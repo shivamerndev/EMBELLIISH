@@ -1,0 +1,237 @@
+[{
+  "_id": {
+    "$oid": "6a6d95b05dc458cc57d0c51d"
+  },
+  "name": "Hitesh Sharma",
+  "email": "admin@embellish.com",
+  "password": "$2a$10$2vBP1xPlyVU76ILb.OFzR.4fQbjD7qx6LShWNv41gFQM1bdTndF/S",
+  "role": "ADMIN",
+  "permissions": [],
+  "department": "Management",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:00.635Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T07:41:27.700Z"
+  },
+  "__v": 0,
+  "lastLoginAt": {
+    "$date": "2026-08-01T07:41:27.694Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a6d95b05dc458cc57d0c54c"
+  },
+  "name": "Priya Malhotra",
+  "email": "senior.dcm@embellish.com",
+  "password": "$2a$10$5kbO7W5eNXDNOYKOgfGUneGAjnM/EQo02nV3j91XCDoHDcrQvDe2S",
+  "role": "SENIOR_DCM",
+  "permissions": [],
+  "department": "Sales",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:00.785Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:00.785Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b05dc458cc57d0c564"
+  },
+  "name": "Rahul Verma",
+  "email": "rahul@embellish.com",
+  "password": "$2a$10$/wQvoSCikzlV5Q7QxPqTBe6ew.Qfc1.YYyOZnm5XCK.OpKPzSZ1Di",
+  "role": "DCM",
+  "permissions": [],
+  "department": "Sales",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:00.900Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:16.091Z"
+  },
+  "__v": 0,
+  "lastLoginAt": {
+    "$date": "2026-08-01T06:44:16.089Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a6d95b05dc458cc57d0c569"
+  },
+  "name": "Ankit Gupta",
+  "email": "coordinator@embellish.com",
+  "password": "$2a$10$FsiDWgW8sNlN1SlIn6mtn.3SNgV6VBYmC27eHRBW8.4k1RCPS8T0O",
+  "role": "PROJECT_COORDINATOR",
+  "permissions": [],
+  "department": "Projects",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:00.995Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:00.995Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c56b"
+  },
+  "name": "Sneha Rao",
+  "email": "designer@embellish.com",
+  "password": "$2a$10$/tBSm9o7U5w1XmVoSaQy8u23dPuLm9.P.52r9Tp2oFcu32ujRUJB.",
+  "role": "DESIGNER",
+  "permissions": [],
+  "department": "Design",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.077Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.077Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c56d"
+  },
+  "name": "Imran Qureshi",
+  "email": "execution@embellish.com",
+  "password": "$2a$10$GoFs/zxiwUK7PfEbzBamAOeGL4irom/8hjQGoBYXfoX5g4KRHmmOe",
+  "role": "EXECUTION_ENGINEER",
+  "permissions": [],
+  "department": "Execution",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.210Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.210Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c56f"
+  },
+  "name": "Deepak Jain",
+  "email": "purchase@embellish.com",
+  "password": "$2a$10$mJaqtOJdGWQn6CBnSo4h2uZ5ag1WV2UTmyRcKxiLJ9ErZfJYqJXX.",
+  "role": "PURCHASE_MANAGER",
+  "permissions": [],
+  "department": "Purchase",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.285Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.285Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c571"
+  },
+  "name": "Ravi Kumar",
+  "email": "stores@embellish.com",
+  "password": "$2a$10$XoPZ/SpTfoJfjyW9wK5Tre9YyP0WN0aG.WTeP8QXXsuhOsgD4Qa7e",
+  "role": "STORE_KEEPER",
+  "permissions": [],
+  "department": "Stores",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.366Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.366Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c573"
+  },
+  "name": "Suresh Patil",
+  "email": "factory@embellish.com",
+  "password": "$2a$10$9qNlm95Xx1ral/wWqcRCO.PCaeA.T8R9GF1FRCIyNiaN4YQZ.OqLG",
+  "role": "FACTORY_MANAGER",
+  "permissions": [],
+  "department": "Factory",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.440Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.440Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c575"
+  },
+  "name": "Meena Iyer",
+  "email": "qc@embellish.com",
+  "password": "$2a$10$EK4nsEWurqHbbBM3NISol.IhCzbf9SljipA49B/95ggI9PZklN19u",
+  "role": "QC_INSPECTOR",
+  "permissions": [],
+  "department": "Quality",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.513Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.513Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c577"
+  },
+  "name": "Hasan Ali",
+  "email": "installer@embellish.com",
+  "password": "$2a$10$NJvrl/rMdTgwWrQAs2yZiu0dLxV/atUXdjiLmUlHInb1HV/34D3hG",
+  "role": "INSTALLER",
+  "permissions": [],
+  "department": "Installation",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.586Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:16.323Z"
+  },
+  "__v": 0,
+  "lastLoginAt": {
+    "$date": "2026-08-01T06:44:16.321Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a6d95b15dc458cc57d0c579"
+  },
+  "name": "Neha Bansal",
+  "email": "accounts@embellish.com",
+  "password": "$2a$10$FKIEqMs3E.u9mEHz0n//WOhVCEE2CjDqkuqS6H8U.jDd3CEuiOqx2",
+  "role": "ACCOUNTANT",
+  "permissions": [],
+  "department": "Accounts",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-08-01T06:44:01.662Z"
+  },
+  "updatedAt": {
+    "$date": "2026-08-01T06:44:01.662Z"
+  },
+  "__v": 0
+}]

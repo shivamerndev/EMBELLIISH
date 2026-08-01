@@ -5,6 +5,7 @@ import store from './app/store';
 import AppRoutes from './routes';
 import { loadProfile } from './features/auth/authSlice';
 import { loadMeta } from './features/meta/metaSlice';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 /**
  * On boot: re-validate any stored token, and pull the workflow vocabulary the
@@ -29,6 +30,7 @@ export const App = () => (
     <BrowserRouter>
       <Bootstrap>
         <AppRoutes />
+        <PWAInstallPrompt />
       </Bootstrap>
     </BrowserRouter>
   </Provider>
