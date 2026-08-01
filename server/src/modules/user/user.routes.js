@@ -63,7 +63,8 @@ const { router, service } = defineModule({
           .select('name email role department')
           .sort('name')
           .lean();
-        return sendSuccess(res, 'Users retrieved', users);
+        const formatted = users.map((u) => ({ ...u, id: u._id.toString() }));
+        return sendSuccess(res, 'Users retrieved', formatted);
       })
     );
 

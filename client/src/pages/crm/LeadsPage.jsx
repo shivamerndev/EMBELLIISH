@@ -91,7 +91,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects }) => {
               value={form.architect}
               onChange={set('architect')}
               placeholder="—"
-              options={(architects || []).map((a) => ({ value: a.id, label: `${a.name}${a.firm ? ` · ${a.firm}` : ''}` }))}
+              options={(architects || []).map((a) => ({ value: a.id || a._id, label: `${a.name}${a.firm ? ` · ${a.firm}` : ''}` }))}
             />
           </Field>
         </div>
@@ -237,13 +237,13 @@ const ConvertModal = ({ lead, onClose }) => {
 /* ------------------------------------------------------------- assign */
 
 const AssignModal = ({ lead, onClose, onDone }) => {
-  const [assignedDCM, setAssignedDCM] = useState(lead?.assignedDCM?.id || '');
+  const [assignedDCM, setAssignedDCM] = useState(lead?.assignedDCM?.id || lead?.assignedDCM?._id || '');
   const { data: dcms } = useAsync(
     () => Promise.all([usersApi.byRole('DCM'), usersApi.byRole('SENIOR_DCM')]).then(([a, b]) => [...a.data, ...b.data]),
     []
   );
 
-  const { execute, pending, error } = useAction((payload) => leadsApi.assign(lead.id, payload), {
+  const { execute, pending, error } = useAction((payload) => leadsApi.assign(lead.id || lead._id, payload), {
     onSuccess: () => { onDone(); onClose(); },
   });
 
@@ -269,7 +269,7 @@ const AssignModal = ({ lead, onClose, onDone }) => {
             value={assignedDCM}
             onChange={(e) => setAssignedDCM(e.target.value)}
             placeholder="Select a DCM"
-            options={(dcms || []).map((u) => ({ value: u.id, label: `${u.name} · ${humanise(u.role)}` }))}
+            options={(dcms || []).map((u) => ({ value: u.id || u._id, label: `${u.name} · ${humanise(u.role)}` }))}
           />
         </Field>
       </div>
