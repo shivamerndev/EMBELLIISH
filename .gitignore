@@ -1,0 +1,36 @@
+# Dependency directories
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production builds
+client/dist/
+client/build/
+server/dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+client/.env
+server/.env
+
+# Server uploads & logs
+server/uploads/*
+!server/uploads/.gitkeep
+server/logs/*
+!server/logs/.gitkeep
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+docs
+missed.md
+story.md
+.mongo-data
