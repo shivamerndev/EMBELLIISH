@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, RefreshCw, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { Calculator, RefreshCw, FileSpreadsheet, CheckCircle2, Eye, FileText, Sparkles } from 'lucide-react';
 import { boqApi } from '../../../api';
 import { useAsync, useAction } from '../../../hooks/useAsync';
 import { currency, number, date } from '../../../utils/format';
@@ -144,34 +144,67 @@ export const ConsumptionTab = ({ projectId, onChange }) => {
 
       <Panel>
         <PanelHeader
-          title={previewing ? 'Live calculation (not saved)' : `Consumption sheet ${boq?.code}`}
+          title={previewing ? 'Live Calculation (Unsaved)' : `Consumption sheet ${boq?.code ? `(${boq.code})` : ''}`}
           subtitle={
             previewing
-              ? 'Recomputed from the current measurements'
-              : `Revision ${boq?.revision} · generated ${date(boq?.createdAt)}`
+              ? 'Recomputed dynamically from current window measurements'
+              : `Revision ${boq?.revision ?? 1} · generated ${date(boq?.createdAt)}`
           }
           icon={Calculator}
           actions={
             <div className="flex items-center gap-2">
-              {boq && !previewing && <StatusBadge status={boq.status} />}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => { setPreviewing(!previewing); if (!previewing) loadPreview(); }}
-              >
-                {previewing ? 'Show saved sheet' : 'Preview from measurements'}
-              </Button>
+              {boq ? (
+                <StatusBadge status={boq.status} />
+              ) : previewing ? (
+                <Badge tone="amber">Unsaved Live Preview</Badge>
+              ) : null}
+
+              {!boq && (
+                <Button
+                  size="sm"
+                  variant={previewing ? 'outline' : 'secondary'}
+                  icon={previewing ? FileText : Eye}
+                  onClick={() => {
+                    const next = !previewing;
+                    setPreviewing(next);
+                    if (next) loadPreview();
+                  }}
+                >
+                  {previewing ? 'Exit preview' : 'Preview from measurements'}
+                </Button>
+              )}
+
               {boq && boq.status !== 'APPROVED' && !previewing && (
                 <Button size="sm" variant="secondary" icon={CheckCircle2} loading={approve.pending} onClick={() => approve.execute()}>
                   Approve
                 </Button>
               )}
+
               <Button size="sm" icon={RefreshCw} loading={generate.pending} onClick={() => generate.execute()}>
                 {boq ? 'Regenerate' : 'Generate'}
               </Button>
             </div>
           }
         />
+
+        {previewing && !boq && (
+          <div className="px-5 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-200 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <b>Live Preview Mode:</b> Viewing recomputed values from current measurements. Click{' '}
+                <b>Generate</b> to save the official sheet.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewing(false)}
+              className="text-amber-300 hover:text-amber-100 font-medium underline shrink-0 ml-4"
+            >
+              Exit Preview
+            </button>
+          </div>
+        )}
 
         {generate.error && <p className="px-5 pt-3 text-xs text-rose-400">{generate.error.message}</p>}
 
