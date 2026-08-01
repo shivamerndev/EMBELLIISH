@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Ruler, DoorOpen, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Ruler, DoorOpen, Trash2, Pencil } from 'lucide-react';
 import { roomsApi, measurementsApi, fabricsApi } from '../../../api';
 import { useAsync, useAction } from '../../../hooks/useAsync';
 import { number, humanise } from '../../../utils/format';
@@ -98,9 +98,11 @@ const EMPTY_WINDOW = {
  * calculated row, so the coordinator sees the panel count and fabric metres the
  * BOQ will actually use — not an approximation the UI invented.
  */
-const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => {
+const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics, onDone }) => {
   const [form, setForm] = useState(EMPTY_WINDOW);
   const [preview, setPreview] = useState(null);
+
+  const isEditing = Boolean(windowToEdit);
 
   const payload = () => ({
     project: projectId,
@@ -125,7 +127,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => 
     if (!width || !height) return setPreview(null);
 
     try {
-      const chosen = fabrics?.find((f) => f.id === next.fabric);
+      const chosen = fabrics?.find((f) => f.id === next.fabric || f._id === next.fabric);
       const response = await measurementsApi.calculate({
         particular: next.particular,
         o2o: { width: Number(next.o2oWidth) || undefined, height: Number(next.o2oHeight) || undefined },
@@ -142,6 +144,38 @@ const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => 
     return undefined;
   };
 
+  useEffect(() => {
+    if (open) {
+      if (windowToEdit) {
+        const fabricId = typeof windowToEdit.fabric === 'object'
+          ? windowToEdit.fabric?._id || windowToEdit.fabric?.id
+          : windowToEdit.fabric;
+        const initial = {
+          label: windowToEdit.label || 'W1',
+          particular: windowToEdit.particular || 'MAIN_CURTAIN',
+          o2oWidth: windowToEdit.o2o?.width ?? '',
+          o2oHeight: windowToEdit.o2o?.height ?? '',
+          f2fWidth: windowToEdit.f2f?.width ?? '',
+          f2fHeight: windowToEdit.f2f?.height ?? '',
+          pelmetWidth: windowToEdit.pelmet?.o2oWidth ?? windowToEdit.pelmet?.f2fWidth ?? '',
+          pelmetDrop: windowToEdit.pelmet?.o2oDrop ?? windowToEdit.pelmet?.f2fDrop ?? '',
+          wireLeft: Boolean(windowToEdit.wire?.left),
+          wireRight: Boolean(windowToEdit.wire?.right),
+          motorRequired: Boolean(windowToEdit.motorRequired),
+          fabric: fabricId || '',
+          fullness: windowToEdit.fullness ?? '',
+          fabricWidthInch: windowToEdit.fabricWidthInch ?? '',
+          partsOverride: windowToEdit.partsOverride ?? '',
+        };
+        setForm(initial);
+        recalc(initial);
+      } else {
+        setForm(EMPTY_WINDOW);
+        setPreview(null);
+      }
+    }
+  }, [open, windowToEdit]);
+
   const set = (key, isCheckbox = false) => (event) => {
     const value = isCheckbox ? event.target.checked : event.target.value;
     const next = { ...form, [key]: value };
@@ -149,21 +183,32 @@ const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => 
     recalc(next);
   };
 
-  const { execute, pending, error } = useAction(() => measurementsApi.create(payload()), {
-    onSuccess: () => { onDone(); onClose(); setForm(EMPTY_WINDOW); setPreview(null); },
-  });
+  const { execute, pending, error } = useAction(
+    () => {
+      const windowId = windowToEdit?._id || windowToEdit?.id;
+      if (windowId) {
+        return measurementsApi.update(windowId, payload());
+      }
+      return measurementsApi.create(payload());
+    },
+    {
+      onSuccess: () => { onDone(); onClose(); setForm(EMPTY_WINDOW); setPreview(null); },
+    }
+  );
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={`Add a window — ${room?.name || ''}`}
+      title={isEditing ? `Edit window ${form.label} — ${room?.name || ''}` : `Add a window — ${room?.name || ''}`}
       subtitle="Step 5 — one row of the measurement sheet"
       size="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={pending} onClick={() => execute()}>Save window</Button>
+          <Button loading={pending} onClick={() => execute()}>
+            {isEditing ? 'Save changes' : 'Save window'}
+          </Button>
         </>
       }
     >
@@ -184,7 +229,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => 
               value={form.fabric}
               onChange={set('fabric')}
               placeholder="—"
-              options={(fabrics || []).map((f) => ({ value: f.id, label: `${f.name} (${f.usableWidthInch}")` }))}
+              options={(fabrics || []).map((f) => ({ value: f.id || f._id, label: `${f.name} (${f.usableWidthInch}")` }))}
             />
           </Field>
         </div>
@@ -261,6 +306,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, fabrics, onDone }) => 
 export const MeasurementsTab = ({ projectId, onChange }) => {
   const [addingRoom, setAddingRoom] = useState(false);
   const [addingWindowTo, setAddingWindowTo] = useState(null);
+  const [editingWindowInfo, setEditingWindowInfo] = useState(null);
 
   const { data: rooms, loading, error, reload } = useAsync(
     () => roomsApi.byProject(projectId).then((r) => r.data),
@@ -277,7 +323,7 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
 
   const totalWindows = (rooms || []).reduce((sum, room) => sum + room.windows.length, 0);
 
-  const windowColumns = [
+  const getWindowColumns = (room) => [
     { key: 'label', header: 'Window', render: (w) => w.label },
     { key: 'particular', header: 'Particular', render: (w) => humanise(w.particular) },
     {
@@ -305,14 +351,24 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
       header: '',
       align: 'right',
       render: (w) => (
-        <button
-          type="button"
-          onClick={() => remove.execute(w._id || w.id)}
-          className="p-1.5 text-slate-600 hover:text-rose-400 rounded transition"
-          title="Delete window"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => setEditingWindowInfo({ window: w, room })}
+            className="p-1.5 text-slate-600 hover:text-blue-400 rounded transition"
+            title="Edit window"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => remove.execute(w._id || w.id)}
+            className="p-1.5 text-slate-600 hover:text-rose-400 rounded transition"
+            title="Delete window"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -349,7 +405,7 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
           />
           <Table
             keyField="_id"
-            columns={windowColumns}
+            columns={getWindowColumns(room)}
             rows={room.windows}
             empty={<EmptyState title="No windows in this room yet" icon={Ruler} />}
           />
@@ -365,8 +421,18 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
         fabrics={fabrics}
         onDone={refresh}
       />
+      <AddWindowModal
+        open={Boolean(editingWindowInfo)}
+        onClose={() => setEditingWindowInfo(null)}
+        projectId={projectId}
+        room={editingWindowInfo?.room ? { ...editingWindowInfo.room, id: editingWindowInfo.room._id } : null}
+        windowToEdit={editingWindowInfo?.window}
+        fabrics={fabrics}
+        onDone={refresh}
+      />
     </div>
   );
 };
 
 export default MeasurementsTab;
+

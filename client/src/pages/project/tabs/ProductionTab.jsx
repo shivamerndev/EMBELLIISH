@@ -237,7 +237,14 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
             }
             icon={Factory}
             action={
-              <Button size="sm" icon={Play} loading={generate.pending} onClick={() => generate.execute()}>
+              <Button
+                size="sm"
+                icon={Play}
+                disabled={!project.isActivated}
+                title={!project.isActivated ? 'Production cannot start before the project is activated' : ''}
+                loading={generate.pending}
+                onClick={() => generate.execute()}
+              >
                 Release to factory
               </Button>
             }

@@ -164,6 +164,13 @@ class ProductionService extends BaseService {
     const order = await ProductionOrderModel.findById(id);
     if (!order) throw ApiError.notFound('Production order not found');
 
+    const project = await ProjectModel.findById(order.project).lean();
+    if (project && !project.isActivated) {
+      throw ApiError.workflow(
+        'Production cannot start before the project is activated (token, advance, design and measurements must all be in)'
+      );
+    }
+
     const currentIdx = PRODUCTION_STAGE_ORDER.indexOf(order.stage);
     const target = toStage || PRODUCTION_STAGE_ORDER[currentIdx + 1];
 
@@ -221,6 +228,13 @@ class ProductionService extends BaseService {
   async createRework(sourceId, { reason, priority = 'HIGH' }, user) {
     const source = await ProductionOrderModel.findById(sourceId).lean();
     if (!source) throw ApiError.notFound('Production order not found');
+
+    const project = await ProjectModel.findById(source.project).lean();
+    if (project && !project.isActivated) {
+      throw ApiError.workflow(
+        'Production cannot start before the project is activated (token, advance, design and measurements must all be in)'
+      );
+    }
 
     const rework = await ProductionOrderModel.create({
       ...source,

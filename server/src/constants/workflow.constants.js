@@ -96,7 +96,7 @@ const STAGE_GATES = {
   [PROJECT_STAGE.MATERIAL_RECEIVED]: ['materialAvailable'],
   // Step 4: "Ready Size confirm bina stitching nahi." Nothing is cut against an
   // unsigned finished size, whatever else is ready.
-  [PROJECT_STAGE.PRODUCTION]: ['materialAvailable', 'readySizeConfirmed'],
+  [PROJECT_STAGE.PRODUCTION]: ['projectActivated', 'materialAvailable', 'readySizeConfirmed'],
   [PROJECT_STAGE.QC]: ['productionComplete'],
   [PROJECT_STAGE.PACKING]: ['qcPassed'],
   [PROJECT_STAGE.DISPATCH]: ['packingComplete'],
