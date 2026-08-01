@@ -12,7 +12,7 @@ const bool = (value, fallback = false) =>
 const env = {
   port: Number(process.env.PORT) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/embellish_erp',
+  mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/embellish_erp',
   /** Run against a throwaway in-process MongoDB — for demos and local dev only. */
   useMemoryDb: bool(process.env.USE_MEMORY_DB, false),
   jwtSecret: process.env.JWT_SECRET || 'default_jwt_secret_embellish_erp',
