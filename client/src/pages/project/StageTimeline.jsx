@@ -11,10 +11,10 @@ import cn from '../../utils/cn';
  */
 
 const STATUS_STYLES = {
-  DONE: { icon: Check, ring: 'bg-emerald-500 border-emerald-500 text-white', text: 'text-slate-400' },
-  CURRENT: { icon: Circle, ring: 'bg-blue-600 border-blue-500 text-white', text: 'text-slate-100 font-semibold' },
-  READY: { icon: ChevronRight, ring: 'bg-[ #836444] 800 border-blue-500/50 text-blue-400', text: 'text-slate-300' },
-  BLOCKED: { icon: Lock, ring: 'bg-[ #836444] 900 border-slate-700 text-slate-600', text: 'text-slate-600' },
+  DONE: { icon: Check, ring: 'bg-emerald-600 border-emerald-500 text-white', text: 'text-stone-400' },
+  CURRENT: { icon: Circle, ring: 'bg-brand-500 border-brand-400 text-white shadow-md shadow-brand-900/50', text: 'text-stone-100 font-semibold' },
+  READY: { icon: ChevronRight, ring: 'bg-[#251e18] border-brand-500/60 text-brand-300', text: 'text-stone-300' },
+  BLOCKED: { icon: Lock, ring: 'bg-[#120f0d] border-[#2e251e] text-stone-600', text: 'text-stone-600' },
 };
 
 export const StageTimeline = ({ timeline, project }) => (
@@ -39,7 +39,7 @@ export const StageTimeline = ({ timeline, project }) => (
                   <span
                     className={cn(
                       'absolute left-[11px] top-6 bottom-0 w-px',
-                      entry.status === 'DONE' ? 'bg-emerald-500/40' : 'bg-[ #836444] 800'
+                      entry.status === 'DONE' ? 'bg-emerald-500/40' : 'bg-[#2e251e]'
                     )}
                   />
                 )}
@@ -56,15 +56,15 @@ export const StageTimeline = ({ timeline, project }) => (
                 <div className="min-w-0 flex-1 -mt-0.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={cn('text-sm', style.text)}>{entry.label}</span>
-                    {entry.status === 'CURRENT' && <Badge tone="blue">Current</Badge>}
+                    {entry.status === 'CURRENT' && <Badge tone="brand">Current</Badge>}
                     {entry.status === 'READY' && <Badge tone="green">Ready</Badge>}
                   </div>
 
                   {entry.status === 'BLOCKED' && unmet.length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {unmet.map((gate) => (
-                        <li key={gate.key} className="text-[11px] text-slate-500 flex items-start gap-1.5">
-                          <Lock className="w-3 h-3 mt-0.5 shrink-0 text-slate-700" />
+                        <li key={gate.key} className="text-[11px] text-stone-500 flex items-start gap-1.5">
+                          <Lock className="w-3 h-3 mt-0.5 shrink-0 text-stone-700" />
                           <span>{gate.detail}</span>
                         </li>
                       ))}
@@ -96,19 +96,19 @@ export const StageTimeline = ({ timeline, project }) => (
           <ol className="space-y-3">
             {[...project.history].reverse().map((entry, index) => (
               <li key={index} className="text-xs">
-                <p className="text-slate-300 font-medium">{humanise(entry.action)}</p>
-                {entry.note && <p className="text-slate-500 mt-0.5">{entry.note}</p>}
+                <p className="text-stone-300 font-medium">{humanise(entry.action)}</p>
+                {entry.note && <p className="text-stone-500 mt-0.5">{entry.note}</p>}
                 {entry.from && entry.to && (
-                  <p className="text-slate-600 mt-0.5">
+                  <p className="text-stone-600 mt-0.5">
                     {String(entry.from).replace(/_/g, ' ')} → {String(entry.to).replace(/_/g, ' ')}
                   </p>
                 )}
-                <p className="text-slate-600 mt-0.5">{dateTime(entry.at)}</p>
+                <p className="text-stone-600 mt-0.5">{dateTime(entry.at)}</p>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-slate-500">Nothing recorded yet.</p>
+          <p className="text-sm text-stone-500">Nothing recorded yet.</p>
         )}
       </div>
     </Panel>

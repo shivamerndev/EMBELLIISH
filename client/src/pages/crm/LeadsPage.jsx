@@ -366,7 +366,7 @@ export const LeadsPage = () => {
             </Button>
           )}
           {lead.status === 'CONVERTED' && lead.convertedProject && (
-            <Link to={`/projects/${lead.convertedProject}`} className="text-xs text-blue-400 hover:text-blue-300 px-2">
+            <Link to={`/projects/${lead.convertedProject}`} className="text-xs text-brand-400 hover:text-brand-300 px-2">
               Open project
             </Link>
           )}

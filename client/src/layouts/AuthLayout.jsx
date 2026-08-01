@@ -1,18 +1,19 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import Logo from '../components/common/Logo';
 
 export const AuthLayout = () => (
-  <div className="min-h-screen bg-[ #836444] 950 flex flex-col justify-center items-center p-4">
-    <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-blue-600/30 mx-auto mb-4">
-          E
-        </div>
-        <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Embellish ERP</h2>
-        <p className="text-sm text-slate-500 mt-1">Lead to closure, on one record</p>
+  <div className="min-h-screen bg-[#120f0d] flex flex-col justify-center items-center p-6 relative overflow-hidden">
+    {/* Subtle Luxury Ambient Background Glow */}
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+    <div className="w-full max-w-md relative z-10">
+      <div className="text-center mb-8 flex flex-col items-center">
+        <Logo size="lg" variant="vertical" mode="dark" className="mb-2" />
+        <p className="text-xs text-stone-400 mt-2 font-medium tracking-wide">Enterprise Operating Spine</p>
       </div>
 
-      <div className="panel p-6 shadow-2xl">
+      <div className="panel p-8 shadow-2xl border-[#3d3026] bg-[#1a1512]/95 backdrop-blur-md">
         <Outlet />
       </div>
     </div>
@@ -20,3 +21,4 @@ export const AuthLayout = () => (
 );
 
 export default AuthLayout;
+

@@ -261,7 +261,7 @@ export const PaymentsTab = ({ projectId, project, onChange }) => {
                 <button
                   type="button"
                   onClick={() => invoicePdf.execute(i.id)}
-                  className="p-1.5 text-slate-600 hover:text-blue-400 rounded transition"
+                  className="p-1.5 text-stone-500 hover:text-brand-400 rounded transition"
                   title="Open the invoice PDF"
                 >
                   <FileDown className="w-3.5 h-3.5" />

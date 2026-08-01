@@ -10,27 +10,27 @@ import {
 } from '../../components/ui';
 
 /** Horizontal bar chart — the pipeline reads better as position than as a list. */
-const StageBars = ({ rows, total, tone = 'bg-blue-500' }) => {
+const StageBars = ({ rows, total, tone = 'bg-brand-500' }) => {
   const max = Math.max(1, ...rows.map((row) => row.count));
 
   return (
-    <div className="space-y-2 p-5">
+    <div className="space-y-2.5 p-5">
       {rows.map((row) => (
         <div key={row.stage || row.status} className="flex items-center gap-3">
-          <span className="w-44 shrink-0 text-xs text-slate-400 truncate">
+          <span className="w-44 shrink-0 text-xs text-stone-400 truncate">
             {row.label || String(row.stage || row.status).replace(/_/g, ' ')}
           </span>
-          <div className="flex-1 h-5 bg-[ #836444] 950 rounded overflow-hidden">
+          <div className="flex-1 h-5 bg-[#120f0d] rounded overflow-hidden border border-[#2e251e]">
             <div
               className={`h-full ${tone} rounded transition-all duration-500`}
               style={{ width: `${(row.count / max) * 100}%` }}
             />
           </div>
-          <span className="w-8 text-right text-xs font-semibold text-slate-300 numeric">{row.count}</span>
+          <span className="w-8 text-right text-xs font-semibold text-stone-300 numeric">{row.count}</span>
         </div>
       ))}
       {total !== undefined && (
-        <p className="text-[11px] text-slate-600 pt-1">{total} total</p>
+        <p className="text-[11px] text-stone-500 pt-1">{total} total</p>
       )}
     </div>
   );
@@ -60,13 +60,14 @@ export const Dashboard = () => {
           value={number(leads.open, 0)}
           sub={`${currency(leads.pipelineValue, { compact: true })} in pipeline`}
           icon={Users}
+          tone="brand"
         />
         <StatTile
           label="Active projects"
           value={number(projects.active, 0)}
           sub={`${projects.total} total · ${projects.closed} closed`}
           icon={Briefcase}
-          tone="violet"
+          tone="amber"
         />
         <StatTile
           label="Collected"
@@ -85,22 +86,22 @@ export const Dashboard = () => {
       </div>
 
       {(alerts.openSnags > 0 || alerts.overdueFollowUps > 0 || alerts.lowStockItems > 0) && (
-        <Panel className="mb-6 p-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-amber-500/20 bg-amber-500/[0.03]">
+        <Panel className="mb-6 p-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-amber-500/30 bg-amber-500/[0.05]">
           <span className="flex items-center gap-2 text-xs font-semibold text-amber-300">
             <AlertTriangle className="w-4 h-4" /> Needs attention
           </span>
           {alerts.overdueFollowUps > 0 && (
-            <Link to="/crm/leads" className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-blue-400">
+            <Link to="/crm/leads" className="flex items-center gap-1.5 text-xs text-stone-300 hover:text-brand-400">
               <Phone className="w-3.5 h-3.5" /> {alerts.overdueFollowUps} overdue follow-up(s)
             </Link>
           )}
           {alerts.openSnags > 0 && (
-            <Link to="/projects" className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-blue-400">
+            <Link to="/projects" className="flex items-center gap-1.5 text-xs text-stone-300 hover:text-brand-400">
               <AlertTriangle className="w-3.5 h-3.5" /> {alerts.openSnags} open snag(s)
             </Link>
           )}
           {alerts.lowStockItems > 0 && (
-            <Link to="/inventory" className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-blue-400">
+            <Link to="/inventory" className="flex items-center gap-1.5 text-xs text-stone-300 hover:text-brand-400">
               <PackageX className="w-3.5 h-3.5" /> {alerts.lowStockItems} item(s) below reorder level
             </Link>
           )}
@@ -113,12 +114,12 @@ export const Dashboard = () => {
             title="Projects across the spine"
             subtitle="Where every live project currently sits"
             icon={Briefcase}
-            actions={<Link to="/projects" className="text-xs text-blue-400 hover:text-blue-300">View all</Link>}
+            actions={<Link to="/projects" className="text-xs text-brand-400 hover:text-brand-300">View all</Link>}
           />
           {activeStages.length ? (
-            <StageBars rows={activeStages} total={projects.total} />
+            <StageBars rows={activeStages} total={projects.total} tone="bg-brand-500" />
           ) : (
-            <p className="p-5 text-sm text-slate-500">No projects yet.</p>
+            <p className="p-5 text-sm text-stone-500">No projects yet.</p>
           )}
         </Panel>
 
@@ -127,9 +128,9 @@ export const Dashboard = () => {
             title="Lead pipeline"
             subtitle="From first call to conversion"
             icon={Users}
-            actions={<Link to="/crm/leads" className="text-xs text-blue-400 hover:text-blue-300">View all</Link>}
+            actions={<Link to="/crm/leads" className="text-xs text-brand-400 hover:text-brand-300">View all</Link>}
           />
-          <StageBars rows={leads.byStatus} total={leads.total} tone="bg-violet-500" />
+          <StageBars rows={leads.byStatus} total={leads.total} tone="bg-amber-600" />
         </Panel>
 
         <Panel className="lg:col-span-2">
@@ -138,26 +139,27 @@ export const Dashboard = () => {
             subtitle="Work orders by production stage"
             icon={Factory}
             actions={
-              <Badge tone="slate">{production.total} work orders</Badge>
+              <Badge tone="brand">{production.total} work orders</Badge>
             }
           />
           {production.total ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-px bg-[ #836444] 800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-px bg-[#2e251e]">
               {production.byStage.map((stage) => (
-                <div key={stage.stage} className="bg-[ #836444] 900 p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-2 leading-tight h-6">
+                <div key={stage.stage} className="bg-[#1a1512] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-2 leading-tight h-6">
                     {stage.stage.replace(/_/g, ' ')}
                   </p>
-                  <p className="text-xl font-bold text-slate-100 numeric">{stage.count}</p>
+                  <p className="text-xl font-bold text-stone-100 numeric">{stage.count}</p>
                   <Progress
                     value={production.total ? (stage.count / production.total) * 100 : 0}
                     className="mt-2"
+                    tone="brand"
                   />
                 </div>
               ))}
             </div>
           ) : (
-            <p className="p-5 text-sm text-slate-500">Nothing on the factory floor right now.</p>
+            <p className="p-5 text-sm text-stone-500">Nothing on the factory floor right now.</p>
           )}
         </Panel>
       </div>

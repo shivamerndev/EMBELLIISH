@@ -37,7 +37,7 @@ export const AccountsPage = () => {
 
   const projectLink = (project) =>
     project?.id || project?._id ? (
-      <Link to={`/projects/${project.id || project._id}`} className="text-blue-400 hover:text-blue-300">
+      <Link to={`/projects/${project.id || project._id}`} className="text-brand-400 hover:text-brand-300">
         {project.code}
       </Link>
     ) : (

@@ -72,8 +72,8 @@ export const Login = () => {
         Sign in
       </Button>
 
-      <div className="pt-4 border-t border-slate-800">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-2">
+      <div className="pt-4 border-t border-[#2e251e]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
           Seeded accounts
         </p>
         <div className="grid grid-cols-1 gap-1">
@@ -82,7 +82,7 @@ export const Login = () => {
               key={email}
               type="button"
               onClick={() => setForm({ email, password: 'Embellish@2026' })}
-              className="text-left px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:bg-[ #836444] 800 hover:text-slate-200 transition"
+              className="text-left px-2.5 py-1.5 rounded-md text-xs text-stone-400 hover:bg-[#251e18] hover:text-stone-200 transition"
             >
               {label}
             </button>
