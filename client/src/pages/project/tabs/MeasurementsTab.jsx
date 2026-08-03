@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Ruler, DoorOpen, Trash2, Pencil } from 'lucide-react';
-import { roomsApi, measurementsApi, fabricsApi } from '../../../api';
+import { Plus, Ruler, DoorOpen, Trash2, Pencil, MapPin, CheckCircle2, Calendar } from 'lucide-react';
+import { roomsApi, measurementsApi, fabricsApi, siteVisitsApi } from '../../../api';
 import { useAsync, useAction } from '../../../hooks/useAsync';
-import { number, humanise } from '../../../utils/format';
+import { number, humanise, date } from '../../../utils/format';
 import {
   Panel, PanelHeader, Table, Button, Badge, Modal, Field, Input, Select, Checkbox,
   Loading, ErrorState, EmptyState,
@@ -11,6 +11,135 @@ import {
 const PARTICULARS = [
   'MAIN_CURTAIN', 'SHEER_CURTAIN', 'MOTORISED_CURTAIN', 'ROMAN_BLIND', 'WOODEN_BLIND',
 ];
+
+/* ----------------------------------------------------------- site visits */
+
+const RecordSiteVisitModal = ({ open, onClose, projectId, onDone }) => {
+  const [form, setForm] = useState({
+    visitDate: new Date().toISOString().slice(0, 10),
+    observations: '',
+    ceilingHeightInch: '',
+    roomsSurveyed: '',
+    windowsSurveyed: '',
+    pelmetAvailable: false,
+    wiringAvailable: false,
+    falseCeiling: false,
+    curtainStylePreference: '',
+    accessNotes: '',
+  });
+
+  const { execute, pending, error } = useAction(
+    (payload) => siteVisitsApi.create(payload),
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+        setForm({
+          visitDate: new Date().toISOString().slice(0, 10),
+          observations: '',
+          ceilingHeightInch: '',
+          roomsSurveyed: '',
+          windowsSurveyed: '',
+          pelmetAvailable: false,
+          wiringAvailable: false,
+          falseCeiling: false,
+          curtainStylePreference: '',
+          accessNotes: '',
+        });
+      },
+    }
+  );
+
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Record Site Visit"
+      subtitle="Step 1 — Site inspection details and completion"
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            loading={pending}
+            onClick={() =>
+              execute({
+                project: projectId,
+                status: 'COMPLETED',
+                visitDate: form.visitDate ? new Date(form.visitDate) : undefined,
+                observations: form.observations || undefined,
+                ceilingHeightInch: form.ceilingHeightInch ? Number(form.ceilingHeightInch) : undefined,
+                roomsSurveyed: form.roomsSurveyed ? Number(form.roomsSurveyed) : undefined,
+                windowsSurveyed: form.windowsSurveyed ? Number(form.windowsSurveyed) : undefined,
+                pelmetAvailable: form.pelmetAvailable,
+                wiringAvailable: form.wiringAvailable,
+                falseCeiling: form.falseCeiling,
+                curtainStylePreference: form.curtainStylePreference || undefined,
+                accessNotes: form.accessNotes || undefined,
+              })
+            }
+          >
+            Complete Site Visit
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {error && <p className="text-xs text-rose-400">{error.message}</p>}
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Visit Date" required>
+            <Input type="date" value={form.visitDate} onChange={set('visitDate')} />
+          </Field>
+          <Field label="Ceiling Height (in)">
+            <Input type="number" value={form.ceilingHeightInch} onChange={set('ceilingHeightInch')} placeholder="120" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Rooms Surveyed">
+            <Input type="number" value={form.roomsSurveyed} onChange={set('roomsSurveyed')} placeholder="4" />
+          </Field>
+          <Field label="Windows Surveyed">
+            <Input type="number" value={form.windowsSurveyed} onChange={set('windowsSurveyed')} placeholder="8" />
+          </Field>
+        </div>
+
+        <div className="flex flex-wrap gap-6">
+          <Checkbox
+            label="Pelmet Available"
+            checked={form.pelmetAvailable}
+            onChange={(e) => setForm((p) => ({ ...p, pelmetAvailable: e.target.checked }))}
+          />
+          <Checkbox
+            label="Wiring Available"
+            checked={form.wiringAvailable}
+            onChange={(e) => setForm((p) => ({ ...p, wiringAvailable: e.target.checked }))}
+          />
+          <Checkbox
+            label="False Ceiling"
+            checked={form.falseCeiling}
+            onChange={(e) => setForm((p) => ({ ...p, falseCeiling: e.target.checked }))}
+          />
+        </div>
+
+        <Field label="Curtain Style Preference">
+          <Input value={form.curtainStylePreference} onChange={set('curtainStylePreference')} placeholder="Pinch pleat sheers with motorized blackout drapes" />
+        </Field>
+
+        <Field label="Observations / Site Notes">
+          <Input value={form.observations} onChange={set('observations')} placeholder="Site inspected, window pelmets ready." />
+        </Field>
+
+        <Field label="Access / Installation Notes">
+          <Input value={form.accessNotes} onChange={set('accessNotes')} placeholder="Elevator access available to 3rd floor." />
+        </Field>
+      </div>
+    </Modal>
+  );
+};
 
 /* ---------------------------------------------------------------- rooms */
 
@@ -307,20 +436,28 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
   const [addingRoom, setAddingRoom] = useState(false);
   const [addingWindowTo, setAddingWindowTo] = useState(null);
   const [editingWindowInfo, setEditingWindowInfo] = useState(null);
+  const [recordingVisit, setRecordingVisit] = useState(false);
 
   const { data: rooms, loading, error, reload } = useAsync(
     () => roomsApi.byProject(projectId).then((r) => r.data),
     [projectId]
   );
+
+  const { data: siteVisits, reload: reloadVisits } = useAsync(
+    () => siteVisitsApi.list({ project: projectId }).then((r) => r.data?.items || r.data || []),
+    [projectId]
+  );
+
   const { data: fabrics } = useAsync(() => fabricsApi.list({ limit: 100 }).then((r) => r.data.items), []);
 
   const remove = useAction((id) => measurementsApi.remove(id), { onSuccess: () => { reload(); onChange?.(); } });
 
-  const refresh = () => { reload(); onChange?.(); };
+  const refresh = () => { reload(); reloadVisits(); onChange?.(); };
 
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
+  const completedVisits = (siteVisits || []).filter((v) => v.status === 'COMPLETED');
   const totalWindows = (rooms || []).reduce((sum, room) => sum + room.windows.length, 0);
 
   const getWindowColumns = (room) => [
@@ -375,6 +512,68 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
 
   return (
     <div className="space-y-4">
+      {/* Site Visits Panel */}
+      <Panel>
+        <PanelHeader
+          title="Site Visits"
+          subtitle="Step 1 — Site inspection details and completion"
+          icon={MapPin}
+          actions={
+            <Button size="sm" icon={Plus} onClick={() => setRecordingVisit(true)}>
+              Record Site Visit
+            </Button>
+          }
+        />
+        {completedVisits.length > 0 ? (
+          <div className="p-4 space-y-3">
+            {completedVisits.map((visit) => (
+              <div
+                key={visit._id || visit.id}
+                className="p-3.5 rounded-lg bg-stone-900/60 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge tone="green">
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> Visit Completed
+                    </Badge>
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-slate-500" /> {date(visit.visitDate)}
+                    </span>
+                    {visit.conductedBy && (
+                      <span className="text-slate-500">Conducted by: {visit.conductedBy.name || visit.conductedBy}</span>
+                    )}
+                  </div>
+                  {visit.observations && (
+                    <p className="text-slate-300 font-medium">{visit.observations}</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 text-[11px]">
+                    {visit.ceilingHeightInch && <span>Ceiling: {visit.ceilingHeightInch}"</span>}
+                    {visit.roomsSurveyed && <span>Rooms surveyed: {visit.roomsSurveyed}</span>}
+                    {visit.windowsSurveyed && <span>Windows surveyed: {visit.windowsSurveyed}</span>}
+                    {visit.pelmetAvailable && <span className="text-emerald-400">Pelmet available</span>}
+                    {visit.wiringAvailable && <span className="text-emerald-400">Wiring available</span>}
+                    {visit.falseCeiling && <span className="text-emerald-400">False ceiling</span>}
+                    {visit.curtainStylePreference && <span>Preference: {visit.curtainStylePreference}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 m-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold text-amber-300">No completed site visit recorded yet</p>
+              <p className="text-[11px] text-amber-200/70 mt-0.5">
+                Recording a completed site visit satisfies the <span className="font-semibold">siteVisitDone</span> gate and unlocks the Measurement stage.
+              </p>
+            </div>
+            <Button size="sm" icon={Plus} onClick={() => setRecordingVisit(true)}>
+              Record Site Visit
+            </Button>
+          </div>
+        )}
+      </Panel>
+
       <Panel>
         <PanelHeader
           title="Rooms and windows"
@@ -412,6 +611,12 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
         </Panel>
       ))}
 
+      <RecordSiteVisitModal
+        open={recordingVisit}
+        onClose={() => setRecordingVisit(false)}
+        projectId={projectId}
+        onDone={refresh}
+      />
       <AddRoomModal open={addingRoom} onClose={() => setAddingRoom(false)} projectId={projectId} onDone={refresh} />
       <AddWindowModal
         open={Boolean(addingWindowTo)}

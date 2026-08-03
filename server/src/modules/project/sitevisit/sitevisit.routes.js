@@ -10,17 +10,17 @@ import { objectId } from '../project/project.validation.js';
 
 const siteVisitSchema = z.object({
   project: objectId,
-  visitDate: z.coerce.date().optional(),
+  visitDate: z.preprocess((val) => (val === '' ? undefined : val), z.coerce.date().optional()),
   attendees: z.array(objectId).optional(),
   externalAttendees: z.array(z.string()).optional(),
-  ceilingHeightInch: z.coerce.number().nonnegative().optional(),
+  ceilingHeightInch: z.preprocess((val) => (val === '' ? undefined : val), z.coerce.number().nonnegative().optional()),
   pelmetAvailable: z.boolean().optional(),
   wiringAvailable: z.boolean().optional(),
   falseCeiling: z.boolean().optional(),
   curtainStylePreference: z.string().optional(),
   accessNotes: z.string().optional(),
-  roomsSurveyed: z.coerce.number().int().nonnegative().optional(),
-  windowsSurveyed: z.coerce.number().int().nonnegative().optional(),
+  roomsSurveyed: z.preprocess((val) => (val === '' ? undefined : val), z.coerce.number().int().nonnegative().optional()),
+  windowsSurveyed: z.preprocess((val) => (val === '' ? undefined : val), z.coerce.number().int().nonnegative().optional()),
   observations: z.string().optional(),
   photos: z.array(z.record(z.any())).optional(),
   videos: z.array(z.record(z.any())).optional(),
@@ -29,7 +29,11 @@ const siteVisitSchema = z.object({
 
 class SiteVisitService extends BaseService {
   async create(data, user) {
-    return this.repository.create({ ...data, conductedBy: user?.id });
+    const visit = await this.repository.create({ ...data, conductedBy: user?.id });
+    if (visit.status === 'COMPLETED') {
+      await projectService.tryAutoAdvance(visit.project, user, 'Site visit completed');
+    }
+    return visit;
   }
 
   /** Completing the visit is what opens the Measurement stage. */

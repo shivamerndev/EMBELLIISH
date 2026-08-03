@@ -6,11 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "npx nodemon src/server.js",
-    "seed": "node scripts/seed.js",
-    "demo:workflow": "node scripts/demo_workflow.js",
-    "verify:consumption": "node scripts/verify_consumption.js",
-    "smoke": "node scripts/smoke_api.js"
+    "dev": "npx nodemon src/server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

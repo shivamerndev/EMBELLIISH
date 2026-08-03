@@ -29,7 +29,7 @@ export const Header = () => {
         <div className="h-5 w-px bg-[#2e251e]" />
 
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-xs font-serif font-bold text-brand-200 shadow-sm">
+          <div className="h-8 w-8 rounded-full bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-xs  font-bold text-brand-200 shadow-sm">
             {initials(user?.name) || '—'}
           </div>
           <div className="leading-tight">

@@ -70,7 +70,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
 
         <div className="flex flex-col">
           <span
-            className={`font-serif tracking-[0.2em] font-semibold ${currentSize.fontSizeTitle}`}
+            className={` tracking-[0.2em] font-semibold ${currentSize.fontSizeTitle}`}
             style={{ color: textColor }}
           >
             EMBELL
@@ -84,7 +84,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
             className={`tracking-[0.15em] uppercase font-sans font-medium ${currentSize.fontSizeSub}`}
             style={{ color: subtextColor }}
           >
-         LUXURY CURTAIN DESIGNING & PRODUCTION
+            LUXURY CURTAIN DESIGNING & PRODUCTION
           </span>
         </div>
       </div>
@@ -141,7 +141,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
 
       {/* Main Title */}
       <h2
-        className={`font-serif tracking-[0.25em] font-semibold uppercase ${currentSize.fontSizeTitle}`}
+        className={` tracking-[0.25em] font-semibold uppercase ${currentSize.fontSizeTitle}`}
         style={{ color: textColor }}
       >
         EMBELLISH HOME

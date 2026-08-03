@@ -18,13 +18,19 @@
   }
 
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-brand-900/80 hover:bg-brand-700/80 rounded-full border border-brand-800/40;
+    background-color: rgba(37, 26, 15, 0.8);
+    border-radius: 9999px;
+    border: 1px solid rgba(59, 42, 26, 0.4);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(84, 62, 39, 0.8);
   }
 }
 
