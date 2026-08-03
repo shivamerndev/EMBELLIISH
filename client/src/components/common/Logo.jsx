@@ -73,7 +73,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
             className={`font-serif tracking-[0.2em] font-semibold ${currentSize.fontSizeTitle}`}
             style={{ color: textColor }}
           >
-            EMBELLISH
+            EMBELL
           </span>
           <div className="flex items-center gap-1.5 my-0.5">
             <div className="h-[1px] w-6 bg-brand-500/40"></div>
