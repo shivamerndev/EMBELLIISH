@@ -118,7 +118,7 @@ export const ClientsPage = () => {
                 header: '',
                 align: 'right',
                 render: (p) => (
-                  <Link to={`/projects/${p._id}`} className="text-xs text-blue-400 hover:text-blue-300">
+                  <Link to={`/projects/${p._id}`} className="text-xs text-brand-400 hover:text-brand-300">
                     Open
                   </Link>
                 ),

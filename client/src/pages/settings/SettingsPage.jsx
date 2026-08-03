@@ -213,9 +213,9 @@ const RulesTab = ({ settings, save, saving, error }) => {
                 type="checkbox"
                 checked={Boolean(form.notifications[key])}
                 onChange={toggle(key)}
-                className="w-4 h-4 rounded border-slate-700 bg-[ #836444] 950 text-blue-600 focus:ring-blue-500/40 focus:ring-2"
+                className="w-4 h-4 rounded border-[#3d3026] bg-[#120f0d] text-brand-500 focus:ring-brand-500/40 focus:ring-2 accent-brand-500"
               />
-              <span className="text-sm text-slate-300">{label}</span>
+              <span className="text-sm text-stone-300">{label}</span>
             </label>
           ))}
         </div>

@@ -56,7 +56,7 @@ const orderColumns = [
     align: 'right',
     render: (o) =>
       o.project?.id || o.project?._id ? (
-        <Link to={`/projects/${o.project.id || o.project._id}`} className="text-xs text-blue-400 hover:text-blue-300">
+        <Link to={`/projects/${o.project.id || o.project._id}`} className="text-xs text-brand-400 hover:text-brand-300">
           Open project
         </Link>
       ) : null,

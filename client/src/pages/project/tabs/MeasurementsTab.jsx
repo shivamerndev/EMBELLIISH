@@ -272,8 +272,8 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
         </div>
 
         {/* Live consumption, straight from the server's engine. */}
-        <div className="rounded-lg border border-blue-500/20 bg-blue-500/[0.04] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-300 mb-3">
+        <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.05] p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300 mb-3">
             Consumption for this window
           </p>
           {preview ? (
@@ -355,7 +355,7 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
           <button
             type="button"
             onClick={() => setEditingWindowInfo({ window: w, room })}
-            className="p-1.5 text-slate-600 hover:text-blue-400 rounded transition"
+            className="p-1.5 text-stone-500 hover:text-brand-400 rounded transition"
             title="Edit window"
           >
             <Pencil className="w-3.5 h-3.5" />

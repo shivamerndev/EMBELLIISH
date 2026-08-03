@@ -68,7 +68,7 @@ const ReadySizeModal = ({ open, onClose, line, onDone }) => {
       <div className="space-y-4">
         {error && <p className="text-xs text-rose-400">{error.message}</p>}
 
-        <div className="rounded-lg border border-slate-800 bg-[ #836444] 900/40 p-3">
+        <div className="rounded-lg border border-[#2e251e] bg-[#1a1512] p-3">
           <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">Measured at site</p>
           <p className="text-sm text-slate-200 numeric mt-1">
             {line.windowWidthInch}&quot; × {line.windowHeightInch}&quot;
@@ -186,7 +186,7 @@ export const ReadySizeTab = ({ projectId, onChange }) => {
           <button
             type="button"
             onClick={() => setEditing(l)}
-            className="p-1.5 text-slate-500 hover:text-blue-400 rounded transition"
+            className="p-1.5 text-stone-500 hover:text-brand-400 rounded transition"
             title="Set the finished size by hand"
           >
             <PencilLine className="w-3.5 h-3.5" />

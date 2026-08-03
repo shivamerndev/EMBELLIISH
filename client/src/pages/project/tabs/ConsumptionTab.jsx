@@ -36,7 +36,7 @@ const cellValue = (line, key) => {
 
 const RoomBlock = ({ room }) => (
   <div className="border-b border-slate-800 last:border-0">
-    <div className="px-4 py-2 bg-[ #836444] 800/40 flex items-center justify-between">
+    <div className="px-4 py-2 bg-[#251e18] flex items-center justify-between">
       <span className="text-xs font-semibold text-slate-200">
         {room.roomName}
         {room.floor && <span className="text-slate-500 font-normal ml-2">{room.floor}</span>}
@@ -230,7 +230,7 @@ export const ConsumptionTab = ({ projectId, onChange }) => {
               <RoomBlock key={room.room || index} room={room} />
             ))}
 
-            <div className="px-4 py-3 bg-[ #836444] 800/60 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 py-3 bg-[#251e18] border-t border-[#3d3026] flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">Project total</span>
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs numeric">
                 <span className="text-slate-400">Rnft <b className="text-slate-100">{number(totals.rnft)}</b></span>

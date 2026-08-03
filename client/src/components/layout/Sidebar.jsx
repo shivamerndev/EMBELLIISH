@@ -13,6 +13,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import cn from '../../utils/cn';
+import Logo from '../common/Logo';
 
 /**
  * Navigation is filtered by permission, so each department sees only the parts of
@@ -37,18 +38,12 @@ export const Sidebar = () => {
   const items = NAV.filter((item) => !item.permission || granted.has(item.permission));
 
   return (
-    <aside className="w-60 shrink-0 bg-[ #836444] 900 border-r border-slate-800 flex flex-col h-screen sticky top-0">
-      <div className="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-blue-600/30">
-          E
-        </div>
-        <div className="min-w-0">
-          <h1 className="font-bold text-slate-100 leading-tight tracking-tight">EMBELLISH</h1>
-          <span className="text-[10px] text-blue-400 font-semibold tracking-wider">OPERATING SPINE</span>
-        </div>
+    <aside className="w-64 shrink-0 bg-[#171310] border-r border-[#2e251e] flex flex-col h-screen sticky top-0">
+      <div className="px-5 py-5 border-b border-[#2e251e] flex items-center justify-center">
+        <Logo size="sm" variant="horizontal" mode="dark" />
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -57,10 +52,10 @@ export const Sidebar = () => {
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
+                  'flex items-center px-3.5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
                   isActive
-                    ? 'bg-blue-600/10 text-blue-400'
-                    : 'text-slate-400 hover:bg-[ #836444] 800/60 hover:text-slate-200'
+                    ? 'bg-brand-500/15 text-brand-300 font-semibold border-l-2 border-brand-500 shadow-sm shadow-brand-900/30'
+                    : 'text-stone-400 hover:bg-[#251e18] hover:text-stone-200'
                 )
               }
             >
@@ -71,11 +66,12 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      <div className="p-3 border-t border-slate-800">
-        <p className="text-[10px] text-slate-600 px-3">Embellish ERP v1.0</p>
+      <div className="p-4 border-t border-[#2e251e] text-center">
+        <p className="text-[10px] text-stone-500 tracking-wider font-medium">EMBELLISH ERP v1.0</p>
       </div>
     </aside>
   );
 };
 
 export default Sidebar;
+
