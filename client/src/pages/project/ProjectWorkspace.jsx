@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, PauseCircle, PlayCircle } from 'lucide-react';
 import { projectsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
@@ -32,7 +32,16 @@ const TABS = [
 
 export const ProjectWorkspace = () => {
   const { id } = useParams();
-  const [tab, setTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const queryTab = searchParams.get('tab');
+  const initialTab = queryTab && TABS.some((t) => t.key === queryTab) ? queryTab : 'overview';
+  const [tab, setTab] = useState(initialTab);
+
+  useEffect(() => {
+    if (queryTab && TABS.some((t) => t.key === queryTab)) {
+      setTab(queryTab);
+    }
+  }, [queryTab]);
 
   const { data, loading, error, reload } = useAsync(
     () => projectsApi.workspace(id).then((r) => r.data),
@@ -61,7 +70,7 @@ export const ProjectWorkspace = () => {
         <div className="p-5 flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-100 tracking-tight">{project.name}</h1>
+              <h1 className="text-xl font-bold text-slate-500 tracking-tight">{project.name}</h1>
               <Badge tone="slate">{project.code}</Badge>
               {project.isActivated && <Badge tone="green">Active</Badge>}
               {project.isOnHold && (

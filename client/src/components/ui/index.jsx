@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, AlertCircle, Inbox, X } from 'lucide-react';
 import cn from '../../utils/cn';
 
@@ -478,37 +479,57 @@ export const Progress = ({ value = 0, tone = 'blue', className }) => {
   );
 };
 
-export const Tabs = ({ tabs, active, onChange }) => (
-  <div
-    className="flex gap-1 overflow-x-auto border-b -mx-1 px-1"
-    style={{ borderColor: 'var(--border)' }}
-  >
-    {tabs.map((tab) => (
-      <button
-        key={tab.key}
-        type="button"
-        onClick={() => onChange(tab.key)}
-        className={cn(
-          'px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
-          active === tab.key
-            ? 'border-brand-500 text-brand-300'
-            : 'border-transparent'
-        )}
-        style={active !== tab.key ? { color: 'var(--text-muted)' } : {}}
-        onMouseEnter={(e) => {
-          if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)';
-        }}
-        onMouseLeave={(e) => {
-          if (active !== tab.key) e.currentTarget.style.color = 'var(--text-muted)';
-        }}
-      >
-        {tab.label}
-        {tab.count !== undefined && (
-          <span className="ml-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            {tab.count}
-          </span>
-        )}
-      </button>
-    ))}
-  </div>
-);
+export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = true }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const handleTabClick = (tabKey) => {
+    if (syncQuery) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set(paramName, tabKey);
+          return next;
+        },
+        { replace: true }
+      );
+    }
+    if (onChange) {
+      onChange(tabKey);
+    }
+  };
+
+  return (
+    <div
+      className="flex gap-1.5 border-b "
+      style={{ borderColor: 'var(--border)' }}
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => handleTabClick(tab.key)}
+          className={cn(
+            'px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
+            active === tab.key
+              ? 'border-brand-500 text-brand-300'
+              : 'border-transparent'
+          )}
+          style={active !== tab.key ? { color: 'var(--text-muted)' } : {}}
+          onMouseEnter={(e) => {
+            if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            if (active !== tab.key) e.currentTarget.style.color = 'var(--text-muted)';
+          }}
+        >
+          {tab.label}
+          {tab.count !== undefined && (
+            <span className="ml-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {tab.count}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+};
