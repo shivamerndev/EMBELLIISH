@@ -92,7 +92,16 @@ export const NotificationBell = () => {
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Notifications"
-        className="relative p-2 text-stone-400 hover:text-stone-200 rounded-lg hover:bg-[#251e18] transition"
+        className="relative p-2 rounded-lg transition"
+        style={{ color: 'var(--text-muted)' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = 'var(--text-primary)';
+          e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = 'var(--text-muted)';
+          e.currentTarget.style.backgroundColor = '';
+        }}
       >
         <Bell className="w-4 h-4" />
         {unread > 0 && (
@@ -103,26 +112,43 @@ export const NotificationBell = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto panel shadow-2xl z-50 border-[#3d3026]">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#2e251e] sticky top-0 bg-[#1a1512]">
-            <p className="text-xs font-semibold text-stone-200">
-              Notifications {unread > 0 && <span className="text-stone-500">· {unread} unread</span>}
+        <div
+          className="absolute right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto panel shadow-2xl z-50"
+          style={{ borderColor: 'var(--border-strong)' }}
+        >
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b sticky top-0"
+            style={{
+              borderColor: 'var(--border)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Notifications{' '}
+              {unread > 0 && (
+                <span style={{ color: 'var(--text-muted)' }}>· {unread} unread</span>
+              )}
             </p>
             {unread > 0 && (
               <button
                 type="button"
                 onClick={markAll}
-                className="inline-flex items-center gap-1 text-[11px] text-stone-400 hover:text-brand-300"
+                className="inline-flex items-center gap-1 text-[11px] hover:text-brand-300 transition-colors"
+                style={{ color: 'var(--text-muted)' }}
               >
                 <CheckCheck className="w-3 h-3" /> Mark all read
               </button>
             )}
           </div>
 
-          {loading && <p className="px-4 py-6 text-xs text-stone-500 text-center">Loading…</p>}
+          {loading && (
+            <p className="px-4 py-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              Loading…
+            </p>
+          )}
 
           {!loading && !items.length && (
-            <p className="px-4 py-8 text-xs text-stone-500 text-center">
+            <p className="px-4 py-8 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
               Nothing yet. Stage changes, payments, QC failures and snags land here.
             </p>
           )}
@@ -135,18 +161,29 @@ export const NotificationBell = () => {
                 type="button"
                 onClick={() => openItem(item)}
                 className={cn(
-                  'w-full text-left flex gap-3 px-4 py-3 border-b border-[#2e251e]/60 last:border-0 transition',
-                  'hover:bg-[#251e18]/80',
+                  'w-full text-left flex gap-3 px-4 py-3 border-b last:border-0 transition-colors',
                   !item.isRead && 'bg-brand-500/[0.06]'
                 )}
+                style={{ borderColor: 'var(--border)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = !item.isRead ? 'rgba(131,100,68,0.06)' : '')}
               >
                 <Icon className={cn('w-4 h-4 mt-0.5 shrink-0', tone)} />
                 <div className="min-w-0 flex-1">
-                  <p className={cn('text-xs truncate', item.isRead ? 'text-stone-400' : 'font-semibold text-stone-200')}>
+                  <p
+                    className={cn('text-xs truncate', !item.isRead && 'font-semibold')}
+                    style={{ color: item.isRead ? 'var(--text-secondary)' : 'var(--text-primary)' }}
+                  >
                     {item.title}
                   </p>
-                  {item.body && <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-2">{item.body}</p>}
-                  <p className="text-[10px] text-stone-600 mt-1">{relativeTime(item.createdAt)}</p>
+                  {item.body && (
+                    <p className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                      {item.body}
+                    </p>
+                  )}
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                    {relativeTime(item.createdAt)}
+                  </p>
                 </div>
                 {!item.isRead && <span className="w-1.5 h-1.5 rounded-full bg-brand-400 mt-1.5 shrink-0" />}
               </button>

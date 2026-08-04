@@ -16,7 +16,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
   const currentSize = sizes[size] || sizes.md;
 
   const strokeColor = mode === 'light' ? '#6E5235' : '#B59573';
-  const textColor = mode === 'light' ? '#3B2A1A' : '#F3E9DD';
+  const textColor = mode === 'light' ? '#ba5c29ff' : '#d87905ff';
   const subtextColor = mode === 'light' ? '#6E5235' : '#B59573';
 
   if (variant === 'horizontal') {
@@ -73,7 +73,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
             className={` tracking-[0.2em] font-semibold ${currentSize.fontSizeTitle}`}
             style={{ color: textColor }}
           >
-            EMBELL
+            EMBELLIISH
           </span>
           <div className="flex items-center gap-1.5 my-0.5">
             <div className="h-[1px] w-6 bg-brand-500/40"></div>

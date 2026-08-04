@@ -318,7 +318,7 @@ const ApproveModal = ({ open, onClose, quotation, action }) => {
           <Input value={approvedByClient} onChange={(e) => setApprovedByClient(e.target.value)} placeholder="Mr. Hiral" />
         </Field>
 
-        <div className="rounded-lg bg-[#251e18] border border-[#3d3026] p-4 space-y-2 text-xs">
+        <div className="rounded-lg border p-4 space-y-2 text-xs" style={{ backgroundColor: 'var(--bg-hover)', borderColor: 'var(--border-strong)' }}>
           <p className="text-slate-400">On approval the ERP will:</p>
           <ul className="space-y-1 text-slate-300">
             <li>• stamp the contract value at <b>{currency(quotation.grandTotal)}</b></li>

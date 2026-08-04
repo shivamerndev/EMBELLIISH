@@ -20,7 +20,7 @@ const StageBars = ({ rows, total, tone = 'bg-brand-500' }) => {
           <span className="w-44 shrink-0 text-xs text-stone-400 truncate">
             {row.label || String(row.stage || row.status).replace(/_/g, ' ')}
           </span>
-          <div className="flex-1 h-5 bg-[#120f0d] rounded overflow-hidden border border-[#2e251e]">
+          <div className="flex-1 h-5 rounded overflow-hidden border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}>
             <div
               className={`h-full ${tone} rounded transition-all duration-500`}
               style={{ width: `${(row.count / max) * 100}%` }}
@@ -143,9 +143,9 @@ export const Dashboard = () => {
             }
           />
           {production.total ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-px bg-[#2e251e]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-px" style={{ backgroundColor: 'var(--border)' }}>
               {production.byStage.map((stage) => (
-                <div key={stage.stage} className="bg-[#1a1512] p-4">
+                <div key={stage.stage} className="p-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-2 leading-tight h-6">
                     {stage.stage.replace(/_/g, ' ')}
                   </p>

@@ -2,14 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   DESIGN TOKENS — CSS Custom Properties
+   Light mode values live on :root.
+   Dark mode values live on html.dark (override everything).
+   ============================================================ */
+
 @layer base {
+
+  /* ── LIGHT THEME (default) ────────────────────────────────── */
   :root {
-    color-scheme: dark;
+    color-scheme: light;
+
+    /* Page & surface backgrounds */
+    --bg-page:        #FAF7F4;   /* warm cream */
+    --bg-surface:     #FFFFFF;   /* white card */
+    --bg-surface-alt: #F5F0EB;   /* warm off-white (header/sidebar) */
+    --bg-hover:       #F0E8DF;   /* hover state */
+    --bg-input:       #FFFFFF;   /* form inputs */
+    --bg-input-deep:  #F9F5F1;   /* slightly off-white for depth */
+
+    /* Borders */
+    --border:         #E8DDD4;   /* light warm border */
+    --border-strong:  #D4C4B0;   /* stronger border */
+
+    /* Text */
+    --text-primary:   #2C1F12;   /* dark warm brown */
+    --text-secondary: #6B5240;   /* medium warm brown */
+    --text-muted:     #9B8878;   /* muted warm */
+    --text-faint:     #B8A898;   /* very faint */
+
+    /* Scrollbar */
+    --scrollbar-thumb:       rgba(180, 150, 120, 0.5);
+    --scrollbar-thumb-hover: rgba(140, 110, 80, 0.7);
+
+    /* Overlay / modal backdrop */
+    --backdrop: rgba(44, 31, 18, 0.45);
+
+    /* Progress track */
+    --progress-track: #EDE5DB;
   }
 
+  /* ── DARK THEME ───────────────────────────────────────────── */
+  html.dark {
+    color-scheme: dark;
+
+    --bg-page:        #14110f;
+    --bg-surface:     #1a1512;
+    --bg-surface-alt: #171310;
+    --bg-hover:       #251e18;
+    --bg-input:       #120f0d;
+    --bg-input-deep:  #0e0c0a;
+
+    --border:         #2e251e;
+    --border-strong:  #3d3026;
+
+    --text-primary:   #e7e5e4;   /* stone-200 */
+    --text-secondary: #a8a29e;   /* stone-400 */
+    --text-muted:     #78716c;   /* stone-500 */
+    --text-faint:     #57534e;   /* stone-600 */
+
+    --scrollbar-thumb:       rgba(37, 26, 15, 0.8);
+    --scrollbar-thumb-hover: rgba(84, 62, 39, 0.8);
+
+    --backdrop: rgba(14, 12, 10, 0.80);
+
+    --progress-track: #251e18;
+  }
+
+  /* ── BASE ELEMENT STYLES ──────────────────────────────────── */
   body, #root {
-    @apply bg-[#14110f] text-stone-200 min-h-screen antialiased font-sans;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    @apply min-h-screen antialiased font-sans;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    transition: background-color 0.25s ease, color 0.2s ease;
   }
 
   /* Tabular figures keep measurement and money columns aligned. */
@@ -17,6 +84,7 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* ── SCROLLBAR ────────────────────────────────────────────── */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -25,35 +93,69 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(37, 26, 15, 0.8);
+    background-color: var(--scrollbar-thumb);
     border-radius: 9999px;
-    border: 1px solid rgba(59, 42, 26, 0.4);
+    border: 1px solid var(--scrollbar-thumb-hover);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(84, 62, 39, 0.8);
+    background-color: var(--scrollbar-thumb-hover);
   }
 }
 
+/* ============================================================
+   SHARED COMPONENT CLASSES
+   All use CSS variables so they respond to both themes.
+   ============================================================ */
+
 @layer components {
+
+  /* Surface card */
   .panel {
-    @apply bg-[#1a1512] border border-[#2e251e] rounded-xl shadow-lg shadow-black/30;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    @apply rounded-xl shadow-lg;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
   }
 
+  html.dark .panel {
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.30), 0 4px 6px -4px rgba(0,0,0,0.2);
+  }
+
+  /* Form labels */
   .field-label {
-    @apply block text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-1.5;
+    color: var(--text-muted);
+    @apply block text-[11px] font-semibold uppercase tracking-wider mb-1.5;
+    transition: color 0.2s ease;
   }
 
+  /* Form inputs */
   .field-input {
-    @apply w-full px-3 py-2 bg-[#120f0d] border border-[#2e251e] rounded-lg text-sm text-stone-100
-           placeholder:text-stone-600 focus:outline-none focus:border-brand-500 focus:ring-1
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    @apply w-full px-3 py-2 rounded-lg text-sm
+           focus:outline-none focus:border-brand-500 focus:ring-1
            focus:ring-brand-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  .field-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  /* Brand gradient text */
   .brand-gradient-text {
     @apply bg-gradient-to-r from-brand-300 via-brand-400 to-gold-400 bg-clip-text text-transparent;
   }
 
+  /* Brand badge */
   .brand-badge {
     @apply bg-brand-500/15 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  /* Theme transition — all color-bearing elements animate smoothly */
+  .theme-transition,
+  .theme-transition * {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease !important;
   }
 }

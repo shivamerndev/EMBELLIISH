@@ -38,8 +38,17 @@ export const Sidebar = () => {
   const items = NAV.filter((item) => !item.permission || granted.has(item.permission));
 
   return (
-    <aside className="w-64 shrink-0 bg-[#171310] border-r border-[#2e251e] flex flex-col h-screen sticky top-0">
-      <div className="px-5 py-5 border-b border-[#2e251e] flex items-center justify-center">
+    <aside
+      className="w-64 shrink-0 border-r flex flex-col h-screen sticky top-0 transition-colors duration-300"
+      style={{
+        backgroundColor: 'var(--bg-surface-alt)',
+        borderColor: 'var(--border)',
+      }}
+    >
+      <div
+        className="px-5 py-5 border-b flex items-center justify-center"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <Logo size="sm" variant="horizontal" mode="dark" />
       </div>
 
@@ -55,9 +64,26 @@ export const Sidebar = () => {
                   'flex items-center px-3.5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
                   isActive
                     ? 'bg-brand-500/15 text-brand-300 font-semibold border-l-2 border-brand-500 shadow-sm shadow-brand-900/30'
-                    : 'text-stone-400 hover:bg-[#251e18] hover:text-stone-200'
+                    : 'border-l-2 border-transparent'
                 )
               }
+              style={({ isActive }) =>
+                isActive
+                  ? {}
+                  : { color: 'var(--text-muted)' }
+              }
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.classList.contains('text-brand-300')) {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.classList.contains('text-brand-300')) {
+                  e.currentTarget.style.backgroundColor = '';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                }
+              }}
             >
               <Icon className="w-4 h-4 mr-3 shrink-0" />
               {item.label}
@@ -66,12 +92,16 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      <div className="p-4 border-t border-[#2e251e] text-center">
-        <p className="text-[10px] text-stone-500 tracking-wider font-medium">EMBELLISH ERP v1.0</p>
+      <div
+        className="p-4 border-t text-center"
+        style={{ borderColor: 'var(--border)' }}
+      >
+        <p className="text-[10px] tracking-wider font-medium" style={{ color: 'var(--text-faint)' }}>
+          EMBELLIISH ERP v1.0
+        </p>
       </div>
     </aside>
   );
 };
 
 export default Sidebar;
-

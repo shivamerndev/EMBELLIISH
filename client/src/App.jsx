@@ -7,6 +7,10 @@ import { loadProfile } from './features/auth/authSlice';
 import { loadMeta } from './features/meta/metaSlice';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 
+// Import themeSlice so the theme class is applied to <html>
+// as early as possible (before first render), preventing FOUC.
+import './features/theme/themeSlice';
+
 /**
  * On boot: re-validate any stored token, and pull the workflow vocabulary the
  * screens label themselves with.

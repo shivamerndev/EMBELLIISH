@@ -72,7 +72,7 @@ export const Login = () => {
         Sign in
       </Button>
 
-      <div className="pt-4 border-t border-[#2e251e]">
+      <div className="pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
           Seeded accounts
         </p>
@@ -82,7 +82,10 @@ export const Login = () => {
               key={email}
               type="button"
               onClick={() => setForm({ email, password: 'Embellish@2026' })}
-              className="text-left px-2.5 py-1.5 rounded-md text-xs text-stone-400 hover:bg-[#251e18] hover:text-stone-200 transition"
+              className="text-left px-2.5 py-1.5 rounded-md text-xs transition"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
             >
               {label}
             </button>
