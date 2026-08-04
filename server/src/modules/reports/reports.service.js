@@ -7,6 +7,7 @@ import ProductionOrderModel from '../production/production/production.model.js';
 import SnagModel from '../project/snag/snag.model.js';
 import StockModel from '../inventory/stock/stock.model.js';
 import FollowUpModel from '../crm/followup/followup.model.js';
+import QuotationModel from '../crm/quotation/quotation.model.js';
 import { round } from '../../services/consumption.service.js';
 import {
   STAGE_ORDER,
@@ -25,6 +26,11 @@ import {
 class ReportsService {
   /** Headline dashboard: pipeline, money, factory load, and what is overdue. */
   async dashboard() {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
     const [
       leadRows,
       stageRows,
@@ -36,6 +42,10 @@ class ReportsService {
       openSnags,
       overdueFollowUps,
       lowStockCount,
+      followupsToday,
+      meetingsToday,
+      pendingQuotationsCount,
+      recentFollowUps,
     ] = await Promise.all([
       LeadModel.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, value: { $sum: '$budget' } } }]),
       ProjectModel.aggregate([{ $group: { _id: '$stage', count: { $sum: 1 }, value: { $sum: '$contractValue' } } }]),
@@ -50,6 +60,16 @@ class ReportsService {
       SnagModel.countDocuments({ status: { $ne: SNAG_STATUS.CLOSED } }),
       FollowUpModel.countDocuments({ status: 'PENDING', scheduledAt: { $lte: new Date() } }),
       this.#lowStockCount(),
+      FollowUpModel.countDocuments({ scheduledAt: { $gte: startOfDay, $lte: endOfDay } }),
+      FollowUpModel.countDocuments({ type: 'MEETING', scheduledAt: { $gte: startOfDay, $lte: endOfDay } }),
+      QuotationModel.countDocuments({ $or: [{ status: { $in: ['DRAFT', 'SENT'] } }, { 'discountApproval.status': 'PENDING' }] }),
+      FollowUpModel.find({})
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .populate('lead', 'clientName code')
+        .populate('project', 'name code')
+        .populate('createdBy', 'name')
+        .lean(),
     ]);
 
     const leadsByStatus = Object.fromEntries(leadRows.map((r) => [r._id, r]));
@@ -58,22 +78,38 @@ class ReportsService {
 
     const contractValue = stageRows.reduce((sum, row) => sum + (row.value || 0), 0);
     const received = paymentRow[0]?.total || 0;
+    const totalLeadsCount = leadRows.reduce((sum, r) => sum + r.count, 0);
+    const newLeadsCount = leadsByStatus[LEAD_STATUS.NEW]?.count || 0;
+    const wonProjectsCount = leadsByStatus[LEAD_STATUS.CONVERTED]?.count || 0;
+    const lostProjectsCount = leadsByStatus[LEAD_STATUS.LOST]?.count || 0;
+    const pipelineValue = round(
+      [LEAD_STATUS.NEW, LEAD_STATUS.CONTACTED, LEAD_STATUS.QUALIFIED].reduce(
+        (sum, status) => sum + (leadsByStatus[status]?.value || 0),
+        0
+      ),
+      0
+    );
 
     return {
+      kpis: {
+        totalLeads: totalLeadsCount,
+        newLeads: newLeadsCount,
+        followupToday: followupsToday,
+        meetingToday: meetingsToday,
+        pendingQuotations: pendingQuotationsCount,
+        wonProjects: wonProjectsCount,
+        lostProjects: lostProjectsCount,
+        revenuePipeline: pipelineValue,
+      },
+      recentActivities: recentFollowUps,
       leads: {
-        total: leadRows.reduce((sum, r) => sum + r.count, 0),
+        total: totalLeadsCount,
         open: [LEAD_STATUS.NEW, LEAD_STATUS.CONTACTED, LEAD_STATUS.QUALIFIED].reduce(
           (sum, status) => sum + (leadsByStatus[status]?.count || 0),
           0
         ),
-        converted: leadsByStatus[LEAD_STATUS.CONVERTED]?.count || 0,
-        pipelineValue: round(
-          [LEAD_STATUS.NEW, LEAD_STATUS.CONTACTED, LEAD_STATUS.QUALIFIED].reduce(
-            (sum, status) => sum + (leadsByStatus[status]?.value || 0),
-            0
-          ),
-          0
-        ),
+        converted: wonProjectsCount,
+        pipelineValue,
         byStatus: Object.values(LEAD_STATUS).map((status) => ({
           status,
           count: leadsByStatus[status]?.count || 0,
