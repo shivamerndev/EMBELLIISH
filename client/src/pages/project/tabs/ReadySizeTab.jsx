@@ -68,7 +68,7 @@ const ReadySizeModal = ({ open, onClose, line, onDone }) => {
       <div className="space-y-4">
         {error && <p className="text-xs text-rose-400">{error.message}</p>}
 
-        <div className="rounded-lg border border-[#2e251e] bg-[#1a1512] p-3">
+        <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
           <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">Measured at site</p>
           <p className="text-sm text-slate-200 numeric mt-1">
             {line.windowWidthInch}&quot; × {line.windowHeightInch}&quot;

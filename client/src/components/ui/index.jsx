@@ -11,12 +11,21 @@ export const Panel = ({ className, children, ...props }) => (
 );
 
 export const PanelHeader = ({ title, subtitle, actions, icon: Icon }) => (
-  <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[#2e251e]">
+  <div
+    className="flex items-start justify-between gap-4 px-5 py-4 border-b"
+    style={{ borderColor: 'var(--border)' }}
+  >
     <div className="flex items-start gap-3 min-w-0">
       {Icon && <Icon className="w-5 h-5 text-brand-400 mt-0.5 shrink-0" />}
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-stone-100 truncate">{title}</h3>
-        {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
+        <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+          {title}
+        </h3>
+        {subtitle && (
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {subtitle}
+          </p>
+        )}
       </div>
     </div>
     {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
@@ -26,8 +35,14 @@ export const PanelHeader = ({ title, subtitle, actions, icon: Icon }) => (
 export const PageHeader = ({ title, subtitle, actions }) => (
   <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
     <div>
-      <h1 className="text-2xl  font-bold text-stone-100 tracking-wide">{title}</h1>
-      {subtitle && <p className="text-sm text-stone-400 mt-1">{subtitle}</p>}
+      <h1 className="text-2xl font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
+        {title}
+      </h1>
+      {subtitle && (
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          {subtitle}
+        </p>
+      )}
     </div>
     {actions && <div className="flex items-center gap-2">{actions}</div>}
   </div>
@@ -37,11 +52,8 @@ export const PageHeader = ({ title, subtitle, actions }) => (
 
 const BUTTON_VARIANTS = {
   primary: 'bg-gradient-to-r from-brand-600 via-brand-500 to-amber-700 hover:from-brand-500 hover:to-amber-600 text-white shadow-lg shadow-brand-900/40 border-transparent',
-  secondary: 'bg-[#251e18] hover:bg-[#332820] text-stone-200 border-[#3d3026]',
-  ghost: 'bg-transparent hover:bg-[#251e18] text-stone-300 border-transparent',
   danger: 'bg-rose-700 hover:bg-rose-600 text-white border-transparent',
   success: 'bg-emerald-700 hover:bg-emerald-600 text-white border-transparent',
-  outline: 'bg-transparent hover:bg-[#251e18] text-stone-200 border-brand-500/40',
 };
 
 const BUTTON_SIZES = {
@@ -50,6 +62,10 @@ const BUTTON_SIZES = {
   lg: 'px-5 py-2.5 text-sm gap-2',
 };
 
+/**
+ * Button component — primary/danger/success variants use fixed colors.
+ * secondary/ghost/outline variants use CSS variables to adapt to theme.
+ */
 export const Button = ({
   variant = 'primary',
   size = 'md',
@@ -59,23 +75,49 @@ export const Button = ({
   className,
   children,
   ...props
-}) => (
-  <button
-    type="button"
-    disabled={disabled || loading}
-    className={cn(
-      'inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-200',
-      'disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500/40',
-      BUTTON_VARIANTS[variant],
-      BUTTON_SIZES[size],
-      className
-    )}
-    {...props}
-  >
-    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : Icon && <Icon className="w-4 h-4" />}
-    {children}
-  </button>
-);
+}) => {
+  // Themed variants need inline styles (CSS variables)
+  const themedVariantStyle = {};
+  let themedVariantClass = '';
+
+  if (variant === 'secondary') {
+    themedVariantClass = 'transition-colors';
+    themedVariantStyle.backgroundColor = 'var(--bg-hover)';
+    themedVariantStyle.color = 'var(--text-primary)';
+    themedVariantStyle.borderColor = 'var(--border-strong)';
+  } else if (variant === 'ghost') {
+    themedVariantClass = 'transition-colors';
+    themedVariantStyle.backgroundColor = 'transparent';
+    themedVariantStyle.color = 'var(--text-secondary)';
+    themedVariantStyle.borderColor = 'transparent';
+  } else if (variant === 'outline') {
+    themedVariantClass = 'transition-colors';
+    themedVariantStyle.backgroundColor = 'transparent';
+    themedVariantStyle.color = 'var(--text-primary)';
+    themedVariantStyle.borderColor = 'rgba(131, 100, 68, 0.4)'; // brand-500/40 — stays consistent
+  }
+
+  const isThemed = ['secondary', 'ghost', 'outline'].includes(variant);
+
+  return (
+    <button
+      type="button"
+      disabled={disabled || loading}
+      style={isThemed ? themedVariantStyle : undefined}
+      className={cn(
+        'inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-200',
+        'disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500/40',
+        isThemed ? themedVariantClass : BUTTON_VARIANTS[variant],
+        BUTTON_SIZES[size],
+        className
+      )}
+      {...props}
+    >
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : Icon && <Icon className="w-4 h-4" />}
+      {children}
+    </button>
+  );
+};
 
 export const Field = ({ label, error, hint, required, children }) => (
   <div>
@@ -86,7 +128,11 @@ export const Field = ({ label, error, hint, required, children }) => (
       </label>
     )}
     {children}
-    {hint && !error && <p className="text-[11px] text-stone-500 mt-1">{hint}</p>}
+    {hint && !error && (
+      <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+        {hint}
+      </p>
+    )}
     {error && <p className="text-[11px] text-rose-400 mt-1">{error}</p>}
   </div>
 );
@@ -118,33 +164,42 @@ export const Checkbox = ({ label, className, ...props }) => (
       className="w-4 h-4 rounded border-[#3d3026] bg-[#120f0d] text-brand-500 focus:ring-brand-500/40 focus:ring-2 accent-brand-500"
       {...props}
     />
-    <span className="text-sm text-stone-300">{label}</span>
+    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+      {label}
+    </span>
   </label>
 );
 
 /* -------------------------------------------------------------------- status */
 
 const BADGE_TONES = {
-  slate: 'bg-[#251e18] text-stone-300 border-[#3d3026]',
-  blue: 'bg-brand-500/15 text-brand-300 border-brand-500/30',
-  brand: 'bg-brand-500/20 text-brand-200 border-brand-500/40',
-  green: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-  amber: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-  rose: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
-  violet: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
+  slate:  { bg: 'var(--bg-hover)',              text: 'var(--text-secondary)', border: 'var(--border-strong)' },
+  blue:   { bg: 'rgba(131,100,68,0.15)',        text: '#D0B59C',               border: 'rgba(131,100,68,0.30)' },
+  brand:  { bg: 'rgba(131,100,68,0.20)',        text: '#E4D2BF',               border: 'rgba(131,100,68,0.40)' },
+  green:  { bg: 'rgba( 16,185,129,0.10)',       text: '#6ee7b7',               border: 'rgba( 16,185,129,0.30)' },
+  amber:  { bg: 'rgba(245,158, 11,0.10)',       text: '#fcd34d',               border: 'rgba(245,158, 11,0.30)' },
+  rose:   { bg: 'rgba(244, 63, 94,0.10)',       text: '#fda4af',               border: 'rgba(244, 63, 94,0.30)' },
+  violet: { bg: 'rgba(139, 92,246,0.10)',       text: '#c4b5fd',               border: 'rgba(139, 92,246,0.30)' },
 };
 
-export const Badge = ({ tone = 'slate', className, children }) => (
-  <span
-    className={cn(
-      'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border whitespace-nowrap',
-      BADGE_TONES[tone] || BADGE_TONES.slate,
-      className
-    )}
-  >
-    {children}
-  </span>
-);
+export const Badge = ({ tone = 'slate', className, children }) => {
+  const colors = BADGE_TONES[tone] || BADGE_TONES.slate;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border whitespace-nowrap',
+        className
+      )}
+      style={{
+        backgroundColor: colors.bg,
+        color: colors.text,
+        borderColor: colors.border,
+      }}
+    >
+      {children}
+    </span>
+  );
+};
 
 /** Maps the server's status vocabulary onto badge colours, in one place. */
 export const toneForStatus = (status) => {
@@ -169,7 +224,7 @@ export const Spinner = ({ className }) => (
 );
 
 export const Loading = ({ label = 'Loading…' }) => (
-  <div className="flex flex-col items-center justify-center py-16 gap-3 text-stone-500">
+  <div className="flex flex-col items-center justify-center py-16 gap-3" style={{ color: 'var(--text-muted)' }}>
     <Spinner className="w-6 h-6" />
     <p className="text-sm">{label}</p>
   </div>
@@ -179,11 +234,13 @@ export const ErrorState = ({ error, onRetry }) => (
   <div className="flex flex-col items-center justify-center py-14 gap-3 text-center px-6">
     <AlertCircle className="w-8 h-8 text-rose-400" />
     <div>
-      <p className="text-sm font-semibold text-stone-200">{error?.message || 'Something went wrong'}</p>
+      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+        {error?.message || 'Something went wrong'}
+      </p>
       {Array.isArray(error?.errors) && error.errors.length > 0 && (
         <ul className="mt-2 space-y-0.5">
           {error.errors.map((item, index) => (
-            <li key={index} className="text-xs text-stone-400">
+            <li key={index} className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {item.field ? `${item.field}: ` : ''}
               {item.message}
             </li>
@@ -201,10 +258,16 @@ export const ErrorState = ({ error, onRetry }) => (
 
 export const EmptyState = ({ title = 'Nothing here yet', hint, icon: Icon = Inbox, action }) => (
   <div className="flex flex-col items-center justify-center py-14 gap-3 text-center px-6">
-    <Icon className="w-8 h-8 text-stone-600" />
+    <Icon className="w-8 h-8" style={{ color: 'var(--border-strong)' }} />
     <div>
-      <p className="text-sm font-semibold text-stone-300">{title}</p>
-      {hint && <p className="text-xs text-stone-500 mt-1 max-w-sm">{hint}</p>}
+      <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+        {title}
+      </p>
+      {hint && (
+        <p className="text-xs mt-1 max-w-sm" style={{ color: 'var(--text-muted)' }}>
+          {hint}
+        </p>
+      )}
     </div>
     {action}
   </div>
@@ -225,11 +288,22 @@ export const StatTile = ({ label, value, sub, icon: Icon, tone = 'blue' }) => {
   return (
     <Panel className="p-5">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">{label}</span>
+        <span
+          className="text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {label}
+        </span>
         {Icon && <Icon className={cn('w-4 h-4', tones[tone] || 'text-brand-400')} />}
       </div>
-      <p className="text-2xl font-bold text-stone-100 numeric">{value}</p>
-      {sub && <p className="text-xs text-stone-500 mt-1">{sub}</p>}
+      <p className="text-2xl font-bold numeric" style={{ color: 'var(--text-primary)' }}>
+        {value}
+      </p>
+      {sub && (
+        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+          {sub}
+        </p>
+      )}
     </Panel>
   );
 };
@@ -246,15 +320,16 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[#2e251e]">
+          <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
             {columns.map((column) => (
               <th
                 key={column.key}
                 className={cn(
-                  'px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 whitespace-nowrap',
+                  'px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap',
                   column.align === 'right' ? 'text-right' : 'text-left',
                   column.headerClassName
                 )}
+                style={{ color: 'var(--text-muted)' }}
               >
                 {column.header}
               </th>
@@ -267,18 +342,30 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
               key={row[keyField] ?? index}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
-                'border-b border-[#2e251e]/60 last:border-0',
-                onRowClick && 'cursor-pointer hover:bg-[#251e18]/80 transition-colors'
+                'border-b last:border-0 transition-colors',
+                onRowClick && 'cursor-pointer'
               )}
+              style={{ borderColor: 'var(--border)' }}
+              onMouseEnter={
+                onRowClick
+                  ? (e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')
+                  : undefined
+              }
+              onMouseLeave={
+                onRowClick
+                  ? (e) => (e.currentTarget.style.backgroundColor = '')
+                  : undefined
+              }
             >
               {columns.map((column) => (
                 <td
                   key={column.key}
                   className={cn(
-                    'px-4 py-2.5 text-stone-300',
+                    'px-4 py-2.5',
                     column.align === 'right' && 'text-right numeric',
                     column.className
                   )}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   {column.render ? column.render(row, index) : row[column.key] ?? '—'}
                 </td>
@@ -286,7 +373,11 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
             </tr>
           ))}
         </tbody>
-        {footer && <tfoot className="border-t-2 border-[#3d3026]">{footer}</tfoot>}
+        {footer && (
+          <tfoot className="border-t-2" style={{ borderColor: 'var(--border-strong)' }}>
+            {footer}
+          </tfoot>
+        )}
       </table>
     </div>
   );
@@ -313,23 +404,52 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-y-auto">
-      <div className="fixed inset-0 bg-[#0e0c0a]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className={cn('relative w-full my-8 panel shadow-2xl border-[#3d3026]', sizes[size])}>
-        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[#2e251e]">
+      <div
+        className="fixed inset-0 backdrop-blur-sm"
+        style={{ backgroundColor: 'var(--backdrop)' }}
+        onClick={onClose}
+      />
+      <div
+        className={cn('relative w-full my-8 panel shadow-2xl', sizes[size])}
+        style={{ borderColor: 'var(--border-strong)' }}
+      >
+        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div>
-            <h3 className="text-base font-semibold text-stone-100">{title}</h3>
-            {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
+            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {title}
+            </h3>
+            {subtitle && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {subtitle}
+              </p>
+            )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-stone-500 hover:text-stone-200 hover:bg-[#251e18] transition"
+            className="p-1 rounded-lg transition"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-muted)';
+              e.currentTarget.style.backgroundColor = '';
+            }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#2e251e]">{footer}</div>}
+        {footer && (
+          <div
+            className="flex justify-end gap-2 px-5 py-4 border-t"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -346,7 +466,10 @@ export const Progress = ({ value = 0, tone = 'blue', className }) => {
   };
 
   return (
-    <div className={cn('h-1.5 w-full bg-[#251e18] rounded-full overflow-hidden', className)}>
+    <div
+      className={cn('h-1.5 w-full rounded-full overflow-hidden', className)}
+      style={{ backgroundColor: 'var(--progress-track)' }}
+    >
       <div
         className={cn('h-full rounded-full transition-all duration-500', tones[tone] || 'bg-brand-500')}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -356,7 +479,10 @@ export const Progress = ({ value = 0, tone = 'blue', className }) => {
 };
 
 export const Tabs = ({ tabs, active, onChange }) => (
-  <div className="flex gap-1 overflow-x-auto border-b border-[#2e251e] -mx-1 px-1">
+  <div
+    className="flex gap-1 overflow-x-auto border-b -mx-1 px-1"
+    style={{ borderColor: 'var(--border)' }}
+  >
     {tabs.map((tab) => (
       <button
         key={tab.key}
@@ -366,15 +492,23 @@ export const Tabs = ({ tabs, active, onChange }) => (
           'px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
           active === tab.key
             ? 'border-brand-500 text-brand-300'
-            : 'border-transparent text-stone-500 hover:text-stone-300'
+            : 'border-transparent'
         )}
+        style={active !== tab.key ? { color: 'var(--text-muted)' } : {}}
+        onMouseEnter={(e) => {
+          if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)';
+        }}
+        onMouseLeave={(e) => {
+          if (active !== tab.key) e.currentTarget.style.color = 'var(--text-muted)';
+        }}
       >
         {tab.label}
         {tab.count !== undefined && (
-          <span className="ml-1.5 text-[11px] text-stone-500">{tab.count}</span>
+          <span className="ml-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            {tab.count}
+          </span>
         )}
       </button>
     ))}
   </div>
 );
-

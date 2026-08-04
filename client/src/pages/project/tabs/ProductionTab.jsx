@@ -130,7 +130,7 @@ const InspectModal = ({ order, onClose, onDone }) => {
         {/* Step 4: what the piece is supposed to measure, so the inspector is not
             checking against memory. */}
         {order?.readyWidthInch > 0 && (
-          <div className="rounded-lg border border-[#2e251e] bg-[#1a1512] px-3 py-2">
+          <div className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
             <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">Signed ready size</p>
             <p className="text-sm text-slate-200 numeric mt-0.5">
               {order.readyWidthInch}&quot; × {order.readyHeightInch}&quot;
@@ -278,10 +278,10 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
           icon={Factory}
         />
         <div className="overflow-x-auto">
-          <div className="flex gap-px bg-[#2e251e] min-w-max">
+          <div className="flex gap-px min-w-max" style={{ backgroundColor: 'var(--border)' }}>
             {(board || []).map((column) => (
-              <div key={column.stage} className="bg-[#1a1512] w-52 shrink-0">
-                <div className="px-3 py-2.5 border-b border-[#2e251e] flex items-center justify-between">
+              <div key={column.stage} className="w-52 shrink-0" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                <div className="px-3 py-2.5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
                     {column.stage.replace(/_/g, ' ')}
                   </span>
@@ -290,7 +290,7 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
 
                 <div className="p-2 space-y-2 min-h-[6rem] max-h-96 overflow-y-auto">
                   {column.orders.map((order) => (
-                    <div key={order._id} className="p-2.5 rounded-lg bg-[#251e18] border border-[#3d3026]">
+                    <div key={order._id} className="p-2.5 rounded-lg border" style={{ backgroundColor: 'var(--bg-hover)', borderColor: 'var(--border-strong)' }}>
                       <p className="text-xs font-medium text-slate-200 truncate">{order.roomName}</p>
                       <p className="text-[11px] text-slate-500">
                         {order.windowLabel} · {humanise(order.particular)}
@@ -312,7 +312,10 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
                           <button
                             type="button"
                             onClick={() => advance.execute(order._id, nextStageOf(order.stage))}
-                            className="text-[10px] px-2 py-1 rounded bg-[#251e18] hover:bg-[#332820] text-stone-200 border border-[#3d3026] transition font-medium"
+                            className="text-[10px] px-2 py-1 rounded border transition font-medium"
+                            style={{ backgroundColor: 'var(--bg-hover)', borderColor: 'var(--border-strong)', color: 'var(--text-primary)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                           >
                             → {nextStageOf(order.stage).replace(/_/g, ' ')}
                           </button>

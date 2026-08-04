@@ -239,9 +239,9 @@ export const DeliveryTab = ({ projectId, onChange }) => {
         )}
 
         {packingList?.boxes?.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-[#2e251e]">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px" style={{ backgroundColor: 'var(--border)' }}>
             {packingList.boxes.map((box) => (
-              <div key={box.code} className="bg-[#1a1512] p-4">
+              <div key={box.code} className="p-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-slate-100">Box {box.boxNumber}</span>
                   <StatusBadge status={box.status} />

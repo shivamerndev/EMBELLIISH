@@ -4,7 +4,10 @@ import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 
 export const DashboardLayout = () => (
-  <div className="flex min-h-screen bg-[#14110f]">
+  <div
+    className="flex min-h-screen transition-colors duration-300"
+    style={{ backgroundColor: 'var(--bg-page)' }}
+  >
     <Sidebar />
     <div className="flex-1 flex flex-col min-w-0">
       <Header />

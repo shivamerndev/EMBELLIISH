@@ -13,8 +13,8 @@ import cn from '../../utils/cn';
 const STATUS_STYLES = {
   DONE: { icon: Check, ring: 'bg-emerald-600 border-emerald-500 text-white', text: 'text-stone-400' },
   CURRENT: { icon: Circle, ring: 'bg-brand-500 border-brand-400 text-white shadow-md shadow-brand-900/50', text: 'text-stone-100 font-semibold' },
-  READY: { icon: ChevronRight, ring: 'bg-[#251e18] border-brand-500/60 text-brand-300', text: 'text-stone-300' },
-  BLOCKED: { icon: Lock, ring: 'bg-[#120f0d] border-[#2e251e] text-stone-600', text: 'text-stone-600' },
+  READY: { icon: ChevronRight, ring: '', ringStyle: { backgroundColor: 'var(--bg-hover)', borderColor: 'rgba(131,100,68,0.6)', color: '#D0B59C' }, text: 'text-stone-300' },
+  BLOCKED: { icon: Lock, ring: '', ringStyle: { backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-faint)' }, text: 'text-stone-600' },
 };
 
 export const StageTimeline = ({ timeline, project }) => (
@@ -39,8 +39,9 @@ export const StageTimeline = ({ timeline, project }) => (
                   <span
                     className={cn(
                       'absolute left-[11px] top-6 bottom-0 w-px',
-                      entry.status === 'DONE' ? 'bg-emerald-500/40' : 'bg-[#2e251e]'
+                      entry.status === 'DONE' ? 'bg-emerald-500/40' : ''
                     )}
+                    style={entry.status !== 'DONE' ? { backgroundColor: 'var(--border)' } : {}}
                   />
                 )}
 
@@ -49,6 +50,7 @@ export const StageTimeline = ({ timeline, project }) => (
                     'relative z-10 shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center',
                     style.ring
                   )}
+                  style={style.ringStyle || {}}
                 >
                   <Icon className="w-3 h-3" />
                 </span>
