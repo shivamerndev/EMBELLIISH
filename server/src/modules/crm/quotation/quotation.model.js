@@ -40,6 +40,8 @@ const quotationSchema = new mongoose.Schema(
     subtotal: { type: Number, default: 0 },
     discountPercent: { type: Number, default: 0, min: 0, max: 100 },
     discountAmount: { type: Number, default: 0 },
+    marginPercent: { type: Number, default: 0 },
+    marginAmount: { type: Number, default: 0 },
     taxableAmount: { type: Number, default: 0 },
     gstPercent: { type: Number, default: 18 },
     gstAmount: { type: Number, default: 0 },

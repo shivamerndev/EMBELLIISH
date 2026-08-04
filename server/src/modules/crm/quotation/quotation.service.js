@@ -110,7 +110,7 @@ class QuotationService extends BaseService {
 
   /** Recomputes every money field from the lines. Called on create and on edit. */
   #recalculate(quotation) {
-    const lines = quotation.lines.map((line) => {
+    const lines = (quotation.lines || []).map((line) => {
       const gross = (line.quantity || 0) * (line.rate || 0);
       const discount = gross * ((line.discountPercent || 0) / 100);
       return { ...line, amount: round(gross - discount, 2) };
@@ -119,16 +119,99 @@ class QuotationService extends BaseService {
     const subtotal = round(lines.reduce((sum, line) => sum + line.amount, 0), 2);
     const discountAmount = round((subtotal * (quotation.discountPercent || 0)) / 100, 2);
     const taxableAmount = round(subtotal - discountAmount, 2);
+    const marginAmount = round((taxableAmount * (quotation.marginPercent || 0)) / 100, 2);
     const gstAmount = round((taxableAmount * (quotation.gstPercent || 0)) / 100, 2);
 
     return {
       lines,
       subtotal,
       discountAmount,
+      marginAmount,
       taxableAmount,
       gstAmount,
       grandTotal: round(taxableAmount + gstAmount, 2),
     };
+  }
+
+  /** Creates a manual quotation for a project with full control over fields & lines. */
+  async create(data, user) {
+    const {
+      project: projectId,
+      code,
+      lines = [],
+      discountPercent = 0,
+      marginPercent = 0,
+      gstPercent = 18,
+      validUntil,
+      notes,
+      termsAndConditions,
+      paymentTerms,
+      revision,
+    } = data;
+
+    if (!projectId) throw ApiError.badRequest('Project ID is required');
+
+    const project = await ProjectModel.findById(projectId).lean();
+    if (!project) throw ApiError.notFound('Project not found');
+
+    const previous = await QuotationModel.findOne({ project: projectId, isCurrent: true }).lean();
+    if (previous) {
+      await QuotationModel.updateOne({ _id: previous._id }, { $set: { isCurrent: false } });
+    }
+
+    const draftLines = (lines.length > 0 ? lines : [{ particular: 'Custom Quotation Item', quantity: 1, rate: 0 }]).map((l) => ({
+      key: l.key || String(Date.now() + Math.random()),
+      particular: l.particular || 'Item',
+      description: l.description || '',
+      quantity: Number(l.quantity) || 1,
+      unit: l.unit || 'nos',
+      rate: Number(l.rate) || 0,
+      discountPercent: Number(l.discountPercent) || 0,
+    }));
+
+    const draft = {
+      lines: draftLines,
+      discountPercent: Number(discountPercent) || 0,
+      marginPercent: Number(marginPercent) || 0,
+      gstPercent: Number(gstPercent) || 18,
+    };
+
+    const totals = this.#recalculate(draft);
+
+    const approvalDraft = { discountApproval: {}, discountPercent: draft.discountPercent, lines: totals.lines };
+    await this.#applyDiscountRule(approvalDraft, user);
+
+    const qCode = code?.trim() ? code.trim() : await nextCode('QT');
+    const qRevision = revision ? Number(revision) : (previous?.revision || 0) + 1;
+
+    const quotation = await QuotationModel.create({
+      code: qCode,
+      discountApproval: approvalDraft.discountApproval,
+      project: projectId,
+      client: project.client,
+      revision: qRevision,
+      isCurrent: true,
+      validUntil: validUntil ? new Date(validUntil) : undefined,
+      notes,
+      termsAndConditions,
+      discountPercent: draft.discountPercent,
+      marginPercent: draft.marginPercent,
+      gstPercent: draft.gstPercent,
+      ...totals,
+      paymentTerms: {
+        tokenPercent: paymentTerms?.tokenPercent ?? project.paymentSchedule?.tokenPercent ?? 10,
+        advancePercent: paymentTerms?.advancePercent ?? project.paymentSchedule?.advancePercent ?? 60,
+        balancePercent: paymentTerms?.balancePercent ?? project.paymentSchedule?.balancePercent ?? 30,
+      },
+      preparedBy: user?.id,
+      history: [{ action: 'MANUAL_CREATED', note: `Manual quotation ${qCode}`, by: user?.id }],
+    });
+
+    await ProjectModel.updateOne({ _id: projectId }, { $set: { estimatedValue: totals.grandTotal } });
+    await this.#announceDiscountRequest(quotation, user);
+    await projectService.tryAutoAdvance(projectId, user, `Quotation ${quotation.code} created`);
+
+    return quotation.toJSON();
   }
 
   /** Builds the next revision straight off the project's current consumption sheet. */

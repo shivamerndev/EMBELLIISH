@@ -27,6 +27,14 @@ router.get(
 );
 
 router.get(
+  '/analytics',
+  canView,
+  asyncHandler(async (req, res) =>
+    sendSuccess(res, 'Analytics retrieved', await reportsService.analytics())
+  )
+);
+
+router.get(
   '/project/:projectId',
   canView,
   asyncHandler(async (req, res) =>
