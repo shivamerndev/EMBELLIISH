@@ -49,6 +49,7 @@ import notificationRoutes from '../modules/notification/notification.routes.js';
 import settingsRoutes from '../modules/settings/settings.routes.js';
 import pricingRoutes from '../modules/pricing/pricing.routes.js';
 import documentRoutes from '../modules/documents/document.routes.js';
+import uploadRoutes from './upload.routes.js';
 
 import settingsService from '../modules/settings/settings.service.js';
 import { STAGE_ORDER, STAGE_LABELS } from '../constants/workflow.constants.js';
@@ -60,6 +61,8 @@ const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+
+router.use('/upload', uploadRoutes);
 
 router.use('/crm/leads', leadRoutes);
 router.use('/crm/clients', clientRoutes);

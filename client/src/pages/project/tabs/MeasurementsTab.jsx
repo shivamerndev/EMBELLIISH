@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Ruler, DoorOpen, Trash2, Pencil, MapPin, CheckCircle2, Calendar } from 'lucide-react';
-import { roomsApi, measurementsApi, fabricsApi, siteVisitsApi } from '../../../api';
+import { Plus, Ruler, DoorOpen, Trash2, Pencil, MapPin, CheckCircle2, Calendar, Upload, Loader2, Image, Film, ExternalLink } from 'lucide-react';
+import { roomsApi, measurementsApi, fabricsApi, siteVisitsApi, uploadApi } from '../../../api';
 import { useAsync, useAction } from '../../../hooks/useAsync';
-import { number, humanise, date } from '../../../utils/format';
+import { number, humanise, date, getMediaUrl } from '../../../utils/format';
 import {
   Panel, PanelHeader, Table, Button, Badge, Modal, Field, Input, Select, Checkbox,
   Loading, ErrorState, EmptyState,
@@ -88,7 +88,7 @@ const RecordSiteVisitModal = ({ open, onClose, projectId, onDone }) => {
     >
       <div className="space-y-4">
         {error && <p className="text-xs text-rose-400">{error.message}</p>}
-        
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Visit Date" required>
             <Input type="date" value={form.visitDate} onChange={set('visitDate')} />
@@ -437,6 +437,8 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
   const [addingWindowTo, setAddingWindowTo] = useState(null);
   const [editingWindowInfo, setEditingWindowInfo] = useState(null);
   const [recordingVisit, setRecordingVisit] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const { data: rooms, loading, error, reload } = useAsync(
     () => roomsApi.byProject(projectId).then((r) => r.data),
@@ -453,6 +455,47 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
   const remove = useAction((id) => measurementsApi.remove(id), { onSuccess: () => { reload(); onChange?.(); } });
 
   const refresh = () => { reload(); reloadVisits(); onChange?.(); };
+
+  const handleMediaUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+
+      const res = await uploadApi.upload(formData);
+      const uploadedFiles = res.data || [];
+
+      const photos = uploadedFiles.filter((f) => f.mimetype?.startsWith('image/'));
+      const videos = uploadedFiles.filter((f) => f.mimetype?.startsWith('video/'));
+
+      const activeVisit = (siteVisits || [])[0];
+
+      if (activeVisit) {
+        await siteVisitsApi.addMedia(activeVisit._id || activeVisit.id, { photos, videos });
+      } else {
+        await siteVisitsApi.create({
+          project: projectId,
+          status: 'COMPLETED',
+          photos,
+          videos,
+          observations: 'Site visit photos/videos uploaded',
+        });
+      }
+
+      refresh();
+    } catch (err) {
+      console.error('Failed to upload media:', err);
+      setUploadError(err?.message || 'Failed to upload media to S3');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -519,57 +562,124 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
           subtitle="Step 1 — Site inspection details and completion"
           icon={MapPin}
           actions={
-            <Button size="sm" icon={Plus} onClick={() => setRecordingVisit(true)}>
-              Record Site Visit
-            </Button>
+            <>
+              <label
+                htmlFor="uploadMedia"
+                className={`px-3 py-1.5 bg-orange-800/60 hover:bg-orange-800/80 text-xs font-semibold rounded-md transition cursor-pointer flex justify-center text-slate-100 items-center gap-2 ${
+                  uploading ? 'opacity-60 pointer-events-none' : ''
+                }`}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                <span>{uploading ? 'Uploading to S3...' : 'Upload Media'}</span>
+                <input
+                  type="file"
+                  id="uploadMedia"
+                  accept="image/*,video/*"
+                  multiple
+                  disabled={uploading}
+                  className="hidden"
+                  onChange={handleMediaUpload}
+                />
+              </label>
+              <Button size="sm" icon={Plus} onClick={() => setRecordingVisit(true)}>
+                Record Site Visit
+              </Button>
+            </>
           }
         />
-        {completedVisits.length > 0 ? (
+        {uploadError && (
+          <div className="px-4 pt-3 text-xs text-rose-400">
+            Upload Error: {uploadError}
+          </div>
+        )}
+        {completedVisits.length > 0 && (
           <div className="p-4 space-y-3">
             {completedVisits.map((visit) => (
               <div
                 key={visit._id || visit.id}
-                className="p-3.5 rounded-lg bg-stone-900/60 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                className="p-3.5 rounded-lg bg-stone-900/60 border border-stone-800 flex flex-col gap-3 text-xs"
               >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge tone="green">
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> Visit Completed
-                    </Badge>
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-slate-500" /> {date(visit.visitDate)}
-                    </span>
-                    {visit.conductedBy && (
-                      <span className="text-slate-500">Conducted by: {visit.conductedBy.name || visit.conductedBy}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge tone="green">
+                        <CheckCircle2 className="w-3 h-3 mr-1" /> Visit Completed
+                      </Badge>
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-500" /> {date(visit.visitDate)}
+                      </span>
+                      {visit.conductedBy && (
+                        <span className="text-slate-500">Conducted by: {visit.conductedBy.name || visit.conductedBy}</span>
+                      )}
+                    </div>
+                    {visit.observations && (
+                      <p className="text-slate-300 font-medium">{visit.observations}</p>
                     )}
-                  </div>
-                  {visit.observations && (
-                    <p className="text-slate-300 font-medium">{visit.observations}</p>
-                  )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 text-[11px]">
-                    {visit.ceilingHeightInch && <span>Ceiling: {visit.ceilingHeightInch}"</span>}
-                    {visit.roomsSurveyed && <span>Rooms surveyed: {visit.roomsSurveyed}</span>}
-                    {visit.windowsSurveyed && <span>Windows surveyed: {visit.windowsSurveyed}</span>}
-                    {visit.pelmetAvailable && <span className="text-emerald-400">Pelmet available</span>}
-                    {visit.wiringAvailable && <span className="text-emerald-400">Wiring available</span>}
-                    {visit.falseCeiling && <span className="text-emerald-400">False ceiling</span>}
-                    {visit.curtainStylePreference && <span>Preference: {visit.curtainStylePreference}</span>}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 text-[11px]">
+                      {visit.ceilingHeightInch && <span>Ceiling: {visit.ceilingHeightInch}"</span>}
+                      {visit.roomsSurveyed && <span>Rooms surveyed: {visit.roomsSurveyed}</span>}
+                      {visit.windowsSurveyed && <span>Windows surveyed: {visit.windowsSurveyed}</span>}
+                      {visit.pelmetAvailable && <span className="text-emerald-400">Pelmet available</span>}
+                      {visit.wiringAvailable && <span className="text-emerald-400">Wiring available</span>}
+                      {visit.falseCeiling && <span className="text-emerald-400">False ceiling</span>}
+                      {visit.curtainStylePreference && <span>Preference: {visit.curtainStylePreference}</span>}
+                    </div>
                   </div>
                 </div>
+
+                {((visit.photos && visit.photos.length > 0) || (visit.videos && visit.videos.length > 0)) && (
+                  <div className="pt-2 border-t border-stone-800/80 space-y-2">
+                    <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
+                      <Image className="w-3.5 h-3.5 text-amber-500" /> Site Media ({(visit.photos?.length || 0) + (visit.videos?.length || 0)})
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                      {visit.photos?.map((photo, i) => {
+                        const mediaUrl = getMediaUrl(photo.url);
+                        return (
+                          <a
+                            key={photo._id || photo.url || i}
+                            href={mediaUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group relative aspect-square rounded-md overflow-hidden bg-stone-950 border border-stone-800 hover:border-amber-500/50 transition"
+                          >
+                            <img
+                              src={mediaUrl}
+                              alt={photo.filename || `Photo ${i + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                              <ExternalLink className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded">S3</span>
+                          </a>
+                        );
+                      })}
+                      {visit.videos?.map((video, i) => {
+                        const mediaUrl = getMediaUrl(video.url);
+                        return (
+                          <a
+                            key={video._id || video.url || i}
+                            href={mediaUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group relative aspect-square rounded-md overflow-hidden bg-stone-950 border border-stone-800 hover:border-amber-500/50 flex flex-col items-center justify-center p-2 text-slate-400 hover:text-white transition"
+                          >
+                            <Film className="w-6 h-6 text-amber-400 mb-1 group-hover:scale-110 transition" />
+                            <span className="text-[10px] truncate max-w-full text-slate-300">{video.filename || `Video ${i + 1}`}</span>
+                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded">S3</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 m-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold text-amber-300">No completed site visit recorded yet</p>
-              <p className="text-[11px] text-amber-200/70 mt-0.5">
-                Recording a completed site visit satisfies the <span className="font-semibold">siteVisitDone</span> gate and unlocks the Measurement stage.
-              </p>
-            </div>
-            <Button size="sm" icon={Plus} onClick={() => setRecordingVisit(true)}>
-              Record Site Visit
-            </Button>
           </div>
         )}
       </Panel>
