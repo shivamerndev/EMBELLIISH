@@ -17,12 +17,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const frontendPath = path.resolve(__dirname, '../../client/dist');
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: env.clientUrl, credentials: true }));
 
 app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
-
+app.use(express.static(frontendPath));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -96,10 +97,8 @@ app.use('/api/*', (req, res, next) => {
 });
 
 // Serve frontend static build and handle SPA routing for Render/production deployment
-const frontendPath = path.resolve(__dirname, '../../client/dist');
 
 if (env.nodeEnv === 'production' || fs.existsSync(frontendPath)) {
-  app.use(express.static(frontendPath));
 
   app.get('*', (req, res, next) => {
     const indexPath = path.join(frontendPath, 'index.html');
