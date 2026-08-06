@@ -33,14 +33,26 @@ const uploadService = {
   },
 
   /** Pushes a local file to S3 when it is configured; otherwise leaves it on disk. */
-  async archive(file) {
+  async archive(file, user) {
+    const baseAttachment = {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      uploadedBy: user?.id,
+      uploadedAt: new Date(),
+    };
+
     if (!s3Configured()) {
       logger.debug(`[upload] keeping ${file.filename} on local disk (no S3 configured)`);
-      return { url: `/uploads/${file.filename}`, storage: 'local' };
+      return {
+        ...baseAttachment,
+        url: `/uploads/${file.filename}`,
+        storage: 'local',
+      };
     }
 
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-    const { createReadStream } = await import('fs');
+    const { createReadStream, unlinkSync } = await import('fs');
 
     const client = new S3Client({
       region: env.aws.region,
@@ -57,8 +69,16 @@ const uploadService = {
       })
     );
 
+    // Clean up local temp file after uploading to S3
+    try {
+      unlinkSync(file.path);
+    } catch (err) {
+      logger.warn(`[upload] failed to remove temp file ${file.path}: ${err.message}`);
+    }
+
     return {
-      url: `https://${env.aws.bucket}.s3.${env.aws.region}.amazonaws.com/${key}`,
+      ...baseAttachment,
+      url: `/uploads/${file.filename}`,
       key,
       storage: 's3',
     };

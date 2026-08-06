@@ -108,10 +108,18 @@ export const measurementsApi = {
     api.post(`/project/measurements/project/${projectId}/ready-size/confirm-all`, payload),
 };
 
+export const uploadApi = {
+  upload: (formData) =>
+    api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+};
+
 export const siteVisitsApi = {
   list: (params) => api.get('/project/site-visits', { params }),
   create: (payload) => api.post('/project/site-visits', payload),
   complete: (id, payload) => api.post(`/project/site-visits/${id}/complete`, payload),
+  addMedia: (id, payload) => api.post(`/project/site-visits/${id}/media`, payload),
 };
 
 export const boqApi = {

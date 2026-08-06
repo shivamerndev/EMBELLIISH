@@ -48,6 +48,17 @@ class SiteVisitService extends BaseService {
     await projectService.tryAutoAdvance(visit.project, user, 'Site visit completed');
     return updated;
   }
+
+  async addMedia(id, { photos = [], videos = [] }) {
+    const visit = await this.getById(id);
+    const updatedPhotos = [...(visit.photos || []), ...photos];
+    const updatedVideos = [...(visit.videos || []), ...videos];
+
+    return this.repository.update(visit._id, {
+      photos: updatedPhotos,
+      videos: updatedVideos,
+    });
+  }
 }
 
 const { router, service } = defineModule({
@@ -69,6 +80,15 @@ const { router, service } = defineModule({
       asyncHandler(async (req, res) => {
         const data = await service.complete(req.params.id, req.body || {}, req.user);
         return sendSuccess(res, 'Site visit completed', data);
+      })
+    );
+
+    r.post(
+      '/:id/media',
+      ...canManage,
+      asyncHandler(async (req, res) => {
+        const data = await service.addMedia(req.params.id, req.body || {});
+        return sendSuccess(res, 'Media attached to site visit', data);
       })
     );
   },

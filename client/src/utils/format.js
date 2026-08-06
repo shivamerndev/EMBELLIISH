@@ -70,3 +70,20 @@ export const initials = (name) =>
     .slice(0, 2)
     .map((part) => part[0].toUpperCase())
     .join('');
+
+/**
+ * Normalises media URLs: converts direct S3 URLs (e.g. https://*.s3.*.amazonaws.com/uploads/...)
+ * into relative proxy paths (/uploads/...) served by the Express backend proxy.
+ */
+export const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (typeof url === 'string' && (url.includes('.s3.') || url.includes('.amazonaws.com'))) {
+    try {
+      const parsed = new URL(url);
+      return parsed.pathname;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+};
