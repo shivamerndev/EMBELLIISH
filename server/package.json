@@ -6,7 +6,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "npx nodemon src/server.js"
+    "dev": "npx nodemon src/server.js",
+    "build": "npm --prefix ../client install && npm --prefix ../client run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

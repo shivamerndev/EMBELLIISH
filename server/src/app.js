@@ -69,7 +69,7 @@ app.get('/uploads/*', async (req, res) => {
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({
     name: 'Embellish ERP API',
     status: 'OK',
@@ -78,7 +78,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   const healthy = dbState === 1;
   res.status(healthy ? 200 : 503).json({
@@ -90,6 +90,27 @@ app.get('/health', (req, res) => {
 
 app.use('/api/v1', routes);
 
+// Handle 404 for API endpoints
+app.use('/api/*', (req, res, next) => {
+  next(ApiError.notFound(`No route for ${req.method} ${req.originalUrl}`));
+});
+
+// Serve frontend static build and handle SPA routing for Render/production deployment
+const frontendPath = path.resolve(__dirname, '../../client/dist');
+
+if (env.nodeEnv === 'production' || fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+
+  app.get('*', (req, res, next) => {
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    return next(ApiError.notFound(`No route for ${req.method} ${req.originalUrl}`));
+  });
+}
+
+// Fallback 404 handler for unmatched routes
 app.use((req, res, next) => next(ApiError.notFound(`No route for ${req.method} ${req.originalUrl}`)));
 
 app.use(errorMiddleware);
