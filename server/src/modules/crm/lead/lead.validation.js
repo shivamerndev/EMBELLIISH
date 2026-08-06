@@ -13,11 +13,14 @@ const addressSchema = z
 
 const createLeadSchema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
+  companyName: z.string().optional(),
   phone: z.string().min(7, 'A contactable phone number is required'),
   email: z.string().email().optional().or(z.literal('')),
   architect: objectId.optional(),
-  source: z.enum(['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER']).optional(),
+  source: z.enum(['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER', 'DCM', 'DIRECT_VISIT', 'DIRECT_CLIENT', 'EXISTING_CLIENT']).optional(),
+  previousClientRelationship: z.boolean().optional(),
   location: z.string().optional(),
+  priority: z.enum(['HOT', 'MEDIUM', 'LOW']).optional(),
   address: addressSchema,
   projectType: z
     .enum(['VILLA', 'APARTMENT', 'BUNGALOW', 'FARMHOUSE', 'HOTEL', 'OFFICE', 'RETAIL', 'OTHER'])

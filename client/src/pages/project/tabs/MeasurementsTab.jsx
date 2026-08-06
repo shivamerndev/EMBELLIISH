@@ -402,7 +402,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
 
         {/* Live consumption, straight from the server's engine. */}
         <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.05] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300 mb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-300 mb-3">
             Consumption for this window
           </p>
           {preview ? (
@@ -417,7 +417,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wide">{label}</p>
-                  <p className="text-sm font-semibold text-slate-100 numeric">{value}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 numeric">{value}</p>
                 </div>
               ))}
             </div>

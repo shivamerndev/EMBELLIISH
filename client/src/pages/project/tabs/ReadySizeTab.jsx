@@ -70,7 +70,7 @@ const ReadySizeModal = ({ open, onClose, line, onDone }) => {
 
         <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
           <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">Measured at site</p>
-          <p className="text-sm text-slate-200 numeric mt-1">
+          <p className="text-sm text-slate-900 dark:text-slate-200 numeric mt-1">
             {line.windowWidthInch}&quot; × {line.windowHeightInch}&quot;
             <span className="text-slate-500 ml-2">({feet(line.windowHeightInch)} drop)</span>
           </p>

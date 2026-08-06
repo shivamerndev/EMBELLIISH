@@ -61,7 +61,7 @@ export const ProjectWorkspace = () => {
 
   return (
     <div>
-      <Link to="/projects" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-4">
+      <Link to="/projects" className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-300 mb-4">
         <ArrowLeft className="w-3.5 h-3.5" /> All projects
       </Link>
 
@@ -70,7 +70,7 @@ export const ProjectWorkspace = () => {
         <div className="p-5 flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-500 tracking-tight">{project.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-slate-400 tracking-tight">{project.name}</h1>
               <Badge tone="slate">{project.code}</Badge>
               {project.isActivated && <Badge tone="green">Active</Badge>}
               {project.isOnHold && (
@@ -80,7 +80,7 @@ export const ProjectWorkspace = () => {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-xs text-slate-600 dark:text-slate-500">
               <span>{project.client?.name}{project.client?.phone ? ` · ${project.client.phone}` : ''}</span>
               {project.architect && <span>Architect: {project.architect.name}</span>}
               {project.assignedDCM && <span>DCM: {project.assignedDCM.name}</span>}
@@ -91,10 +91,10 @@ export const ProjectWorkspace = () => {
 
           <div className="flex items-start gap-6">
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">
+              <p className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-500 font-semibold">
                 {project.contractValue ? 'Contract value' : 'Estimated value'}
               </p>
-              <p className="text-xl font-bold text-slate-100 numeric">
+              <p className="text-xl font-bold text-slate-900 dark:text-stone-100 numeric">
                 {currency(project.contractValue || project.estimatedValue, { compact: true })}
               </p>
             </div>
@@ -129,9 +129,9 @@ export const ProjectWorkspace = () => {
         </div>
 
         <div className="px-5 pb-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-500 mb-1.5">
             <span>Lead</span>
-            <span className="font-semibold text-slate-400">{progress}% complete</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-400">{progress}% complete</span>
             <span>Closure</span>
           </div>
           <Progress value={progress} tone={project.stage === 'CLOSED' ? 'green' : 'blue'} />
@@ -139,11 +139,11 @@ export const ProjectWorkspace = () => {
 
         {(advance.error || hold.error) && (
           <div className="mx-5 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-            <p className="text-xs font-semibold text-amber-300">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
               {(advance.error || hold.error).message}
             </p>
             {(advance.error || hold.error).errors?.map((item, index) => (
-              <p key={index} className="text-[11px] text-amber-200/70 mt-0.5">— {item.message}</p>
+              <p key={index} className="text-[11px] text-amber-900/80 dark:text-amber-200/70 mt-0.5">— {item.message}</p>
             ))}
           </div>
         )}

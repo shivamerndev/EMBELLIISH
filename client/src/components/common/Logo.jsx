@@ -16,7 +16,7 @@ export const Logo = ({ size = 'md', variant = 'vertical', mode = 'dark', classNa
   const currentSize = sizes[size] || sizes.md;
 
   const strokeColor = mode === 'light' ? '#6E5235' : '#B59573';
-  const textColor = mode === 'light' ? '#ba5c29ff' : '#d87905ff';
+  const textColor = mode === 'light' ? '#14110F' : '#836444';
   const subtextColor = mode === 'light' ? '#6E5235' : '#B59573';
 
   if (variant === 'horizontal') {

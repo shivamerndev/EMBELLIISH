@@ -60,6 +60,7 @@ export const followupsApi = {
 export const quotationsApi = {
   list: (params) => api.get('/crm/quotations', { params }),
   get: (id) => api.get(`/crm/quotations/${id}`),
+  create: (payload) => api.post('/crm/quotations', payload),
   generate: (projectId, payload) => api.post(`/crm/quotations/project/${projectId}/generate`, payload),
   update: (id, payload) => api.put(`/crm/quotations/${id}`, payload),
   send: (id) => api.post(`/crm/quotations/${id}/send`),
@@ -254,6 +255,7 @@ export const transactionsApi = {
 export const reportsApi = {
   dashboard: () => api.get('/reports/dashboard'),
   salesPerformance: () => api.get('/reports/sales-performance'),
+  analytics: () => api.get('/reports/analytics'),
   project: (projectId) => api.get(`/reports/project/${projectId}`),
   material: (projectId) => api.get(`/reports/project/${projectId}/material`),
 };

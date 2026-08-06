@@ -11,10 +11,10 @@ import cn from '../../utils/cn';
  */
 
 const STATUS_STYLES = {
-  DONE: { icon: Check, ring: 'bg-emerald-600 border-emerald-500 text-white', text: 'text-stone-400' },
-  CURRENT: { icon: Circle, ring: 'bg-brand-500 border-brand-400 text-white shadow-md shadow-brand-900/50', text: 'text-stone-100 font-semibold' },
-  READY: { icon: ChevronRight, ring: '', ringStyle: { backgroundColor: 'var(--bg-hover)', borderColor: 'rgba(131,100,68,0.6)', color: '#D0B59C' }, text: 'text-stone-300' },
-  BLOCKED: { icon: Lock, ring: '', ringStyle: { backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-faint)' }, text: 'text-stone-600' },
+  DONE: { icon: Check, ring: 'bg-emerald-600 border-emerald-500 text-white', text: 'text-stone-700 dark:text-stone-400' },
+  CURRENT: { icon: Circle, ring: 'bg-brand-500 border-brand-400 text-white shadow-md shadow-brand-900/50', text: 'text-stone-900 dark:text-stone-100 font-semibold' },
+  READY: { icon: ChevronRight, ring: '', ringStyle: { backgroundColor: 'var(--bg-hover)', borderColor: 'rgba(131,100,68,0.6)', color: '#D0B59C' }, text: 'text-stone-800 dark:text-stone-300' },
+  BLOCKED: { icon: Lock, ring: '', ringStyle: { backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-faint)' }, text: 'text-stone-600 dark:text-stone-600' },
 };
 
 export const StageTimeline = ({ timeline, project }) => (
@@ -65,8 +65,8 @@ export const StageTimeline = ({ timeline, project }) => (
                   {entry.status === 'BLOCKED' && unmet.length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {unmet.map((gate) => (
-                        <li key={gate.key} className="text-[11px] text-stone-500 flex items-start gap-1.5">
-                          <Lock className="w-3 h-3 mt-0.5 shrink-0 text-stone-700" />
+                        <li key={gate.key} className="text-[11px] text-stone-600 dark:text-stone-500 flex items-start gap-1.5">
+                          <Lock className="w-3 h-3 mt-0.5 shrink-0 text-stone-500 dark:text-stone-700" />
                           <span>{gate.detail}</span>
                         </li>
                       ))}
@@ -76,7 +76,7 @@ export const StageTimeline = ({ timeline, project }) => (
                   {entry.status === 'READY' && entry.gates.length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {entry.gates.map((gate) => (
-                        <li key={gate.key} className="text-[11px] text-emerald-400/70 flex items-start gap-1.5">
+                        <li key={gate.key} className="text-[11px] text-emerald-700 dark:text-emerald-400/70 flex items-start gap-1.5">
                           <Check className="w-3 h-3 mt-0.5 shrink-0" />
                           <span>{gate.detail}</span>
                         </li>
@@ -98,19 +98,19 @@ export const StageTimeline = ({ timeline, project }) => (
           <ol className="space-y-3">
             {[...project.history].reverse().map((entry, index) => (
               <li key={index} className="text-xs">
-                <p className="text-stone-300 font-medium">{humanise(entry.action)}</p>
-                {entry.note && <p className="text-stone-500 mt-0.5">{entry.note}</p>}
+                <p className="text-stone-800 dark:text-stone-300 font-medium">{humanise(entry.action)}</p>
+                {entry.note && <p className="text-stone-600 dark:text-stone-500 mt-0.5">{entry.note}</p>}
                 {entry.from && entry.to && (
-                  <p className="text-stone-600 mt-0.5">
+                  <p className="text-stone-500 dark:text-stone-600 mt-0.5">
                     {String(entry.from).replace(/_/g, ' ')} → {String(entry.to).replace(/_/g, ' ')}
                   </p>
                 )}
-                <p className="text-stone-600 mt-0.5">{dateTime(entry.at)}</p>
+                <p className="text-stone-500 dark:text-stone-600 mt-0.5">{dateTime(entry.at)}</p>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-stone-500">Nothing recorded yet.</p>
+          <p className="text-sm text-stone-600 dark:text-stone-500">Nothing recorded yet.</p>
         )}
       </div>
     </Panel>

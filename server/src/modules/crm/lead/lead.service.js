@@ -10,7 +10,7 @@ import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
 
 const leadRepository = new BaseRepository(LeadModel, {
   filterable: ['status', 'source', 'projectType', 'assignedDCM', 'architect', 'qualifiedBy'],
-  searchable: ['clientName', 'phone', 'location', 'code'],
+  searchable: ['clientName', 'companyName', 'phone', 'location', 'code'],
   populate: [
     { path: 'architect', select: 'name firm phone' },
     { path: 'assignedDCM', select: 'name email role' },
@@ -103,6 +103,7 @@ class LeadService extends BaseService {
       client = await ClientModel.create({
         code: await nextCode('CL'),
         name: lead.clientName,
+        company: lead.companyName,
         phone: lead.phone,
         email: lead.email,
         architect: lead.architect,

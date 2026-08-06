@@ -243,7 +243,7 @@ export const DeliveryTab = ({ projectId, onChange }) => {
             {packingList.boxes.map((box) => (
               <div key={box.code} className="p-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-100">Box {box.boxNumber}</span>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Box {box.boxNumber}</span>
                   <StatusBadge status={box.status} />
                 </div>
                 <p className="text-xs text-slate-500 mb-2.5">{box.room}</p>
@@ -338,7 +338,7 @@ export const DeliveryTab = ({ projectId, onChange }) => {
             {
               key: 'title', header: 'Issue', render: (s) => (
                 <div>
-                  <p className="text-slate-200">{s.title}</p>
+                  <p className="text-slate-900 dark:text-slate-200">{s.title}</p>
                   {s.deviation && <p className="text-[11px] text-slate-500">{s.deviation}</p>}
                 </div>
               )
