@@ -57,6 +57,12 @@ const boqLineSchema = new mongoose.Schema(
     fabric: { type: mongoose.Schema.Types.ObjectId, ref: 'Fabric' },
     fabricName: String,
     motorRequired: Boolean,
+
+    // Measurement detail breakdown matching original paper consumption sheet
+    o2o: { width: Number, height: Number },
+    f2f: { width: Number, height: Number },
+    pelmet: { o2oWidth: Number, o2oDrop: Number, f2fWidth: Number, f2fDrop: Number },
+    wire: { right: Boolean, left: Boolean },
   },
   { _id: false }
 );

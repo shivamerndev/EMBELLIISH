@@ -387,6 +387,10 @@ const buildConsumptionSheet = (windows = [], config = {}) => {
       motorRequired: Boolean(window.motorRequired),
       fabric: window.fabric ? String(window.fabric) : undefined,
       fabricName: window.fabricName || '',
+      o2o: window.o2o || { width: line.basis === 'O2O' ? line.windowWidthInch : null, height: line.basis === 'O2O' ? line.windowHeightInch : null },
+      f2f: window.f2f || { width: line.basis === 'F2F' ? line.windowWidthInch : null, height: line.basis === 'F2F' ? line.windowHeightInch : null },
+      pelmet: window.pelmet || null,
+      wire: window.wire || null,
     };
 
     const key = enriched.room || enriched.roomName;
