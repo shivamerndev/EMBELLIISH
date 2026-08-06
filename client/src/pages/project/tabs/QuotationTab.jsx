@@ -512,7 +512,7 @@ const CreateManualQuotationModal = ({ open, onClose, projectId, onSuccess }) => 
         {Number(discountPercent) > 10 && (
           <div className="p-3 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-center gap-2.5">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-            <p className="text-xs text-amber-300 font-medium">
+            <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
               ⚠️ Discount exceeds 10%. Founder approval workflow will automatically be triggered on creation.
             </p>
           </div>

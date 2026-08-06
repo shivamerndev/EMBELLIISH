@@ -12,15 +12,22 @@ const leadSchema = new mongoose.Schema(
 
     // --- What Hitesh writes down on the first call.
     clientName: { type: String, required: true, trim: true, index: true },
+    companyName: { type: String, trim: true },
     phone: { type: String, required: true, trim: true, index: true },
     email: { type: String, trim: true, lowercase: true },
     architect: { type: mongoose.Schema.Types.ObjectId, ref: 'Architect', index: true },
     source: {
       type: String,
-      enum: ['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER'],
-      default: 'ARCHITECT',
+      enum: ['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER', 'DCM', 'DIRECT_VISIT', 'DIRECT_CLIENT', 'EXISTING_CLIENT'],
+      default: 'DCM',
     },
+    previousClientRelationship: { type: Boolean, default: false },
     location: { type: String, trim: true },
+    priority: {
+      type: String,
+      enum: ['HOT', 'MEDIUM', 'LOW'],
+      default: 'MEDIUM',
+    },
     address: addressSchema,
     projectType: {
       type: String,
@@ -55,7 +62,7 @@ const leadSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-leadSchema.index({ clientName: 'text', phone: 'text', location: 'text' });
+leadSchema.index({ clientName: 'text', companyName: 'text', phone: 'text', location: 'text' });
 
 /** Open leads are the ones still worth a follow-up call. */
 leadSchema.virtual('isOpen').get(function isOpen() {

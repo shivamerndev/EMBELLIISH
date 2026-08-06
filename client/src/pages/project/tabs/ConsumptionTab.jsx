@@ -37,7 +37,7 @@ const cellValue = (line, key) => {
 const RoomBlock = ({ room }) => (
   <div className="border-b border-slate-800 last:border-0">
     <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-hover)' }}>
-      <span className="text-xs font-semibold text-slate-200">
+      <span className="text-xs font-semibold text-slate-900 dark:text-slate-200">
         {room.roomName}
         {room.floor && <span className="text-slate-500 font-normal ml-2">{room.floor}</span>}
       </span>
@@ -54,7 +54,7 @@ const RoomBlock = ({ room }) => (
             {SHEET_COLUMNS.map((column) => (
               <td
                 key={column.key}
-                className={`px-3 py-2 ${column.align === 'right' ? 'text-right numeric text-slate-300' : 'text-slate-300'}`}
+                className={`px-3 py-2 ${column.align === 'right' ? 'text-right numeric text-slate-800 dark:text-slate-300' : 'text-slate-800 dark:text-slate-300'}`}
               >
                 {column.key === 'roundedParts' && line.partsOverridden ? (
                   <span className="text-amber-400" title="Panel count set by the coordinator">
@@ -231,19 +231,19 @@ export const ConsumptionTab = ({ projectId, onChange }) => {
             ))}
 
             <div className="px-4 py-3 border-t flex flex-wrap items-center justify-between gap-3" style={{ backgroundColor: 'var(--bg-hover)', borderColor: 'var(--border-strong)' }}>
-              <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">Project total</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">Project total</span>
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs numeric">
-                <span className="text-slate-400">Rnft <b className="text-slate-100">{number(totals.rnft)}</b></span>
-                <span className="text-slate-400">Fabric <b className="text-slate-100">{number(totals.fabricMeters)} m</b></span>
-                <span className="text-slate-400">Blackout <b className="text-slate-100">{number(totals.blackoutMeters)} m</b></span>
-                <span className="text-slate-400">Roman <b className="text-slate-100">{number(totals.romanSqft)} ft²</b></span>
-                <span className="text-slate-400">Lead band <b className="text-slate-100">{number(totals.leadBandRnft)} rnft</b></span>
+                <span className="text-slate-500 dark:text-slate-400">Rnft <b className="text-slate-900 dark:text-slate-100">{number(totals.rnft)}</b></span>
+                <span className="text-slate-500 dark:text-slate-400">Fabric <b className="text-slate-900 dark:text-slate-100">{number(totals.fabricMeters)} m</b></span>
+                <span className="text-slate-500 dark:text-slate-400">Blackout <b className="text-slate-900 dark:text-slate-100">{number(totals.blackoutMeters)} m</b></span>
+                <span className="text-slate-500 dark:text-slate-400">Roman <b className="text-slate-900 dark:text-slate-100">{number(totals.romanSqft)} ft²</b></span>
+                <span className="text-slate-500 dark:text-slate-400">Lead band <b className="text-slate-900 dark:text-slate-100">{number(totals.leadBandRnft)} rnft</b></span>
               </div>
             </div>
           </div>
         </div>
 
-        <p className="px-4 py-2 text-[11px] text-slate-600 border-t border-slate-800">
+        <p className="px-4 py-2 text-[11px] text-slate-500 dark:text-slate-600 border-t border-slate-800">
           * panel count set by the coordinator rather than the calculated figure
         </p>
       </Panel>
@@ -264,25 +264,25 @@ export const ConsumptionTab = ({ projectId, onChange }) => {
             <tbody>
               {costing.lines.map((line) => (
                 <tr key={line.key} className="border-b border-slate-800/50">
-                  <td className="px-4 py-2.5 text-slate-300">{line.particular}</td>
-                  <td className="px-4 py-2.5 text-right numeric text-slate-300">{number(line.quantity)}</td>
+                  <td className="px-4 py-2.5 text-slate-800 dark:text-slate-300">{line.particular}</td>
+                  <td className="px-4 py-2.5 text-right numeric text-slate-800 dark:text-slate-300">{number(line.quantity)}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{line.unit}</td>
-                  <td className="px-4 py-2.5 text-right numeric text-slate-400">{currency(line.rate)}</td>
-                  <td className="px-4 py-2.5 text-right numeric text-slate-100 font-medium">{currency(line.amount)}</td>
+                  <td className="px-4 py-2.5 text-right numeric text-slate-600 dark:text-slate-400">{currency(line.rate)}</td>
+                  <td className="px-4 py-2.5 text-right numeric text-slate-900 dark:text-slate-100 font-medium">{currency(line.amount)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} className="px-4 py-2 text-right text-xs text-slate-400">Subtotal</td>
-                <td className="px-4 py-2 text-right numeric text-slate-200">{currency(costing.subtotal)}</td>
+                <td colSpan={4} className="px-4 py-2 text-right text-xs text-slate-500 dark:text-slate-400">Subtotal</td>
+                <td className="px-4 py-2 text-right numeric text-slate-900 dark:text-slate-200">{currency(costing.subtotal)}</td>
               </tr>
               <tr>
-                <td colSpan={4} className="px-4 py-2 text-right text-xs text-slate-400">GST @ {costing.gstPercent}%</td>
-                <td className="px-4 py-2 text-right numeric text-slate-200">{currency(costing.gstAmount)}</td>
+                <td colSpan={4} className="px-4 py-2 text-right text-xs text-slate-500 dark:text-slate-400">GST @ {costing.gstPercent}%</td>
+                <td className="px-4 py-2 text-right numeric text-slate-900 dark:text-slate-200">{currency(costing.gstAmount)}</td>
               </tr>
               <tr className="border-t border-slate-700">
-                <td colSpan={4} className="px-4 py-3 text-right text-sm font-bold text-slate-100">Grand total</td>
+                <td colSpan={4} className="px-4 py-3 text-right text-sm font-bold text-slate-900 dark:text-slate-100">Grand total</td>
                 <td className="px-4 py-3 text-right numeric text-base font-bold text-emerald-400">
                   {currency(costing.grandTotal)}
                 </td>

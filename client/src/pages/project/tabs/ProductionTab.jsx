@@ -132,7 +132,7 @@ const InspectModal = ({ order, onClose, onDone }) => {
         {order?.readyWidthInch > 0 && (
           <div className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
             <p className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold">Signed ready size</p>
-            <p className="text-sm text-slate-200 numeric mt-0.5">
+            <p className="text-sm text-slate-900 dark:text-slate-200 numeric mt-0.5">
               {order.readyWidthInch}&quot; × {order.readyHeightInch}&quot;
             </p>
             <p className="text-[10px] text-slate-600 mt-0.5">
@@ -291,7 +291,7 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
                 <div className="p-2 space-y-2 min-h-[6rem] max-h-96 overflow-y-auto">
                   {column.orders.map((order) => (
                     <div key={order._id} className="p-2.5 rounded-lg border" style={{ backgroundColor: 'var(--bg-hover)', borderColor: 'var(--border-strong)' }}>
-                      <p className="text-xs font-medium text-slate-200 truncate">{order.roomName}</p>
+                      <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">{order.roomName}</p>
                       <p className="text-[11px] text-slate-500">
                         {order.windowLabel} · {humanise(order.particular)}
                       </p>
@@ -300,7 +300,7 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
                       </p>
                       {/* Step 4: the size on the card is the one the floor cuts to. */}
                       {order.readyWidthInch > 0 && (
-                        <p className="text-[10px] text-amber-300/80 mt-0.5 numeric" title="Ready size — the finished size, not the window opening">
+                        <p className="text-[10px] text-amber-800 dark:text-amber-300/80 mt-0.5 numeric" title="Ready size — the finished size, not the window opening">
                           ready {order.readyWidthInch}&quot; × {order.readyHeightInch}&quot;
                         </p>
                       )}
@@ -363,7 +363,7 @@ export const ProductionTab = ({ projectId, project, onChange }) => {
               <div key={defect.type} className="flex items-center gap-3">
                 <span className="w-28 text-xs text-slate-400">{humanise(defect.type)}</span>
                 <Progress value={(defect.count / qcSummary.total) * 100} tone="rose" className="flex-1" />
-                <span className="w-8 text-right text-xs numeric text-slate-300">{defect.count}</span>
+                <span className="w-8 text-right text-xs numeric text-slate-800 dark:text-slate-300">{defect.count}</span>
               </div>
             ))}
           </div>

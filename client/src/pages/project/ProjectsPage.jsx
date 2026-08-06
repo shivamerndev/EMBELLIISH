@@ -32,14 +32,14 @@ export const ProjectsPage = () => {
       render: (project) => (
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-slate-200 truncate">{project.name}</p>
+            <p className="font-medium text-slate-900 dark:text-slate-200 truncate">{project.name}</p>
             {project.isOnHold && (
               <Badge tone="amber">
                 <PauseCircle className="w-3 h-3 mr-1" /> On hold
               </Badge>
             )}
           </div>
-          <p className="text-xs text-slate-500">{project.code}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-500">{project.code}</p>
         </div>
       ),
     },
@@ -48,8 +48,8 @@ export const ProjectsPage = () => {
       header: 'Client',
       render: (project) => (
         <div>
-          <p className="text-slate-300">{project.client?.name || '—'}</p>
-          {project.architect && <p className="text-[11px] text-slate-500">{project.architect.name}</p>}
+          <p className="text-slate-800 dark:text-slate-300">{project.client?.name || '—'}</p>
+          {project.architect && <p className="text-[11px] text-slate-600 dark:text-slate-500">{project.architect.name}</p>}
         </div>
       ),
     },
@@ -74,8 +74,8 @@ export const ProjectsPage = () => {
       align: 'right',
       render: (project) => (
         <div>
-          <p className="text-slate-200">{currency(project.contractValue || project.estimatedValue, { compact: true })}</p>
-          <p className="text-[11px] text-slate-500">{project.contractValue ? 'contracted' : 'estimated'}</p>
+          <p className="text-slate-900 dark:text-slate-200">{currency(project.contractValue || project.estimatedValue, { compact: true })}</p>
+          <p className="text-[11px] text-slate-600 dark:text-slate-500">{project.contractValue ? 'contracted' : 'estimated'}</p>
         </div>
       ),
     },

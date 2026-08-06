@@ -194,7 +194,7 @@ export const PaymentsTab = ({ projectId, project, onChange }) => {
               <div key={row.milestone}>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-200">{humanise(row.milestone)}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-200">{humanise(row.milestone)}</span>
                     <Badge tone="slate">{row.percent}%</Badge>
                     {row.cleared && <Badge tone="green"><Check className="w-3 h-3 mr-1" />Cleared</Badge>}
                     {invoice && <Badge tone="slate">{invoice.code}</Badge>}

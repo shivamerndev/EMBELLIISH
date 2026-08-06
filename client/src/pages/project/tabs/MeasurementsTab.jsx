@@ -402,7 +402,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
 
         {/* Live consumption, straight from the server's engine. */}
         <div className="rounded-lg border border-brand-500/30 bg-brand-500/[0.05] p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300 mb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-300 mb-3">
             Consumption for this window
           </p>
           {preview ? (
@@ -417,7 +417,7 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
               ].map(([label, value]) => (
                 <div key={label}>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wide">{label}</p>
-                  <p className="text-sm font-semibold text-slate-100 numeric">{value}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 numeric">{value}</p>
                 </div>
               ))}
             </div>
@@ -529,30 +529,30 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
             {completedVisits.map((visit) => (
               <div
                 key={visit._id || visit.id}
-                className="p-3.5 rounded-lg bg-stone-900/60 border border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                className="p-3.5 rounded-lg bg-slate-100 dark:bg-stone-900/60 border border-slate-200 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge tone="green">
                       <CheckCircle2 className="w-3 h-3 mr-1" /> Visit Completed
                     </Badge>
-                    <span className="text-slate-400 flex items-center gap-1">
+                    <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-slate-500" /> {date(visit.visitDate)}
                     </span>
                     {visit.conductedBy && (
-                      <span className="text-slate-500">Conducted by: {visit.conductedBy.name || visit.conductedBy}</span>
+                      <span className="text-slate-600 dark:text-slate-500">Conducted by: {visit.conductedBy.name || visit.conductedBy}</span>
                     )}
                   </div>
                   {visit.observations && (
-                    <p className="text-slate-300 font-medium">{visit.observations}</p>
+                    <p className="text-slate-800 dark:text-slate-300 font-medium">{visit.observations}</p>
                   )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 text-[11px]">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-600 dark:text-slate-500 text-[11px]">
                     {visit.ceilingHeightInch && <span>Ceiling: {visit.ceilingHeightInch}"</span>}
                     {visit.roomsSurveyed && <span>Rooms surveyed: {visit.roomsSurveyed}</span>}
                     {visit.windowsSurveyed && <span>Windows surveyed: {visit.windowsSurveyed}</span>}
-                    {visit.pelmetAvailable && <span className="text-emerald-400">Pelmet available</span>}
-                    {visit.wiringAvailable && <span className="text-emerald-400">Wiring available</span>}
-                    {visit.falseCeiling && <span className="text-emerald-400">False ceiling</span>}
+                    {visit.pelmetAvailable && <span className="text-emerald-700 dark:text-emerald-400">Pelmet available</span>}
+                    {visit.wiringAvailable && <span className="text-emerald-700 dark:text-emerald-400">Wiring available</span>}
+                    {visit.falseCeiling && <span className="text-emerald-700 dark:text-emerald-400">False ceiling</span>}
                     {visit.curtainStylePreference && <span>Preference: {visit.curtainStylePreference}</span>}
                   </div>
                 </div>
@@ -562,8 +562,8 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
         ) : (
           <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 m-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold text-amber-300">No completed site visit recorded yet</p>
-              <p className="text-[11px] text-amber-200/70 mt-0.5">
+              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">No completed site visit recorded yet</p>
+              <p className="text-[11px] text-amber-900/80 dark:text-amber-200/70 mt-0.5">
                 Recording a completed site visit satisfies the <span className="font-semibold">siteVisitDone</span> gate and unlocks the Measurement stage.
               </p>
             </div>

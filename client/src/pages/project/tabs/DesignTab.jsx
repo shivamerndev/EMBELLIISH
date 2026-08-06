@@ -301,7 +301,7 @@ export const DesignTab = ({ projectId, onChange }) => {
               header: 'Room',
               render: (d) => (
                 <div>
-                  <p className="text-slate-200">{d.roomName || '—'}</p>
+                  <p className="text-slate-900 dark:text-slate-200">{d.roomName || '—'}</p>
                   <p className="text-xs text-slate-500">{d.title}</p>
                 </div>
               ),
