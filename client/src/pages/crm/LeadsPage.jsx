@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, XCircle, Users } from 'lucide-react';
+import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, XCircle, Users, Pencil, Trash2 } from 'lucide-react';
 import { leadsApi, architectsApi, usersApi, projectsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { currency, relative, humanise, initials } from '../../utils/format';
@@ -158,6 +158,197 @@ const NewLeadModal = ({ open, onClose, onCreated, architects }) => {
   );
 };
 
+/* ------------------------------------------------------------- edit lead */
+
+const EditLeadModal = ({ lead, onClose, onDone, architects }) => {
+  const getInitialForm = (l) => ({
+    clientName: l?.clientName || '',
+    companyName: l?.companyName || '',
+    phone: l?.phone || '',
+    email: l?.email || '',
+    location: l?.location || '',
+    priority: l?.priority || 'MEDIUM',
+    projectType: l?.projectType || 'VILLA',
+    source: l?.source || 'DCM',
+    architect: typeof l?.architect === 'object' ? (l?.architect?.id || l?.architect?._id || '') : (l?.architect || ''),
+    budget: l?.budget ?? '',
+    roomCount: l?.roomCount ?? '',
+    requirement: l?.requirement || '',
+    previousClientRelationship: l?.previousClientRelationship ? 'YES' : 'NO',
+  });
+
+  const [form, setForm] = useState(() => getInitialForm(lead));
+
+  useEffect(() => {
+    if (lead) {
+      setForm(getInitialForm(lead));
+    }
+  }, [lead]);
+
+  const { execute, pending, error } = useAction(
+    (payload) => leadsApi.update(lead.id || lead._id, payload),
+    { onSuccess: () => { onDone(); onClose(); } }
+  );
+
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const submit = (event) => {
+    event.preventDefault();
+    execute({
+      ...form,
+      previousClientRelationship: form.previousClientRelationship === 'YES',
+      companyName: form.companyName || undefined,
+      budget: form.budget !== '' ? Number(form.budget) : undefined,
+      roomCount: form.roomCount !== '' ? Number(form.roomCount) : undefined,
+      architect: form.architect || undefined,
+      email: form.email || undefined,
+    });
+  };
+
+  return (
+    <Modal
+      open={Boolean(lead)}
+      onClose={onClose}
+      title="Edit lead"
+      subtitle={`Update lead details for ${lead?.clientName || ''}`}
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} loading={pending}>Save changes</Button>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
+        {error && <p className="text-xs text-rose-400">{error.message}</p>}
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Client name" required>
+            <Input value={form.clientName} onChange={set('clientName')} placeholder="Mr. Hiral" required />
+          </Field>
+          <Field label="Company name">
+            <Input value={form.companyName} onChange={set('companyName')} placeholder="Embelliish Corp" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Phone" required>
+            <Input value={form.phone} onChange={set('phone')} placeholder="98990 01122" required />
+          </Field>
+          <Field label="Email">
+            <Input type="email" value={form.email} onChange={set('email')} />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Location">
+            <Input value={form.location} onChange={set('location')} placeholder="Delhi" />
+          </Field>
+          <Field label="Source">
+            <Select
+              value={form.source}
+              onChange={set('source')}
+              options={[
+                { value: 'ARCHITECT', label: 'Architect' },
+                { value: 'DCM', label: 'DCM' },
+                { value: 'DIRECT_CLIENT', label: 'Direct Client' },
+                { value: 'EXISTING_CLIENT', label: 'Existing Client' },
+              ]}
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Priority">
+            <Select
+              value={form.priority}
+              onChange={set('priority')}
+              options={[
+                { value: 'HOT', label: 'Hot' },
+                { value: 'MEDIUM', label: 'Medium' },
+                { value: 'LOW', label: 'Low' },
+              ]}
+            />
+          </Field>
+          <Field label="Architect">
+            <Select
+              value={form.architect}
+              onChange={set('architect')}
+              placeholder="—"
+              options={(architects || []).map((a) => ({ value: a.id || a._id, label: `${a.name}${a.firm ? ` · ${a.firm}` : ''}` }))}
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Previous client relationship">
+            <Select
+              value={form.previousClientRelationship}
+              onChange={set('previousClientRelationship')}
+              options={[
+                { value: 'NO', label: 'No' },
+                { value: 'YES', label: 'Yes' },
+              ]}
+            />
+          </Field>
+          <Field label="Project type">
+            <Select
+              value={form.projectType}
+              onChange={set('projectType')}
+              options={['VILLA', 'BUNGALOW', 'APARTMENT', 'FARMHOUSE', 'HOTEL', 'OFFICE', 'RETAIL', 'OTHER'].map((v) => ({ value: v, label: humanise(v) }))}
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Budget (₹)">
+            <Input type="number" value={form.budget} onChange={set('budget')} placeholder="3500000" />
+          </Field>
+          <Field label="Rooms">
+            <Input type="number" value={form.roomCount} onChange={set('roomCount')} placeholder="12" />
+          </Field>
+        </div>
+
+        <Field label="Requirement">
+          <Textarea value={form.requirement} onChange={set('requirement')} placeholder="Luxury curtains, motorised where possible…" />
+        </Field>
+      </form>
+    </Modal>
+  );
+};
+
+/* ----------------------------------------------------------- delete lead */
+
+const DeleteLeadModal = ({ lead, onClose, onDone }) => {
+  const { execute, pending, error } = useAction(
+    () => leadsApi.remove(lead.id || lead._id),
+    { onSuccess: () => { onDone(); onClose(); } }
+  );
+
+  return (
+    <Modal
+      open={Boolean(lead)}
+      onClose={onClose}
+      title="Delete lead"
+      subtitle={`Remove lead record for ${lead?.clientName || ''}`}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="danger" loading={pending} onClick={() => execute()}>Delete lead</Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        {error && <p className="text-xs text-rose-400">{error.message}</p>}
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Are you sure you want to delete lead <strong className="text-slate-900 dark:text-slate-100">{lead?.code}</strong> ({lead?.clientName})? This action cannot be undone.
+        </p>
+      </div>
+    </Modal>
+  );
+};
+
 /* ------------------------------------------------------- qualification */
 
 const QualifyModal = ({ lead, onClose, onDone }) => {
@@ -200,7 +391,7 @@ const QualifyModal = ({ lead, onClose, onDone }) => {
               })
             }
           >
-            {form.qualified ? 'Mark qualified' : 'Mark unqualified'}
+            {form.qualified ? 'Save qualification' : 'Mark lost'}
           </Button>
         </>
       }
@@ -208,26 +399,58 @@ const QualifyModal = ({ lead, onClose, onDone }) => {
       <div className="space-y-4">
         {error && <p className="text-xs text-rose-400">{error.message}</p>}
 
-        <Checkbox
-          label="This lead is worth pursuing"
-          checked={form.qualified}
-          onChange={(e) => setForm((prev) => ({ ...prev, qualified: e.target.checked }))}
-        />
+        <div className="flex items-center gap-4 py-2 border-b border-slate-800">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+            <input
+              type="radio"
+              name="qualified"
+              checked={form.qualified}
+              onChange={() => setForm((p) => ({ ...p, qualified: true }))}
+              className="text-brand-500"
+            />
+            Qualified lead
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-rose-400">
+            <input
+              type="radio"
+              name="qualified"
+              checked={!form.qualified}
+              onChange={() => setForm((p) => ({ ...p, qualified: false }))}
+              className="text-rose-500"
+            />
+            Unqualified / Lost
+          </label>
+        </div>
 
         {form.qualified ? (
           <>
-            <div className="grid grid-cols-3 gap-4">
-              <Field label="Location"><Input value={form.location} onChange={set('location')} /></Field>
-              <Field label="Rooms"><Input type="number" value={form.roomCount} onChange={set('roomCount')} /></Field>
-              <Field label="Budget (₹)"><Input type="number" value={form.budget} onChange={set('budget')} /></Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Confirmed budget (₹)">
+                <Input type="number" value={form.budget} onChange={set('budget')} placeholder="3500000" />
+              </Field>
+              <Field label="Room count">
+                <Input type="number" value={form.roomCount} onChange={set('roomCount')} placeholder="12" />
+              </Field>
             </div>
-            <Field label="Notes from the call">
-              <Textarea value={form.notes} onChange={set('notes')} placeholder="Delhi. 12 rooms. Around ₹35 lakhs." />
+            <Field label="Location">
+              <Input value={form.location} onChange={set('location')} placeholder="Vasant Vihar, Delhi" />
+            </Field>
+            <Field label="Qualification notes">
+              <Textarea
+                value={form.notes}
+                onChange={set('notes')}
+                placeholder="Needs motorised tracks for double height windows, budget confirmed with spouse…"
+              />
             </Field>
           </>
         ) : (
-          <Field label="Why not?" required>
-            <Textarea value={form.lostReason} onChange={set('lostReason')} placeholder="Budget far below our range" />
+          <Field label="Why is this lost?" required>
+            <Textarea
+              value={form.lostReason}
+              onChange={set('lostReason')}
+              placeholder="Budget below house minimum, timeline mismatch, chose another vendor…"
+              required
+            />
           </Field>
         )}
       </div>
@@ -235,108 +458,56 @@ const QualifyModal = ({ lead, onClose, onDone }) => {
   );
 };
 
-/* ------------------------------------------------------------ convert */
+/* ------------------------------------------------------------- conversion */
 
 const ConvertModal = ({ lead, onClose }) => {
   const navigate = useNavigate();
-  const [projectName, setProjectName] = useState(`${lead?.clientName} — ${humanise(lead?.projectType)}`);
+  const [projectName, setProjectName] = useState(`${lead?.clientName} Villa`);
+  const [estimatedValue, setEstimatedValue] = useState(lead?.budget || '');
+  const [siteAddress, setSiteAddress] = useState({ line1: '', line2: '', city: lead?.location || '', state: '', pincode: '' });
 
-  const { execute, pending, error } = useAction((payload) => leadsApi.convert(lead.id, payload), {
-    onSuccess: (response) => navigate(`/projects/${response.data.project.id}`),
-  });
+  const { execute, pending, error } = useAction(
+    (payload) => leadsApi.convert(lead.id, payload),
+    {
+      onSuccess: (res) => {
+        onClose();
+        const createdProject = res.data?.project;
+        if (createdProject?._id || createdProject?.id) {
+          navigate(`/projects/${createdProject._id || createdProject.id}`);
+        } else {
+          navigate('/crm/clients');
+        }
+      },
+    }
+  );
 
   return (
     <Modal
       open={Boolean(lead)}
       onClose={onClose}
-      title="Convert to a project"
-      subtitle="Step 3 — the client and project records are created together"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button loading={pending} onClick={() => execute({ projectName })}>Create project</Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        {error && <p className="text-xs text-rose-400">{error.message}</p>}
-        <Field label="Project name" required>
-          <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-        </Field>
-        <p className="text-xs text-slate-500">
-          The project opens at the Site Visit stage. Its client record carries over the phone number, so
-          a returning client is recognised rather than duplicated.
-        </p>
-      </div>
-    </Modal>
-  );
-};
-
-/* ------------------------------------------------------------- assign */
-
-const AssignModal = ({ lead, onClose, onDone }) => {
-  const [assignedDCM, setAssignedDCM] = useState(lead?.assignedDCM?.id || lead?.assignedDCM?._id || '');
-  const [note, setNote] = useState('');
-  const isReassign = Boolean(lead?.assignedDCM?.id || lead?.assignedDCM?._id || lead?.assignedDCM);
-
-  const { data: dcms, loading: dcmsLoading } = useAsync(
-    () =>
-      Promise.all([
-        usersApi.byRole('DCM'),
-        usersApi.byRole('SENIOR_DCM'),
-        projectsApi.list({ limit: 500 }),
-      ]).then(([a, b, projRes]) => {
-        const users = [...(a.data || []), ...(b.data || [])];
-        const projects = projRes.data?.items || (Array.isArray(projRes.data) ? projRes.data : []);
-
-        const projectCounts = {};
-        (projects || []).forEach((p) => {
-          if (p.stage !== 'CLOSED' && p.assignedDCM) {
-            const dcmId = String(p.assignedDCM.id || p.assignedDCM._id || p.assignedDCM);
-            projectCounts[dcmId] = (projectCounts[dcmId] || 0) + 1;
-          }
-        });
-
-        return users.map((u) => {
-          const uId = String(u.id || u._id);
-          return {
-            ...u,
-            projectCount: projectCounts[uId] || 0,
-          };
-        });
-      }),
-    []
-  );
-
-  const { execute, pending, error } = useAction((payload) => leadsApi.assign(lead.id || lead._id, payload), {
-    onSuccess: () => { onDone(); onClose(); },
-  });
-
-  const getWorkloadStatus = (count) => {
-    if (count <= 2) {
-      return { label: 'Low Workload', tone: 'green' };
-    }
-    if (count <= 5) {
-      return { label: 'Medium Workload', tone: 'amber' };
-    }
-    return { label: 'High Workload (Occupied)', tone: 'rose' };
-  };
-
-  return (
-    <Modal
-      open={Boolean(lead)}
-      onClose={onClose}
-      title={isReassign ? "Reassign DCM" : "Assign a DCM"}
-      subtitle={isReassign ? "Select a new Design Consultant Manager for this lead" : 'Step 3 — "Rahul tum ye project handle karo."'}
+      title={`Convert ${lead?.clientName} to Client`}
+      subtitle="Step 3 — Lead qualification finished. Create client record and start project spine."
+      size="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
             loading={pending}
-            disabled={!assignedDCM || (isReassign && !note.trim())}
-            onClick={() => execute({ assignedDCM, note: note.trim() || undefined })}
+            onClick={() =>
+              execute({
+                projectName: projectName || undefined,
+                estimatedValue: estimatedValue ? Number(estimatedValue) : undefined,
+                siteAddress: {
+                  line1: siteAddress.line1 || undefined,
+                  line2: siteAddress.line2 || undefined,
+                  city: siteAddress.city || undefined,
+                  state: siteAddress.state || undefined,
+                  pincode: siteAddress.pincode || undefined,
+                },
+              })
+            }
           >
-            {isReassign ? 'Reassign DCM' : 'Assign DCM'}
+            Create Client & Project
           </Button>
         </>
       }
@@ -344,59 +515,106 @@ const AssignModal = ({ lead, onClose, onDone }) => {
       <div className="space-y-4">
         {error && <p className="text-xs text-rose-400">{error.message}</p>}
 
-        <Field label="Select Design Consultant Manager" required>
-          <Select
-            value={assignedDCM}
-            onChange={(e) => setAssignedDCM(e.target.value)}
-            placeholder="— Select DCM —"
-            options={(dcms || []).map((u) => ({
-              value: u.id || u._id,
-              label: `${u.name} (${humanise(u.role)}) — ${u.projectCount} active ${u.projectCount === 1 ? 'project' : 'projects'}`,
-            }))}
-          />
+        <Field label="Project Title" required>
+          <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="Mr. Hiral Villa" required />
         </Field>
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider mb-3 text-slate-500 dark:text-slate-400">
-            DCM Workload Overview
-          </label>
+        <Field label="Estimated Project Value (₹)">
+          <Input type="number" value={estimatedValue} onChange={(e) => setEstimatedValue(e.target.value)} placeholder="3500000" />
+        </Field>
 
-          {dcmsLoading ? (
-            <Loading label="Loading DCM workload stats..." />
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Initial Site Address</p>
+          <Input value={siteAddress.line1} onChange={(e) => setSiteAddress((p) => ({ ...p, line1: e.target.value }))} placeholder="Address Line 1" />
+          <Input value={siteAddress.line2} onChange={(e) => setSiteAddress((p) => ({ ...p, line2: e.target.value }))} placeholder="Address Line 2 (Optional)" />
+          <div className="grid grid-cols-3 gap-2">
+            <Input value={siteAddress.city} onChange={(e) => setSiteAddress((p) => ({ ...p, city: e.target.value }))} placeholder="City" />
+            <Input value={siteAddress.state} onChange={(e) => setSiteAddress((p) => ({ ...p, state: e.target.value }))} placeholder="State" />
+            <Input value={siteAddress.pincode} onChange={(e) => setSiteAddress((p) => ({ ...p, pincode: e.target.value }))} placeholder="Pincode" />
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+/* ------------------------------------------------------------- assignment */
+
+const AssignModal = ({ lead, onClose, onDone }) => {
+  const [assignedDCM, setAssignedDCM] = useState(lead?.assignedDCM?._id || lead?.assignedDCM?.id || '');
+  const [note, setNote] = useState('');
+
+  const isReassign = Boolean(lead?.assignedDCM);
+
+  const { data: dcms } = useAsync(
+    () => usersApi.byRole('DCM').then((r) => r.data),
+    []
+  );
+
+  const { execute, pending, error } = useAction(
+    (payload) => leadsApi.assign(lead.id || lead._id, payload),
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+      },
+    }
+  );
+
+  const handleSave = () => {
+    if (!assignedDCM) return;
+    execute({ assignedDCM, note: note || undefined });
+  };
+
+  return (
+    <Modal
+      open={Boolean(lead)}
+      onClose={onClose}
+      title={isReassign ? `Reassign DCM — ${lead?.clientName}` : `Assign DCM — ${lead?.clientName}`}
+      subtitle={isReassign ? "Transfer lead ownership to a different DCM" : "Assign an owner to manage this lead"}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button loading={pending} disabled={!assignedDCM} onClick={handleSave}>
+            {isReassign ? "Reassign DCM" : "Assign DCM"}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {error && <p className="text-xs text-rose-400">{error.message}</p>}
+
+        {isReassign && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300">
+            Current Owner: <span className="font-semibold text-amber-200">{lead?.assignedDCM?.name}</span>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label className="field-label">Select DCM Owner <span className="text-rose-400">*</span></label>
+          {!(dcms && dcms.length > 0) ? (
+            <p className="text-xs text-slate-500 py-2">Loading DCMs...</p>
           ) : (
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
               {(dcms || []).map((u) => {
-                const uId = u.id || u._id;
-                const isSelected = assignedDCM === uId;
-                const workload = getWorkloadStatus(u.projectCount);
-
+                const userId = u._id || u.id;
+                const isSelected = assignedDCM === userId;
                 return (
                   <div
-                    key={uId}
-                    onClick={() => setAssignedDCM(uId)}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    key={userId}
+                    onClick={() => setAssignedDCM(userId)}
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/30'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-500/5 dark:bg-slate-900/40 hover:bg-slate-500/10 dark:hover:bg-slate-800/60'
+                        ? 'border-brand-500 bg-brand-500/10 text-slate-100'
+                        : 'border-slate-800 bg-slate-900/40 text-slate-300 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-sm font-bold text-brand-600 dark:text-brand-400">
-                        {initials(u.name)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{u.name}</p>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">· {humanise(u.role)}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          <strong className="text-slate-700 dark:text-slate-200 font-semibold">{u.projectCount}</strong> {u.projectCount === 1 ? 'active project' : 'active projects'} currently assigned
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs font-medium">{u.name}</p>
+                      <p className="text-[11px] text-slate-500">{u.email}</p>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <Badge tone={workload.tone}>{workload.label}</Badge>
+                    <div className="shrink-0 ml-2">
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
                         isSelected ? 'border-brand-400 bg-brand-500' : 'border-slate-300 dark:border-slate-600'
                       }`}>
@@ -410,11 +628,11 @@ const AssignModal = ({ lead, onClose, onDone }) => {
           )}
         </div>
 
-        <Field label={isReassign ? "Reassignment reason" : "Note"} required={isReassign}>
+        <Field label="Notes">
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder={isReassign ? "Enter the reason for reassigning to a new DCM..." : "Optional note..."}
+            placeholder="Reason for assignment..."
           />
         </Field>
       </div>
@@ -431,6 +649,8 @@ export const LeadsPage = () => {
   const [qualifying, setQualifying] = useState(null);
   const [converting, setConverting] = useState(null);
   const [assigning, setAssigning] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   const { data, loading, error, reload } = useAsync(
     () => leadsApi.list({ ...(tab !== 'ALL' && { status: tab }), ...(search && { search }), limit: 100 }).then((r) => r.data),
@@ -526,6 +746,22 @@ export const LeadsPage = () => {
               Open project
             </Link>
           )}
+          <button
+            type="button"
+            onClick={() => setEditing(lead)}
+            title="Edit lead"
+            className="p-1.5 text-slate-600 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleting(lead)}
+            title="Delete lead"
+            className="p-1.5 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       ),
     },
@@ -588,6 +824,8 @@ export const LeadsPage = () => {
       </Panel>
 
       <NewLeadModal open={creating} onClose={() => setCreating(false)} onCreated={reload} architects={architects} />
+      {editing && <EditLeadModal lead={editing} onClose={() => setEditing(null)} onDone={reload} architects={architects} />}
+      {deleting && <DeleteLeadModal lead={deleting} onClose={() => setDeleting(null)} onDone={reload} />}
       {qualifying && <QualifyModal lead={qualifying} onClose={() => setQualifying(null)} onDone={reload} />}
       {converting && <ConvertModal lead={converting} onClose={() => setConverting(null)} />}
       {assigning && <AssignModal lead={assigning} onClose={() => setAssigning(null)} onDone={reload} />}
