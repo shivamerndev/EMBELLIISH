@@ -59,6 +59,33 @@ class SiteVisitService extends BaseService {
       videos: updatedVideos,
     });
   }
+
+  async deleteMedia(id, { photoId, videoId, url }) {
+    const visit = await this.getById(id);
+    let photos = visit.photos || [];
+    let videos = visit.videos || [];
+
+    if (photoId || url) {
+      photos = photos.filter((p) => {
+        if (photoId && (p._id?.toString() === photoId || p.id?.toString() === photoId)) return false;
+        if (url && p.url === url) return false;
+        return true;
+      });
+    }
+
+    if (videoId || url) {
+      videos = videos.filter((v) => {
+        if (videoId && (v._id?.toString() === videoId || v.id?.toString() === videoId)) return false;
+        if (url && v.url === url) return false;
+        return true;
+      });
+    }
+
+    return this.repository.update(visit._id, {
+      photos,
+      videos,
+    });
+  }
 }
 
 const { router, service } = defineModule({
@@ -89,6 +116,15 @@ const { router, service } = defineModule({
       asyncHandler(async (req, res) => {
         const data = await service.addMedia(req.params.id, req.body || {});
         return sendSuccess(res, 'Media attached to site visit', data);
+      })
+    );
+
+    r.delete(
+      '/:id/media',
+      ...canManage,
+      asyncHandler(async (req, res) => {
+        const data = await service.deleteMedia(req.params.id, req.body || req.query || {});
+        return sendSuccess(res, 'Media removed from site visit', data);
       })
     );
   },

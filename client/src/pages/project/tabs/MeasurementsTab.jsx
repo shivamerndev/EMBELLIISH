@@ -449,12 +449,22 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
     () => siteVisitsApi.list({ project: projectId }).then((r) => r.data?.items || r.data || []),
     [projectId]
   );
-
-  const { data: fabrics } = useAsync(() => fabricsApi.list({ limit: 100 }).then((r) => r.data.items), []);
+const { data: fabrics } = useAsync(() => fabricsApi.list({ limit: 100 }).then((r) => r.data.items), []);
 
   const remove = useAction((id) => measurementsApi.remove(id), { onSuccess: () => { reload(); onChange?.(); } });
 
   const refresh = () => { reload(); reloadVisits(); onChange?.(); };
+
+  const handleDeleteMedia = async (visitId, payload) => {
+    if (!window.confirm('Are you sure you want to delete this media item?')) return;
+    try {
+      await siteVisitsApi.deleteMedia(visitId, payload);
+      refresh();
+    } catch (err) {
+      console.error('Failed to delete media:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete media item');
+    }
+  };
 
   const handleMediaUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -565,9 +575,8 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
             <>
               <label
                 htmlFor="uploadMedia"
-                className={`px-3 py-1.5 bg-orange-800/60 hover:bg-orange-800/80 text-xs font-semibold rounded-md transition cursor-pointer flex justify-center text-slate-100 items-center gap-2 ${
-                  uploading ? 'opacity-60 pointer-events-none' : ''
-                }`}
+                className={`px-3 py-1.5 bg-orange-800/60 hover:bg-orange-800/80 text-xs font-semibold rounded-md transition cursor-pointer flex justify-center text-slate-100 items-center gap-2 ${uploading ? 'opacity-60 pointer-events-none' : ''
+                  }`}
               >
                 {uploading ? (
                   <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
@@ -640,11 +649,8 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
                       {visit.photos?.map((photo, i) => {
                         const mediaUrl = getMediaUrl(photo.url);
                         return (
-                          <a
+                          <div
                             key={photo._id || photo.url || i}
-                            href={mediaUrl}
-                            target="_blank"
-                            rel="noreferrer"
                             className="group relative aspect-square rounded-md overflow-hidden bg-stone-950 border border-stone-800 hover:border-amber-500/50 transition"
                           >
                             <img
@@ -652,27 +658,59 @@ export const MeasurementsTab = ({ projectId, onChange }) => {
                               alt={photo.filename || `Photo ${i + 1}`}
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                              <ExternalLink className="w-4 h-4 text-white" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition">
+                              <a
+                                href={mediaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 bg-stone-800/90 hover:bg-amber-600 text-white rounded-full transition shadow"
+                                title="View full size"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedia(visit._id || visit.id, { photoId: photo._id || photo.id, url: photo.url })}
+                                className="p-1.5 bg-rose-900/90 hover:bg-rose-600 text-white rounded-full transition shadow"
+                                title="Delete photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded">S3</span>
-                          </a>
+                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded pointer-events-none">S3</span>
+                          </div>
                         );
                       })}
                       {visit.videos?.map((video, i) => {
                         const mediaUrl = getMediaUrl(video.url);
                         return (
-                          <a
+                          <div
                             key={video._id || video.url || i}
-                            href={mediaUrl}
-                            target="_blank"
-                            rel="noreferrer"
                             className="group relative aspect-square rounded-md overflow-hidden bg-stone-950 border border-stone-800 hover:border-amber-500/50 flex flex-col items-center justify-center p-2 text-slate-400 hover:text-white transition"
                           >
                             <Film className="w-6 h-6 text-amber-400 mb-1 group-hover:scale-110 transition" />
                             <span className="text-[10px] truncate max-w-full text-slate-300">{video.filename || `Video ${i + 1}`}</span>
-                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded">S3</span>
-                          </a>
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition">
+                              <a
+                                href={mediaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 bg-stone-800/90 hover:bg-amber-600 text-white rounded-full transition shadow"
+                                title="Watch video"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedia(visit._id || visit.id, { videoId: video._id || video.id, url: video.url })}
+                                className="p-1.5 bg-rose-900/90 hover:bg-rose-600 text-white rounded-full transition shadow"
+                                title="Delete video"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <span className="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono text-amber-300 px-1 rounded pointer-events-none">S3</span>
+                          </div>
                         );
                       })}
                     </div>

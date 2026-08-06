@@ -23,6 +23,16 @@ class SnagController extends BaseController {
       const data = await snagService.projectSummary(req.params.projectId);
       return sendSuccess(res, 'Snag summary retrieved', data);
     });
+
+    this.addMedia = asyncHandler(async (req, res) => {
+      const data = await snagService.addMedia(req.params.id, req.body || {});
+      return sendSuccess(res, 'Media attached to snag', data);
+    });
+
+    this.deleteMedia = asyncHandler(async (req, res) => {
+      const data = await snagService.deleteMedia(req.params.id, req.body || req.query || {});
+      return sendSuccess(res, 'Media removed from snag', data);
+    });
   }
 }
 
@@ -36,5 +46,7 @@ export default crudRouter({
     router.get('/project/:projectId/summary', ...canView, snagController.summary);
     router.post('/:id/ready', ...canManage, snagController.ready);
     router.post('/:id/close', ...canManage, snagController.close);
+    router.post('/:id/media', ...canManage, snagController.addMedia);
+    router.delete('/:id/media', ...canManage, snagController.deleteMedia);
   },
 });

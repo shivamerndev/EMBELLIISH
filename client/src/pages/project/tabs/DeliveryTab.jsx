@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Package, Truck, Wrench, AlertTriangle, Plus, Check, PackageCheck } from 'lucide-react';
-import { packingApi, dispatchApi, installationsApi, snagsApi, roomsApi, productionApi } from '../../../api';
+import { Package, Truck, Wrench, AlertTriangle, Plus, Check, PackageCheck, Upload, Loader2, Image, Film, ExternalLink, Trash2 } from 'lucide-react';
+import { packingApi, dispatchApi, installationsApi, snagsApi, roomsApi, productionApi, uploadApi } from '../../../api';
 import { useAsync, useAction } from '../../../hooks/useAsync';
-import { date, humanise } from '../../../utils/format';
+import { date, humanise, getMediaUrl } from '../../../utils/format';
 import {
   Panel, PanelHeader, Table, Button, Badge, StatusBadge, Modal, Field, Input,
   Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Progress,
@@ -172,6 +172,8 @@ const ScheduleInstallModal = ({ open, onClose, projectId, rooms, onDone }) => {
 export const DeliveryTab = ({ projectId, onChange }) => {
   const [raisingSnag, setRaisingSnag] = useState(false);
   const [scheduling, setScheduling] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const { data: packingList, loading, error, reload } = useAsync(
     () => packingApi.packingList(projectId).then((r) => r.data),
@@ -210,10 +212,57 @@ export const DeliveryTab = ({ projectId, onChange }) => {
   const closeSnag = useAction((id) => snagsApi.close(id, { resolution: 'Altered and refitted' }), { onSuccess: refresh });
   const readySnag = useAction((id) => snagsApi.ready(id, {}), { onSuccess: refresh });
 
+  const openSnags = (snags || []).filter((s) => s.status !== 'CLOSED');
+
+  const handleMediaUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+
+      const res = await uploadApi.upload(formData);
+      const uploadedFiles = res.data || [];
+
+      const activeSnag = openSnags[0] || (snags || [])[0];
+
+      if (activeSnag) {
+        await snagsApi.addMedia(activeSnag._id || activeSnag.id, { photos: uploadedFiles });
+      } else {
+        await snagsApi.create({
+          project: projectId,
+          title: 'Site snag photos/media uploaded',
+          photos: uploadedFiles,
+        });
+      }
+
+      refresh();
+    } catch (err) {
+      console.error('Failed to upload media:', err);
+      setUploadError(err?.message || 'Failed to upload media to S3');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteMedia = async (snagId, payload) => {
+    if (!window.confirm('Are you sure you want to delete this media item?')) return;
+    try {
+      await snagsApi.deleteMedia(snagId, payload);
+      refresh();
+    } catch (err) {
+      console.error('Failed to delete media:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to delete media item');
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
-
-  const openSnags = (snags || []).filter((s) => s.status !== 'CLOSED');
 
   return (
     <div className="space-y-4">
@@ -329,19 +378,99 @@ export const DeliveryTab = ({ projectId, onChange }) => {
           title="Snags"
           subtitle="Step 20 — installer reports, factory alters, ticket closes"
           icon={AlertTriangle}
-          actions={<Button size="sm" variant="secondary" icon={Plus} onClick={() => setRaisingSnag(true)}>Raise snag</Button>}
+          actions={
+            <div className='flex gap-2'>
+
+              <label
+                htmlFor="uploadMedia"
+                className={`px-3 py-1.5 bg-orange-800/60 hover:bg-orange-800/80 text-xs font-semibold rounded-md transition cursor-pointer flex justify-center text-slate-100 items-center gap-2 ${uploading ? 'opacity-60 pointer-events-none' : ''
+                  }`}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                <span>{uploading ? 'Uploading to S3...' : 'Upload Media'}</span>
+                <input
+                  type="file"
+                  id="uploadMedia"
+                  accept="image/*,video/*"
+                  multiple
+                  disabled={uploading}
+                  className="hidden"
+                  onChange={handleMediaUpload}
+                />
+              </label>
+
+              <Button size="sm" variant="secondary" icon={Plus} onClick={() => setRaisingSnag(true)}>Raise Snag</Button>
+            </div>
+          }
         />
+
+        {uploadError && (
+          <div className="px-4 pt-3 text-xs text-rose-400">
+            Upload Error: {uploadError}
+          </div>
+        )}
 
         <Table
           columns={[
             { key: 'code', header: 'Ticket', render: (s) => s.code },
             {
-              key: 'title', header: 'Issue', render: (s) => (
-                <div>
-                  <p className="text-slate-900 dark:text-slate-200">{s.title}</p>
+              key: 'title',
+              header: 'Issue',
+              render: (s) => (
+                <div className="space-y-1">
+                  <p className="text-slate-900 dark:text-slate-200 font-medium">{s.title}</p>
                   {s.deviation && <p className="text-[11px] text-slate-500">{s.deviation}</p>}
+                  {s.photos && s.photos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {s.photos.map((photo, i) => {
+                        const mediaUrl = getMediaUrl(photo.url);
+                        const isVideo = photo.mimetype?.startsWith('video/') || photo.url?.match(/\.(mp4|webm|mov)$/i);
+                        return (
+                          <div
+                            key={photo._id || photo.url || i}
+                            className="group relative w-10 h-10 rounded overflow-hidden bg-stone-950 border border-stone-800 hover:border-amber-500/50 flex-shrink-0"
+                          >
+                            {isVideo ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900 text-amber-400">
+                                <Film className="w-4 h-4" />
+                              </div>
+                            ) : (
+                              <img
+                                src={mediaUrl}
+                                alt={photo.filename || `Photo ${i + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition">
+                              <a
+                                href={mediaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 bg-stone-800/90 hover:bg-amber-600 text-white rounded-full transition shadow"
+                                title="View media"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedia(s._id || s.id, { photoId: photo._id || photo.id, url: photo.url })}
+                                className="p-1 bg-rose-900/90 hover:bg-rose-600 text-white rounded-full transition shadow"
+                                title="Delete media"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )
+              ),
             },
             { key: 'room', header: 'Room', render: (s) => s.roomName || '—' },
             { key: 'type', header: 'Type', render: (s) => humanise(s.type) },

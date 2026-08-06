@@ -145,6 +145,30 @@ class SnagService extends BaseService {
     };
   }
 
+  async addMedia(id, { photos = [] }) {
+    const snag = await this.#load(id);
+    snag.photos = [...(snag.photos || []), ...photos];
+    await snag.save();
+    return snag.toJSON();
+  }
+
+  async deleteMedia(id, { photoId, url }) {
+    const snag = await this.#load(id);
+    let photos = snag.photos || [];
+
+    if (photoId || url) {
+      photos = photos.filter((p) => {
+        if (photoId && (p._id?.toString() === photoId || p.id?.toString() === photoId)) return false;
+        if (url && p.url === url) return false;
+        return true;
+      });
+    }
+
+    snag.photos = photos;
+    await snag.save();
+    return snag.toJSON();
+  }
+
   async #load(id) {
     const snag = await SnagModel.findById(id);
     if (!snag) throw ApiError.notFound('Snag not found');

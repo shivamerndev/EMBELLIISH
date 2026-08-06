@@ -120,6 +120,7 @@ export const siteVisitsApi = {
   create: (payload) => api.post('/project/site-visits', payload),
   complete: (id, payload) => api.post(`/project/site-visits/${id}/complete`, payload),
   addMedia: (id, payload) => api.post(`/project/site-visits/${id}/media`, payload),
+  deleteMedia: (id, payload) => api.delete(`/project/site-visits/${id}/media`, { data: payload }),
 };
 
 export const boqApi = {
@@ -158,6 +159,8 @@ export const snagsApi = {
   create: (payload) => api.post('/project/snags', payload),
   ready: (id, payload) => api.post(`/project/snags/${id}/ready`, payload),
   close: (id, payload) => api.post(`/project/snags/${id}/close`, payload),
+  addMedia: (id, payload) => api.post(`/project/snags/${id}/media`, payload),
+  deleteMedia: (id, payload) => api.delete(`/project/snags/${id}/media`, { data: payload }),
 };
 
 /* ------------------------------------------------------------ Inventory */
