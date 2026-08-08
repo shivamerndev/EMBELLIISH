@@ -215,6 +215,8 @@ const EMPTY_WINDOW = {
   label: 'W1',
   particular: 'MAIN_CURTAIN',
   o2oWidth: '', o2oHeight: '', f2fWidth: '', f2fHeight: '',
+  o2oPelmetWidth: '', o2oPelmetDrop: '',
+  f2fPelmetWidth: '', f2fPelmetDrop: '',
   pelmetWidth: '', pelmetDrop: '',
   wireLeft: false, wireRight: false,
   motorRequired: false,
@@ -240,7 +242,12 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
     particular: form.particular,
     o2o: { width: Number(form.o2oWidth) || undefined, height: Number(form.o2oHeight) || undefined },
     f2f: { width: Number(form.f2fWidth) || undefined, height: Number(form.f2fHeight) || undefined },
-    pelmet: { o2oWidth: Number(form.pelmetWidth) || undefined, o2oDrop: Number(form.pelmetDrop) || undefined },
+    pelmet: {
+      o2oWidth: Number(form.o2oPelmetWidth) || undefined,
+      o2oDrop: Number(form.o2oPelmetDrop) || undefined,
+      f2fWidth: Number(form.f2fPelmetWidth) || Number(form.pelmetWidth) || undefined,
+      f2fDrop: Number(form.f2fPelmetDrop) || Number(form.pelmetDrop) || undefined,
+    },
     wire: { left: form.wireLeft, right: form.wireRight },
     motorRequired: form.motorRequired,
     motorQty: form.motorRequired ? 1 : 0,
@@ -286,8 +293,12 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
           o2oHeight: windowToEdit.o2o?.height ?? '',
           f2fWidth: windowToEdit.f2f?.width ?? '',
           f2fHeight: windowToEdit.f2f?.height ?? '',
-          pelmetWidth: windowToEdit.pelmet?.o2oWidth ?? windowToEdit.pelmet?.f2fWidth ?? '',
-          pelmetDrop: windowToEdit.pelmet?.o2oDrop ?? windowToEdit.pelmet?.f2fDrop ?? '',
+          o2oPelmetWidth: windowToEdit.pelmet?.o2oWidth ?? '',
+          o2oPelmetDrop: windowToEdit.pelmet?.o2oDrop ?? '',
+          f2fPelmetWidth: windowToEdit.pelmet?.f2fWidth ?? windowToEdit.pelmet?.o2oWidth ?? '',
+          f2fPelmetDrop: windowToEdit.pelmet?.f2fDrop ?? windowToEdit.pelmet?.o2oDrop ?? '',
+          pelmetWidth: windowToEdit.pelmet?.f2fWidth ?? windowToEdit.pelmet?.o2oWidth ?? '',
+          pelmetDrop: windowToEdit.pelmet?.f2fDrop ?? windowToEdit.pelmet?.o2oDrop ?? '',
           wireLeft: Boolean(windowToEdit.wire?.left),
           wireRight: Boolean(windowToEdit.wire?.right),
           motorRequired: Boolean(windowToEdit.motorRequired),
@@ -367,9 +378,11 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
             O2O — outside to outside (inches)
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Field label="Width"><Input type="number" step="0.1" value={form.o2oWidth} onChange={set('o2oWidth')} placeholder="236.2" /></Field>
             <Field label="Height"><Input type="number" step="0.1" value={form.o2oHeight} onChange={set('o2oHeight')} placeholder="121.9" /></Field>
+            <Field label="Pelmet width"><Input type="number" step="0.1" value={form.o2oPelmetWidth} onChange={set('o2oPelmetWidth')} /></Field>
+            <Field label="Pelmet drop"><Input type="number" step="0.1" value={form.o2oPelmetDrop} onChange={set('o2oPelmetDrop')} /></Field>
           </div>
         </div>
 
@@ -377,15 +390,15 @@ const AddWindowModal = ({ open, onClose, projectId, room, windowToEdit, fabrics,
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
             F2F — face to face, for recessed windows (inches)
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Field label="Width"><Input type="number" step="0.1" value={form.f2fWidth} onChange={set('f2fWidth')} /></Field>
             <Field label="Height"><Input type="number" step="0.1" value={form.f2fHeight} onChange={set('f2fHeight')} /></Field>
+            <Field label="Pelmet width"><Input type="number" step="0.1" value={form.f2fPelmetWidth || form.pelmetWidth} onChange={(e) => { set('f2fPelmetWidth')(e); set('pelmetWidth')(e); }} /></Field>
+            <Field label="Pelmet drop"><Input type="number" step="0.1" value={form.f2fPelmetDrop || form.pelmetDrop} onChange={(e) => { set('f2fPelmetDrop')(e); set('pelmetDrop')(e); }} /></Field>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <Field label="Pelmet width"><Input type="number" step="0.1" value={form.pelmetWidth} onChange={set('pelmetWidth')} /></Field>
-          <Field label="Pelmet drop"><Input type="number" step="0.1" value={form.pelmetDrop} onChange={set('pelmetDrop')} /></Field>
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Fullness" hint="blank = fabric default">
             <Input type="number" step="0.1" value={form.fullness} onChange={set('fullness')} placeholder="2.5" />
           </Field>
