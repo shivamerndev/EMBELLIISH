@@ -204,6 +204,7 @@ export const purchaseApi = {
   generate: (projectId, payload) => api.post(`/inventory/purchase-orders/project/${projectId}/generate`, payload),
   issue: (id) => api.post(`/inventory/purchase-orders/${id}/issue`),
   receive: (id, payload) => api.post(`/inventory/purchase-orders/${id}/receive`, payload),
+  create: (payload) => api.post('/inventory/purchase-orders', payload),
 };
 
 /* ----------------------------------------------------------- Production */
