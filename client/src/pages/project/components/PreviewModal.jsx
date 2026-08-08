@@ -139,10 +139,10 @@ const PreviewModal = ({ boq, project, preview, previewing = false, onClose }) =>
                 </div>
 
                 {/* Modal Body — Paper Sheet Viewer */}
-                <div className="p-4 sm:p-8 overflow-y-auto flex-1 flex justify-center print:p-0 print:overflow-visible bg-slate-950/40">
+                <div className="p-4 sm:p-8 overflow-y-auto flex-1 bg-slate-950/40 print:p-0 print:overflow-visible">
                     
                     {/* Excel Table Paper Container */}
-                    <div id="consumption-pdf-sheet" className="w-full max-w-[1100px] bg-white text-black p-6 sm:p-8 shadow-2xl rounded-sm font-sans print:shadow-none print:p-0 print:max-w-none">
+                    <div id="consumption-pdf-sheet" className="mx-auto w-full max-w-[1100px] h-fit bg-white text-black p-6 sm:p-8 pb-10 sm:pb-14 mb-8 shadow-2xl rounded-sm font-sans print:shadow-none print:p-0 print:max-w-none print:mb-0">
 
                         {/* Top Document Header Table */}
                         <table className="w-full border-collapse border border-black text-xs text-black font-sans bg-white mb-4">
