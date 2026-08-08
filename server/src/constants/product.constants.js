@@ -28,8 +28,12 @@ const DRAPE_PARTICULARS = [
 
 const BLIND_PARTICULARS = [PARTICULAR.ROMAN_BLIND, PARTICULAR.WOODEN_BLIND];
 
-/** Only opaque main curtains carry a blackout lining; sheers never do. */
-const BLACKOUT_PARTICULARS = [PARTICULAR.MAIN_CURTAIN, PARTICULAR.MOTORISED_CURTAIN];
+/** Only opaque main curtains and main roman blinds carry a blackout lining; sheers never do. */
+const BLACKOUT_PARTICULARS = [
+  PARTICULAR.MAIN_CURTAIN,
+  PARTICULAR.MOTORISED_CURTAIN,
+  PARTICULAR.ROMAN_BLIND,
+];
 
 const MATERIAL_TYPE = {
   FABRIC: 'FABRIC',

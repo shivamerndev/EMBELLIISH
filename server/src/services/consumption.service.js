@@ -229,7 +229,7 @@ const calculateWindow = (window = {}, config = {}) => {
   const blind = isBlind(particular);
 
   // --- Running feet: what stitching, lead band, track and installation are billed on.
-  const rnft = width > 0 ? Math.ceil(width / INCHES_PER_FOOT) : 0;
+  const rnft = drape ? (width > 0 ? Math.ceil(width / INCHES_PER_FOOT) : 0) : 0;
 
   // --- Height of one fabric panel, in metres, including hem and heading.
   const heightPerPartM = height > 0 ? round(inchToMeter(height + cfg.heightAllowanceInch) + cfg.patternRepeatAllowanceM, 4) : 0;
@@ -245,8 +245,9 @@ const calculateWindow = (window = {}, config = {}) => {
     ? Math.round(Number(window.partsOverride))
     : suggestedParts;
 
-  // --- Fabric.
-  const rawDrapeMeters = drape || blind ? round(roundedParts * heightPerPartM, 2) : 0;
+  // --- Fabric. (Wooden blinds are hard window coverings, not fabric drapes)
+  const isFabricProduct = drape || particular === PARTICULAR.ROMAN_BLIND;
+  const rawDrapeMeters = isFabricProduct ? round(roundedParts * heightPerPartM, 2) : 0;
   const wastage = rawDrapeMeters * (cfg.wastagePercent / 100);
   const fabricMeters = rawDrapeMeters > 0 ? ceilToHalf(rawDrapeMeters + wastage) : 0;
 
