@@ -9,8 +9,8 @@ import projectService from '../../project/project/project.service.js';
 import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
 
 const leadRepository = new BaseRepository(LeadModel, {
-  filterable: ['status', 'source', 'projectType', 'assignedDCM', 'architect', 'qualifiedBy'],
-  searchable: ['clientName', 'companyName', 'phone', 'location', 'code'],
+  filterable: ['status', 'source', 'projectType', 'assignedDCM', 'architect', 'qualifiedBy', 'budgetClassification', 'architectInvolved'],
+  searchable: ['clientName', 'contactPerson', 'companyName', 'architectName', 'phone', 'location', 'code'],
   populate: [
     { path: 'architect', select: 'name firm phone' },
     { path: 'assignedDCM', select: 'name email role' },

@@ -10,18 +10,20 @@ const leadSchema = new mongoose.Schema(
   {
     code: { type: String, unique: true, index: true },
 
-    // --- What Hitesh writes down on the first call.
+    // --- What Hitesh writes down on the first call & Lead Capture Sheet attributes.
     clientName: { type: String, required: true, trim: true, index: true },
+    contactPerson: { type: String, trim: true },
     companyName: { type: String, trim: true },
     phone: { type: String, required: true, trim: true, index: true },
     email: { type: String, trim: true, lowercase: true },
     architect: { type: mongoose.Schema.Types.ObjectId, ref: 'Architect', index: true },
+    architectName: { type: String, trim: true },
     source: {
       type: String,
-      enum: ['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER', 'DCM', 'DIRECT_VISIT', 'DIRECT_CLIENT', 'EXISTING_CLIENT'],
       default: 'DCM',
     },
     previousClientRelationship: { type: Boolean, default: false },
+    existingRelationshipOwner: { type: String, trim: true, default: 'NA' },
     location: { type: String, trim: true },
     priority: {
       type: String,
@@ -35,8 +37,21 @@ const leadSchema = new mongoose.Schema(
       default: 'VILLA',
     },
     budget: { type: Number, min: 0 },
+    indicativeBudget: { type: String, trim: true },
+    budgetClassification: {
+      type: String,
+      enum: ['A', 'B', 'C', 'D'],
+      default: 'A',
+    },
     roomCount: { type: Number, min: 0 },
     requirement: String,
+    requirementSummary: String,
+    architectInvolved: {
+      type: String,
+      enum: ['Yes', 'No', 'Not Known'],
+      default: 'Not Known',
+    },
+    attachmentUrl: String,
 
     // --- Sales & Commercials: Site Visit requirement flag.
     siteVisitRequired: { type: Boolean, default: true },

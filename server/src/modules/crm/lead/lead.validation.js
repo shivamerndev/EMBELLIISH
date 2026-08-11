@@ -166,12 +166,15 @@ const presentationSchema = z
 
 const createLeadSchema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
+  contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  phone: z.string().min(7, 'A contactable phone number is required'),
+  phone: z.string().min(3, 'Phone number is required'),
   email: z.string().email().optional().or(z.literal('')),
   architect: objectId.optional(),
-  source: z.enum(['ARCHITECT', 'REFERRAL', 'WALK_IN', 'WEBSITE', 'EXHIBITION', 'SOCIAL', 'OTHER', 'DCM', 'DIRECT_VISIT', 'DIRECT_CLIENT', 'EXISTING_CLIENT']).optional(),
+  architectName: z.string().optional(),
+  source: z.string().optional(),
   previousClientRelationship: z.boolean().optional(),
+  existingRelationshipOwner: z.string().optional(),
   location: z.string().optional(),
   priority: z.enum(['HOT', 'MEDIUM', 'LOW']).optional(),
   address: addressSchema,
@@ -179,8 +182,13 @@ const createLeadSchema = z.object({
     .enum(['VILLA', 'APARTMENT', 'BUNGALOW', 'FARMHOUSE', 'HOTEL', 'OFFICE', 'RETAIL', 'OTHER'])
     .optional(),
   budget: z.coerce.number().nonnegative().optional(),
+  indicativeBudget: z.string().optional(),
+  budgetClassification: z.enum(['A', 'B', 'C', 'D']).optional(),
   roomCount: z.coerce.number().int().nonnegative().optional(),
   requirement: z.string().optional(),
+  requirementSummary: z.string().optional(),
+  architectInvolved: z.enum(['Yes', 'No', 'Not Known']).optional(),
+  attachmentUrl: z.string().optional(),
   assignedDCM: objectId.optional(),
   nextFollowUpAt: z.coerce.date().optional(),
 
