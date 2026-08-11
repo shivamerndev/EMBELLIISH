@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   LayoutDashboard,
@@ -11,6 +11,8 @@ import {
   BarChart3,
   UserCog,
   Settings2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import cn from '../../utils/cn';
 import Logo from '../common/Logo';
@@ -22,7 +24,16 @@ import Logo from '../common/Logo';
  */
 const NAV = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'CRM', path: '/crm', icon: Users, permission: 'crm:view' },
+  {
+    label: 'CRM',
+    icon: Users,
+    permission: 'crm:view',
+    children: [
+      { label: 'Leads', path: '/crm/leads' },
+      { label: 'Sales and Commercials', path: '/crm/sales-commercials' },
+      { label: 'Clients', path: '/crm/clients' },
+    ],
+  },
   { label: 'Projects', path: '/projects', icon: Briefcase, permission: 'project:view' },
   { label: 'Production', path: '/production', icon: Factory, permission: 'production:view' },
   { label: 'Inventory', path: '/inventory', icon: Package, permission: 'inventory:view' },
@@ -33,13 +44,40 @@ const NAV = [
 ];
 
 export const Sidebar = () => {
-  const permissions = useSelector((state) => state.auth.user?.permissions || []);
+  const permissions = useSelector((state) => state.auth?.user?.permissions || []);
   const granted = new Set(permissions);
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const items = NAV.filter((item) => !item.permission || granted.has(item.permission));
+
+  const [openMenus, setOpenMenus] = useState(() => {
+    const initial = {};
+    if (location.pathname.startsWith('/crm')) {
+      initial['CRM'] = true;
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/crm') && !openMenus['CRM']) {
+      setOpenMenus((prev) => ({ ...prev, CRM: true }));
+    }
+  }, [location.pathname]);
+
+  const toggleMenu = (label, defaultChildPath) => {
+    setOpenMenus((prev) => {
+      const isOpening = !prev[label];
+      if (isOpening && defaultChildPath && !location.pathname.startsWith('/crm')) {
+        navigate(defaultChildPath);
+      }
+      return { ...prev, [label]: isOpening };
+    });
+  };
 
   return (
     <aside
-      className="w-64 shrink-0 border-r flex flex-col h-screen sticky top-0 transition-colors duration-300"
+      className="w-64 shrink-0 border-r flex flex-col h-screen sticky top-0 transition-colors duration-300 select-none"
       style={{
         backgroundColor: 'var(--bg-surface-alt)',
         borderColor: 'var(--border)',
@@ -55,6 +93,64 @@ export const Sidebar = () => {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {items.map((item) => {
           const Icon = item.icon;
+          const hasChildren = Boolean(item.children && item.children.length > 0);
+
+          if (hasChildren) {
+            const isChildActive = item.children.some((child) => location.pathname === child.path || location.pathname.startsWith(child.path + '/'));
+            const isOpen = Boolean(openMenus[item.label]);
+
+            return (
+              <div key={item.label} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleMenu(item.label, item.children[0]?.path)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 border-l-2 text-left',
+                    isChildActive
+                      ? 'bg-brand-500/15 text-brand-300 font-semibold border-brand-500 shadow-sm shadow-brand-900/30'
+                      : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  )}
+                  style={
+                    isChildActive
+                      ? {}
+                      : { color: 'var(--text-muted)' }
+                  }
+                >
+                  <div className="flex items-center">
+                    <Icon className="w-4 h-4 mr-3 shrink-0" />
+                    <span>{item.label}</span>
+                  </div>
+                  {isOpen ? (
+                    <ChevronDown className="w-4 h-4 shrink-0 text-slate-400" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 shrink-0 text-slate-400" />
+                  )}
+                </button>
+
+                {isOpen && (
+                  <div className="ml-4 pl-3 border-l border-slate-700/40 space-y-1">
+                    {item.children.map((child) => (
+                      <NavLink
+                        key={child.path}
+                        to={child.path}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center px-3 py-2 text-xs font-medium rounded-md transition-all duration-200',
+                            isActive
+                              ? 'bg-brand-500/20 text-brand-300 font-semibold border-l-2 border-brand-500 shadow-sm'
+                              : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                          )
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <NavLink
               key={item.path}
