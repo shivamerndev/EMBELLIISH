@@ -188,7 +188,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects }) => {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+      <form onSubmit={submit} className="space-y-4 pr-1">
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
 
         <div className="grid grid-cols-2 gap-4">
@@ -349,7 +349,7 @@ const EditLeadModal = ({ lead, onClose, onDone }) => {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+      <form onSubmit={submit} className="space-y-4 pr-1">
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
 
         <div className="grid grid-cols-2 gap-4">
@@ -544,33 +544,33 @@ export const LeadsPage = () => {
       </Panel>
 
       {/* Main 16-Column Sheet Table */}
-      <Panel className="overflow-x-auto">
+      <Panel className="overflow-hidden">
         {loading ? (
           <Loading />
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <div className="min-w-[1250px] overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="w-full overflow-x-auto">
+            <table className="min-w-[1250px] w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-amber-200/90 text-amber-950 dark:bg-amber-500/20 dark:text-amber-200 font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider">
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Lead ID</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
-                  <th className="p-3 truncate border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
-                  <th className="p-3 truncate text-right">Actions</th>
+                <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider">
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Lead ID</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
+                  <th className="p-1 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
+                  <th className="p-1 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
