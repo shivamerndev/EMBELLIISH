@@ -183,7 +183,7 @@ const createLeadSchema = z.object({
     .optional(),
   budget: z.coerce.number().nonnegative().optional(),
   indicativeBudget: z.string().optional(),
-  budgetClassification: z.enum(['A', 'B', 'C', 'D']).optional(),
+  budgetClassification: z.enum(['A', 'B', 'C', 'D', 'ECONOMY', 'MID_RANGE', 'PREMIUM', 'LUXURY', 'ULTRA_LUXURY']).optional(),
   roomCount: z.coerce.number().int().nonnegative().optional(),
   requirement: z.string().optional(),
   requirementSummary: z.string().optional(),
