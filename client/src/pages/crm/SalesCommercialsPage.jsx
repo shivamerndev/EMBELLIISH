@@ -1,19 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  Plus, Search, Paperclip, Filter, Eye, Pencil, Trash2, UserCheck,
-  Building2, BadgeDollarSign, Calendar, Phone, Mail, MapPin, User, FileText,
-  Upload, Download, ArrowRightCircle, Sparkles, CheckCircle2, AlertCircle, XCircle,
-  LayoutGrid, Table as TableIcon, Ruler, ClipboardList, Wallet, ReceiptText,
-  ShieldCheck, Presentation as PresentationIcon, CalendarCheck2
-} from 'lucide-react';
-import { leadsApi, architectsApi, usersApi, clientsApi, quotationsApi, uploadApi } from '../../api';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, Search, Paperclip, Eye, Pencil, UserCheck, Building2, BadgeDollarSign, Phone, Mail, MapPin, User, FileText, Upload, Download, ArrowRightCircle, Sparkles, CheckCircle2, LayoutGrid, Table as TableIcon, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, Users } from 'lucide-react';
+import { leadsApi, architectsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { currency, date, humanise } from '../../utils/format';
-import {
-  PageHeader, Panel, Table, Button, Badge, StatusBadge, Modal, Field, Input, Select,
-  Textarea, Loading, ErrorState, EmptyState, Tabs, StatTile, Progress
-} from '../../components/ui';
+import { PageHeader, Panel, Table, Button, Badge, StatusBadge, Modal, Field, Input, Select, Textarea, Loading, ErrorState, EmptyState, Tabs, StatTile } from '../../components/ui';
 
 const BUDGET_CLASSIFICATIONS = [
   { value: 'ECONOMY', label: 'Economy (Under ₹15L)' },
@@ -567,11 +558,10 @@ const LeadFormModal = ({ open, lead, onClose, onSaved, architects, users }) => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveFormTab(tab.id)}
-                className={`flex flex-col items-center justify-center p-2.5 rounded-lg text-xs transition-all ${
-                  isActive
-                    ? 'bg-brand-500 text-slate-950 font-bold shadow-md'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 font-medium'
-                }`}
+                className={`flex flex-col items-center justify-center p-2.5 rounded-lg text-xs transition-all ${isActive
+                  ? 'bg-brand-500 text-slate-950 font-bold shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 font-medium'
+                  }`}
               >
                 <div className="flex items-center gap-1.5">
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-brand-400'}`} />
@@ -1576,11 +1566,10 @@ const LeadDetailDrawer = ({ lead, onClose, onEdit, onQualify, onAssign, onConver
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveDetailTab(tab.id)}
-                className={`flex items-center justify-center gap-1.5 p-2 rounded-lg text-xs transition-all ${
-                  isActive
-                    ? 'bg-brand-500 text-slate-950 font-bold shadow-md'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 font-medium'
-                }`}
+                className={`flex items-center justify-center gap-1.5 p-2 rounded-lg text-xs transition-all ${isActive
+                  ? 'bg-brand-500 text-slate-950 font-bold shadow-md'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 font-medium'
+                  }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-brand-400'}`} />
                 <span className="truncate">{tab.label}</span>
@@ -2123,19 +2112,499 @@ const LeadCard = ({ lead, onView, onEdit }) => {
   );
 };
 
+/* --------------------------------------------------- Spreadsheet Matrix View Component */
+
+const SPREADSHEET_SECTIONS = [
+  {
+    id: 's1',
+    title: 'Lead & Contact Details (Mandatory Details)',
+    color: 'bg-purple-950/90 text-purple-200 border-purple-700/80',
+    cols: [
+      { key: 'sno', label: 'S.No.' },
+      { key: 'code', label: 'Lead Code' },
+      { key: 'captureDateTime', label: 'Capture Date & Time' },
+      { key: 'clientName', label: 'Client Name' },
+      { key: 'contactPerson', label: 'Contact Person' },
+      { key: 'phone', label: 'Mobile No.' },
+      { key: 'email', label: 'Email Id' },
+      { key: 'companyName', label: 'Company Name' },
+      { key: 'location', label: 'Location' },
+      { key: 'projectType', label: 'Project Type' },
+      { key: 'priority', label: 'Lead Priority' },
+      { key: 'budget', label: 'Indicative Budget' },
+      { key: 'budgetClassification', label: 'Budget Classification' },
+    ]
+  },
+  {
+    id: 's2',
+    title: 'Lead Source & Relationship',
+    color: 'bg-blue-950/90 text-blue-200 border-blue-700/80',
+    cols: [
+      { key: 'source', label: 'Lead Source' },
+      { key: 'architectName', label: 'Architect / Designer Name' },
+      { key: 'architectInvolved', label: 'Architect Involved' },
+      { key: 'architectInvolvedDetails', label: 'Architect Involvement Notes' },
+      { key: 'previousClientRelationship', label: 'Previous Client Relationship' },
+      { key: 'previousClientRelationshipDetails', label: 'Previous Relationship Details' },
+      { key: 'existingRelationshipOwner', label: 'Existing Relationship Owner' },
+      { key: 'existingRelationshipOwnerName', label: 'Relationship Owner Name' },
+      { key: 'requirementSummary', label: 'Requirement Summary' },
+      { key: 'attachments', label: 'Attachments' },
+    ]
+  },
+  {
+    id: 's3',
+    title: 'Site Visit (Req. Details)',
+    color: 'bg-indigo-950/90 text-indigo-200 border-indigo-700/80',
+    cols: [
+      { key: 'siteVisitRequired', label: 'Site Visit Requirement' },
+      { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
+      { key: 'siteAddress', label: 'Site Address' },
+      { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
+      { key: 'assignedInstaller', label: 'Assigned Installer' },
+      { key: 'clientArchitectAvailability', label: 'Client / Architect Availability' },
+      { key: 'scope', label: 'Scope' },
+      { key: 'rooms', label: 'Rooms' },
+      { key: 'drawingsRenders', label: 'Drawings & Renders' },
+      { key: 'installerAvailability', label: 'Installer Availability' },
+    ]
+  },
+  {
+    id: 's4',
+    title: 'Measurement (Site Details)',
+    color: 'bg-teal-950/90 text-teal-200 border-teal-700/80',
+    cols: [
+      { key: 'measurement.dueDate', label: 'Measurement Due Date' },
+      { key: 'measurement.date', label: 'Measurement Date' },
+      { key: 'measurement.measuredBy', label: 'Measured By' },
+      { key: 'measurement.status', label: 'Measurement Status' },
+      { key: 'measurement.siteAccess', label: 'Site Access' },
+      { key: 'measurement.attachments', label: 'Measurement Attachments' },
+      { key: 'measurement.roomList', label: 'Room List' },
+      { key: 'measurement.drawings', label: 'Drawings / Layouts' },
+      { key: 'measurement.pelmetDetails', label: 'Pelmet Details' },
+      { key: 'measurement.channelDetails', label: 'Channel Details' },
+      { key: 'measurement.motorDetails', label: 'Motor Details' },
+      { key: 'measurement.wiringDetails', label: 'Wiring Details' },
+      { key: 'measurement.notes', label: 'Measurement Notes' },
+    ]
+  },
+  {
+    id: 's5',
+    title: 'Studio Meeting',
+    color: 'bg-purple-950/90 text-purple-200 border-purple-700/80',
+    cols: [
+      { key: 'studioMeeting.dueDate', label: 'Studio Meeting Due Date' },
+      { key: 'studioMeeting.date', label: 'Studio Meeting Date' },
+      { key: 'studioMeeting.attendees', label: 'Attendees' },
+      { key: 'studioMeeting.clientDrawings', label: 'Client Drawings' },
+      { key: 'studioMeeting.feedback', label: 'Studio Feedback' },
+      { key: 'studioMeeting.nextAction', label: 'Next Action' },
+      { key: 'studioMeeting.architectBrief', label: 'Architect Brief' },
+      { key: 'studioMeeting.samples', label: 'Samples Shown' },
+      { key: 'studioMeeting.projectPictures', label: 'Project Pictures' },
+      { key: 'studioMeeting.pricingRange', label: 'Pricing Range' },
+    ]
+  },
+  {
+    id: 's6',
+    title: 'Ready Size (Window/Site Details)',
+    color: 'bg-blue-950/90 text-blue-200 border-blue-700/80',
+    cols: [
+      { key: 'readySize.roomReadiness', label: 'Room Readiness' },
+      { key: 'readySize.dueDate', label: 'Ready Size Due Date' },
+      { key: 'readySize.confirmedBy', label: 'Confirmed By' },
+      { key: 'readySize.confirmationDate', label: 'Confirmation Date' },
+      { key: 'readySize.windowSize', label: 'Window Size' },
+      { key: 'readySize.siteCondition', label: 'Site Condition' },
+      { key: 'readySize.pelmetDetails', label: 'Pelmet Details' },
+      { key: 'readySize.channelDetails', label: 'Channel Details' },
+      { key: 'readySize.readyHeight', label: 'Ready Height' },
+      { key: 'readySize.finalMeasurements', label: 'Final Measurements' },
+    ]
+  },
+  {
+    id: 's7',
+    title: 'Consumption / BOQ',
+    color: 'bg-emerald-950/90 text-emerald-200 border-emerald-700/80',
+    cols: [
+      { key: 'consumption.sheetDueDate', label: 'BOQ / Consumption Sheet Due Date' },
+      { key: 'consumption.measurements', label: 'Measurements' },
+      { key: 'consumption.quantity', label: 'Quantity' },
+      { key: 'consumption.unit', label: 'Unit' },
+      { key: 'consumption.wastageAllowance', label: 'Wastage Allowance' },
+      { key: 'consumption.boqVersion', label: 'BOQ Version' },
+      { key: 'consumption.roomList', label: 'Room List' },
+      { key: 'consumption.fabricDesignSelection', label: 'Fabric / Design Selection' },
+      { key: 'consumption.panelCount', label: 'Panel Count' },
+      { key: 'consumption.liningAccessoryAssumptions', label: 'Lining / Accessory Assumptions' },
+    ]
+  },
+  {
+    id: 's8',
+    title: 'Proposal',
+    color: 'bg-sky-950/90 text-sky-200 border-sky-700/80',
+    cols: [
+      { key: 'proposal.dueDate', label: 'Proposal Due Date' },
+      { key: 'proposal.noVersion', label: 'Proposal No & Version' },
+      { key: 'proposal.date', label: 'Proposal Date' },
+      { key: 'proposal.clientBrief', label: 'Client Brief' },
+      { key: 'proposal.consumptionSheet', label: 'Consumption Sheet' },
+      { key: 'proposal.designDirection', label: 'Design Direction' },
+      { key: 'proposal.pricingRange', label: 'Pricing Range' },
+      { key: 'proposal.terms', label: 'Proposal Terms' },
+      { key: 'proposal.refundRevisionClause', label: 'Refund / Revision Clause' },
+    ]
+  },
+  {
+    id: 's9',
+    title: 'Token / Advance',
+    color: 'bg-amber-950/90 text-amber-200 border-amber-700/80',
+    cols: [
+      { key: 'token.discussionDueDate', label: 'Token Discussion Due Date' },
+      { key: 'token.amount', label: 'Token Amount' },
+      { key: 'token.status', label: 'Token Status' },
+      { key: 'token.receivedDate', label: 'Received Date' },
+      { key: 'token.clientBudgetResponse', label: 'Client Budget Response' },
+      { key: 'token.proposalAttachment', label: 'Proposal Attachment' },
+      { key: 'token.budgetEstimate', label: 'Budget Estimate' },
+      { key: 'token.clientResponse', label: 'Client Response' },
+      { key: 'token.projectTimeline', label: 'Project Timeline' },
+      { key: 'token.commercialTerms', label: 'Commercial Terms' },
+    ]
+  },
+  {
+    id: 's10',
+    title: ' Costing',
+    color: 'bg-slate-900 text-slate-200 border-slate-700/80',
+    cols: [
+      { key: 'costing.dueDate', label: 'Costing Due Date' },
+      { key: 'costing.catalogueCost', label: 'Catalogue Cost' },
+      { key: 'costing.version', label: 'Costing Version' },
+      { key: 'costing.landedCost', label: 'Landed Cost' },
+      { key: 'costing.localFabricCost', label: 'Local Fabric Cost' },
+      { key: 'costing.labourCost', label: 'Labour Cost' },
+      { key: 'costing.sampleCost', label: 'Sample Cost' },
+      { key: 'costing.marginModel', label: 'Margin Model' },
+    ]
+  },
+  {
+    id: 's11',
+    title: ' Quotation',
+    color: 'bg-emerald-950/90 text-emerald-200 border-emerald-700/80',
+    cols: [
+      { key: 'quotation.dueDate', label: 'Quotation Due Date' },
+      { key: 'quotation.no', label: 'Quotation No.' },
+      { key: 'quotation.version', label: 'Quotation Version' },
+      { key: 'quotation.date', label: 'Quotation Date' },
+      { key: 'quotation.finalQuotedValue', label: 'Final Quoted Value' },
+      { key: 'quotation.taxes', label: 'Taxes' },
+      { key: 'quotation.addSubtotal', label: 'Add Subtotal' },
+      { key: 'quotation.validity', label: 'Quotation Validity' },
+      { key: 'quotation.discountApprovalStatus', label: 'Discount Approval Status' },
+      { key: 'quotation.boq', label: 'BOQ Attachment' },
+      { key: 'quotation.fabricSelection', label: 'Fabric Selection' },
+      { key: 'quotation.cataloguePrice', label: 'Catalogue Price' },
+      { key: 'quotation.labourPrice', label: 'Labour Price' },
+      { key: 'quotation.samplePrice', label: 'Sample Price' },
+      { key: 'quotation.discount', label: 'Discount' },
+      { key: 'quotation.marginRules', label: 'Margin Rules' },
+    ]
+  },
+  {
+    id: 's12',
+    title: ' Client Approval',
+    color: 'bg-orange-950/90 text-orange-200 border-orange-700/80',
+    cols: [
+      { key: 'approval.planned', label: 'Planned Approval Date' },
+      { key: 'approval.clientApprovalStatus', label: 'Client Approval Status' },
+      { key: 'approval.proofAttachment', label: 'Proof Attachment' },
+      { key: 'approval.finalApprovedVersion', label: 'Final Approved Version' },
+    ]
+  },
+  {
+    id: 's13',
+    title: ' Presentation',
+    color: 'bg-yellow-950/90 text-yellow-200 border-yellow-700/80',
+    cols: [
+      { key: 'presentation.attachment', label: 'Presentation Attachment' },
+      { key: 'presentation.clientSelection', label: 'Client Selection' },
+      { key: 'presentation.fabricSelection', label: 'Fabric Selection' },
+      { key: 'presentation.designDirection', label: 'Design Direction' },
+      { key: 'presentation.revisionNotes', label: 'Revision Notes' },
+    ]
+  }
+];
+
+const getNestedVal = (obj, path) => {
+  if (!obj || !path) return undefined;
+  const parts = path.split('.');
+  let curr = obj;
+  for (const p of parts) {
+    if (curr === null || curr === undefined) return undefined;
+    curr = curr[p];
+  }
+  return curr;
+};
+
+const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
+  if (key === 'sno') return <span className="font-mono text-slate-400 font-medium">{sno}</span>;
+  if (key === 'code') {
+    return (
+      <button
+        type="button"
+        onClick={() => onView(lead)}
+        className="font-mono text-xs font-bold text-brand-400 hover:underline"
+      >
+        {lead.code}
+      </button>
+    );
+  }
+  if (key === 'clientName') {
+    return (
+      <button
+        type="button"
+        onClick={() => onView(lead)}
+        className="font-semibold text-slate-100 hover:text-brand-300 text-left truncate block max-w-[160px]"
+        title={lead.clientName}
+      >
+        {lead.clientName}
+      </button>
+    );
+  }
+  if (key === 'budgetClassification') {
+    const val = lead.budgetClassification || 'MID_RANGE';
+    return <Badge tone={BUDGET_TONES[val] || 'blue'}>{val}</Badge>;
+  }
+  if (key === 'priority') {
+    const p = lead.priority || 'MEDIUM';
+    return <Badge tone={p === 'HOT' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>;
+  }
+  if (key === 'siteVisitRequired') {
+    return lead.siteVisitRequired ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>;
+  }
+  if (key === 'previousClientRelationship') {
+    return lead.previousClientRelationship ? <Badge tone="violet">YES</Badge> : <Badge tone="slate">NO</Badge>;
+  }
+  if (key === 'architectInvolved') {
+    const val = lead.architectInvolved || (lead.architectInvolvedDetails ? 'YES' : 'NO');
+    return <Badge tone={val === 'YES' || val === 'Yes' ? 'blue' : 'slate'}>{val}</Badge>;
+  }
+  if (key === 'architectName') {
+    return <span className="truncate block max-w-[140px]" title={lead.architect?.name || lead.architectName}>{lead.architect?.name || lead.architectName || '—'}</span>;
+  }
+  if (key === 'existingRelationshipOwner') {
+    return <span className="truncate block max-w-[130px]">{lead.existingRelationshipOwner?.name || lead.existingRelationshipOwnerName || lead.assignedDCM?.name || '—'}</span>;
+  }
+  if (key === 'assignedInstaller') {
+    return <span className="truncate block max-w-[130px]">{lead.assignedInstaller?.name || lead.assignedInstallerName || '—'}</span>;
+  }
+  if (key === 'measurement.measuredBy') {
+    return <span className="truncate block max-w-[130px]">{lead.measurement?.measuredBy?.name || '—'}</span>;
+  }
+  if (key === 'readySize.confirmedBy') {
+    return <span className="truncate block max-w-[130px]">{lead.readySize?.confirmedBy?.name || '—'}</span>;
+  }
+
+  const raw = getNestedVal(lead, key);
+
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) return <span className="text-slate-600">—</span>;
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-800 text-brand-400 font-medium">
+        <Paperclip className="w-3 h-3 shrink-0" /> {raw.length} file(s)
+      </span>
+    );
+  }
+
+  if (raw instanceof Date || (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw))) {
+    return <span className="text-slate-300 text-[11px] whitespace-nowrap">{date(raw, { time: String(raw).includes('T') })}</span>;
+  }
+
+  if (typeof raw === 'number') {
+    const kLower = key.toLowerCase();
+    if (kLower.includes('cost') || kLower.includes('budget') || kLower.includes('price') || kLower.includes('value') || kLower.includes('amount') || kLower.includes('taxes') || kLower.includes('subtotal') || kLower.includes('discount')) {
+      return <span className="font-mono text-slate-200 text-xs font-semibold">{currency(raw)}</span>;
+    }
+    return <span className="font-mono text-slate-200 text-xs">{raw}</span>;
+  }
+
+  if (typeof raw === 'boolean') {
+    return raw ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>;
+  }
+
+  if (!raw && raw !== 0) return <span className="text-slate-600">—</span>;
+
+  return <span className="text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
+};
+
+const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's1', onSectionChange }) => {
+
+  const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's1';
+  const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
+
+  return (
+    <Panel className="overflow-hidden border border-slate-800">
+      {/* Section Quick Jump Filter Bar */}
+      <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex items-center gap-2 overflow-x-auto select-none">
+        {SPREADSHEET_SECTIONS.map((sec) => (
+          <button key={sec.id} type="button" onClick={() => onSectionChange?.(sec.id)}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium shrink-0 transition ${currentSection === sec.id ? 'bg-brand-500 text-slate-950 font-bold shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'}`}          >
+            {sec.title.split(' ')[0]} {sec.title.split(' ').slice(1, 3).join(' ')}
+          </button>
+        ))}
+      </div>
+
+      {/* Excel Sheet Matrix Table Container */}
+      <div className="overflow-x-auto max-h-[72vh] overflow-y-auto select-none relative">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            {/* Header Row 1: Section Title Banners */}
+            {/* <tr className="sticky top-0 z-20 shadow-md">
+              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[11px] font-bold text-slate-300 text-center sticky left-0 z-30 min-w-[50px]">
+                S.No
+              </th>
+              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[11px] font-bold text-slate-300 sticky left-[50px] z-30 min-w-[100px]">
+                Lead Code
+              </th>
+              {visibleSections.map((sec) => {
+                const colsWithoutSnoCode = sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code');
+                if (colsWithoutSnoCode.length === 0) return null;
+                return (
+                  <th
+                    key={sec.id}
+                    colSpan={colsWithoutSnoCode.length}
+                    className={`border-b border-r p-2 text-[11px] font-bold uppercase tracking-wider text-center ${sec.color}`}
+                  >
+                    {sec.title}
+                  </th>
+                );
+              })}
+              <th className="bg-slate-950 border-b border-slate-800 p-2 text-[11px] font-bold text-slate-300 text-right sticky right-0 z-30 min-w-[80px]">
+                Actions
+              </th>
+            </tr> */}
+
+            {/* Header Row 2: Sub-Column Field Names */}
+            <tr className="sticky z-20 shadow-sm bg-slate-900">
+           
+              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[10px] uppercase text-center font-semibold text-slate-400 z-30">
+                Code
+              </th>
+              {visibleSections.map((sec) =>
+                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                  <th key={col.key} className="border-b border-r border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-slate-300 whitespace-nowrap min-w-[130px] bg-slate-900/90">
+                    {col.label}
+                  </th>
+                ))
+              )}
+              <th className="bg-slate-950 border-b border-slate-800 p-2 text-[10px] uppercase font-semibold text-slate-400 text-right sticky right-0 z-30">
+                Manage
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
+            {items.map((lead, idx) => (
+              <tr key={lead.id || lead._id} className="hover:bg-slate-900/80 transition group">
+                <td className=" border-r border-slate-800/80 bg-slate-950 group-hover:bg-slate-900  z-10 font-mono text-brand-400 font-semibold">
+                  <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                    {lead.code}
+                  </button>
+                </td>
+                {visibleSections.map((sec) =>
+                  sec.cols
+                    .filter((c) => c.key !== 'sno' && c.key !== 'code')
+                    .map((col) => (
+                      <td key={col.key} className="p-2 border-r border-slate-800/60 whitespace-nowrap">
+                        {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
+                      </td>
+                    ))
+                )}
+                <td className="p-2 bg-slate-950 group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-800/80">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
+                    <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(lead)} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+};
+
 /* ----------------------------------------------------------- Sales & Commercials Page */
 
 export const SalesCommercialsPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('LEADS');
-  const [viewMode, setViewMode] = useState('GRID'); // 'GRID' or 'TABLE'
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [budgetFilter, setBudgetFilter] = useState('ALL');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial/current values from URL search params
+  const activeTab = searchParams.get('tab') || 'LEADS';
+  const viewMode = searchParams.get('view') || 'SPREADSHEET'; // 'SPREADSHEET', 'GRID', or 'TABLE'
+  const statusFilter = searchParams.get('status') || 'ALL';
+  const budgetFilter = searchParams.get('budget') || 'ALL';
+  const selectedSection = searchParams.get('section') || 's1';
+  const leadIdParam = searchParams.get('leadId') || searchParams.get('lead') || '';
+
+  const searchParam = searchParams.get('search') || '';
+  const [search, setSearch] = useState(searchParam);
 
   const [creatingLead, setCreatingLead] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [viewingLead, setViewingLead] = useState(null);
+
+  // Sync local search input with URL search param
+  useEffect(() => {
+    setSearch(searchParam);
+  }, [searchParam]);
+
+  // Helper function to update search parameters in URL
+  const updateParam = (key, value, defaultValue = 'ALL') => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!value || value === defaultValue || value === '') {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    updateParam('search', val, '');
+  };
+
+  const resetFilters = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('status');
+        next.delete('budget');
+        next.delete('search');
+        next.delete('section');
+        return next;
+      },
+      { replace: true }
+    );
+    setSearch('');
+  };
+
+  const handleViewLead = (lead) => {
+    setViewingLead(lead);
+    if (lead) {
+      updateParam('leadId', lead.id || lead._id || lead.code, '');
+    } else {
+      updateParam('leadId', '', '');
+    }
+  };
 
   const { data: leadsData, loading, error, reload } = useAsync(
     () => leadsApi.list({
@@ -2155,6 +2624,18 @@ export const SalesCommercialsPage = () => {
   const totalPipelineVal = items.reduce((acc, l) => acc + (l.budget || 0), 0);
   const luxuryLeadsCount = items.filter((l) => ['LUXURY', 'ULTRA_LUXURY'].includes(l.budgetClassification)).length;
 
+  // Auto-open lead detail drawer on reload if leadId URL param is present
+  useEffect(() => {
+    if (leadIdParam && items.length > 0 && !viewingLead) {
+      const match = items.find(
+        (l) => String(l.id || l._id) === String(leadIdParam) || l.code === leadIdParam
+      );
+      if (match) {
+        setViewingLead(match);
+      }
+    }
+  }, [leadIdParam, items]);
+
   const leadColumns = [
     {
       key: 'code',
@@ -2162,7 +2643,7 @@ export const SalesCommercialsPage = () => {
       render: (lead) => (
         <button
           type="button"
-          onClick={() => setViewingLead(lead)}
+          onClick={() => handleViewLead(lead)}
           className="font-mono text-xs font-semibold text-brand-400 hover:text-brand-300 hover:underline"
         >
           {lead.code}
@@ -2273,7 +2754,7 @@ export const SalesCommercialsPage = () => {
       align: 'right',
       render: (lead) => (
         <div className="flex items-center justify-end gap-1">
-          <Button size="sm" variant="ghost" icon={Eye} onClick={() => setViewingLead(lead)} />
+          <Button size="sm" variant="ghost" icon={Eye} onClick={() => handleViewLead(lead)} />
           <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingLead(lead)} />
         </div>
       ),
@@ -2304,9 +2785,9 @@ export const SalesCommercialsPage = () => {
       <Panel className="mb-6">
         <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <Tabs
-            syncQuery={false}
+            syncQuery={true}
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={(t) => updateParam('tab', t, 'LEADS')}
             tabs={[
               { key: 'LEADS', label: 'Sales Leads Directory', count: totalLeadsCount },
             ]}
@@ -2316,21 +2797,27 @@ export const SalesCommercialsPage = () => {
             <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
               <button
                 type="button"
-                onClick={() => setViewMode('GRID')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                  viewMode === 'GRID' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                }`}
+                onClick={() => updateParam('view', 'SPREADSHEET', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'SPREADSHEET' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+              >
+                <ClipboardList className="w-3.5 h-3.5" /> Sheet Matrix
+              </button>
+              <button
+                type="button"
+                onClick={() => updateParam('view', 'GRID', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'GRID' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                  }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" /> Grid
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('TABLE')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                  viewMode === 'TABLE' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                }`}
+                onClick={() => updateParam('view', 'TABLE', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'TABLE' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                  }`}
               >
-                <TableIcon className="w-3.5 h-3.5" /> Table
+                <TableIcon className="w-3.5 h-3.5" /> Summary
               </button>
             </div>
           </div>
@@ -2342,7 +2829,7 @@ export const SalesCommercialsPage = () => {
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search lead code, client name, phone or location..."
               className="pl-9"
             />
@@ -2353,7 +2840,7 @@ export const SalesCommercialsPage = () => {
               <span className="text-xs text-slate-400 font-medium">Status:</span>
               <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => updateParam('status', e.target.value, 'ALL')}
                 options={[
                   { value: 'ALL', label: 'All Statuses' },
                   { value: 'NEW', label: 'New' },
@@ -2370,7 +2857,7 @@ export const SalesCommercialsPage = () => {
               <span className="text-xs text-slate-400 font-medium">Budget:</span>
               <Select
                 value={budgetFilter}
-                onChange={(e) => setBudgetFilter(e.target.value)}
+                onChange={(e) => updateParam('budget', e.target.value, 'ALL')}
                 options={[
                   { value: 'ALL', label: 'All Budget Tiers' },
                   ...BUDGET_CLASSIFICATIONS,
@@ -2379,15 +2866,11 @@ export const SalesCommercialsPage = () => {
               />
             </div>
 
-            {(statusFilter !== 'ALL' || budgetFilter !== 'ALL' || search) && (
+            {(statusFilter !== 'ALL' || budgetFilter !== 'ALL' || search || (selectedSection && selectedSection !== 's1')) && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setStatusFilter('ALL');
-                  setBudgetFilter('ALL');
-                  setSearch('');
-                }}
+                onClick={resetFilters}
                 className="text-xs text-slate-400 hover:text-slate-200"
               >
                 Reset Filters
@@ -2415,13 +2898,21 @@ export const SalesCommercialsPage = () => {
             }
           />
         </Panel>
+      ) : viewMode === 'SPREADSHEET' ? (
+        <SpreadsheetGridView
+          items={items}
+          onView={handleViewLead}
+          onEdit={(l) => setEditingLead(l)}
+          selectedSection={selectedSection}
+          onSectionChange={(sec) => updateParam('section', sec, 's1')}
+        />
       ) : viewMode === 'GRID' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((lead) => (
             <LeadCard
               key={lead.id || lead._id}
               lead={lead}
-              onView={(l) => setViewingLead(l)}
+              onView={handleViewLead}
               onEdit={(l) => setEditingLead(l)}
             />
           ))}
@@ -2459,7 +2950,7 @@ export const SalesCommercialsPage = () => {
       {viewingLead && (
         <LeadDetailDrawer
           lead={viewingLead}
-          onClose={() => setViewingLead(null)}
+          onClose={() => handleViewLead(null)}
           onEdit={(l) => setEditingLead(l)}
           onQualify={() => navigate('/crm/leads')}
           onAssign={() => navigate('/crm/leads')}
