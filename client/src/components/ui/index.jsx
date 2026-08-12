@@ -404,17 +404,17 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
   const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <div
         className="fixed inset-0 backdrop-blur-sm"
         style={{ backgroundColor: 'var(--backdrop)' }}
         onClick={onClose}
       />
       <div
-        className={cn('relative w-full my-8 panel shadow-2xl', sizes[size])}
+        className={cn('relative w-full my-auto panel shadow-2xl flex flex-col max-h-[85vh]', sizes[size])}
         style={{ borderColor: 'var(--border-strong)' }}
       >
-        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
           <div>
             <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
               {title}
@@ -442,10 +442,10 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
         {footer && (
           <div
-            className="flex justify-end gap-2 px-5 py-4 border-t"
+            className="flex justify-end gap-2 px-5 py-4 border-t shrink-0"
             style={{ borderColor: 'var(--border)' }}
           >
             {footer}
