@@ -176,7 +176,7 @@ const createLeadSchema = z.object({
   previousClientRelationship: z.boolean().optional(),
   existingRelationshipOwner: z.string().optional(),
   location: z.string().optional(),
-  priority: z.enum(['HOT', 'MEDIUM', 'LOW']).optional(),
+  priority: z.enum(['HOT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
   address: addressSchema,
   projectType: z
     .enum(['VILLA', 'APARTMENT', 'BUNGALOW', 'FARMHOUSE', 'HOTEL', 'OFFICE', 'RETAIL', 'OTHER'])
@@ -191,6 +191,36 @@ const createLeadSchema = z.object({
   attachmentUrl: z.string().optional(),
   assignedDCM: objectId.optional(),
   nextFollowUpAt: z.coerce.date().optional(),
+
+  // --- Assignment (Step 3): DCM Capacity & Reassignment.
+  assignedDcmName: z.string().optional(),
+  assignmentDueDate: z.coerce.date().optional(),
+  assignmentDateTime: z.coerce.date().optional(),
+  dcmCapacityStatus: z.enum(['AVAILABLE', 'OVERLOADED']).optional(),
+  dcmActiveProjectCount: z.coerce.number().int().nonnegative().optional(),
+  reassignmentRequired: z.boolean().optional(),
+  reassignedTo: objectId.optional(),
+  reassignedToName: z.string().optional(),
+  reassignmentReason: z.string().optional(),
+  updatedUser: z.string().optional(),
+
+  // --- Qualification Sheet (Step 2 checklist form).
+  qualificationDueDate: z.coerce.date().optional(),
+  requirementVerified: z.enum(['YES', 'NO', 'PENDING']).optional(),
+  budgetPricingVerified: z.enum(['YES', 'NO', 'PENDING']).optional(),
+  timelineConfirmed: z.enum(['YES', 'NO', 'PENDING']).optional(),
+  decisionMakerIdentified: z.enum(['YES', 'NO', 'PENDING', 'NOT_KNOWN']).optional(),
+  competitionDetailsCaptured: z.enum(['YES', 'NO', 'NOT_KNOWN']).optional(),
+  qualificationDecision: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  decisionDateTime: z.coerce.date().optional(),
+  rejectionHoldReason: z.string().optional(),
+  status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED', 'LOST']).optional(),
+  lostReason: z.string().optional(),
+
+  // --- Follow-up Sheet (Step 4).
+  nextAction: z.string().optional(),
+  nextActionDueDate: z.coerce.date().optional(),
+  overallLeadStatus: z.enum(['IN_PROGRESS', 'APPROVED', 'REJECTED', 'ON_HOLD']).optional(),
 
   siteVisitRequired: z.boolean().optional(),
   measurement: measurementSchema,

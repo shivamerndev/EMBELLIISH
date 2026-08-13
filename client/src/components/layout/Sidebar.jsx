@@ -30,6 +30,9 @@ const NAV = [
     permission: 'crm:view',
     children: [
       { label: 'Leads', path: '/crm/leads' },
+      { label: 'DCM Assignments', path: '/crm/dcm-assignments' },
+      { label: 'Qualification', path: '/crm/qualification' },
+      { label: 'Follow-ups', path: '/crm/follow-ups' },
       { label: 'Sales and Commercials', path: '/crm/sales-commercials' },
       { label: 'Clients', path: '/crm/clients' },
     ],

@@ -27,7 +27,7 @@ const leadSchema = new mongoose.Schema(
     location: { type: String, trim: true },
     priority: {
       type: String,
-      enum: ['HOT', 'MEDIUM', 'LOW'],
+      enum: ['HOT', 'HIGH', 'MEDIUM', 'LOW'],
       default: 'MEDIUM',
     },
     address: addressSchema,
@@ -214,9 +214,67 @@ const leadSchema = new mongoose.Schema(
     qualificationNotes: String,
     lostReason: String,
 
-    // --- Assignment (Step 3): "Rahul tum ye project handle karo."
+    // --- Qualification Sheet (Step 2 checklist form).
+    qualificationDueDate: Date,
+    requirementVerified: {
+      type: String,
+      enum: ['YES', 'NO', 'PENDING'],
+      default: 'PENDING',
+    },
+    budgetPricingVerified: {
+      type: String,
+      enum: ['YES', 'NO', 'PENDING'],
+      default: 'PENDING',
+    },
+    timelineConfirmed: {
+      type: String,
+      enum: ['YES', 'NO', 'PENDING'],
+      default: 'PENDING',
+    },
+    decisionMakerIdentified: {
+      type: String,
+      enum: ['YES', 'NO', 'PENDING', 'NOT_KNOWN'],
+      default: 'PENDING',
+    },
+    competitionDetailsCaptured: {
+      type: String,
+      enum: ['YES', 'NO', 'NOT_KNOWN'],
+      default: 'NOT_KNOWN',
+    },
+    qualificationDecision: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      default: 'PENDING',
+    },
+    decisionDateTime: Date,
+    rejectionHoldReason: String,
+
+    // --- Assignment (Step 3): DCM Capacity & Reassignment.
     assignedDCM: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    assignedDcmName: { type: String, trim: true },
+    assignmentDueDate: Date,
+    assignmentDateTime: Date,
+    dcmCapacityStatus: {
+      type: String,
+      enum: ['AVAILABLE', 'OVERLOADED'],
+      default: 'AVAILABLE',
+    },
+    dcmActiveProjectCount: { type: Number, default: 0 },
+    reassignmentRequired: { type: Boolean, default: false },
+    reassignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reassignedToName: { type: String, trim: true },
+    reassignmentReason: String,
+    updatedUser: String,
     assignedAt: Date,
+
+    // --- Follow-up Sheet (Step 4).
+    nextAction: String,
+    nextActionDueDate: Date,
+    overallLeadStatus: {
+      type: String,
+      enum: ['IN_PROGRESS', 'APPROVED', 'REJECTED', 'ON_HOLD'],
+      default: 'IN_PROGRESS',
+    },
 
     nextFollowUpAt: { type: Date, index: true },
 
