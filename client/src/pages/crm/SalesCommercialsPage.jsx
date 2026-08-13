@@ -2347,63 +2347,69 @@ const getNestedVal = (obj, path) => {
   return curr;
 };
 
-const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
-  if (key === 'sno') return <span className="font-mono text-slate-400 font-medium">{sno}</span>;
-  if (key === 'code') {
-    return (
-      <button
-        type="button"
-        onClick={() => onView(lead)}
-        className="font-mono text-xs font-bold text-brand-400 hover:underline"
-      >
-        {lead.code}
-      </button>
-    );
-  }
-  if (key === 'clientName') {
-    return (
-      <button
-        type="button"
-        onClick={() => onView(lead)}
-        className="font-semibold text-slate-100 hover:text-brand-300 text-left truncate block max-w-[160px]"
-        title={lead.clientName}
-      >
-        {lead.clientName}
-      </button>
-    );
-  }
-  if (key === 'budgetClassification') {
+const SPREADSHEET_CELL_RENDERERS = {
+  sno: (lead, { sno }) => <span className="font-mono text-slate-400 font-medium">{sno}</span>,
+  code: (lead, { onView }) => (
+    <button
+      type="button"
+      onClick={() => onView(lead)}
+      className="font-mono text-xs font-bold text-brand-400 hover:underline"
+    >
+      {lead.code}
+    </button>
+  ),
+  clientName: (lead, { onView }) => (
+    <button
+      type="button"
+      onClick={() => onView(lead)}
+      className="font-semibold text-slate-100 hover:text-brand-300 text-left truncate block max-w-[160px]"
+      title={lead.clientName}
+    >
+      {lead.clientName}
+    </button>
+  ),
+  budgetClassification: (lead) => {
     const val = lead.budgetClassification || 'MID_RANGE';
     return <Badge tone={BUDGET_TONES[val] || 'blue'}>{val}</Badge>;
-  }
-  if (key === 'priority') {
+  },
+  priority: (lead) => {
     const p = lead.priority || 'MEDIUM';
     return <Badge tone={p === 'HOT' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>;
-  }
-  if (key === 'siteVisitRequired') {
-    return lead.siteVisitRequired ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>;
-  }
-  if (key === 'previousClientRelationship') {
-    return lead.previousClientRelationship ? <Badge tone="violet">YES</Badge> : <Badge tone="slate">NO</Badge>;
-  }
-  if (key === 'architectInvolved') {
+  },
+  siteVisitRequired: (lead) => (
+    lead.siteVisitRequired ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>
+  ),
+  previousClientRelationship: (lead) => (
+    lead.previousClientRelationship ? <Badge tone="violet">YES</Badge> : <Badge tone="slate">NO</Badge>
+  ),
+  architectInvolved: (lead) => {
     const val = lead.architectInvolved || (lead.architectInvolvedDetails ? 'YES' : 'NO');
     return <Badge tone={val === 'YES' || val === 'Yes' ? 'blue' : 'slate'}>{val}</Badge>;
-  }
-  if (key === 'architectName') {
-    return <span className="truncate block max-w-[140px]" title={lead.architect?.name || lead.architectName}>{lead.architect?.name || lead.architectName || '—'}</span>;
-  }
-  if (key === 'existingRelationshipOwner') {
-    return <span className="truncate block max-w-[130px]">{lead.existingRelationshipOwner?.name || lead.existingRelationshipOwnerName || lead.assignedDCM?.name || '—'}</span>;
-  }
-  if (key === 'assignedInstaller') {
-    return <span className="truncate block max-w-[130px]">{lead.assignedInstaller?.name || lead.assignedInstallerName || '—'}</span>;
-  }
-  if (key === 'measurement.measuredBy') {
-    return <span className="truncate block max-w-[130px]">{lead.measurement?.measuredBy?.name || '—'}</span>;
-  }
-  if (key === 'readySize.confirmedBy') {
-    return <span className="truncate block max-w-[130px]">{lead.readySize?.confirmedBy?.name || '—'}</span>;
+  },
+  architectName: (lead) => (
+    <span className="truncate block max-w-[140px]" title={lead.architect?.name || lead.architectName}>
+      {lead.architect?.name || lead.architectName || '—'}
+    </span>
+  ),
+  existingRelationshipOwner: (lead) => (
+    <span className="truncate block max-w-[130px]">
+      {lead.existingRelationshipOwner?.name || lead.existingRelationshipOwnerName || lead.assignedDCM?.name || '—'}
+    </span>
+  ),
+  assignedInstaller: (lead) => (
+    <span className="truncate block max-w-[130px]">{lead.assignedInstaller?.name || lead.assignedInstallerName || '—'}</span>
+  ),
+  'measurement.measuredBy': (lead) => (
+    <span className="truncate block max-w-[130px]">{lead.measurement?.measuredBy?.name || '—'}</span>
+  ),
+  'readySize.confirmedBy': (lead) => (
+    <span className="truncate block max-w-[130px]">{lead.readySize?.confirmedBy?.name || '—'}</span>
+  ),
+};
+
+const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
+  if (SPREADSHEET_CELL_RENDERERS[key]) {
+    return SPREADSHEET_CELL_RENDERERS[key](lead, { sno, onView, onEdit });
   }
 
   const raw = getNestedVal(lead, key);
@@ -2445,50 +2451,18 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's1', on
 
   return (
     <Panel className="overflow-hidden border border-slate-800">
-      {/* Section Quick Jump Filter Bar */}
-      <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex items-center gap-2 overflow-x-auto select-none">
-        {SPREADSHEET_SECTIONS.map((sec) => (
-          <button key={sec.id} type="button" onClick={() => onSectionChange?.(sec.id)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium shrink-0 transition ${currentSection === sec.id ? 'bg-brand-500 text-slate-950 font-bold shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'}`}          >
-            {sec.title.split(' ')[0]} {sec.title.split(' ').slice(1, 3).join(' ')}
-          </button>
-        ))}
-      </div>
 
       {/* Excel Sheet Matrix Table Container */}
-      <div className="overflow-x-auto max-h-[72vh] overflow-y-auto select-none relative">
+      <div className="overflow-x-auto max-h-[45vh] overflow-y-auto select-none relative">
         <table className="w-full text-left border-collapse text-xs">
+
+
           <thead>
-            {/* Header Row 1: Section Title Banners */}
-            {/* <tr className="sticky top-0 z-20 shadow-md">
-              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[11px] font-bold text-slate-300 text-center sticky left-0 z-30 min-w-[50px]">
-                S.No
-              </th>
-              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[11px] font-bold text-slate-300 sticky left-[50px] z-30 min-w-[100px]">
-                Lead Code
-              </th>
-              {visibleSections.map((sec) => {
-                const colsWithoutSnoCode = sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code');
-                if (colsWithoutSnoCode.length === 0) return null;
-                return (
-                  <th
-                    key={sec.id}
-                    colSpan={colsWithoutSnoCode.length}
-                    className={`border-b border-r p-2 text-[11px] font-bold uppercase tracking-wider text-center ${sec.color}`}
-                  >
-                    {sec.title}
-                  </th>
-                );
-              })}
-              <th className="bg-slate-950 border-b border-slate-800 p-2 text-[11px] font-bold text-slate-300 text-right sticky right-0 z-30 min-w-[80px]">
-                Actions
-              </th>
-            </tr> */}
 
             {/* Header Row 2: Sub-Column Field Names */}
             <tr className="sticky z-20 shadow-sm bg-slate-900">
-           
-              <th className="bg-slate-950 border-b border-r border-slate-800 p-2 text-[10px] uppercase text-center font-semibold text-slate-400 z-30">
+
+              <th className="bg-slate-950 border-b border-r border-slate-800 p-4 text-[10px] uppercase text-center font-semibold text-slate-400 z-30">
                 Code
               </th>
               {visibleSections.map((sec) =>
@@ -2503,10 +2477,11 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's1', on
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
             {items.map((lead, idx) => (
-              <tr key={lead.id || lead._id} className="hover:bg-slate-900/80 transition group">
-                <td className=" border-r border-slate-800/80 bg-slate-950 group-hover:bg-slate-900  z-10 font-mono text-brand-400 font-semibold">
+              <tr key={lead.id || lead._id} className="hover:bg-slate-900/80 transition group ">
+                <td className=" border-r border-slate-800/80 bg-slate-950 group-hover:bg-slate-900   z-10 font-mono text-brand-400 font-semibold">
                   <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
                     {lead.code}
                   </button>
@@ -2515,7 +2490,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's1', on
                   sec.cols
                     .filter((c) => c.key !== 'sno' && c.key !== 'code')
                     .map((col) => (
-                      <td key={col.key} className="p-2 border-r border-slate-800/60 whitespace-nowrap">
+                      <td key={col.key} className="p-4 border-r border-slate-800/60 whitespace-nowrap">
                         {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                       </td>
                     ))
@@ -2774,7 +2749,7 @@ export const SalesCommercialsPage = () => {
       />
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatTile label="Total Sales Leads" value={totalLeadsCount} sub="In current view" icon={UserCheck} tone="blue" />
         <StatTile label="Pipeline Budget Value" value={currency(totalPipelineVal, { compact: true })} sub="Cumulative indicative budget" icon={BadgeDollarSign} tone="green" />
         <StatTile label="Luxury / Premium Leads" value={luxuryLeadsCount} sub="Luxury & Ultra Luxury Segment" icon={Sparkles} tone="brand" />
@@ -2782,49 +2757,37 @@ export const SalesCommercialsPage = () => {
       </div>
 
       {/* Workspace Controls & Tabs */}
-      <Panel className="mb-6">
-        <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
-          <Tabs
-            syncQuery={true}
-            active={activeTab}
-            onChange={(t) => updateParam('tab', t, 'LEADS')}
-            tabs={[
-              { key: 'LEADS', label: 'Sales Leads Directory', count: totalLeadsCount },
-            ]}
-          />
+      <Panel className="mb-4">
+        <div className="px-4 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
+          <Tabs syncQuery={true} active={activeTab} onChange={(t) => updateParam('tab', t, 'LEADS')}
+            tabs={[{ key: 'LEADS', label: 'Sales Leads Directory', count: totalLeadsCount },]} />
 
           <div className="flex items-center gap-2">
+
             <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
-              <button
-                type="button"
-                onClick={() => updateParam('view', 'SPREADSHEET', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'SPREADSHEET' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-              >
+
+
+              <button type="button" onClick={() => updateParam('view', 'SPREADSHEET', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'SPREADSHEET' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
                 <ClipboardList className="w-3.5 h-3.5" /> Sheet Matrix
               </button>
-              <button
-                type="button"
-                onClick={() => updateParam('view', 'GRID', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'GRID' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-              >
+
+              <button type="button" onClick={() => updateParam('view', 'GRID', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'GRID' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
                 <LayoutGrid className="w-3.5 h-3.5" /> Grid
               </button>
-              <button
-                type="button"
-                onClick={() => updateParam('view', 'TABLE', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'TABLE' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-              >
+
+              <button type="button" onClick={() => updateParam('view', 'TABLE', 'SPREADSHEET')}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'TABLE' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
                 <TableIcon className="w-3.5 h-3.5" /> Summary
               </button>
+
             </div>
           </div>
         </div>
 
         {/* Filters Bar */}
-        <div className="p-4 flex flex-wrap items-center justify-between gap-3 bg-slate-950/40">
+        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-slate-950/40">
           <div className="relative flex-1 min-w-[220px] max-w-md">
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
@@ -2878,6 +2841,7 @@ export const SalesCommercialsPage = () => {
             )}
           </div>
         </div>
+        
       </Panel>
 
       {/* Main Content Area */}
