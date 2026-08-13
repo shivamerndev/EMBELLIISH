@@ -1,0 +1,248 @@
+import React, { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Search, Users, UserCheck, ShieldCheck, Pencil, ArrowRightCircle } from 'lucide-react';
+import { leadsApi } from '../../api';
+import { useAsync, useAction } from '../../hooks/useAsync';
+import {
+  PageHeader, Panel, Button, Modal, Field, Input, Select,
+  Textarea, Loading, ErrorState, Tabs,
+} from '../../components/ui';
+
+const FOLLOWUP_TABS = [
+  { key: 'ALL', label: 'All Leads' },
+  { key: 'DUE_TODAY', label: 'Due Today' },
+  { key: 'OVERDUE', label: 'Overdue' },
+  { key: 'APPROVED', label: 'Approved' },
+  { key: 'REJECTED', label: 'Rejected' },
+];
+
+/* ------------------------------------------------------------- Badges */
+
+const OverallStatusBadge = ({ value }) => {
+  const styles = {
+    IN_PROGRESS: 'bg-sky-200 text-sky-900 dark:bg-sky-700 dark:text-sky-100',
+    APPROVED: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-600 dark:text-emerald-100',
+    REJECTED: 'bg-rose-600 text-white dark:bg-rose-700',
+    ON_HOLD: 'bg-amber-200 text-amber-900 dark:bg-amber-600 dark:text-amber-100',
+  };
+  const labelMap = {
+    IN_PROGRESS: 'In Progress',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+    ON_HOLD: 'On Hold',
+  };
+  const key = value || 'IN_PROGRESS';
+  return (
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md shadow-sm ${styles[key] || styles.IN_PROGRESS}`}>
+      {labelMap[key] || key}
+    </span>
+  );
+};
+
+/* ------------------------------------------------------------- Follow-up Form Modal */
+
+const EditFollowUpModal = ({ item, onClose, onDone }) => {
+  const [form, setForm] = useState({
+    nextAction: item?.nextAction || '',
+    nextActionDueDate: item?.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : '',
+    overallLeadStatus: item?.overallLeadStatus || 'IN_PROGRESS',
+  });
+
+  const { execute, pending, error } = useAction(
+    (payload) => leadsApi.update(item.id || item._id, payload),
+    { onSuccess: () => { onDone(); onClose(); } }
+  );
+
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    execute({ ...form });
+  };
+
+  return (
+    <Modal
+      open={Boolean(item)}
+      onClose={onClose}
+      title={`Log Follow-up — ${item?.code || ''}`}
+      subtitle={`Set the next action and overall status for ${item?.clientName || ''}`}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} loading={pending}>Save Follow-up</Button>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4 pr-1">
+        {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
+
+        <Field label="Next Action">
+          <Textarea value={form.nextAction} onChange={set('nextAction')} placeholder="e.g. Site visit, follow-up call, send quotation..." />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Next Action Due Date">
+            <Input type="date" value={form.nextActionDueDate} onChange={set('nextActionDueDate')} />
+          </Field>
+          <Field label="Overall Lead Status">
+            <Select
+              value={form.overallLeadStatus}
+              onChange={set('overallLeadStatus')}
+              options={[
+                { value: 'IN_PROGRESS', label: 'In Progress' },
+                { value: 'APPROVED', label: 'Approved' },
+                { value: 'REJECTED', label: 'Rejected' },
+                { value: 'ON_HOLD', label: 'On Hold' },
+              ]}
+            />
+          </Field>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+/* ------------------------------------------------------------- Main Page Component */
+
+export const FollowUpPage = () => {
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState('ALL');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [editing, setEditing] = useState(null);
+
+  const { data, loading, error, reload } = useAsync(
+    () => leadsApi.list({ limit: 100 }).then((r) => r.data),
+    []
+  );
+
+  const list = data?.items || [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const filtered = list.filter((item) => {
+    const dueDate = item.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : null;
+    const status = item.overallLeadStatus || 'IN_PROGRESS';
+
+    if (tab === 'DUE_TODAY' && dueDate !== today) return false;
+    if (tab === 'OVERDUE' && !(dueDate && dueDate < today)) return false;
+    if (tab === 'APPROVED' && status !== 'APPROVED') return false;
+    if (tab === 'REJECTED' && status !== 'REJECTED') return false;
+
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      item.code?.toLowerCase().includes(q) ||
+      item.clientName?.toLowerCase().includes(q) ||
+      item.contactPerson?.toLowerCase().includes(q) ||
+      item.nextAction?.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div>
+      <PageHeader
+        title="CRM — Lead Follow-up"
+        subtitle="Track the next action, due date, and overall status for every lead in the pipeline"
+        actions={
+          <>
+            <Link to="/crm/leads">
+              <Button variant="secondary" icon={Users}>Lead Capture Sheet</Button>
+            </Link>
+            <Link to="/crm/dcm-assignments">
+              <Button variant="secondary" icon={UserCheck}>DCM Assignments</Button>
+            </Link>
+            <Link to="/crm/qualification">
+              <Button variant="secondary" icon={ShieldCheck}>Qualification</Button>
+            </Link>
+          </>
+        }
+      />
+
+      <Panel className="mb-4">
+        <div className="px-4 pt-1">
+          <Tabs
+            tabs={FOLLOWUP_TABS}
+            active={tab}
+            onChange={setTab}
+          />
+        </div>
+        <div className="p-4">
+          <div className="relative max-w-sm">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search Lead ID, Client, Contact, Next Action..."
+              className="pl-9"
+            />
+          </div>
+        </div>
+      </Panel>
+
+      <Panel className="overflow-hidden">
+        {loading ? (
+          <Loading />
+        ) : error ? (
+          <ErrorState error={error} onRetry={reload} />
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <table className="min-w-[1100px] w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Code & Client</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action Due Date</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Overall Lead Status</th>
+                  <th className="p-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                      No leads match your filter or search query.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((row) => (
+                    <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="p-3 whitespace-nowrap">
+                        <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
+                        <span className="block text-xs text-brand-600 dark:text-brand-400 font-medium">{row.clientName}</span>
+                      </td>
+                      <td className="p-3 max-w-[260px] truncate text-slate-700 dark:text-slate-300" title={row.nextAction || '—'}>
+                        {row.nextAction || '—'}
+                      </td>
+                      <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {row.nextActionDueDate ? new Date(row.nextActionDueDate).toLocaleDateString('en-GB') : '—'}
+                      </td>
+                      <td className="p-3 text-center">
+                        <OverallStatusBadge value={row.overallLeadStatus} />
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
+                            Update
+                          </Button>
+                          <Link to={`/crm/sales-commercials?search=${encodeURIComponent(row.code || '')}`}>
+                            <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Sales & Commercials for this lead">
+                              Sales
+                            </Button>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {editing && <EditFollowUpModal item={editing} onClose={() => setEditing(null)} onDone={reload} />}
+    </div>
+  );
+};
+
+export default FollowUpPage;

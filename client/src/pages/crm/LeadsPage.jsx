@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, Users, Pencil, Trash2, ExternalLink, Paperclip } from 'lucide-react';
+import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, ShieldCheck, Users, Pencil, Trash2, ExternalLink, Paperclip } from 'lucide-react';
 import { leadsApi, architectsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise } from '../../utils/format';
@@ -104,11 +104,10 @@ const BudgetClassBadge = ({ value }) => {
 const RelationshipBadge = ({ value }) => {
   const isYes = value === true || value === 'Yes' || value === 'YES';
   return (
-    <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-md shadow-sm ${
-      isYes
+    <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-md shadow-sm ${isYes
         ? 'bg-emerald-200 text-emerald-900 dark:bg-emerald-600 dark:text-emerald-100'
         : 'bg-red-700 text-white dark:bg-red-800 dark:text-white'
-    }`}>
+      }`}>
       {isYes ? 'Yes' : 'No'}
     </span>
   );
@@ -144,7 +143,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects }) => {
     contactPerson: '',
     phone: '',
     email: '',
-    source: 'Architect Referral',
+    source: 'Architect',
     clientName: '',
     architectName: '',
     indicativeBudget: '',
@@ -215,12 +214,8 @@ const NewLeadModal = ({ open, onClose, onCreated, architects }) => {
               value={form.source}
               onChange={set('source')}
               options={[
-                { value: 'Architect Referral', label: 'Architect Referral' },
-                { value: 'Direct Client', label: 'Direct Client' },
-                { value: 'Existing Client', label: 'Existing Client' },
-                { value: 'Website', label: 'Website' },
-                { value: 'Walk-in', label: 'Walk-in' },
-                { value: 'DCM', label: 'DCM' },
+                { value: 'Architect', label: 'Architect' },
+                { value: 'Interior Designer', label: 'Interior Designer' },
               ]}
             />
           </Field>
@@ -300,7 +295,7 @@ const EditLeadModal = ({ lead, onClose, onDone }) => {
     contactPerson: l?.contactPerson || '',
     phone: l?.phone || '',
     email: l?.email || '',
-    source: l?.source || 'Architect Referral',
+    source: l?.source || 'Architect',
     architectName: l?.architectName || (typeof l?.architect === 'object' ? l?.architect?.name : l?.architect) || '',
     indicativeBudget: l?.indicativeBudget || (l?.budget ? `${l.budget}` : ''),
     budgetClassification: l?.budgetClassification || 'A',
@@ -372,7 +367,14 @@ const EditLeadModal = ({ lead, onClose, onDone }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Lead Source">
-            <Input value={form.source} onChange={set('source')} />
+            <Select
+              value={form.source}
+              onChange={set('source')}
+              options={[
+                { value: 'Architect', label: 'Architect' },
+                { value: 'Interior Designer', label: 'Interior Designer' },
+              ]}
+            />
           </Field>
           <Field label="Architect / Designer Name">
             <Input value={form.architectName} onChange={set('architectName')} />
@@ -477,6 +479,7 @@ const DeleteLeadModal = ({ lead, onClose, onDone }) => {
 /* ------------------------------------------------------------- Main Page Component */
 
 export const LeadsPage = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
@@ -514,10 +517,19 @@ export const LeadsPage = () => {
         subtitle="Manage, track, and qualify leads recorded through Architects, Interior Designers, or Direct Channels"
         actions={
           <>
+            <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
+            <Link to="/crm/dcm-assignments">
+              <Button variant="secondary" icon={UserCheck}>DCM Assignments</Button>
+            </Link>
+            <Link to="/crm/qualification">
+              <Button variant="secondary" icon={ShieldCheck}>Qualification</Button>
+            </Link>
+            <Link to="/crm/follow-ups">
+              <Button variant="secondary" icon={PhoneCall}>Follow-ups</Button>
+            </Link>
             <Link to="/crm/clients">
               <Button variant="secondary" icon={Users}>Clients</Button>
             </Link>
-            <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
           </>
         }
       />
@@ -584,7 +596,7 @@ export const LeadsPage = () => {
                   filteredLeads.map((row) => {
                     const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
                     const archName = row.architectName || (typeof row.architect === 'object' ? row.architect?.name : row.architect) || '—';
-                    
+
                     return (
                       <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">{row.code}</td>
@@ -628,7 +640,17 @@ export const LeadsPage = () => {
                           )}
                         </td>
                         <td className="p-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              icon={UserCheck}
+                              onClick={() => navigate(`/crm/dcm-assignments?search=${encodeURIComponent(row.code || '')}&assign=true`)}
+                              title={`Assign DCM manager for lead ${row.code}`}
+                              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
+                            >
+                              Assign DCM
+                            </Button>
                             <button
                               type="button"
                               onClick={() => setEditing(row)}

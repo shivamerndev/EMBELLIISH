@@ -8,6 +8,9 @@ import PrivateRoute from './PrivateRoute';
 import Login from '../pages/auth/Login';
 import Dashboard from '../pages/dashboard/Dashboard';
 import LeadsPage from '../pages/crm/LeadsPage';
+import DcmAssignmentPage from '../pages/crm/DcmAssignmentPage';
+import QualificationPage from '../pages/crm/QualificationPage';
+import FollowUpPage from '../pages/crm/FollowUpPage';
 import SalesCommercialsPage from '../pages/crm/SalesCommercialsPage';
 import ClientsPage from '../pages/crm/ClientsPage';
 import ProjectsPage from '../pages/project/ProjectsPage';
@@ -33,6 +36,9 @@ export const AppRoutes = () => (
 
         <Route path="/crm" element={<Navigate to="/crm/leads" replace />} />
         <Route path="/crm/leads" element={<LeadsPage />} />
+        <Route path="/crm/dcm-assignments" element={<DcmAssignmentPage />} />
+        <Route path="/crm/qualification" element={<QualificationPage />} />
+        <Route path="/crm/follow-ups" element={<FollowUpPage />} />
         <Route path="/crm/sales-commercials" element={<SalesCommercialsPage />} />
         <Route path="/crm/clients" element={<ClientsPage />} />
 
