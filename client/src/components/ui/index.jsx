@@ -174,13 +174,13 @@ export const Checkbox = ({ label, className, ...props }) => (
 /* -------------------------------------------------------------------- status */
 
 const BADGE_TONES = {
-  slate:  { bg: 'var(--bg-hover)',              text: 'var(--text-secondary)', border: 'var(--border-strong)' },
-  blue:   { bg: 'rgba(131,100,68,0.15)',        text: '#D0B59C',               border: 'rgba(131,100,68,0.30)' },
-  brand:  { bg: 'rgba(131,100,68,0.20)',        text: '#E4D2BF',               border: 'rgba(131,100,68,0.40)' },
-  green:  { bg: 'rgba( 16,185,129,0.10)',       text: '#6ee7b7',               border: 'rgba( 16,185,129,0.30)' },
-  amber:  { bg: 'rgba(245,158, 11,0.10)',       text: '#fcd34d',               border: 'rgba(245,158, 11,0.30)' },
-  rose:   { bg: 'rgba(244, 63, 94,0.10)',       text: '#fda4af',               border: 'rgba(244, 63, 94,0.30)' },
-  violet: { bg: 'rgba(139, 92,246,0.10)',       text: '#c4b5fd',               border: 'rgba(139, 92,246,0.30)' },
+  slate: { bg: 'var(--bg-hover)', text: 'var(--text-secondary)', border: 'var(--border-strong)' },
+  blue: { bg: 'rgba(131,100,68,0.15)', text: '#D0B59C', border: 'rgba(131,100,68,0.30)' },
+  brand: { bg: 'rgba(131,100,68,0.20)', text: '#E4D2BF', border: 'rgba(131,100,68,0.40)' },
+  green: { bg: 'rgba( 16,185,129,0.10)', text: '#6ee7b7', border: 'rgba( 16,185,129,0.30)' },
+  amber: { bg: 'rgba(245,158, 11,0.10)', text: '#fcd34d', border: 'rgba(245,158, 11,0.30)' },
+  rose: { bg: 'rgba(244, 63, 94,0.10)', text: '#fda4af', border: 'rgba(244, 63, 94,0.30)' },
+  violet: { bg: 'rgba(139, 92,246,0.10)', text: '#c4b5fd', border: 'rgba(139, 92,246,0.30)' },
 };
 
 export const Badge = ({ tone = 'slate', className, children }) => {
@@ -467,14 +467,8 @@ export const Progress = ({ value = 0, tone = 'blue', className }) => {
   };
 
   return (
-    <div
-      className={cn('h-1.5 w-full rounded-full overflow-hidden', className)}
-      style={{ backgroundColor: 'var(--progress-track)' }}
-    >
-      <div
-        className={cn('h-full rounded-full transition-all duration-500', tones[tone] || 'bg-brand-500')}
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-      />
+    <div style={{ backgroundColor: 'var(--progress-track)' }} className={cn('h-1.5 w-full rounded-full overflow-hidden', className)} >
+      <div style={{ width: `${Math.min(100, Math.max(0, value))}%` }} className={cn('h-full rounded-full transition-all duration-500', tones[tone] || 'bg-brand-500')} />
     </div>
   );
 };
@@ -499,21 +493,9 @@ export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = tr
   };
 
   return (
-    <div
-      className="flex gap-1.5 border-b "
-      style={{ borderColor: 'var(--border)' }}
-    >
+    <div className="flex gap-1.5 border-b " style={{ borderColor: 'var(--border)' }}>
       {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          type="button"
-          onClick={() => handleTabClick(tab.key)}
-          className={cn(
-            'px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
-            active === tab.key
-              ? 'border-brand-500 text-brand-300'
-              : 'border-transparent'
-          )}
+        <button key={tab.key} type="button" onClick={() => handleTabClick(tab.key)} className={cn('px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors', active === tab.key ? 'border-brand-500 text-brand-300' : 'border-transparent')}
           style={active !== tab.key ? { color: 'var(--text-muted)' } : {}}
           onMouseEnter={(e) => {
             if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)';
