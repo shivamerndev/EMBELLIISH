@@ -1,17 +1,17 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 import DashboardLayout from '../layouts/DashboardLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import PrivateRoute from './PrivateRoute';
-
 import Login from '../pages/auth/Login';
 import Dashboard from '../pages/dashboard/Dashboard';
 import LeadsPage from '../pages/crm/LeadsPage';
 import DcmAssignmentPage from '../pages/crm/DcmAssignmentPage';
 import QualificationPage from '../pages/crm/QualificationPage';
 import FollowUpPage from '../pages/crm/FollowUpPage';
-import SalesCommercialsPage from '../pages/crm/SalesCommercialsPage';
+
+// Sales and Commercials Pages
+import SalesCommercialsPage from '../pages/sales/SalesCommercials.jsx';
+
 import ClientsPage from '../pages/crm/ClientsPage';
 import ProjectsPage from '../pages/project/ProjectsPage';
 import ProjectWorkspace from '../pages/project/ProjectWorkspace';
@@ -22,6 +22,7 @@ import ReportsPage from '../pages/reports/ReportsPage';
 import TeamPage from '../pages/team/TeamPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import NotFound from '../pages/NotFound';
+import LeadDetails from '@/pages/sales/LeadDetails.jsx';
 
 export const AppRoutes = () => (
   <Routes>
@@ -39,7 +40,11 @@ export const AppRoutes = () => (
         <Route path="/crm/dcm-assignments" element={<DcmAssignmentPage />} />
         <Route path="/crm/qualification" element={<QualificationPage />} />
         <Route path="/crm/follow-ups" element={<FollowUpPage />} />
-        <Route path="/crm/sales-commercials" element={<SalesCommercialsPage />} />
+
+        {/* Sales and Commercials Sub-Routes */}
+        <Route path="/crm/sales-commercials/leads" element={<SalesCommercialsPage />} />
+        <Route path="/crm/sales-commercials/leads/:LeadCode" element={<LeadDetails/>} />
+
         <Route path="/crm/clients" element={<ClientsPage />} />
 
         <Route path="/projects" element={<ProjectsPage />} />

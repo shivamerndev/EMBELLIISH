@@ -11,6 +11,9 @@ import architectRoutes from '../modules/crm/architect/architect.routes.js';
 import followupRoutes from '../modules/crm/followup/followup.routes.js';
 import quotationRoutes from '../modules/crm/quotation/quotation.routes.js';
 
+// Sales
+import salesRoutes from '../modules/sales/sales.routes.js';
+
 // Project — Steps 4, 5, 6, 11, 12, 19, 20, 21
 import projectRoutes from '../modules/project/project/project.routes.js';
 import roomRoutes from '../modules/project/room/room.routes.js';
@@ -69,6 +72,7 @@ router.use('/crm/clients', clientRoutes);
 router.use('/crm/architects', architectRoutes);
 router.use('/crm/followups', followupRoutes);
 router.use('/crm/quotations', quotationRoutes);
+router.use('/sales', salesRoutes);
 
 router.use('/project/projects', projectRoutes);
 router.use('/project/rooms', roomRoutes);

@@ -266,6 +266,10 @@ export const reportsApi = {
   material: (projectId) => api.get(`/reports/project/${projectId}/material`),
 };
 
+export const salesApi = {
+  fetchApprovedLeads: () => api.get('/sales/leads'),
+};
+
 /* --------------------------------------------------------- Notifications */
 
 export const notificationsApi = {
