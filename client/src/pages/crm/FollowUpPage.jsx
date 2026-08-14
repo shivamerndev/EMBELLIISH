@@ -208,7 +208,7 @@ export const FollowUpPage = () => {
                     <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="p-3 whitespace-nowrap">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
-                        <span className="block text-xs text-brand-600 dark:text-brand-400 font-medium">{row.clientName}</span>
+                        <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                       </td>
                       <td className="p-3 max-w-[260px] truncate text-slate-700 dark:text-slate-300" title={row.nextAction || '—'}>
                         {row.nextAction || '—'}

@@ -2518,7 +2518,7 @@ export const SalesCommercialsPage = () => {
 
   // Read initial/current values from URL search params
   const activeTab = searchParams.get('tab') || 'LEADS';
-  const viewMode = searchParams.get('view') || 'SPREADSHEET'; // 'SPREADSHEET', 'GRID', or 'TABLE'
+  const viewMode = searchParams.get('view') || 'TABLE'; // 'TABLE' (Summary)
   const statusFilter = searchParams.get('status') || 'ALL';
   const budgetFilter = searchParams.get('budget') || 'ALL';
   const selectedSection = searchParams.get('section') || 's1';
@@ -2765,42 +2765,40 @@ export const SalesCommercialsPage = () => {
           <div className="flex items-center gap-2">
 
             <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
-
-
-              <button type="button" onClick={() => updateParam('view', 'SPREADSHEET', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'SPREADSHEET' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
-                <ClipboardList className="w-3.5 h-3.5" /> Sheet Matrix
-              </button>
-
-              <button type="button" onClick={() => updateParam('view', 'GRID', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'GRID' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
-                <LayoutGrid className="w-3.5 h-3.5" /> Grid
-              </button>
-
-              <button type="button" onClick={() => updateParam('view', 'TABLE', 'SPREADSHEET')}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${viewMode === 'TABLE' ? 'bg-brand-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>
+              <button type="button" onClick={() => updateParam('view', 'TABLE', 'TABLE')}
+                className="px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 bg-brand-500 text-slate-950 shadow-sm">
                 <TableIcon className="w-3.5 h-3.5" /> Summary
               </button>
-
             </div>
           </div>
         </div>
 
         {/* Filters Bar */}
-        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-slate-950/40">
+        <div
+          className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 rounded-b-xl border-t transition-colors"
+          style={{
+            backgroundColor: 'var(--bg-hover)',
+            borderColor: 'var(--border)',
+          }}
+        >
           <div className="relative flex-1 min-w-[220px] max-w-md">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2 z-10" />
             <Input
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search lead code, client name, phone or location..."
-              className="pl-9"
+              className="pl-9 text-xs font-medium rounded-lg shadow-sm"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-strong)',
+              }}
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-400 font-medium">Status:</span>
+              <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--text-primary)' }}>Status:</span>
               <Select
                 value={statusFilter}
                 onChange={(e) => updateParam('status', e.target.value, 'ALL')}
@@ -2812,12 +2810,17 @@ export const SalesCommercialsPage = () => {
                   { value: 'CONVERTED', label: 'Converted' },
                   { value: 'LOST', label: 'Lost' },
                 ]}
-                className="w-36 text-xs"
+                className="w-36 text-xs font-medium rounded-lg shadow-sm"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-strong)',
+                }}
               />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-400 font-medium">Budget:</span>
+              <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--text-primary)' }}>Budget:</span>
               <Select
                 value={budgetFilter}
                 onChange={(e) => updateParam('budget', e.target.value, 'ALL')}
@@ -2825,19 +2828,30 @@ export const SalesCommercialsPage = () => {
                   { value: 'ALL', label: 'All Budget Tiers' },
                   ...BUDGET_CLASSIFICATIONS,
                 ]}
-                className="w-44 text-xs"
+                className="w-44 text-xs font-medium rounded-lg shadow-sm"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-strong)',
+                }}
               />
             </div>
 
             {(statusFilter !== 'ALL' || budgetFilter !== 'ALL' || search || (selectedSection && selectedSection !== 's1')) && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={resetFilters}
-                className="text-xs text-slate-400 hover:text-slate-200"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all shadow-sm"
+                style={{
+                  color: 'var(--color-primary)',
+                  borderColor: 'var(--border-strong)',
+                  backgroundColor: 'var(--bg-surface)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-input-deep)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface)'; }}
               >
                 Reset Filters
-              </Button>
+              </button>
             )}
           </div>
         </div>

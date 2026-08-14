@@ -19,8 +19,8 @@
     /* warm cream */
     --bg-surface: #FFFFFF;
     /* white card */
-    --bg-surface-alt: #3D2A21;
-    /* warm off-white (header/sidebar) */
+    --bg-surface-alt: #FAF7F4;
+    /* bronze brown — sidebar & header */
     --bg-hover: #F0E8DF;
     /* hover state */
     --bg-input: #FFFFFF;
@@ -31,18 +31,18 @@
     /* Borders */
     --border: #E8DDD4;
     /* light warm border */
-    --border-strong: #D4C4B0;
+    --border-strong: #3D2A21;
     /* stronger border */
 
     /* Text */
     --text-primary: #2C1F12;
-    /* dark warm brown */
-    --text-secondary: #6B5240;
-    /* medium warm brown */
-    --text-muted: #9B8878;
-    /* muted warm */
-    --text-faint: #B8A898;
-    /* very faint */
+    /* dark espresso brown — headings & body */
+    --text-secondary: #5A4332;
+    /* rich dark brown — secondary text */
+    --text-muted: #6E5948;
+    /* dark warm taupe — muted text */
+    --text-faint: #8C7866;
+    /* visible faint text */
 
     /* Scrollbar */
     --scrollbar-thumb: rgba(180, 150, 120, 0.5);

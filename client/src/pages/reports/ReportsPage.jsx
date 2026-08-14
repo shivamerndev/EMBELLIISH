@@ -222,8 +222,8 @@ export const ReportsPage = () => {
                 key: 'source',
                 header: 'Source Channel',
                 render: (row) => (
-                  <Badge tone="brand">
-                    {String(row.source).replace(/_/g, ' ')}
+                  <Badge tone="amber">
+                    {String(row.source || '—').replace(/_/g, ' ')}
                   </Badge>
                 ),
               },
@@ -237,7 +237,7 @@ export const ReportsPage = () => {
                 key: 'converted',
                 header: 'Converted',
                 align: 'right',
-                render: (row) => <span className="text-emerald-400 font-semibold">{row.converted}</span>,
+                render: (row) => <span className="text-emerald-500 dark:text-emerald-400 font-bold">{row.converted}</span>,
               },
               {
                 key: 'conversionRate',
@@ -272,8 +272,8 @@ export const ReportsPage = () => {
                 header: 'Architect / Firm',
                 render: (row) => (
                   <div>
-                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{row.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{row.firm}</p>
+                    <p className="font-bold text-slate-900 dark:text-slate-100">{row.name || row.architectName || '—'}</p>
+                    {row.firm && <p className="text-xs text-slate-600 dark:text-slate-400">{row.firm}</p>}
                   </div>
                 ),
               },

@@ -174,28 +174,24 @@ export const Checkbox = ({ label, className, ...props }) => (
 /* -------------------------------------------------------------------- status */
 
 const BADGE_TONES = {
-  slate: { bg: 'var(--bg-hover)', text: 'var(--text-secondary)', border: 'var(--border-strong)' },
-  blue: { bg: 'rgba(131,100,68,0.15)', text: '#D0B59C', border: 'rgba(131,100,68,0.30)' },
-  brand: { bg: 'rgba(131,100,68,0.20)', text: '#E4D2BF', border: 'rgba(131,100,68,0.40)' },
-  green: { bg: 'rgba( 16,185,129,0.10)', text: '#6ee7b7', border: 'rgba( 16,185,129,0.30)' },
-  amber: { bg: 'rgba(245,158, 11,0.10)', text: '#fcd34d', border: 'rgba(245,158, 11,0.30)' },
-  rose: { bg: 'rgba(244, 63, 94,0.10)', text: '#fda4af', border: 'rgba(244, 63, 94,0.30)' },
-  violet: { bg: 'rgba(139, 92,246,0.10)', text: '#c4b5fd', border: 'rgba(139, 92,246,0.30)' },
+  slate: 'bg-slate-200 text-slate-900 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+  blue: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/40',
+  brand: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40',
+  green: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40',
+  amber: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40',
+  rose: 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40',
+  violet: 'bg-violet-100 text-violet-900 border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/40',
 };
 
 export const Badge = ({ tone = 'slate', className, children }) => {
-  const colors = BADGE_TONES[tone] || BADGE_TONES.slate;
+  const badgeClasses = BADGE_TONES[tone] || BADGE_TONES.slate;
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border whitespace-nowrap',
+        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap shadow-sm',
+        badgeClasses,
         className
       )}
-      style={{
-        backgroundColor: colors.bg,
-        color: colors.text,
-        borderColor: colors.border,
-      }}
     >
       {children}
     </span>
