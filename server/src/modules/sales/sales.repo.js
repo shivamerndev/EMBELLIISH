@@ -10,6 +10,7 @@ const findApprovedLeads = async () => {
   })
     .populate('architect', 'name firm phone')
     .populate('assignedDCM', 'name email role')
+    .populate('assignedInstaller', 'name email role')
     .populate('qualifiedBy', 'name email')
     .sort({ updatedAt: -1 })
     .lean();

@@ -12,6 +12,7 @@ const fetchApprovedLeadsService = async () => {
     const isSiteVisitRequired = lead.siteVisitRequired !== false;
 
     return {
+      ...lead,
       _id: lead._id,
       id: lead._id,
       sno: index + 1,
@@ -20,6 +21,10 @@ const fetchApprovedLeadsService = async () => {
       architectName: lead.architectName || lead.architect?.name || '',
       location: lead.location || '',
       siteVisitRequired: isSiteVisitRequired,
+      siteVisitDueDate: lead.siteVisitDueDate,
+      actualSiteVisitDateTime: lead.actualSiteVisitDateTime,
+      siteAddress: lead.siteAddress || lead.location || '',
+      assignedInstaller: lead.assignedInstaller,
     };
   });
 };

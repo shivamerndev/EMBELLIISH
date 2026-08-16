@@ -255,7 +255,7 @@ const LeadDetails = ({ onClose: propOnClose, onEdit: propOnEdit, onAssign: propO
 
                             <div className="p-2.5 bg-slate-950/60 border border-slate-800 rounded-lg">
                                 <span className="text-slate-400 block text-[10px] uppercase">Installer Availability</span>
-                                <Badge tone={lead.installerAvailability === 'AVAILABLE' ? 'emerald' : lead.installerAvailability === 'BUSY' ? 'amber' : lead.installerAvailability === 'ON_SITE' ? 'blue' : 'slate'}>
+                                <Badge tone={lead.installerAvailability === 'AVAILABLE' ? 'emerald' : lead.installerAvailability === 'BUSY' ? 'amber' : lead.installerAvailability === 'ON_SITE' ? 'blue' : lead.installerAvailability === 'UNAVAILABLE' ? 'rose' : 'slate'}>
                                     {lead.installerAvailability || 'AVAILABLE'}
                                 </Badge>
                             </div>
