@@ -53,8 +53,21 @@ const leadSchema = new mongoose.Schema(
     },
     attachmentUrl: String,
 
-    // --- Sales & Commercials: Site Visit requirement flag.
+    // --- Sales & Commercials: Site Visit requirement flag and dates.
     siteVisitRequired: { type: Boolean, default: true },
+    siteVisitDueDate: Date,
+    actualSiteVisitDateTime: Date,
+    siteAddress: String,
+    assignedInstaller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    clientArchitectAvailability: String,
+    scope: String,
+    rooms: String,
+    drawingsRenders: String,
+    installerAvailability: {
+      type: String,
+      enum: ['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE'],
+      default: 'AVAILABLE',
+    },
 
     // --- Sales & Commercials: Measurement.
     measurement: {
