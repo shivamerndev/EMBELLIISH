@@ -76,7 +76,7 @@ const leadSchema = new mongoose.Schema(
       measuredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       status: {
         type: String,
-        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED'],
+        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required'],
         default: 'PENDING',
       },
       siteAccess: String,

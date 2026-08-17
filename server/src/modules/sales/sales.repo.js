@@ -12,6 +12,8 @@ const findApprovedLeads = async () => {
     .populate('assignedDCM', 'name email role')
     .populate('assignedInstaller', 'name email role')
     .populate('qualifiedBy', 'name email')
+    .populate('measurement.measuredBy', 'name email')
+    .populate('readySize.confirmedBy', 'name email')
     .sort({ updatedAt: -1 })
     .lean();
 };

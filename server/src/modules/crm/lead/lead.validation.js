@@ -24,7 +24,7 @@ const measurementSchema = z
     dueDate: z.coerce.date().optional(),
     date: z.coerce.date().optional(),
     measuredBy: objectId.optional(),
-    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED']).optional(),
+    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required']).optional(),
     siteAccess: z.string().optional(),
     attachments: z.array(attachmentItemSchema).optional(),
     roomList: z.string().optional(),
