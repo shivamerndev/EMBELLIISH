@@ -384,6 +384,8 @@ const LeadDetails = ({ onClose: propOnClose, onEdit: propOnEdit, onAssign: propO
                             <InfoTile label="Unit" value={lead.consumption?.unit} />
                             <InfoTile label="Wastage Allowance" value={lead.consumption?.wastageAllowance} />
                             <InfoTile label="BOQ / Consumption Sheet Version" value={lead.consumption?.boqVersion} />
+                            <InfoTile label="BOQ Prepared By" value={typeof lead.consumption?.boqPreparedBy === 'object' ? lead.consumption?.boqPreparedBy?.name : lead.consumption?.boqPreparedBy} />
+                            <InfoTile label="BOQ Prepared Date" value={lead.consumption?.boqPreparedDate ? date(lead.consumption.boqPreparedDate) : null} />
                             <InfoTile label="Panel Count" value={lead.consumption?.panelCount} />
                             <InfoTile label="Fabric / Design Selection" value={lead.consumption?.fabricDesignSelection} />
                             <InfoTile label="Lining / Accessory Assumptions" value={lead.consumption?.liningAccessoryAssumptions} />
@@ -418,6 +420,8 @@ const LeadDetails = ({ onClose: propOnClose, onEdit: propOnEdit, onAssign: propO
                             <InfoTile label="Proposal Date" value={lead.proposal?.date ? date(lead.proposal.date) : null} />
                             <InfoTile label="Design Direction" value={lead.proposal?.designDirection} />
                             <InfoTile label="Pricing Range" value={lead.proposal?.pricingRange} />
+                            <InfoTile label="Approval Status" value={lead.proposal?.approvalStatus || 'PENDING'} />
+                            <InfoTile label="Approved By" value={lead.proposal?.approvedBy || 'Hitesh / Senior DCM'} />
                         </div>
                         {lead.proposal?.clientBrief && (
                             <div className="p-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-xs">

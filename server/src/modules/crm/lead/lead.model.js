@@ -76,7 +76,7 @@ const leadSchema = new mongoose.Schema(
       measuredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       status: {
         type: String,
-        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED'],
+        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required'],
         default: 'PENDING',
       },
       siteAccess: String,
@@ -127,6 +127,8 @@ const leadSchema = new mongoose.Schema(
       wastageAllowance: String,
       boqVersion: String,
       roomList: String,
+      boqPreparedBy: String,
+      boqPreparedDate: Date,
       fabricDesignSelection: String,
       panelCount: Number,
       liningAccessoryAssumptions: String,
@@ -143,6 +145,12 @@ const leadSchema = new mongoose.Schema(
       pricingRange: String,
       terms: String,
       refundRevisionClause: String,
+      approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
+        default: 'PENDING',
+      },
+      approvedBy: String,
     },
 
     // --- Sales & Commercials: Token / advance discussion.

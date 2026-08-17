@@ -24,7 +24,7 @@ const measurementSchema = z
     dueDate: z.coerce.date().optional(),
     date: z.coerce.date().optional(),
     measuredBy: objectId.optional(),
-    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED']).optional(),
+    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required']).optional(),
     siteAccess: z.string().optional(),
     attachments: z.array(attachmentItemSchema).optional(),
     roomList: z.string().optional(),
@@ -76,6 +76,8 @@ const consumptionSchema = z
     wastageAllowance: z.string().optional(),
     boqVersion: z.string().optional(),
     roomList: z.string().optional(),
+    boqPreparedBy: z.string().optional(),
+    boqPreparedDate: z.coerce.date().optional(),
     fabricDesignSelection: z.string().optional(),
     panelCount: z.coerce.number().int().optional(),
     liningAccessoryAssumptions: z.string().optional(),
@@ -93,6 +95,8 @@ const proposalSchema = z
     pricingRange: z.string().optional(),
     terms: z.string().optional(),
     refundRevisionClause: z.string().optional(),
+    approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
+    approvedBy: z.string().optional(),
   })
   .optional();
 
