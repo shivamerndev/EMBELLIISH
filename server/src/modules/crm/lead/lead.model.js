@@ -127,6 +127,8 @@ const leadSchema = new mongoose.Schema(
       wastageAllowance: String,
       boqVersion: String,
       roomList: String,
+      boqPreparedBy: String,
+      boqPreparedDate: Date,
       fabricDesignSelection: String,
       panelCount: Number,
       liningAccessoryAssumptions: String,
@@ -143,6 +145,12 @@ const leadSchema = new mongoose.Schema(
       pricingRange: String,
       terms: String,
       refundRevisionClause: String,
+      approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
+        default: 'PENDING',
+      },
+      approvedBy: String,
     },
 
     // --- Sales & Commercials: Token / advance discussion.

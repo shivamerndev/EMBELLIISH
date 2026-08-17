@@ -43,6 +43,7 @@ const settingsSchema = z.object({
       bankAccount: z.string().optional(),
       bankIfsc: z.string().optional(),
       termsAndConditions: z.string().optional(),
+      refundRevisionClause: z.string().optional(),
       quotationValidityDays: z.coerce.number().int().positive().optional(),
     })
     .optional(),

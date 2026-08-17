@@ -34,6 +34,8 @@ const settingsSchema = new mongoose.Schema(
       bankIfsc: String,
       /** Printed at the foot of every proposal and quotation. */
       termsAndConditions: String,
+      /** Approved master refund & revision clause. */
+      refundRevisionClause: String,
       quotationValidityDays: { type: Number, default: 15 },
     },
 

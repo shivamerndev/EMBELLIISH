@@ -76,6 +76,8 @@ const consumptionSchema = z
     wastageAllowance: z.string().optional(),
     boqVersion: z.string().optional(),
     roomList: z.string().optional(),
+    boqPreparedBy: z.string().optional(),
+    boqPreparedDate: z.coerce.date().optional(),
     fabricDesignSelection: z.string().optional(),
     panelCount: z.coerce.number().int().optional(),
     liningAccessoryAssumptions: z.string().optional(),
@@ -93,6 +95,8 @@ const proposalSchema = z
     pricingRange: z.string().optional(),
     terms: z.string().optional(),
     refundRevisionClause: z.string().optional(),
+    approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
+    approvedBy: z.string().optional(),
   })
   .optional();
 
