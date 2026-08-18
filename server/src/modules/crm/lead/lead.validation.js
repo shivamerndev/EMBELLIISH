@@ -123,8 +123,15 @@ const costingSchema = z
     landedCost: z.coerce.number().optional(),
     localFabricCost: z.coerce.number().optional(),
     labourCost: z.coerce.number().optional(),
+    totalCost: z.coerce.number().optional(),
+    calculatedMargin: z.coerce.number().optional(),
     sampleCost: z.coerce.number().optional(),
     marginModel: z.string().optional(),
+    minMarginThreshold: z.coerce.number().optional(),
+    maxDiscountThreshold: z.coerce.number().optional(),
+    hiteshApprovalRequired: z.boolean().optional(),
+    hiteshApprovalStatus: z.enum(['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED']).optional(),
+    hiteshApprovalNotes: z.string().optional(),
   })
   .optional();
 

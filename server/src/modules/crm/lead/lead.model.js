@@ -179,8 +179,19 @@ const leadSchema = new mongoose.Schema(
       landedCost: Number,
       localFabricCost: Number,
       labourCost: Number,
+      totalCost: Number,
+      calculatedMargin: Number,
       sampleCost: Number,
       marginModel: String,
+      minMarginThreshold: { type: Number, default: 25 },
+      maxDiscountThreshold: { type: Number, default: 15 },
+      hiteshApprovalRequired: { type: Boolean, default: false },
+      hiteshApprovalStatus: {
+        type: String,
+        enum: ['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED'],
+        default: 'NOT_REQUIRED',
+      },
+      hiteshApprovalNotes: String,
     },
 
     // --- Sales & Commercials: Quotation.
