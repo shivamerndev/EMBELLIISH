@@ -550,7 +550,7 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
 
     const handleViewLead = (lead) => {
         if (lead?.code) {
-            navigate(`/crm/sales-commercials/leads/${lead.code}`);
+            navigate(`/crm/sales-commercials/leads/${lead.code}?tab=measurement`);
         }
     };
 

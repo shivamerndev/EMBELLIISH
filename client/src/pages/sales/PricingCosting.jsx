@@ -473,7 +473,7 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
 
     const handleViewLead = (lead) => {
         if (lead?.code) {
-            navigate(`/crm/sales-commercials/leads/${lead.code}`);
+            navigate(`/crm/sales-commercials/leads/${lead.code}?tab=pricing-costing`);
         }
     };
 

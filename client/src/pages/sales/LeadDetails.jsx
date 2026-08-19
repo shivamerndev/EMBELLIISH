@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2 } from 'lucide-react';
 import { Badge, StatusBadge, Loading } from '../../components/ui';
 import { currency, date, humanise } from '../../utils/format';
 import { useSelector } from "react-redux";
 import useSales from "../../hooks/useSales";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 
 /** Compact label/value tile used across the Sales & Commercials detail panels. */
@@ -38,27 +38,41 @@ const AttachmentLinks = ({ label, files }) => (
     </div>
 );
 
+const DETAIL_TABS = [
+    { id: 'leads', label: '1. Leads (Qualified)', icon: User },
+    { id: 'pre-site', label: '2. Pre Site Visit', icon: MapPin },
+    { id: 'measurement', label: '3. Measurement Capture', icon: Ruler },
+    { id: 'studio-meeting', label: '4. Studio Meeting', icon: CalendarCheck2 },
+    { id: 'ready-size', label: '5. Ready Size Confirmation', icon: ClipboardList },
+    { id: 'consumption-boq', label: '6. Consumption / BOQ', icon: FileText },
+    { id: 'proposal', label: '7. Proposal Creation', icon: ReceiptText },
+    { id: 'token-discussion', label: '8. Token Discussion', icon: Wallet },
+    { id: 'pricing-costing', label: '9. Pricing & Costing', icon: BadgeDollarSign },
+    { id: 'quotation', label: '10. Quotation Prep', icon: ReceiptText },
+    { id: 'client-approval', label: '11. Client Approval', icon: ShieldCheck },
+    { id: 'kyc', label: '12. KYC & Conversion', icon: PresentationIcon },
+];
+
 const LeadDetails = () => {
 
     const { LeadCode, code } = useParams();
     const targetCode = LeadCode || code;
 
-    const [activeDetailTab, setActiveDetailTab] = useState('leads');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeDetailTab = searchParams.get('tab') && DETAIL_TABS.some(t => t.id === searchParams.get('tab'))
+        ? searchParams.get('tab')
+        : 'leads';
 
-    const DETAIL_TABS = [
-        { id: 'leads', label: '1. Leads (Qualified)', icon: User },
-        { id: 'pre-site', label: '2. Pre Site Visit', icon: MapPin },
-        { id: 'measurement', label: '3. Measurement Capture', icon: Ruler },
-        { id: 'studio-meeting', label: '4. Studio Meeting', icon: CalendarCheck2 },
-        { id: 'ready-size', label: '5. Ready Size Confirmation', icon: ClipboardList },
-        { id: 'consumption-boq', label: '6. Consumption / BOQ', icon: FileText },
-        { id: 'proposal', label: '7. Proposal Creation', icon: ReceiptText },
-        { id: 'token-discussion', label: '8. Token Discussion', icon: Wallet },
-        { id: 'pricing-costing', label: '9. Pricing & Costing', icon: BadgeDollarSign },
-        { id: 'quotation', label: '10. Quotation Prep', icon: ReceiptText },
-        { id: 'client-approval', label: '11. Client Approval', icon: ShieldCheck },
-        { id: 'kyc', label: '12. KYC & Conversion', icon: PresentationIcon },
-    ];
+  const handleTabChange = (tabId) => {
+        setSearchParams(
+            (prev) => {
+                const next = new URLSearchParams(prev);
+                next.set('tab', tabId);
+                return next;
+            },
+            { replace: true }
+        );
+    };
 
     const { handleGetLead } = useSales();
     const lead = useSelector((state) => state.sales?.currentLead);
@@ -128,7 +142,7 @@ const LeadDetails = () => {
                         <button
                             key={tab.id}
                             type="button"
-                            onClick={() => setActiveDetailTab(tab.id)}
+                            onClick={() => handleTabChange(tab.id)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${
                                 isActive
                                     ? 'bg-brand-600 dark:bg-brand-500 text-white font-semibold shadow-xs'
