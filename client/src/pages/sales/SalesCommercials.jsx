@@ -365,7 +365,7 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
 
     const handleViewLead = (lead) => {
         if (lead?.code) {
-            navigate(`/crm/sales-commercials/leads/${lead.code}`);
+            navigate(`/crm/sales-commercials/leads/${lead.code}?tab=leads`);
         }
     };
 
