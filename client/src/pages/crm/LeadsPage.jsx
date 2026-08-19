@@ -18,74 +18,6 @@ const STATUS_TABS = [
   { key: 'LOST', label: 'Lost' },
 ];
 
-const INITIAL_SAMPLE_LEADS = [
-  {
-    _id: 'seed-ld-001',
-    code: 'LD/001',
-    createdAt: '2026-08-04T12:24:00.000Z',
-    captureDateTime: '08/04/2026 12:24',
-    contactPerson: 'Saskhi',
-    phone: '12345678',
-    email: 'asc@gamil.com',
-    source: 'Architect Referral',
-    clientName: 'D-table Anlytics',
-    architectName: 'Wintek',
-    indicativeBudget: '15 L',
-    budgetClassification: 'A',
-    location: 'Aurangabad',
-    previousClientRelationship: false,
-    existingRelationshipOwner: 'NA',
-    requirementSummary: 'As per given documnet',
-    architectInvolved: 'Yes',
-    attachmentUrl: 'https://drive.google.com/open?id=1hvXHIl8QaQlyZMCK8',
-    status: 'NEW',
-  },
-  {
-    _id: 'seed-ld-002',
-    code: 'LD-002',
-    createdAt: '2026-08-04T12:25:00.000Z',
-    captureDateTime: '08/04/2026 12:25',
-    contactPerson: 'Rani',
-    phone: '12345678',
-    email: 'asc@gamil.com',
-    source: 'Direct Client',
-    clientName: 'Amazon',
-    architectName: 'Supremo',
-    indicativeBudget: '1 Cr',
-    budgetClassification: 'B',
-    location: 'Mumbai',
-    previousClientRelationship: true,
-    existingRelationshipOwner: 'Sakshi',
-    requirementSummary: 'NA',
-    architectInvolved: 'No',
-    attachmentUrl: 'https://drive.google.com/open?id=1vIB7aQQDHyv1q9FhYwMw8mWPO',
-    status: 'QUALIFIED',
-  },
-  {
-    _id: 'seed-ld-003',
-    code: 'LD-003',
-    createdAt: '2026-08-04T12:25:00.000Z',
-    captureDateTime: '08/04/2026 12:25',
-    contactPerson: 'Punam',
-    phone: '12345678',
-    email: 'asc@gamil.com',
-    source: 'Existing Client',
-    clientName: 'Prime',
-    architectName: 'Studio RJ',
-    indicativeBudget: '15 L',
-    budgetClassification: 'C',
-    location: 'Pune',
-    previousClientRelationship: false,
-    existingRelationshipOwner: 'NA',
-    requirementSummary: 'Refere attch document',
-    architectInvolved: 'Not Known',
-    attachmentUrl: 'https://drive.google.com/open?id=1hvXHIl8QaQlyZMCK8',
-    status: 'NEW',
-  },
-];
-
-
-/* ------------------------------------------------------------- Lead Badges */
 
 const BudgetClassBadge = ({ value }) => {
   const styles = {
@@ -495,7 +427,7 @@ export const LeadsPage = () => {
 
   // Merge server records with fallback initial sample rows if server returns empty list
   const apiItems = data?.items || [];
-  const leadsList = apiItems.length > 0 ? apiItems : INITIAL_SAMPLE_LEADS;
+  const leadsList = apiItems || []
 
   const filteredLeads = leadsList.filter((lead) => {
     if (!search) return true;

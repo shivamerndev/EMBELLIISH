@@ -53,8 +53,21 @@ const leadSchema = new mongoose.Schema(
     },
     attachmentUrl: String,
 
-    // --- Sales & Commercials: Site Visit requirement flag.
+    // --- Sales & Commercials: Site Visit requirement flag and dates.
     siteVisitRequired: { type: Boolean, default: true },
+    siteVisitDueDate: Date,
+    actualSiteVisitDateTime: Date,
+    siteAddress: String,
+    assignedInstaller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    clientArchitectAvailability: String,
+    scope: String,
+    rooms: String,
+    drawingsRenders: String,
+    installerAvailability: {
+      type: String,
+      enum: ['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE'],
+      default: 'AVAILABLE',
+    },
 
     // --- Sales & Commercials: Measurement.
     measurement: {
@@ -63,7 +76,7 @@ const leadSchema = new mongoose.Schema(
       measuredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       status: {
         type: String,
-        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED'],
+        enum: ['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required'],
         default: 'PENDING',
       },
       siteAccess: String,
@@ -114,6 +127,8 @@ const leadSchema = new mongoose.Schema(
       wastageAllowance: String,
       boqVersion: String,
       roomList: String,
+      boqPreparedBy: String,
+      boqPreparedDate: Date,
       fabricDesignSelection: String,
       panelCount: Number,
       liningAccessoryAssumptions: String,
@@ -130,6 +145,12 @@ const leadSchema = new mongoose.Schema(
       pricingRange: String,
       terms: String,
       refundRevisionClause: String,
+      approvalStatus: {
+        type: String,
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
+        default: 'PENDING',
+      },
+      approvedBy: String,
     },
 
     // --- Sales & Commercials: Token / advance discussion.
@@ -158,8 +179,19 @@ const leadSchema = new mongoose.Schema(
       landedCost: Number,
       localFabricCost: Number,
       labourCost: Number,
+      totalCost: Number,
+      calculatedMargin: Number,
       sampleCost: Number,
       marginModel: String,
+      minMarginThreshold: { type: Number, default: 25 },
+      maxDiscountThreshold: { type: Number, default: 15 },
+      hiteshApprovalRequired: { type: Boolean, default: false },
+      hiteshApprovalStatus: {
+        type: String,
+        enum: ['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED'],
+        default: 'NOT_REQUIRED',
+      },
+      hiteshApprovalNotes: String,
     },
 
     // --- Sales & Commercials: Quotation.
@@ -189,6 +221,7 @@ const leadSchema = new mongoose.Schema(
     // --- Sales & Commercials: Client approval.
     approval: {
       planned: String,
+      clientApprovalDate: String,
       clientApprovalStatus: {
         type: String,
         enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
@@ -196,6 +229,20 @@ const leadSchema = new mongoose.Schema(
       },
       proofAttachment: [attachmentSchema],
       finalApprovedVersion: String,
+      revisions: [
+        {
+          revisionNumber: Number,
+          clientApprovalStatus: String,
+          finalApprovedVersion: String,
+          clientSelection: String,
+          fabricSelection: String,
+          designDirection: String,
+          revisionNotes: String,
+          changeReason: String,
+          revisedAt: { type: Date, default: Date.now },
+          proofAttachment: [attachmentSchema],
+        },
+      ],
     },
 
     // --- Sales & Commercials: Presentation.
@@ -205,6 +252,21 @@ const leadSchema = new mongoose.Schema(
       fabricSelection: String,
       designDirection: String,
       revisionNotes: String,
+    },
+
+    // --- Sales & Commercials: KYC Verification.
+    kyc: {
+      dueDate: Date,
+      actualDate: Date,
+      status: {
+        type: String,
+        enum: ['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
+        default: 'PENDING',
+      },
+      verifiedDocuments: [attachmentSchema],
+      documentTypes: [String],
+      remarks: String,
+      verifiedBy: String,
     },
 
     // --- Qualification (Step 2).

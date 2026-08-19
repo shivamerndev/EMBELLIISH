@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import store from './app/store';
-import AppRoutes from './routes';
-import { loadProfile } from './features/auth/authSlice';
-import { loadMeta } from './features/meta/metaSlice';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
+import store from '../store/store';
+import AppRoutes from '../routes';
+import { loadProfile } from '../features/auth/authSlice';
+import { loadMeta } from '../features/meta/metaSlice';
+import PWAInstallPrompt from '../components/PWAInstallPrompt';
 
 // Import themeSlice so the theme class is applied to <html>
 // as early as possible (before first render), preventing FOUC.
-import './features/theme/themeSlice';
+import '../features/theme/themeSlice';
 
 /**
  * On boot: re-validate any stored token, and pull the workflow vocabulary the

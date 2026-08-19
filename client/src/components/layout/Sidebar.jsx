@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
@@ -42,19 +42,18 @@ const NAV = [
       {
         label: 'Sales and Commercials',
         children: [
-          { label: 'Leads', path: '/crm/sales-commercials?section=s1' },
-          { label: 'Lead Source', path: '/crm/sales-commercials?section=s2' },
-          { label: 'Pre Site Visit', path: '/crm/sales-commercials?section=s3' },
-          { label: 'Measurement Capture', path: '/crm/sales-commercials?section=s4' },
-          { label: 'Studio Meeting', path: '/crm/sales-commercials?section=s5' },
-          { label: 'Ready Size Confirmation', path: '/crm/sales-commercials?section=s6' },
-          { label: 'Consumption Sheet/BOQ Dashboard', path: '/crm/sales-commercials?section=s7' },
-          { label: 'Proposal Creation', path: '/crm/sales-commercials?section=s8' },
-          { label: 'Budgeting/Token Discussion', path: '/crm/sales-commercials?section=s9' },
-          { label: 'Pricing/Material Costing', path: '/crm/sales-commercials?section=s10' },
-          { label: 'Quotation Preparation', path: '/crm/sales-commercials?section=s11' },
-          { label: 'Client Approval', path: '/crm/sales-commercials?section=s12' },
-          { label: 'Presentation', path: '/crm/sales-commercials?section=s13' },
+          { label: 'Leads - (Qualified Decision)', path: '/crm/sales-commercials/leads' },
+          { label: 'Pre Site Visit', path: '/crm/sales-commercials/pre-site-visit' },
+          { label: 'Measurement Capture', path: '/crm/sales-commercials/measurement' },
+          { label: 'Studio Meeting', path: '/crm/sales-commercials/studio-meeting' },
+          { label: 'Ready Size Confirmation', path: '/crm/sales-commercials/ready-size' },
+          { label: 'Consumption Sheet/BOQ Dashboard', path: '/crm/sales-commercials/consumption-boq' },
+          { label: 'Proposal Creation', path: '/crm/sales-commercials/proposal' },
+          { label: 'Budgeting/Token Discussion', path: '/crm/sales-commercials/token-discussion' },
+          { label: 'Pricing/Material Costing', path: '/crm/sales-commercials/pricing-costing' },
+          { label: 'Quotation Preparation', path: '/crm/sales-commercials/quotation' },
+          { label: 'Client Approval', path: '/crm/sales-commercials/client-approval' },
+          { label: "KYC/Customer Conversion", path: '/crm/sales-commercials/kyc'}
         ],
       },
     ],

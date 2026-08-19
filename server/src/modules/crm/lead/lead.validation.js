@@ -24,7 +24,7 @@ const measurementSchema = z
     dueDate: z.coerce.date().optional(),
     date: z.coerce.date().optional(),
     measuredBy: objectId.optional(),
-    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED']).optional(),
+    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required']).optional(),
     siteAccess: z.string().optional(),
     attachments: z.array(attachmentItemSchema).optional(),
     roomList: z.string().optional(),
@@ -76,6 +76,8 @@ const consumptionSchema = z
     wastageAllowance: z.string().optional(),
     boqVersion: z.string().optional(),
     roomList: z.string().optional(),
+    boqPreparedBy: z.string().optional(),
+    boqPreparedDate: z.coerce.date().optional(),
     fabricDesignSelection: z.string().optional(),
     panelCount: z.coerce.number().int().optional(),
     liningAccessoryAssumptions: z.string().optional(),
@@ -93,6 +95,8 @@ const proposalSchema = z
     pricingRange: z.string().optional(),
     terms: z.string().optional(),
     refundRevisionClause: z.string().optional(),
+    approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
+    approvedBy: z.string().optional(),
   })
   .optional();
 
@@ -119,8 +123,15 @@ const costingSchema = z
     landedCost: z.coerce.number().optional(),
     localFabricCost: z.coerce.number().optional(),
     labourCost: z.coerce.number().optional(),
+    totalCost: z.coerce.number().optional(),
+    calculatedMargin: z.coerce.number().optional(),
     sampleCost: z.coerce.number().optional(),
     marginModel: z.string().optional(),
+    minMarginThreshold: z.coerce.number().optional(),
+    maxDiscountThreshold: z.coerce.number().optional(),
+    hiteshApprovalRequired: z.boolean().optional(),
+    hiteshApprovalStatus: z.enum(['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED']).optional(),
+    hiteshApprovalNotes: z.string().optional(),
   })
   .optional();
 
@@ -145,12 +156,27 @@ const quotationDetailsSchema = z
   })
   .optional();
 
+const approvalRevisionItemSchema = z.object({
+  revisionNumber: z.coerce.number().optional(),
+  clientApprovalStatus: z.string().optional(),
+  finalApprovedVersion: z.string().optional(),
+  clientSelection: z.string().optional(),
+  fabricSelection: z.string().optional(),
+  designDirection: z.string().optional(),
+  revisionNotes: z.string().optional(),
+  changeReason: z.string().optional(),
+  revisedAt: z.union([z.string(), z.date()]).optional(),
+  proofAttachment: z.array(attachmentItemSchema).optional(),
+});
+
 const approvalSchema = z
   .object({
     planned: z.string().optional(),
+    clientApprovalDate: z.string().optional(),
     clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
     proofAttachment: z.array(attachmentItemSchema).optional(),
     finalApprovedVersion: z.string().optional(),
+    revisions: z.array(approvalRevisionItemSchema).optional(),
   })
   .optional();
 
@@ -161,6 +187,18 @@ const presentationSchema = z
     fabricSelection: z.string().optional(),
     designDirection: z.string().optional(),
     revisionNotes: z.string().optional(),
+  })
+  .optional();
+
+const kycSchema = z
+  .object({
+    dueDate: z.union([z.string(), z.date()]).optional(),
+    actualDate: z.union([z.string(), z.date()]).optional(),
+    status: z.enum(['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
+    verifiedDocuments: z.array(attachmentItemSchema).optional(),
+    documentTypes: z.array(z.string()).optional(),
+    remarks: z.string().optional(),
+    verifiedBy: z.string().optional(),
   })
   .optional();
 
@@ -223,6 +261,15 @@ const createLeadSchema = z.object({
   overallLeadStatus: z.enum(['IN_PROGRESS', 'APPROVED', 'REJECTED', 'ON_HOLD']).optional(),
 
   siteVisitRequired: z.boolean().optional(),
+  siteVisitDueDate: z.coerce.date().optional(),
+  actualSiteVisitDateTime: z.coerce.date().optional(),
+  siteAddress: z.string().optional(),
+  assignedInstaller: objectId.optional().nullable(),
+  clientArchitectAvailability: z.string().optional(),
+  scope: z.string().optional(),
+  rooms: z.string().optional(),
+  drawingsRenders: z.string().optional(),
+  installerAvailability: z.enum(['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE']).optional(),
   measurement: measurementSchema,
   studioMeeting: studioMeetingSchema,
   readySize: readySizeSchema,
@@ -233,6 +280,7 @@ const createLeadSchema = z.object({
   quotation: quotationDetailsSchema,
   approval: approvalSchema,
   presentation: presentationSchema,
+  kyc: kycSchema,
 });
 
 const updateLeadSchema = createLeadSchema.partial();
