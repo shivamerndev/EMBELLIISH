@@ -221,6 +221,7 @@ const leadSchema = new mongoose.Schema(
     // --- Sales & Commercials: Client approval.
     approval: {
       planned: String,
+      clientApprovalDate: String,
       clientApprovalStatus: {
         type: String,
         enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],

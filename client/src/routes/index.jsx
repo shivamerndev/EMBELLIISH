@@ -22,7 +22,6 @@ import TokenDiscussion from '../pages/sales/TokenDiscussion.jsx';
 import PricingCosting from '../pages/sales/PricingCosting.jsx';
 import QuotationPreparation from '../pages/sales/QuotationPreparation.jsx';
 import ClientApproval from '../pages/sales/ClientApproval.jsx';
-import Presentation from '../pages/sales/Presentation.jsx';
 
 import ClientsPage from '../pages/crm/ClientsPage';
 import ProjectsPage from '../pages/project/ProjectsPage';
@@ -34,6 +33,7 @@ import ReportsPage from '../pages/reports/ReportsPage';
 import TeamPage from '../pages/team/TeamPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import NotFound from '../pages/NotFound';
+import Kyc from '../pages/sales/Kyc.jsx';
 
 export const AppRoutes = () => (
   <Routes>
@@ -66,7 +66,7 @@ export const AppRoutes = () => (
         <Route path="/crm/sales-commercials/pricing-costing" element={<PricingCosting />} />
         <Route path="/crm/sales-commercials/quotation" element={<QuotationPreparation />} />
         <Route path="/crm/sales-commercials/client-approval" element={<ClientApproval />} />
-        <Route path="/crm/sales-commercials/presentation" element={<Presentation />} />
+        <Route path="/crm/sales-commercials/kyc" element={<Kyc />} />
 
         <Route path="/crm/clients" element={<ClientsPage />} />
 

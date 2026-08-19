@@ -53,7 +53,7 @@ const NAV = [
           { label: 'Pricing/Material Costing', path: '/crm/sales-commercials/pricing-costing' },
           { label: 'Quotation Preparation', path: '/crm/sales-commercials/quotation' },
           { label: 'Client Approval', path: '/crm/sales-commercials/client-approval' },
-          { label: 'Presentation', path: '/crm/sales-commercials/presentation' },
+          { label: "KYC/Customer Conversion", path: '/crm/sales-commercials/kyc'}
         ],
       },
     ],

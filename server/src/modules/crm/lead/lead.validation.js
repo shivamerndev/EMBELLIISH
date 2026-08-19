@@ -159,6 +159,7 @@ const quotationDetailsSchema = z
 const approvalSchema = z
   .object({
     planned: z.string().optional(),
+    clientApprovalDate: z.string().optional(),
     clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
     proofAttachment: z.array(attachmentItemSchema).optional(),
     finalApprovedVersion: z.string().optional(),
