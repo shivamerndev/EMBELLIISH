@@ -156,6 +156,19 @@ const quotationDetailsSchema = z
   })
   .optional();
 
+const approvalRevisionItemSchema = z.object({
+  revisionNumber: z.coerce.number().optional(),
+  clientApprovalStatus: z.string().optional(),
+  finalApprovedVersion: z.string().optional(),
+  clientSelection: z.string().optional(),
+  fabricSelection: z.string().optional(),
+  designDirection: z.string().optional(),
+  revisionNotes: z.string().optional(),
+  changeReason: z.string().optional(),
+  revisedAt: z.union([z.string(), z.date()]).optional(),
+  proofAttachment: z.array(attachmentItemSchema).optional(),
+});
+
 const approvalSchema = z
   .object({
     planned: z.string().optional(),
@@ -163,6 +176,7 @@ const approvalSchema = z
     clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
     proofAttachment: z.array(attachmentItemSchema).optional(),
     finalApprovedVersion: z.string().optional(),
+    revisions: z.array(approvalRevisionItemSchema).optional(),
   })
   .optional();
 
@@ -173,6 +187,18 @@ const presentationSchema = z
     fabricSelection: z.string().optional(),
     designDirection: z.string().optional(),
     revisionNotes: z.string().optional(),
+  })
+  .optional();
+
+const kycSchema = z
+  .object({
+    dueDate: z.union([z.string(), z.date()]).optional(),
+    actualDate: z.union([z.string(), z.date()]).optional(),
+    status: z.enum(['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
+    verifiedDocuments: z.array(attachmentItemSchema).optional(),
+    documentTypes: z.array(z.string()).optional(),
+    remarks: z.string().optional(),
+    verifiedBy: z.string().optional(),
   })
   .optional();
 
@@ -254,6 +280,7 @@ const createLeadSchema = z.object({
   quotation: quotationDetailsSchema,
   approval: approvalSchema,
   presentation: presentationSchema,
+  kyc: kycSchema,
 });
 
 const updateLeadSchema = createLeadSchema.partial();
