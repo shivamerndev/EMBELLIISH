@@ -527,19 +527,26 @@ export const LeadsPage = () => {
                 ) : (
                   filteredLeads.map((row) => {
                     const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
-                    const archName = row.architectName || (typeof row.architect === 'object' ? row.architect?.name : row.architect) || '—';
+                    const archName = row.architectName || (typeof row.architect === 'object' ? (row.architect?.name || row.architect?.firm || row.architect?.architectName) : row.architect) || '—';
+                    const clientNameVal = row.clientName || row.companyName || row.name || '—';
+                    const contactPersonVal = row.contactPerson || row.contactName || '—';
+                    const sourceVal = row.source || row.leadSource || '—';
 
                     return (
-                      <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">{row.code}</td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formattedDate}</td>
-                        <td className="p-3 font-medium">{row.contactPerson || '—'}</td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">{row.phone || '—'}</td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400">{row.email || '—'}</td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300">{row.source || '—'}</td>
-                        <td className="p-3 font-semibold text-brand-600 dark:text-brand-400">{row.clientName}</td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300">{archName}</td>
-                        <td className="p-3 font-medium whitespace-nowrap">{row.indicativeBudget || (row.budget ? `₹${row.budget}` : '—')}</td>
+                      <tr key={row._id || row.id} className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800">
+                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{row.code || '—'}</td>
+                        <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
+                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
+                        <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
+                        <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.email || '—'}</td>
+                        <td className="p-3 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
+                            {sourceVal}
+                          </span>
+                        </td>
+                        <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
+                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
+                        <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{row.indicativeBudget || (row.budget ? `₹${row.budget}` : '—')}</td>
                         <td className="p-3 text-center">
                           <BudgetClassBadge value={row.budgetClassification || 'A'} />
                         </td>
