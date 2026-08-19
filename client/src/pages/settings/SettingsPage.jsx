@@ -96,8 +96,12 @@ const CompanyTab = ({ settings, save, saving }) => {
         </div>
       </Section>
 
-      <Section title="Standard terms" hint="Appears at the foot of every quotation that does not carry its own">
-        <Textarea rows={4} value={form.termsAndConditions || ''} onChange={set('termsAndConditions')} />
+      <Section title="Approved Standard Terms" hint="Pulled automatically into proposals & quotations when creating commercial documents">
+        <Textarea rows={4} value={form.termsAndConditions || ''} onChange={set('termsAndConditions')} placeholder="1. Validity: Proposal pricing valid for 15 days...&#10;2. Payment: 10% token, 60% advance, 30% balance..." />
+      </Section>
+
+      <Section title="Approved Refund & Revision Clause" hint="Pulled automatically into proposals for refund & revision policies">
+        <Textarea rows={4} value={form.refundRevisionClause || ''} onChange={set('refundRevisionClause')} placeholder="1. Revision Policy: Up to 2 minor revision rounds included...&#10;2. Refund Policy: Token is refundable within 7 days prior to measurement..." />
       </Section>
     </Panel>
   );

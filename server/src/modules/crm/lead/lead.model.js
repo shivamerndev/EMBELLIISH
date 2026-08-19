@@ -221,6 +221,7 @@ const leadSchema = new mongoose.Schema(
     // --- Sales & Commercials: Client approval.
     approval: {
       planned: String,
+      clientApprovalDate: String,
       clientApprovalStatus: {
         type: String,
         enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
@@ -228,6 +229,20 @@ const leadSchema = new mongoose.Schema(
       },
       proofAttachment: [attachmentSchema],
       finalApprovedVersion: String,
+      revisions: [
+        {
+          revisionNumber: Number,
+          clientApprovalStatus: String,
+          finalApprovedVersion: String,
+          clientSelection: String,
+          fabricSelection: String,
+          designDirection: String,
+          revisionNotes: String,
+          changeReason: String,
+          revisedAt: { type: Date, default: Date.now },
+          proofAttachment: [attachmentSchema],
+        },
+      ],
     },
 
     // --- Sales & Commercials: Presentation.
@@ -237,6 +252,21 @@ const leadSchema = new mongoose.Schema(
       fabricSelection: String,
       designDirection: String,
       revisionNotes: String,
+    },
+
+    // --- Sales & Commercials: KYC Verification.
+    kyc: {
+      dueDate: Date,
+      actualDate: Date,
+      status: {
+        type: String,
+        enum: ['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
+        default: 'PENDING',
+      },
+      verifiedDocuments: [attachmentSchema],
+      documentTypes: [String],
+      remarks: String,
+      verifiedBy: String,
     },
 
     // --- Qualification (Step 2).

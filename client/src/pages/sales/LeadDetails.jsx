@@ -526,8 +526,9 @@ const LeadDetails = ({ onClose: propOnClose, onEdit: propOnEdit, onAssign: propO
                         <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-400 flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
                             <ShieldCheck className="w-3.5 h-3.5" /> Client Approval
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                            <InfoTile label="Planned" value={lead.approval?.planned} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <InfoTile label="Approval Due Date" value={lead.approval?.planned} />
+                            <InfoTile label="Client Approval Date" value={lead.approval?.clientApprovalDate} />
                             <InfoTile label="Client Approval Status" value={lead.approval?.clientApprovalStatus ? humanise(lead.approval.clientApprovalStatus) : null} />
                             <InfoTile label="Final Quotation / Proposal Version Approved" value={lead.approval?.finalApprovedVersion} />
                         </div>
