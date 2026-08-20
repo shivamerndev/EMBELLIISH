@@ -26,7 +26,7 @@ const TEST_DATA = {
     email: 'hiral@example.com',
     source: 'DCM',
     location: 'Delhi',
-    priority: 'HOT',
+    priority: 'HIGH',
     projectType: 'BUNGALOW',
     budget: 749650,
     roomCount: 7,

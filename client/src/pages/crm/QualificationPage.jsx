@@ -50,6 +50,7 @@ const DecisionBadge = ({ value }) => {
 /* ------------------------------------------------------------- Qualification Form Modal */
 
 const EditQualificationModal = ({ item, onClose, onDone }) => {
+  const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
     qualificationDueDate: item?.qualificationDueDate ? new Date(item.qualificationDueDate).toISOString().slice(0, 10) : '',
     requirementVerified: item?.requirementVerified || 'PENDING',
@@ -70,8 +71,16 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
+  const isReasonRequired = form.qualificationDecision === 'REJECTED' || form.qualificationDecision === 'NOT DECIDED';
+
   const submit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    setFormError('');
+
+    if (isReasonRequired && !form.rejectionHoldReason?.trim()) {
+      setFormError('Rejection / Hold reason is required when qualification decision is Rejected or Not Decided.');
+      return;
+    }
 
     const payload = {
       ...form,
@@ -89,8 +98,6 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     execute(payload);
   };
 
-  const decisionIsRejected = form.qualificationDecision === 'REJECTED';
-
   return (
     <Modal
       open={Boolean(item)}
@@ -106,7 +113,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
       }
     >
       <form onSubmit={submit} className="space-y-4 pr-1">
-        {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
+        {(error?.message || formError) && (
+          <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error?.message || formError}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Qualification Due Date">
@@ -195,6 +204,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
                 { value: 'PENDING', label: 'Pending' },
                 { value: 'APPROVED', label: 'Approved' },
                 { value: 'REJECTED', label: 'Rejected' },
+                { value: 'NOT DECIDED', label: 'Not Decided' },
               ]}
             />
           </Field>
@@ -204,12 +214,12 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
           <Input type="datetime-local" value={form.decisionDateTime} onChange={set('decisionDateTime')} />
         </Field>
 
-        <Field label="Rejection / Hold Reason" required={decisionIsRejected}>
+        <Field label="Rejection / Hold Reason" required={isReasonRequired}>
           <Textarea
             value={form.rejectionHoldReason}
             onChange={set('rejectionHoldReason')}
-            placeholder="Required when the decision is Rejected"
-            required={decisionIsRejected}
+            placeholder={isReasonRequired ? "Required when decision is Rejected or Not Decided" : "Enter reason if applicable"}
+            required={isReasonRequired}
           />
         </Field>
       </form>

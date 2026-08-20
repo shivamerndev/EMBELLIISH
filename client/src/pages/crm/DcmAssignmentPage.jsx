@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle } from 'lucide-react';
-import { leadsApi } from '../../api';
+import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, UserCheck, Check } from 'lucide-react';
+import { leadsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
+import { humanise } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select,
   Loading, ErrorState, Tabs,
@@ -10,7 +11,7 @@ import {
 
 const ASSIGNMENT_TABS = [
   { key: 'ALL', label: 'All Assignments' },
-  { key: 'HOT', label: 'Hot Priority' },
+  { key: 'HIGH', label: 'High Priority' },
   { key: 'REASSIGNMENT_NEEDED', label: 'Reassignment Needed' },
   { key: 'OVERLOADED', label: 'Overloaded' },
 ];
@@ -28,7 +29,7 @@ const INITIAL_SAMPLE_LEADS = [
     assignedDcmName: 'Hitesh Sharma',
     assignmentDateTime: '08/04/2026 14:00',
     dcmActiveProjectCount: 3,
-    priority: 'HOT',
+    priority: 'HIGH',
     reassignmentRequired: false,
     reassignedToName: 'NA',
     reassignmentReason: 'N/A',
@@ -75,25 +76,23 @@ const INITIAL_SAMPLE_LEADS = [
 /* ------------------------------------------------------------- Badges */
 
 const DcmCapacityBadge = ({ value }) => {
-  const styles = {
-    AVAILABLE: 'bg-emerald-200 text-emerald-900 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300',
-    OVERLOADED: 'bg-rose-200 text-rose-900 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300',
-  };
-  const labelMap = {
-    AVAILABLE: 'Available',
-    OVERLOADED: 'Overloaded',
-  };
+  const isAvailable = value === 'AVAILABLE' || !value || value === 'Available';
   return (
-    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-md border shadow-sm ${styles[value] || styles.AVAILABLE}`}>
-      {labelMap[value] || value || 'Available'}
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-2xs transition-colors ${isAvailable
+        ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
+        : 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
+        }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
+      {isAvailable ? 'Available' : 'Overloaded'}
     </span>
   );
 };
 
 const LeadPriorityBadge = ({ value }) => {
   const styles = {
-    HOT: 'bg-rose-600 text-white dark:bg-rose-700',
-    HIGH: 'bg-amber-600 text-white dark:bg-amber-700',
+    HIGH: 'bg-rose-600 text-white dark:bg-rose-700',
     MEDIUM: 'bg-sky-600 text-white dark:bg-sky-700',
     LOW: 'bg-slate-500 text-white dark:bg-slate-600',
   };
@@ -107,15 +106,25 @@ const LeadPriorityBadge = ({ value }) => {
 const ReassignmentBadge = ({ value }) => {
   const isYes = value === true || value === 'Yes' || value === 'YES';
   return (
-    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-md shadow-sm ${
-      isYes
-        ? 'bg-amber-200 text-amber-900 dark:bg-amber-600 dark:text-amber-100'
-        : 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300'
-    }`}>
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-md shadow-sm ${isYes
+      ? 'bg-amber-200 text-amber-900 dark:bg-amber-600 dark:text-amber-100'
+      : 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300'
+      }`}>
       {isYes ? 'Yes' : 'No'}
     </span>
   );
 };
+
+const DCM_MANAGERS_LIST = [
+  { _id: 'dcm-1', name: 'Hitesh Sharma', role: 'Senior DCM', activeProjectCount: 3, capacityStatus: 'AVAILABLE' },
+  { _id: 'dcm-2', name: 'Rahul Verma', role: 'DCM Manager', activeProjectCount: 6, capacityStatus: 'OVERLOADED' },
+  { _id: 'dcm-3', name: 'Saskhi M', role: 'Lead DCM', activeProjectCount: 9, capacityStatus: 'OVERLOADED' },
+  { _id: 'dcm-4', name: 'Punam K', role: 'Assistant DCM Manager', activeProjectCount: 2, capacityStatus: 'AVAILABLE' },
+  { _id: 'dcm-5', name: 'Amit Patel', role: 'DCM Specialist', activeProjectCount: 4, capacityStatus: 'AVAILABLE' },
+  { _id: 'dcm-6', name: 'Neha Gupta', role: 'Senior DCM Manager', activeProjectCount: 7, capacityStatus: 'OVERLOADED' },
+  { _id: 'dcm-7', name: 'Karan Johar', role: 'Junior DCM', activeProjectCount: 1, capacityStatus: 'AVAILABLE' },
+  { _id: 'dcm-8', name: 'Rohan Singh', role: 'DCM Coordinator', activeProjectCount: 5, capacityStatus: 'AVAILABLE' },
+];
 
 /* ------------------------------------------------------------- Assignment Form Modal */
 
@@ -133,12 +142,62 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
     updatedUser: item?.updatedUser || '',
   });
 
+  const [managerSearch, setManagerSearch] = useState('');
+
+  const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
+
+  const dcmList = React.useMemo(() => {
+    if (!usersData || usersData.length === 0) return DCM_MANAGERS_LIST;
+    const fetched = usersData
+      .filter((u) => !u.role || u.role.includes('DCM') || u.role.includes('MANAGER') || u.role.includes('ADMIN') || u.department === 'DCM' || u.department === 'Sales')
+      .map((u) => ({
+        _id: u._id || u.id,
+        name: u.name,
+        role: u.role || 'DCM / Manager',
+        activeProjectCount: u.activeProjectCount ?? 3,
+        capacityStatus: u.capacityStatus || ((u.activeProjectCount ?? 3) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
+      }));
+
+    const names = new Set(fetched.map((f) => f.name));
+    const merged = [...fetched];
+    DCM_MANAGERS_LIST.forEach((d) => {
+      if (!names.has(d.name)) merged.push(d);
+    });
+    return merged;
+  }, [usersData]);
+
+  const filteredDcms = React.useMemo(() => {
+    if (!managerSearch.trim()) return dcmList;
+    const q = managerSearch.toLowerCase();
+    return dcmList.filter((d) =>
+      d.name?.toLowerCase().includes(q) ||
+      humanise(d.role || '')?.toLowerCase().includes(q)
+    );
+  }, [dcmList, managerSearch]);
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(item.id || item._id, payload),
     { onSuccess: () => { onDone(); onClose(); } }
   );
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleSelectDcm = (dcmName) => {
+    const selectedDcm = dcmList.find((d) => d.name === dcmName);
+    if (selectedDcm) {
+      setForm((prev) => ({
+        ...prev,
+        assignedDcmName: selectedDcm.name,
+        dcmActiveProjectCount: selectedDcm.activeProjectCount,
+        dcmCapacityStatus: selectedDcm.capacityStatus,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        assignedDcmName: dcmName,
+      }));
+    }
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -167,11 +226,96 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Assigned DCM / Manager" required>
-            <Input value={form.assignedDcmName} onChange={set('assignedDcmName')} placeholder="e.g. Hitesh Sharma" required />
+            <Select
+              value={form.assignedDcmName}
+              onChange={(e) => handleSelectDcm(e.target.value)}
+              options={[
+                { value: '', label: '-- Select DCM / Manager --' },
+                ...dcmList.map((d) => ({
+                  value: d.name,
+                  label: `${d.name} — ${humanise(d.role || 'DCM')}`,
+                })),
+              ]}
+              required
+            />
           </Field>
           <Field label="Assignment Due Date" required>
             <Input type="date" value={form.assignmentDueDate} onChange={set('assignmentDueDate')} required />
           </Field>
+        </div>
+
+        {/* Sleek Manager Directory Grid */}
+        <div className="rounded-xl border border-stone-200 dark:border-[#3d3026] bg-stone-50/70 dark:bg-[#171310] p-3 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
+                DCM & Manager Directory
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300">
+                {dcmList.length} Managers
+              </span>
+            </div>
+            <div className="relative w-44">
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={managerSearch}
+                onChange={(e) => setManagerSearch(e.target.value)}
+                placeholder="Search manager..."
+                className="w-full pl-8 pr-2 py-1 text-xs rounded-md border border-stone-200 dark:border-[#3d3026] bg-white dark:bg-[#120f0d] text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+            {filteredDcms.map((dcm) => {
+              const isSelected = form.assignedDcmName === dcm.name;
+              const initials = dcm.name
+                ? dcm.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase()
+                : 'M';
+
+              return (
+                <button
+                  key={dcm._id || dcm.name}
+                  type="button"
+                  onClick={() => handleSelectDcm(dcm.name)}
+                  className={`text-left p-2.5 rounded-lg border text-xs transition-all duration-150 flex items-center justify-between gap-2 ${isSelected
+                    ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-xs'
+                    : 'border-stone-200 dark:border-[#2e251e] bg-white dark:bg-[#1a1512] hover:border-amber-500/40 hover:bg-stone-50 dark:hover:bg-[#251e18]'
+                    }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${isSelected
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300'
+                        }`}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-stone-900 dark:text-stone-100 truncate flex items-center gap-1">
+                        <span className="truncate">{dcm.name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                      </div>
+                      <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                        {humanise(dcm.role || 'DCM')} • {dcm.activeProjectCount} Projects
+                      </div>
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    <DcmCapacityBadge value={dcm.capacityStatus} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -196,7 +340,6 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
               value={form.priority}
               onChange={set('priority')}
               options={[
-                { value: 'HOT', label: 'Hot' },
                 { value: 'HIGH', label: 'High' },
                 { value: 'MEDIUM', label: 'Medium' },
                 { value: 'LOW', label: 'Low' },
@@ -220,7 +363,17 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
             />
           </Field>
           <Field label="Reassigned To">
-            <Input value={form.reassignedToName} onChange={set('reassignedToName')} placeholder="e.g. Punam K" />
+            <Select
+              value={form.reassignedToName}
+              onChange={set('reassignedToName')}
+              options={[
+                { value: '', label: 'None / NA' },
+                ...dcmList.map((d) => ({
+                  value: d.name,
+                  label: `${d.name} (${humanise(d.role || 'DCM')})`,
+                })),
+              ]}
+            />
           </Field>
         </div>
 
@@ -256,7 +409,7 @@ export const DcmAssignmentPage = () => {
 
   const filtered = list.filter((item) => {
     // Filter Tab
-    if (tab === 'HOT' && item.priority !== 'HOT') return false;
+    if (tab === 'HIGH' && item.priority !== 'HIGH') return false;
     if (tab === 'REASSIGNMENT_NEEDED' && item.reassignmentRequired !== true && item.reassignmentRequired !== 'YES') return false;
     if (tab === 'OVERLOADED' && item.dcmCapacityStatus !== 'OVERLOADED') return false;
 

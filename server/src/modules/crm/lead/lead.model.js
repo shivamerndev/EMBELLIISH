@@ -27,7 +27,7 @@ const leadSchema = new mongoose.Schema(
     location: { type: String, trim: true },
     priority: {
       type: String,
-      enum: ['HOT', 'HIGH', 'MEDIUM', 'LOW'],
+      enum: ['HIGH', 'MEDIUM', 'LOW'],
       default: 'MEDIUM',
     },
     address: addressSchema,
@@ -52,6 +52,7 @@ const leadSchema = new mongoose.Schema(
       default: 'Not Known',
     },
     attachmentUrl: String,
+    attachments: [attachmentSchema],
 
     // --- Sales & Commercials: Site Visit requirement flag and dates.
     siteVisitRequired: { type: Boolean, default: true },
@@ -305,7 +306,7 @@ const leadSchema = new mongoose.Schema(
     },
     qualificationDecision: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      enum: ['PENDING', 'APPROVED', 'REJECTED', 'NOT DECIDED'],
       default: 'PENDING',
     },
     decisionDateTime: Date,
@@ -334,8 +335,8 @@ const leadSchema = new mongoose.Schema(
     nextActionDueDate: Date,
     overallLeadStatus: {
       type: String,
-      enum: ['IN_PROGRESS', 'APPROVED', 'REJECTED', 'ON_HOLD'],
-      default: 'IN_PROGRESS',
+      enum: ['NEW', 'ASSIGNED', 'UNDER_QUALIFICATION', 'REJECTED', 'HOLD', 'ON_HOLD', 'FOLLOW_UP', 'FOLLOWUP', 'IN_PROGRESS', 'APPROVED'],
+      default: 'NEW',
     },
 
     nextFollowUpAt: { type: Date, index: true },
