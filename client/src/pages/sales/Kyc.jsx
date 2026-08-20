@@ -479,13 +479,18 @@ const Kyc = ({ items: itemsProp = [] }) => {
 
   const handleViewLead = (lead) => {
     if (lead?.code) {
-      navigate(`/crm/sales-commercials/leads/${lead.code}`);
+      navigate(`/crm/sales-commercials/leads/${lead.code}?tab=kyc`);
     }
   };
 
   const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-  const filteredLeads = rawLeads.filter((lead) => {
+  // Filter only leads whose client approval completed
+  const approvedLeads = rawLeads.filter(
+    (lead) => (lead.approval?.clientApprovalStatus === 'APPROVED' || lead.clientApprovalStatus === 'APPROVED')
+  );
+
+  const filteredLeads = approvedLeads.filter((lead) => {
     if (search) {
       const q = search.toLowerCase();
       const code = String(lead.code || '').toLowerCase();
@@ -498,10 +503,10 @@ const Kyc = ({ items: itemsProp = [] }) => {
     return true;
   });
 
-  const totalCount = rawLeads.length;
-  const verifiedCount = rawLeads.filter((l) => l.kyc?.status === 'VERIFIED').length;
-  const pendingCount = rawLeads.filter((l) => l.kyc?.status === 'PENDING' || !l.kyc?.status).length;
-  const docAttachedCount = rawLeads.filter((l) => (l.kyc?.verifiedDocuments?.length || 0) > 0).length;
+  const totalCount = approvedLeads.length;
+  const verifiedCount = approvedLeads.filter((l) => l.kyc?.status === 'VERIFIED').length;
+  const pendingCount = approvedLeads.filter((l) => l.kyc?.status === 'PENDING' || !l.kyc?.status).length;
+  const docAttachedCount = approvedLeads.filter((l) => (l.kyc?.verifiedDocuments?.length || 0) > 0).length;
 
   return (
     <div>
@@ -550,7 +555,7 @@ const Kyc = ({ items: itemsProp = [] }) => {
         <ErrorState error={error} onRetry={reload} />
       ) : filteredLeads.length === 0 ? (
         <Panel className="p-8 text-center">
-          <EmptyState icon={ShieldCheck} title="No KYC Verification Records Found" hint="Try adjusting search parameters." />
+          <EmptyState icon={ShieldCheck} title="No KYC Verification Records Found" hint="Only leads with completed Client Approval appear here. Try adjusting search parameters or completing Client Approval for leads." />
         </Panel>
       ) : (
         <SpreadsheetGridView

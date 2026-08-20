@@ -387,7 +387,7 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
 
     const handleViewLead = (lead) => {
         if (lead?.code) {
-            navigate(`/crm/sales-commercials/leads/${lead.code}`);
+            navigate(`/crm/sales-commercials/leads/${lead.code}?tab=pre-site`);
         }
     };
 
