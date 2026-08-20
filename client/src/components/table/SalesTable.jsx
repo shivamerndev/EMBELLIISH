@@ -47,7 +47,7 @@ const SalesCommercialsTable = ({ items, onView, onEdit }) => {
                                         <Badge tone={BUDGET_TONES[val] || 'blue'}>{val}</Badge>
                                     </td>
                                     <td className="p-3">
-                                        <Badge tone={p === 'HOT' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>
+                                        <Badge tone={p === 'HIGH' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>
                                     </td>
                                     <td className="p-3">
                                         <Badge tone={lead.status === 'CONVERTED' ? 'emerald' : lead.status === 'QUALIFIED' ? 'blue' : lead.status === 'LOST' ? 'rose' : 'slate'}>

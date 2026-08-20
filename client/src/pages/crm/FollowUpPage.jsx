@@ -20,20 +20,32 @@ const FOLLOWUP_TABS = [
 
 const OverallStatusBadge = ({ value }) => {
   const styles = {
+    NEW: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+    ASSIGNED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
+    UNDER_QUALIFICATION: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+    REJECTED: 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300',
+    HOLD: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+    ON_HOLD: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+    FOLLOW_UP: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300',
+    FOLLOWUP: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300',
     IN_PROGRESS: 'bg-sky-200 text-sky-900 dark:bg-sky-700 dark:text-sky-100',
     APPROVED: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-600 dark:text-emerald-100',
-    REJECTED: 'bg-rose-600 text-white dark:bg-rose-700',
-    ON_HOLD: 'bg-amber-200 text-amber-900 dark:bg-amber-600 dark:text-amber-100',
   };
   const labelMap = {
+    NEW: 'New',
+    ASSIGNED: 'Assigned',
+    UNDER_QUALIFICATION: 'Under Qualification',
+    REJECTED: 'Rejected',
+    HOLD: 'Hold',
+    ON_HOLD: 'Hold',
+    FOLLOW_UP: 'Followup',
+    FOLLOWUP: 'Followup',
     IN_PROGRESS: 'In Progress',
     APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-    ON_HOLD: 'On Hold',
   };
-  const key = value || 'IN_PROGRESS';
+  const key = value || 'NEW';
   return (
-    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md shadow-sm ${styles[key] || styles.IN_PROGRESS}`}>
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md shadow-sm ${styles[key] || styles.NEW}`}>
       {labelMap[key] || key}
     </span>
   );
@@ -45,7 +57,7 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
     nextAction: item?.nextAction || '',
     nextActionDueDate: item?.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : '',
-    overallLeadStatus: item?.overallLeadStatus || 'IN_PROGRESS',
+    overallLeadStatus: item?.overallLeadStatus || 'NEW',
   });
 
   const { execute, pending, error } = useAction(
@@ -90,10 +102,12 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
               value={form.overallLeadStatus}
               onChange={set('overallLeadStatus')}
               options={[
-                { value: 'IN_PROGRESS', label: 'In Progress' },
-                { value: 'APPROVED', label: 'Approved' },
+                { value: 'NEW', label: 'New' },
+                { value: 'ASSIGNED', label: 'Assigned' },
+                { value: 'UNDER_QUALIFICATION', label: 'Under Qualification' },
                 { value: 'REJECTED', label: 'Rejected' },
-                { value: 'ON_HOLD', label: 'On Hold' },
+                { value: 'HOLD', label: 'Hold' },
+                { value: 'FOLLOW_UP', label: 'Followup' },
               ]}
             />
           </Field>
@@ -121,7 +135,7 @@ export const FollowUpPage = () => {
 
   const filtered = list.filter((item) => {
     const dueDate = item.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : null;
-    const status = item.overallLeadStatus || 'IN_PROGRESS';
+    const status = item.overallLeadStatus || 'NEW';
 
     if (tab === 'DUE_TODAY' && dueDate !== today) return false;
     if (tab === 'OVERDUE' && !(dueDate && dueDate < today)) return false;

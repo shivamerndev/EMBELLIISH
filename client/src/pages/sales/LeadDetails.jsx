@@ -119,7 +119,7 @@ const LeadDetails = ({ onClose: propOnClose, onEdit: propOnEdit, onAssign: propO
                     <p className="text-xs text-slate-400">Current Lead Status</p>
                     <div className="mt-1 flex items-center gap-2">
                         <StatusBadge status={lead.status} />
-                        <Badge tone={lead.priority === 'HOT' ? 'rose' : lead.priority === 'MEDIUM' ? 'amber' : 'slate'}>
+                        <Badge tone={lead.priority === 'HIGH' ? 'rose' : lead.priority === 'MEDIUM' ? 'amber' : 'slate'}>
                             {lead.priority} PRIORITY
                         </Badge>
                     </div>

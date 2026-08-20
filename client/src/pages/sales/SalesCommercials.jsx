@@ -93,7 +93,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     },
     priority: (lead) => {
         const p = lead.priority || 'MEDIUM';
-        return <Badge tone={p === 'HOT' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>;
+        return <Badge tone={p === 'HIGH' ? 'rose' : p === 'MEDIUM' ? 'amber' : 'slate'}>{p}</Badge>;
     },
     siteVisitRequired: (lead) => (
         lead.siteVisitRequired ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>
