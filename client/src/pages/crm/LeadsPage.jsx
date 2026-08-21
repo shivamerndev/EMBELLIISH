@@ -274,7 +274,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
     contactPerson: '',
     phone: '',
     email: '',
-    source: 'Architect',
+    source: 'Architect Referral',
     clientName: '',
     architectName: '',
     indicativeBudget: '',
@@ -387,8 +387,11 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
               value={form.source}
               onChange={set('source')}
               options={[
-                { value: 'Architect', label: 'Architect' },
-                { value: 'Interior Designer', label: 'Interior Designer' },
+                { value: 'Architect Referral', label: 'Architect Referral' },
+                { value: 'Direct Client', label: 'Direct Client' },
+                { value: 'Existing Client', label: 'Existing Client' },
+                { value: 'Social Media', label: 'Social Media' },
+                { value: 'Other Referral', label: 'Other Referral' },
               ]}
             />
           </Field>
@@ -562,7 +565,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     contactPerson: l?.contactPerson || '',
     phone: l?.phone || '',
     email: l?.email || '',
-    source: l?.source || 'Architect',
+    source: l?.source || 'Architect Referral',
     architectName: l?.architectName || (typeof l?.architect === 'object' ? l?.architect?.name : l?.architect) || '',
     indicativeBudget: l?.indicativeBudget || (l?.budget ? `${l.budget}` : ''),
     budgetClassification: l?.budgetClassification || 'A',
@@ -679,8 +682,11 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
               value={form.source}
               onChange={set('source')}
               options={[
-                { value: 'Architect', label: 'Architect' },
-                { value: 'Interior Designer', label: 'Interior Designer' },
+                { value: 'Architect Referral', label: 'Architect Referral' },
+                { value: 'Direct Client', label: 'Direct Client' },
+                { value: 'Existing Client', label: 'Existing Client' },
+                { value: 'Social Media', label: 'Social Media' },
+                { value: 'Other Referral', label: 'Other Referral' },
               ]}
             />
           </Field>

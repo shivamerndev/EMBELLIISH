@@ -118,12 +118,14 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 /* ------------------------------------------------------------- Edit Site Visit Modal */
 const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
     const [form, setForm] = useState({
         siteVisitRequired: item?.siteVisitRequired ?? true,
-        siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : '',
-        actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
+        siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : getLocalDate(),
+        actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
         siteAddress: item?.siteAddress || item?.location || '',
         assignedInstaller: item?.assignedInstaller?._id || item?.assignedInstaller || '',
         clientArchitectAvailability: item?.clientArchitectAvailability || '',

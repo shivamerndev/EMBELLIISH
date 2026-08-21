@@ -26,17 +26,11 @@ const BUDGET_TONES = {
 };
 
 const LEAD_SOURCES = [
-    { value: 'DCM', label: 'DCM' },
-    { value: 'ARCHITECT', label: 'Architect' },
-    { value: 'REFERRAL', label: 'Referral' },
-    { value: 'WALK_IN', label: 'Walk-In' },
-    { value: 'WEBSITE', label: 'Website' },
-    { value: 'EXHIBITION', label: 'Exhibition' },
-    { value: 'SOCIAL', label: 'Social Media' },
-    { value: 'DIRECT_VISIT', label: 'Direct Visit' },
-    { value: 'DIRECT_CLIENT', label: 'Direct Client' },
-    { value: 'EXISTING_CLIENT', label: 'Existing Client' },
-    { value: 'OTHER', label: 'Other' },
+    { value: 'Architect Referral', label: 'Architect Referral' },
+    { value: 'Direct Client', label: 'Direct Client' },
+    { value: 'Existing Client', label: 'Existing Client' },
+    { value: 'Social Media', label: 'Social Media' },
+    { value: 'Other Referral', label: 'Other Referral' },
 ];
 
 const SPREADSHEET_SECTIONS = [
@@ -163,16 +157,18 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const SiteVisitModal = ({ lead, onClose, onSave }) => {
     const [dueDate, setDueDate] = useState(
-        lead?.siteVisitDueDate ? new Date(lead.siteVisitDueDate).toISOString().slice(0, 10) : ''
+        lead?.siteVisitDueDate ? new Date(lead.siteVisitDueDate).toISOString().slice(0, 10) : getLocalDate()
     );
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         if (lead) {
-            setDueDate(lead.siteVisitDueDate ? new Date(lead.siteVisitDueDate).toISOString().slice(0, 10) : '');
+            setDueDate(lead.siteVisitDueDate ? new Date(lead.siteVisitDueDate).toISOString().slice(0, 10) : getLocalDate());
             setError(null);
         }
     }, [lead]);

@@ -169,11 +169,13 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit, users = []) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 /* ------------------------------------------------------------- Edit Measurement Modal */
 const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
     const [form, setForm] = useState({
-        dueDate: item?.measurement?.dueDate ? new Date(item.measurement.dueDate).toISOString().slice(0, 10) : '',
-        date: item?.measurement?.date ? new Date(item.measurement.date).toISOString().slice(0, 10) : '',
+        dueDate: item?.measurement?.dueDate ? new Date(item.measurement.dueDate).toISOString().slice(0, 10) : getLocalDate(),
+        date: item?.measurement?.date ? new Date(item.measurement.date).toISOString().slice(0, 10) : getLocalDate(),
         measuredBy: item?.measurement?.measuredBy?._id || item?.measurement?.measuredBy || '',
         status: item?.measurement?.status || 'PROVISIONAL',
         siteAccess: item?.measurement?.siteAccess || '',

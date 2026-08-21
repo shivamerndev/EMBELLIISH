@@ -366,12 +366,14 @@ export const QuotationTab = ({ projectId, onChange }) => {
 };
 
 /* Modal for Manual Quotation Creation */
+import { getLocalDate } from '../../../utils/format';
+
 const CreateManualQuotationModal = ({ open, onClose, projectId, onSuccess }) => {
   const [code, setCode] = useState('');
   const [revision, setRevision] = useState(1);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [marginPercent, setMarginPercent] = useState(0);
-  const [validUntil, setValidUntil] = useState('');
+  const [validUntil, setValidUntil] = useState(getLocalDate());
   const [gstPercent, setGstPercent] = useState(18);
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState('');

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Loader2, AlertCircle, Inbox, X } from 'lucide-react';
 import cn from '../../utils/cn';
+import { getLocalDate, getLocalDateTime, getLocalTime } from '../../utils/format';
 
 /* ------------------------------------------------------------------ surface */
 
@@ -138,9 +139,47 @@ export const Field = ({ label, error, hint, required, children }) => (
   </div>
 );
 
-export const Input = ({ className, ...props }) => (
-  <input className={cn('field-input', className)} {...props} />
-);
+export const Input = ({ className, type, value, onChange, onFocus, onClick, ...props }) => {
+  const handleFocus = (e) => {
+    if ((type === 'date' || type === 'datetime-local' || type === 'time') && !value && onChange) {
+      let defaultVal = '';
+      if (type === 'date') defaultVal = getLocalDate();
+      else if (type === 'datetime-local') defaultVal = getLocalDateTime();
+      else if (type === 'time') defaultVal = getLocalTime();
+
+      if (defaultVal) {
+        onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });
+      }
+    }
+    if (onFocus) onFocus(e);
+  };
+
+  const handleClick = (e) => {
+    if ((type === 'date' || type === 'datetime-local' || type === 'time') && !value && onChange) {
+      let defaultVal = '';
+      if (type === 'date') defaultVal = getLocalDate();
+      else if (type === 'datetime-local') defaultVal = getLocalDateTime();
+      else if (type === 'time') defaultVal = getLocalTime();
+
+      if (defaultVal) {
+        onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });
+      }
+    }
+    if (onClick) onClick(e);
+  };
+
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      onFocus={handleFocus}
+      onClick={handleClick}
+      className={cn('field-input', className)}
+      {...props}
+    />
+  );
+};
 
 export const Textarea = ({ className, ...props }) => (
   <textarea rows={3} className={cn('field-input resize-y', className)} {...props} />

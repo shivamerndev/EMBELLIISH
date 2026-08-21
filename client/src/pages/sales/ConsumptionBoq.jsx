@@ -100,11 +100,13 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const existingConsumption = item?.consumption || {};
 
     const [form, setForm] = useState({
-        sheetDueDate: existingConsumption.sheetDueDate ? new Date(existingConsumption.sheetDueDate).toISOString().slice(0, 10) : '',
+        sheetDueDate: existingConsumption.sheetDueDate ? new Date(existingConsumption.sheetDueDate).toISOString().slice(0, 10) : getLocalDate(),
         measurements: existingConsumption.measurements || '',
         quantity: existingConsumption.quantity ?? '',
         unit: existingConsumption.unit || 'meters',
@@ -112,7 +114,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         boqVersion: existingConsumption.boqVersion || '',
         roomList: existingConsumption.roomList || '',
         boqPreparedBy: typeof existingConsumption.boqPreparedBy === 'object' ? existingConsumption.boqPreparedBy?.name || '' : (existingConsumption.boqPreparedBy || ''),
-        boqPreparedDate: existingConsumption.boqPreparedDate ? new Date(existingConsumption.boqPreparedDate).toISOString().slice(0, 10) : '',
+        boqPreparedDate: existingConsumption.boqPreparedDate ? new Date(existingConsumption.boqPreparedDate).toISOString().slice(0, 10) : getLocalDate(),
         fabricDesignSelection: existingConsumption.fabricDesignSelection || '',
         panelCount: existingConsumption.panelCount ?? '',
         liningAccessoryAssumptions: existingConsumption.liningAccessoryAssumptions || '',

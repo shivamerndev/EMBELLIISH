@@ -51,12 +51,14 @@ const OverallStatusBadge = ({ value }) => {
   );
 };
 
+import { getLocalDate } from '../../utils/format';
+
 /* ------------------------------------------------------------- Follow-up Form Modal */
 
 const EditFollowUpModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
     nextAction: item?.nextAction || '',
-    nextActionDueDate: item?.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : '',
+    nextActionDueDate: item?.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : getLocalDate(),
     overallLeadStatus: item?.overallLeadStatus || 'NEW',
   });
 

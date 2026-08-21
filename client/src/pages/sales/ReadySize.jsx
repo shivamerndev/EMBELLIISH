@@ -110,14 +110,16 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit, users = []) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
     const initialMeasurement = item?.measurement || {};
     const existingReadySize = item?.readySize || {};
 
     const [form, setForm] = useState({
-        dueDate: existingReadySize.dueDate ? new Date(existingReadySize.dueDate).toISOString().slice(0, 10) : '',
+        dueDate: existingReadySize.dueDate ? new Date(existingReadySize.dueDate).toISOString().slice(0, 10) : getLocalDate(),
         confirmedBy: existingReadySize.confirmedBy?._id || existingReadySize.confirmedBy || '',
-        confirmationDate: existingReadySize.confirmationDate ? new Date(existingReadySize.confirmationDate).toISOString().slice(0, 10) : '',
+        confirmationDate: existingReadySize.confirmationDate ? new Date(existingReadySize.confirmationDate).toISOString().slice(0, 10) : getLocalDate(),
         windowSize: existingReadySize.windowSize || initialMeasurement.roomList || initialMeasurement.notes || '',
         siteCondition: existingReadySize.siteCondition || initialMeasurement.siteAccess || '',
         pelmetDetails: existingReadySize.pelmetDetails || initialMeasurement.pelmetDetails || '',

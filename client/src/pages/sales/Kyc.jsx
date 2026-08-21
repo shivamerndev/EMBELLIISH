@@ -132,13 +132,15 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
   return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 /* ------------------------------------------------------------- Edit KYC Verification Modal */
 const KycEditModal = ({ item, onClose, onDone }) => {
   const kycData = item?.kyc || {};
 
   const [form, setForm] = useState({
-    dueDate: kycData.dueDate ? String(kycData.dueDate).slice(0, 10) : '',
-    actualDate: kycData.actualDate ? String(kycData.actualDate).slice(0, 10) : '',
+    dueDate: kycData.dueDate ? String(kycData.dueDate).slice(0, 10) : getLocalDate(),
+    actualDate: kycData.actualDate ? String(kycData.actualDate).slice(0, 10) : getLocalDate(),
     status: kycData.status || 'PENDING',
     verifiedBy: kycData.verifiedBy || '',
     remarks: kycData.remarks || '',
