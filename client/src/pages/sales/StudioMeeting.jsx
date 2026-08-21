@@ -232,10 +232,12 @@ const AttachmentUploaderField = ({ label, attachments = [], onUpdate, idPrefix }
     );
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const EditStudioMeetingModal = ({ item, onClose, onDone }) => {
     const [form, setForm] = useState({
-        dueDate: item?.studioMeeting?.dueDate ? new Date(item.studioMeeting.dueDate).toISOString().slice(0, 10) : '',
-        date: item?.studioMeeting?.date ? new Date(item.studioMeeting.date).toISOString().slice(0, 10) : '',
+        dueDate: item?.studioMeeting?.dueDate ? new Date(item.studioMeeting.dueDate).toISOString().slice(0, 10) : getLocalDate(),
+        date: item?.studioMeeting?.date ? new Date(item.studioMeeting.date).toISOString().slice(0, 10) : getLocalDate(),
         attendees: item?.studioMeeting?.attendees || '',
         feedback: item?.studioMeeting?.feedback || '',
         nextAction: item?.studioMeeting?.nextAction || '',

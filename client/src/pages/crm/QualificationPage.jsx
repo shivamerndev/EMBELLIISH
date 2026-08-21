@@ -47,12 +47,14 @@ const DecisionBadge = ({ value }) => {
   );
 };
 
+import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 /* ------------------------------------------------------------- Qualification Form Modal */
 
 const EditQualificationModal = ({ item, onClose, onDone }) => {
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
-    qualificationDueDate: item?.qualificationDueDate ? new Date(item.qualificationDueDate).toISOString().slice(0, 10) : '',
+    qualificationDueDate: item?.qualificationDueDate ? new Date(item.qualificationDueDate).toISOString().slice(0, 10) : getLocalDate(),
     requirementVerified: item?.requirementVerified || 'PENDING',
     budgetPricingVerified: item?.budgetPricingVerified || 'PENDING',
     timelineConfirmed: item?.timelineConfirmed || 'PENDING',
@@ -60,7 +62,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     siteVisitRequired: item?.siteVisitRequired === false ? 'NO' : 'YES',
     competitionDetailsCaptured: item?.competitionDetailsCaptured || 'NOT_KNOWN',
     qualificationDecision: item?.qualificationDecision || 'PENDING',
-    decisionDateTime: item?.decisionDateTime ? new Date(item.decisionDateTime).toISOString().slice(0, 16) : '',
+    decisionDateTime: item?.decisionDateTime ? new Date(item.decisionDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
     rejectionHoldReason: item?.rejectionHoldReason || '',
   });
 

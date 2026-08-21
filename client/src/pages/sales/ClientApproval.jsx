@@ -116,12 +116,14 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const wasApproved = item?.approval?.clientApprovalStatus === 'APPROVED';
 
     const [form, setForm] = useState({
-        planned: item?.approval?.planned || '',
-        clientApprovalDate: item?.approval?.clientApprovalDate || '',
+        planned: item?.approval?.planned ? new Date(item.approval.planned).toISOString().slice(0, 10) : getLocalDate(),
+        clientApprovalDate: item?.approval?.clientApprovalDate ? new Date(item.approval.clientApprovalDate).toISOString().slice(0, 10) : getLocalDate(),
         clientApprovalStatus: item?.approval?.clientApprovalStatus || 'PENDING',
         finalApprovedVersion: item?.approval?.finalApprovedVersion || '',
         clientSelection: item?.presentation?.clientSelection || '',

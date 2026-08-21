@@ -20,7 +20,7 @@ const leadSchema = new mongoose.Schema(
     architectName: { type: String, trim: true },
     source: {
       type: String,
-      default: 'DCM',
+      default: 'Architect Referral',
     },
     previousClientRelationship: { type: Boolean, default: false },
     existingRelationshipOwner: { type: String, trim: true, default: 'NA' },

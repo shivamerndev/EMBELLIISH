@@ -107,14 +107,16 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 };
 
 /* ------------------------------------------------------------- Edit Quotation Modal */
+import { getLocalDate } from '../../utils/format';
+
 const EditQuotationModal = ({ item, onClose, onDone }) => {
     const q = item?.quotation || {};
 
     const [form, setForm] = useState({
-        dueDate: q.dueDate ? String(q.dueDate).slice(0, 10) : '',
+        dueDate: q.dueDate ? String(q.dueDate).slice(0, 10) : getLocalDate(),
         no: q.no || '',
         version: q.version || 'v1.0',
-        date: q.date ? String(q.date).slice(0, 10) : '',
+        date: q.date ? String(q.date).slice(0, 10) : getLocalDate(),
         finalQuotedValue: q.finalQuotedValue ?? '',
         taxes: q.taxes ?? '',
         addSubtotal: q.addSubtotal ?? '',

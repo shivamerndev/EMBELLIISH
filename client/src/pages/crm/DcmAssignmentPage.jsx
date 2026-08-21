@@ -128,14 +128,16 @@ const DCM_MANAGERS_LIST = [
 
 /* ------------------------------------------------------------- Assignment Form Modal */
 
+import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 const EditAssignmentModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
     assignedDcmName: item?.assignedDcmName || '',
-    assignmentDueDate: item?.assignmentDueDate ? new Date(item.assignmentDueDate).toISOString().slice(0, 10) : '',
+    assignmentDueDate: item?.assignmentDueDate ? new Date(item.assignmentDueDate).toISOString().slice(0, 10) : getLocalDate(),
     dcmCapacityStatus: item?.dcmCapacityStatus || 'AVAILABLE',
     dcmActiveProjectCount: item?.dcmActiveProjectCount ?? 0,
     priority: item?.priority || 'MEDIUM',
-    assignmentDateTime: item?.assignmentDateTime ? new Date(item.assignmentDateTime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    assignmentDateTime: item?.assignmentDateTime ? new Date(item.assignmentDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
     reassignmentRequired: item?.reassignmentRequired ? 'YES' : 'NO',
     reassignedToName: item?.reassignedToName || '',
     reassignmentReason: item?.reassignmentReason || '',

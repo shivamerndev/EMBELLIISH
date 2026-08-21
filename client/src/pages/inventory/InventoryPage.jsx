@@ -81,7 +81,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
     reason: 'Stock addition',
 
     rate: '',
-    expectedDate: '',
+    expectedDate: getLocalDate(),
   });
 
   const setField = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
