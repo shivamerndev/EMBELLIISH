@@ -100,7 +100,7 @@ const AddArchitectModal = ({ open, onClose, onCreated }) => {
       onClose={onClose}
       title="Add New Architect / Designer"
       subtitle="Create a new member record in CRM"
-      size="sm"
+      size="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -108,7 +108,7 @@ const AddArchitectModal = ({ open, onClose, onCreated }) => {
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
         <Field label="Architect / Designer Name" required>
           <Input
@@ -126,7 +126,7 @@ const AddArchitectModal = ({ open, onClose, onCreated }) => {
             placeholder="e.g. Wintek Designs"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Mobile Number">
             <PhoneInput
               value={newForm.phone}
