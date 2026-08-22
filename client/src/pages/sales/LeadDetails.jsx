@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2 } from 'lucide-react';
+import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink } from 'lucide-react';
 import { Badge, StatusBadge, Loading } from '../../components/ui';
-import { currency, date, humanise } from '../../utils/format';
+import { currency, date, humanise, getMediaUrl } from '../../utils/format';
 import { useSelector } from "react-redux";
 import useSales from "../../hooks/useSales";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -17,13 +17,26 @@ const InfoTile = ({ label, value }) => (
 
 /** Downloadable file badges used across the Sales & Commercials detail panels. */
 const AttachmentLinks = ({ label, files }) => {
+    let raw = files;
+    if (typeof files === 'string' && files.trim() !== '') {
+        try {
+            raw = JSON.parse(files);
+        } catch (e) {
+            if (files.includes(',')) {
+                raw = files.split(',').map((s) => s.trim()).filter(Boolean);
+            } else {
+                raw = files.trim();
+            }
+        }
+    }
+
     let fileList = [];
-    if (Array.isArray(files)) {
-        fileList = files;
-    } else if (files && typeof files === 'object') {
-        fileList = (files.url || files.filename || files.path) ? [files] : Object.values(files);
-    } else if (typeof files === 'string' && files.trim() !== '') {
-        fileList = [{ url: files, filename: files.split('/').pop() || 'Attachment' }];
+    if (Array.isArray(raw)) {
+        fileList = raw;
+    } else if (raw && typeof raw === 'object') {
+        fileList = (raw.url || raw.filename || raw.name || raw.path) ? [raw] : Object.values(raw);
+    } else if (typeof raw === 'string' && raw.trim() !== '') {
+        fileList = [{ url: raw, filename: raw.split('/').pop() || 'Attachment' }];
     }
 
     return (
@@ -36,8 +49,10 @@ const AttachmentLinks = ({ label, files }) => {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {fileList.map((att, i) => {
-                        const href = typeof att === 'string' ? att : (att?.url || att?.path || '#');
-                        const rawName = typeof att === 'object' ? (att?.filename || att?.name || att?.originalName) : (typeof att === 'string' ? att.split('/').pop() : null);
+                        const rawHref = typeof att === 'string' ? att : (att?.url || att?.path || '#');
+                        const href = getMediaUrl(rawHref);
+                        const isLink = att?.type === 'link' || (typeof rawHref === 'string' && (rawHref.startsWith('http://') || rawHref.startsWith('https://')));
+                        const rawName = typeof att === 'object' ? (att?.name || att?.filename || att?.originalName) : (typeof att === 'string' ? att.split('/').pop() : null);
                         const filename = rawName || `File ${i + 1}`;
 
                         return (
@@ -49,7 +64,11 @@ const AttachmentLinks = ({ label, files }) => {
                                 className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-400/50 rounded-lg text-xs transition group shadow-xs"
                             >
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <FileText className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                                    {isLink ? (
+                                        <ExternalLink className="w-4 h-4 text-sky-500 shrink-0" />
+                                    ) : (
+                                        <Paperclip className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                                    )}
                                     <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{filename}</span>
                                 </div>
                                 <Download className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0 ml-2" />

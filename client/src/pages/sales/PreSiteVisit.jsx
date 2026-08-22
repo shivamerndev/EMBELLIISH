@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, Pencil, MapPin, Calendar, UserCheck, Paperclip, ClipboardList, CheckCircle2, Clock,
-    Plus, Trash2, Upload, Link as LinkIcon, X, AlertTriangle, FileText, Check, Layers, Home
+    Plus, Trash2, Upload, Link as LinkIcon, X, AlertTriangle, FileText, Check, Layers, Home, Loader2
 } from 'lucide-react';
-import { leadsApi, usersApi } from '../../api';
+import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
-import { date } from '../../utils/format';
+import { date, getMediaUrl } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
@@ -304,7 +304,6 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto" title={String(raw)}>{String(raw)}</span>;
 };
 
-import { getLocalDate, getLocalDateTime } from '../../utils/format';
 
 /* ------------------------------------------------------------- Edit Site Visit Modal */
 const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
@@ -370,6 +369,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 
     const [installerSearch, setInstallerSearch] = useState('');
     const [validationError, setValidationError] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState(null);
 
     const { execute, pending, error: apiError } = useAction(
         (payload) => leadsApi.update(item.id || item._id, payload),
@@ -440,22 +441,39 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         }));
     };
 
-    const handleFileUpload = (e) => {
+    const handleFileUpload = async (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        const newItems = files.map((file) => ({
-            id: String(Date.now() + Math.random()),
-            name: file.name,
-            size: `${(file.size / 1024).toFixed(1)} KB`,
-            type: file.type.includes('image') ? 'image' : file.name.endsWith('.pdf') ? 'pdf' : 'cad',
-            url: URL.createObjectURL(file)
-        }));
+        setUploading(true);
+        setUploadError(null);
 
-        setForm((prev) => ({
-            ...prev,
-            attachments: [...prev.attachments, ...newItems]
-        }));
+        try {
+            const formData = new FormData();
+            files.forEach((file) => formData.append('files', file));
+
+            const res = await uploadApi.upload(formData);
+            const uploadedFiles = res.data || [];
+
+            const newItems = uploadedFiles.map((file) => ({
+                id: String(Date.now() + Math.random()),
+                name: file.filename || file.originalname || 'Uploaded File',
+                url: file.url,
+                size: file.size ? `${(file.size / 1024).toFixed(1)} KB` : '',
+                type: file.mimetype?.includes('image') ? 'image' : (file.filename || file.originalname || '').toLowerCase().endsWith('.pdf') ? 'pdf' : 'cad',
+                uploadedAt: file.uploadedAt || new Date().toISOString()
+            }));
+
+            setForm((prev) => ({
+                ...prev,
+                attachments: [...prev.attachments, ...newItems]
+            }));
+        } catch (err) {
+            console.error('Failed to upload files:', err);
+            setUploadError(err?.message || 'Failed to upload file(s)');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleAddLink = () => {
@@ -809,15 +827,25 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 <Field label="Drawings / Renders" hint="Allow multiple drawings, images, PDFs and external links">
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-brand-500 dark:hover:border-brand-400 cursor-pointer bg-white dark:bg-slate-950 transition">
-                                <Upload className="w-5 h-5 text-brand-500 mb-1" />
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Upload Files</span>
+                            <label className={`flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-brand-500 dark:hover:border-brand-400 cursor-pointer bg-white dark:bg-slate-950 transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                {uploading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 text-brand-500 mb-1 animate-spin" />
+                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Uploading...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-5 h-5 text-brand-500 mb-1" />
+                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Upload Files</span>
+                                    </>
+                                )}
                                 <span className="text-[10px] text-slate-400">PDFs, Images, CAD DWG/DXF</span>
                                 <input
                                     type="file"
                                     multiple
                                     accept=".pdf,.png,.jpg,.jpeg,.webp,.dwg,.dxf"
                                     onChange={handleFileUpload}
+                                    disabled={uploading}
                                     className="hidden"
                                 />
                             </label>
@@ -844,6 +872,12 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                             </div>
                         </div>
 
+                        {uploadError && (
+                            <div className="p-2 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg">
+                                {uploadError}
+                            </div>
+                        )}
+
                         {form.attachments.length > 0 && (
                             <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
                                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
@@ -858,7 +892,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                                 ) : (
                                                     <Paperclip className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                                 )}
-                                                <a href={att.url} target="_blank" rel="noreferrer" className="truncate text-brand-600 dark:text-brand-400 hover:underline" title={att.name}>
+                                                <a href={getMediaUrl(att.url)} target="_blank" rel="noreferrer" className="truncate text-brand-600 dark:text-brand-400 hover:underline" title={att.name}>
                                                     {att.name}
                                                 </a>
                                             </div>
