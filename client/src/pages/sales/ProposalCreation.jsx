@@ -491,11 +491,13 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's8', on
     );
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const EditProposalModal = ({ item, onClose, onDone }) => {
     const prop = item?.proposal || {};
 
     const [form, setForm] = useState({
-        dueDate: prop.dueDate ? String(prop.dueDate).slice(0, 10) : '',
+        dueDate: prop.dueDate ? String(prop.dueDate).slice(0, 10) : getLocalDate(),
         noVersion: prop.noVersion || '',
         date: prop.date ? String(prop.date).slice(0, 10) : '',
         clientBrief: prop.clientBrief || item?.studioMeeting?.feedback || item?.preSiteVisit?.clientRequirements || '',

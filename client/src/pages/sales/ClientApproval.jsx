@@ -401,6 +401,8 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
     );
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const wasApproved = item?.approval?.clientApprovalStatus === 'APPROVED';
 

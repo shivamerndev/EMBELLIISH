@@ -276,13 +276,15 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 };
 
 /* ------------------------------------------------------------- Edit Token Discussion Modal */
+import { getLocalDate } from '../../utils/format';
+
 const EditTokenModal = ({ item, onClose, onDone }) => {
     const tok = item?.token || {};
 
     const initialStatus = normalizeTokenStatus(tok.status);
 
     const [form, setForm] = useState({
-        discussionDueDate: tok.discussionDueDate ? String(tok.discussionDueDate).slice(0, 10) : '',
+        discussionDueDate: tok.discussionDueDate ? String(tok.discussionDueDate).slice(0, 10) : getLocalDate(),
         amount: tok.amount ?? '',
         status: initialStatus,
         receivedDate: tok.receivedDate ? String(tok.receivedDate).slice(0, 10) : '',

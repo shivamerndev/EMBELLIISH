@@ -343,6 +343,8 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const currentUser = useSelector(selectUser);
     const existingConsumption = item?.consumption || {};

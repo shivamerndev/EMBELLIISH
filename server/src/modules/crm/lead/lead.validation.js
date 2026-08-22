@@ -252,7 +252,12 @@ const createLeadSchema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  phone: z.string().min(3, 'Phone number is required'),
+  phone: z
+    .string()
+    .min(3, 'Phone number is required')
+    .refine((val) => /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
   email: z.string().email().optional().or(z.literal('')),
   architect: objectId.optional(),
   architectName: z.string().optional(),
@@ -260,7 +265,7 @@ const createLeadSchema = z.object({
   previousClientRelationship: z.boolean().optional(),
   existingRelationshipOwner: z.string().optional(),
   location: z.string().optional(),
-  priority: z.enum(['HOT', 'HIGH', 'MEDIUM', 'LOW']).optional(),
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   address: addressSchema,
   projectType: z
     .enum(['VILLA', 'APARTMENT', 'BUNGALOW', 'FARMHOUSE', 'HOTEL', 'OFFICE', 'RETAIL', 'OTHER'])
@@ -273,6 +278,7 @@ const createLeadSchema = z.object({
   requirementSummary: z.string().optional(),
   architectInvolved: z.enum(['Yes', 'No', 'Not Known']).optional(),
   attachmentUrl: z.string().optional(),
+  attachments: z.array(attachmentItemSchema).optional(),
   assignedDCM: objectId.optional(),
   nextFollowUpAt: z.coerce.date().optional(),
 
@@ -295,7 +301,7 @@ const createLeadSchema = z.object({
   timelineConfirmed: z.enum(['YES', 'NO', 'PENDING']).optional(),
   decisionMakerIdentified: z.enum(['YES', 'NO', 'PENDING', 'NOT_KNOWN']).optional(),
   competitionDetailsCaptured: z.enum(['YES', 'NO', 'NOT_KNOWN']).optional(),
-  qualificationDecision: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  qualificationDecision: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'NOT DECIDED']).optional(),
   decisionDateTime: z.coerce.date().optional(),
   rejectionHoldReason: z.string().optional(),
   status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED', 'LOST']).optional(),
@@ -304,9 +310,9 @@ const createLeadSchema = z.object({
   // --- Follow-up Sheet (Step 4).
   nextAction: z.string().optional(),
   nextActionDueDate: z.coerce.date().optional(),
-  overallLeadStatus: z.enum(['IN_PROGRESS', 'APPROVED', 'REJECTED', 'ON_HOLD']).optional(),
+  overallLeadStatus: z.enum(['NEW', 'ASSIGNED', 'UNDER_QUALIFICATION', 'REJECTED', 'HOLD', 'ON_HOLD', 'FOLLOW_UP', 'FOLLOWUP', 'IN_PROGRESS', 'APPROVED']).optional(),
 
-  siteVisitRequired: z.boolean().optional(),
+  siteVisitRequired: z.union([z.boolean(), z.enum(['YES', 'NO', 'PENDING'])]).optional(),
   siteVisitDueDate: z.coerce.date().optional(),
   actualSiteVisitDateTime: z.coerce.date().optional(),
   siteAddress: z.string().optional(),

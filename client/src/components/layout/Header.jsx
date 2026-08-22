@@ -1,13 +1,13 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronRight } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
 import { initials, humanise } from '../../utils/format';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from '../common/ThemeToggle';
 
-export const Header = () => {
+export const Header = ({ isSidebarCollapsed, onToggleSidebar }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
@@ -25,11 +25,27 @@ export const Header = () => {
         borderColor: 'var(--border)',
       }}
     >
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-        <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-          Lead → Measurement → BOQ → Quotation → Production → Installation → Closure
-        </p>
+      <div className="flex items-center gap-3">
+        {isSidebarCollapsed && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            title="Expand Sidebar"
+            className="p-1.5 rounded-lg border transition-all hover:bg-[var(--bg-hover)] text-[var(--text-primary)] shrink-0 cursor-pointer"
+            style={{
+              borderColor: 'var(--border)',
+              backgroundColor: 'var(--bg-surface-alt)',
+            }}
+          >
+            <ChevronRight className="w-5 h-5 text-brand-500" />
+          </button>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+          <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            Lead → Measurement → BOQ → Quotation → Production → Installation → Closure
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

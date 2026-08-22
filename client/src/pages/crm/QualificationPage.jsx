@@ -13,6 +13,7 @@ const QUALIFICATION_TABS = [
   { key: 'PENDING', label: 'Pending Decision' },
   { key: 'APPROVED', label: 'Approved' },
   { key: 'REJECTED', label: 'Rejected' },
+  { key: 'NOT DECIDED', label: 'Not Decided' },
 ];
 
 /* ------------------------------------------------------------- Badges */
@@ -38,28 +39,38 @@ const DecisionBadge = ({ value }) => {
     APPROVED: 'bg-emerald-200 text-emerald-900 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300',
     REJECTED: 'bg-rose-600 text-white dark:bg-rose-700',
     PENDING: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-300',
+    'NOT DECIDED': 'bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300',
   };
   const key = value || 'PENDING';
+  const labelMap = {
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+    PENDING: 'Pending',
+    'NOT DECIDED': 'Not Decided',
+  };
   return (
     <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md border shadow-sm ${styles[key] || styles.PENDING}`}>
-      {key.charAt(0) + key.slice(1).toLowerCase()}
+      {labelMap[key] || (key.charAt(0) + key.slice(1).toLowerCase())}
     </span>
   );
 };
 
+import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 /* ------------------------------------------------------------- Qualification Form Modal */
 
 const EditQualificationModal = ({ item, onClose, onDone }) => {
+  const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
-    qualificationDueDate: item?.qualificationDueDate ? new Date(item.qualificationDueDate).toISOString().slice(0, 10) : '',
+    qualificationDueDate: item?.qualificationDueDate ? new Date(item.qualificationDueDate).toISOString().slice(0, 10) : getLocalDate(),
     requirementVerified: item?.requirementVerified || 'PENDING',
     budgetPricingVerified: item?.budgetPricingVerified || 'PENDING',
     timelineConfirmed: item?.timelineConfirmed || 'PENDING',
     decisionMakerIdentified: item?.decisionMakerIdentified || 'PENDING',
-    siteVisitRequired: item?.siteVisitRequired === false ? 'NO' : 'YES',
+    siteVisitRequired: item?.siteVisitRequired === false ? 'NO' : item?.siteVisitRequired === true ? 'YES' : (item?.siteVisitRequired || 'PENDING'),
     competitionDetailsCaptured: item?.competitionDetailsCaptured || 'NOT_KNOWN',
     qualificationDecision: item?.qualificationDecision || 'PENDING',
-    decisionDateTime: item?.decisionDateTime ? new Date(item.decisionDateTime).toISOString().slice(0, 16) : '',
+    decisionDateTime: item?.decisionDateTime ? new Date(item.decisionDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
     rejectionHoldReason: item?.rejectionHoldReason || '',
   });
 
@@ -70,12 +81,20 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
+  const isReasonRequired = ['REJECTED', 'NOT DECIDED', 'PENDING'].includes(form.qualificationDecision);
+
   const submit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    setFormError('');
+
+    if (isReasonRequired && !form.rejectionHoldReason?.trim()) {
+      setFormError('Rejection / Hold reason is required when qualification decision is Rejected, Pending, or Not Decided.');
+      return;
+    }
 
     const payload = {
       ...form,
-      siteVisitRequired: form.siteVisitRequired === 'YES',
+      siteVisitRequired: form.siteVisitRequired === 'YES' ? true : form.siteVisitRequired === 'NO' ? false : 'PENDING',
       decisionDateTime: form.decisionDateTime || (form.qualificationDecision !== 'PENDING' ? new Date().toISOString() : undefined),
     };
 
@@ -84,12 +103,12 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     } else if (form.qualificationDecision === 'REJECTED') {
       payload.status = 'UNQUALIFIED';
       payload.lostReason = form.rejectionHoldReason;
+    } else if (form.qualificationDecision === 'PENDING') {
+      payload.status = 'CONTACTED';
     }
 
     execute(payload);
   };
-
-  const decisionIsRejected = form.qualificationDecision === 'REJECTED';
 
   return (
     <Modal
@@ -106,7 +125,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
       }
     >
       <form onSubmit={submit} className="space-y-4 pr-1">
-        {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
+        {(error?.message || formError) && (
+          <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error?.message || formError}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Qualification Due Date">
@@ -168,6 +189,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.siteVisitRequired}
               onChange={set('siteVisitRequired')}
               options={[
+                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
               ]}
@@ -195,6 +217,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
                 { value: 'PENDING', label: 'Pending' },
                 { value: 'APPROVED', label: 'Approved' },
                 { value: 'REJECTED', label: 'Rejected' },
+                { value: 'NOT DECIDED', label: 'Not Decided' },
               ]}
             />
           </Field>
@@ -204,12 +227,12 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
           <Input type="datetime-local" value={form.decisionDateTime} onChange={set('decisionDateTime')} />
         </Field>
 
-        <Field label="Rejection / Hold Reason" required={decisionIsRejected}>
+        <Field label="Rejection / Hold Reason" required={isReasonRequired}>
           <Textarea
             value={form.rejectionHoldReason}
             onChange={set('rejectionHoldReason')}
-            placeholder="Required when the decision is Rejected"
-            required={decisionIsRejected}
+            placeholder={isReasonRequired ? "Required when decision is Rejected, Pending, or Not Decided" : "Enter reason if applicable"}
+            required={isReasonRequired}
           />
         </Field>
       </form>
@@ -331,7 +354,7 @@ export const QualificationPage = () => {
                       <td className="p-3 text-center"><TriStateBadge value={row.budgetPricingVerified} /></td>
                       <td className="p-3 text-center"><TriStateBadge value={row.timelineConfirmed} /></td>
                       <td className="p-3 text-center"><TriStateBadge value={row.decisionMakerIdentified} /></td>
-                      <td className="p-3 text-center"><TriStateBadge value={row.siteVisitRequired === false ? 'NO' : 'YES'} /></td>
+                      <td className="p-3 text-center"><TriStateBadge value={row.siteVisitRequired === false ? 'NO' : row.siteVisitRequired === true ? 'YES' : (row.siteVisitRequired || 'PENDING')} /></td>
                       <td className="p-3 text-center"><TriStateBadge value={row.competitionDetailsCaptured} /></td>
                       <td className="p-3 text-center"><DecisionBadge value={row.qualificationDecision} /></td>
                       <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">

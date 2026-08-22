@@ -213,6 +213,8 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 };
 
 /* ------------------------------------------------------------- Edit Quotation Modal */
+import { getLocalDate } from '../../utils/format';
+
 const EditQuotationModal = ({ item, onClose, onDone }) => {
     const q = item?.quotation || {};
 

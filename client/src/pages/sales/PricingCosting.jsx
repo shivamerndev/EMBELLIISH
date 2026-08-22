@@ -250,6 +250,8 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+import { getLocalDate } from '../../utils/format';
+
 /* ------------------------------------------------------------- Edit Costing Modal */
 const EditCostingModal = ({ item, onClose, onDone }) => {
     const c = item?.costing || {};
@@ -260,7 +262,7 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
     const initialSellingPrice = Number(q.finalQuotedValue || item?.token?.budgetEstimate || 0);
 
     const [form, setForm] = useState({
-        dueDate: c.dueDate ? String(c.dueDate).slice(0, 10) : '',
+        dueDate: c.dueDate ? String(c.dueDate).slice(0, 10) : getLocalDate(),
         version: c.version || 'v1.0',
         catalogueCost: c.catalogueCost ?? '',
         landedCost: c.landedCost ?? '',

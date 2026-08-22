@@ -77,10 +77,20 @@ class LeadService extends BaseService {
     if (lead.status === LEAD_STATUS.NEW) lead.status = LEAD_STATUS.CONTACTED;
     lead.assignedDCM = assignedDCM;
     lead.assignedAt = new Date();
+    if (user?.name) lead.updatedUser = user.name;
     lead.history.push({ action: 'ASSIGNED', note, by: user?.id });
 
     await lead.save();
     return this.repository.findById(id);
+  }
+
+  async update(id, data, user) {
+    await this.getById(id);
+    const updateData = { ...data };
+    if (user?.name && (!updateData.updatedUser || updateData.updatedUser === '')) {
+      updateData.updatedUser = user.name;
+    }
+    return this.repository.update(id, updateData);
   }
 
   /**

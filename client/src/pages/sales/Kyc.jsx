@@ -227,6 +227,8 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
   );
 };
 
+import { getLocalDate } from '../../utils/format';
+
 /* ------------------------------------------------------------- Edit KYC Verification Modal */
 const KycEditModal = ({ item, onClose, onDone }) => {
   const currentUser = useSelector((state) => state.auth?.user);
