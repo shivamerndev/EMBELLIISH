@@ -3,6 +3,7 @@ import express from 'express';
 // Identity
 import authRoutes from '../modules/auth/auth.routes.js';
 import userRoutes from '../modules/user/user.routes.js';
+import membersRoutes from '../modules/members/members.routes.js';
 
 // CRM — Steps 1, 2, 3, 7, 8
 import leadRoutes from '../modules/crm/lead/lead.routes.js';
@@ -64,6 +65,7 @@ const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/members', membersRoutes);
 
 router.use('/upload', uploadRoutes);
 
