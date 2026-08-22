@@ -18,7 +18,7 @@ const env = {
   jwtSecret: process.env.JWT_SECRET || 'default_jwt_secret_embellish_erp',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   aws: {
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_REGION || 'ap-south-1',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_KEY,
     bucket: process.env.AWS_S3_BUCKET,
