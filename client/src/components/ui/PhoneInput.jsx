@@ -27,39 +27,6 @@ export const COUNTRY_CODES = [
 ];
 
 /**
- * Validates a phone number according to country code rules.
- */
-export const validatePhoneNumber = (numberStr, countryCode = '+91', required = false) => {
-  const digits = String(numberStr || '').replace(/\D/g, '');
-
-  if (!digits) {
-    if (required) return { isValid: false, error: 'Phone number is required' };
-    return { isValid: true, error: '' };
-  }
-
-  if (countryCode === '+91') {
-    if (digits.length !== 10) {
-      return { isValid: false, error: 'Mobile number must be exactly 10 digits' };
-    }
-    if (!/^[6-9]/.test(digits)) {
-      return { isValid: false, error: 'Mobile number must start with 6, 7, 8, or 9' };
-    }
-    return { isValid: true, error: '' };
-  }
-
-  const countryObj = COUNTRY_CODES.find((c) => c.code === countryCode);
-  if (countryObj?.digits && digits.length !== countryObj.digits) {
-    return { isValid: false, error: `${countryObj.label} should be ${countryObj.digits} digits` };
-  }
-
-  if (digits.length < 7 || digits.length > 15) {
-    return { isValid: false, error: 'Phone number must be between 7 and 15 digits' };
-  }
-
-  return { isValid: true, error: '' };
-};
-
-/**
  * Parse incoming phone string into countryCode and nationalNumber
  */
 const parsePhoneString = (rawVal, defaultCode = '+91') => {
@@ -85,6 +52,41 @@ const parsePhoneString = (rawVal, defaultCode = '+91') => {
 
   // Fallback: default code, raw string is national number
   return { countryCode: defaultCode, nationalNumber: str.replace(/\D/g, '') };
+};
+
+/**
+ * Validates a phone number according to country code rules.
+ */
+export const validatePhoneNumber = (numberStr, countryCode = '+91', required = false) => {
+  const parsed = parsePhoneString(numberStr, countryCode);
+  const code = parsed.countryCode || countryCode;
+  const digits = parsed.nationalNumber;
+
+  if (!digits) {
+    if (required) return { isValid: false, error: 'Phone number is required' };
+    return { isValid: true, error: '' };
+  }
+
+  if (code === '+91') {
+    if (digits.length !== 10) {
+      return { isValid: false, error: 'Mobile number must be exactly 10 digits' };
+    }
+    if (!/^[6-9]/.test(digits)) {
+      return { isValid: false, error: 'Mobile number must start with 6, 7, 8, or 9' };
+    }
+    return { isValid: true, error: '' };
+  }
+
+  const countryObj = COUNTRY_CODES.find((c) => c.code === code);
+  if (countryObj?.digits && digits.length !== countryObj.digits) {
+    return { isValid: false, error: `${countryObj.label} should be ${countryObj.digits} digits` };
+  }
+
+  if (digits.length < 7 || digits.length > 15) {
+    return { isValid: false, error: 'Phone number must be between 7 and 15 digits' };
+  }
+
+  return { isValid: true, error: '' };
 };
 
 export const PhoneInput = ({

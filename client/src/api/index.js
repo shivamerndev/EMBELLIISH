@@ -21,6 +21,15 @@ export const usersApi = {
   create: (payload) => api.post('/users', payload),
 };
 
+export const membersApi = {
+  summary: () => api.get('/members/summary'),
+  list: (params) => api.get('/members', { params }),
+  get: (id) => api.get(`/members/${id}`),
+  create: (payload) => api.post('/members', payload),
+  update: (id, payload) => api.put(`/members/${id}`, payload),
+  remove: (id) => api.delete(`/members/${id}`),
+};
+
 /* ------------------------------------------------------------------ CRM */
 
 export const leadsApi = {

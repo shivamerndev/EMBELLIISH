@@ -17,7 +17,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'https://embelliish.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
