@@ -550,3 +550,8 @@ export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = tr
     </div>
   );
 };
+
+export { PhoneInput, validatePhoneNumber, COUNTRY_CODES } from './PhoneInput';
+export { EmailInput, validateEmail } from './EmailInput';
+
+

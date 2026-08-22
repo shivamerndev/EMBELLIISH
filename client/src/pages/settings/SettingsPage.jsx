@@ -5,7 +5,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
 import {
   Panel, PanelHeader, PageHeader, Tabs, Table, Button, Badge, Field, Input, Textarea, Select, Modal,
-  Loading, ErrorState, EmptyState,
+  Loading, ErrorState, EmptyState, PhoneInput, EmailInput,
 } from '../../components/ui';
 
 /**
@@ -72,8 +72,8 @@ const CompanyTab = ({ settings, save, saving }) => {
           <Field label="Legal name"><Input value={form.legalName || ''} onChange={set('legalName')} /></Field>
           <Field label="GSTIN"><Input value={form.gstin || ''} onChange={set('gstin')} /></Field>
           <Field label="PAN"><Input value={form.pan || ''} onChange={set('pan')} /></Field>
-          <Field label="Phone"><Input value={form.phone || ''} onChange={set('phone')} /></Field>
-          <Field label="Email"><Input value={form.email || ''} onChange={set('email')} /></Field>
+          <Field label="Phone"><PhoneInput value={form.phone || ''} onChange={set('phone')} /></Field>
+          <Field label="Email"><EmailInput value={form.email || ''} onChange={set('email')} placeholder="info@embellish.com" /></Field>
           <Field label="Website"><Input value={form.website || ''} onChange={set('website')} /></Field>
         </div>
       </Section>

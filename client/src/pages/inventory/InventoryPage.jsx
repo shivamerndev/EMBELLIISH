@@ -5,7 +5,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { currency, number, date, humanise } from '../../utils/format';
 import {
   PageHeader, Panel, PanelHeader, Table, Tabs, Badge, StatusBadge, StatTile,
-  Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Checkbox,
+  Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Checkbox, PhoneInput, EmailInput,
 } from '../../components/ui';
 
 const TABS = [
@@ -471,10 +471,10 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <Field label="Phone">
-                <Input value={form.phone} onChange={setField('phone')} placeholder="Phone number" />
+                <PhoneInput value={form.phone} onChange={setField('phone')} />
               </Field>
               <Field label="Email">
-                <Input type="email" value={form.email} onChange={setField('email')} placeholder="Email address" />
+                <EmailInput value={form.email} onChange={setField('email')} placeholder="vendor@example.com" />
               </Field>
               <Field label="GSTIN">
                 <Input value={form.gstin} onChange={setField('gstin')} placeholder="GST Number" />

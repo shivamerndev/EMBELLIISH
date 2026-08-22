@@ -55,7 +55,7 @@ const leadSchema = new mongoose.Schema(
     attachments: [attachmentSchema],
 
     // --- Sales & Commercials: Site Visit requirement flag and dates.
-    siteVisitRequired: { type: Boolean, default: true },
+    siteVisitRequired: { type: mongoose.Schema.Types.Mixed, default: 'PENDING' },
     siteVisitDueDate: Date,
     actualSiteVisitDateTime: Date,
     siteAddress: String,

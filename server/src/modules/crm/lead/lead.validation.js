@@ -206,7 +206,12 @@ const createLeadSchema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  phone: z.string().min(3, 'Phone number is required'),
+  phone: z
+    .string()
+    .min(3, 'Phone number is required')
+    .refine((val) => /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
   email: z.string().email().optional().or(z.literal('')),
   architect: objectId.optional(),
   architectName: z.string().optional(),
@@ -261,7 +266,7 @@ const createLeadSchema = z.object({
   nextActionDueDate: z.coerce.date().optional(),
   overallLeadStatus: z.enum(['NEW', 'ASSIGNED', 'UNDER_QUALIFICATION', 'REJECTED', 'HOLD', 'ON_HOLD', 'FOLLOW_UP', 'FOLLOWUP', 'IN_PROGRESS', 'APPROVED']).optional(),
 
-  siteVisitRequired: z.boolean().optional(),
+  siteVisitRequired: z.union([z.boolean(), z.enum(['YES', 'NO', 'PENDING'])]).optional(),
   siteVisitDueDate: z.coerce.date().optional(),
   actualSiteVisitDateTime: z.coerce.date().optional(),
   siteAddress: z.string().optional(),

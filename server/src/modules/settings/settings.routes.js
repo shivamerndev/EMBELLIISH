@@ -27,7 +27,12 @@ const settingsSchema = z.object({
       legalName: z.string().optional(),
       gstin: z.string().optional(),
       pan: z.string().optional(),
-      phone: z.string().optional(),
+      phone: z
+        .string()
+        .optional()
+        .refine((val) => !val || /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+          message: 'Invalid phone number format',
+        }),
       email: z.string().email().optional().or(z.literal('')),
       website: z.string().optional(),
       address: z
