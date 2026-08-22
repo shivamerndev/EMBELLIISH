@@ -40,10 +40,11 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
         cols: [
             { key: 'sno', label: 'S.No.' },
-            { key: 'code', label: 'Lead Code' },
+            { key: 'code', label: 'Lead ID' },
             { key: 'clientName', label: 'Client Name' },
-            { key: 'architectName', label: 'Architect/Designer Name' },
-            { key: 'location', label: 'Location' },
+            { key: 'architectName', label: 'Architect / Designer Name' },
+            { key: 'location', label: 'Project Location' },
+            { key: 'assignedDCM', label: 'Assigned DCM / Manager' },
             { key: 'siteVisitRequired', label: 'Site Visit Required' }
         ]
     }
@@ -107,6 +108,11 @@ const SPREADSHEET_CELL_RENDERERS = {
     existingRelationshipOwner: (lead) => (
         <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300">
             {lead.existingRelationshipOwner?.name || lead.existingRelationshipOwnerName || lead.assignedDCM?.name || '—'}
+        </span>
+    ),
+    assignedDCM: (lead) => (
+        <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300">
+            {lead.assignedDCM?.name || lead.assignedDCMName || lead.existingRelationshipOwner?.name || lead.assignedManager?.name || '—'}
         </span>
     ),
     assignedInstaller: (lead) => (
@@ -264,7 +270,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, selectedSecti
                         <tr className="sticky top-0 z-20 text-center shadow-sm bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30">
 
                             <th className="bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 p-4 text-[10px] uppercase text-center font-semibold text-amber-100 dark:text-slate-400 z-30">
-                                Code
+                                Lead ID
                             </th>
                             {visibleSections.map((sec) =>
                                 sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (

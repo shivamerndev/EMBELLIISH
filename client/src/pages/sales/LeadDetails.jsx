@@ -16,27 +16,51 @@ const InfoTile = ({ label, value }) => (
 );
 
 /** Downloadable file badges used across the Sales & Commercials detail panels. */
-const AttachmentLinks = ({ label, files }) => (
-    <div className="space-y-1.5 pt-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> {label} ({files?.length || 0})
-        </span>
-        {!(files && files.length > 0) ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500 italic">None attached.</p>
-        ) : <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {files.map((att, i) => (
-                <a key={i} href={att.url} target="_blank" rel="noreferrer" className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-400/50 rounded-lg text-xs transition group shadow-xs" >
-                    <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
-                        <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{att.filename || `File ${i + 1}`}</span>
-                    </div>
-                    <Download className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0 ml-2" />
-                </a>
-            ))}
+const AttachmentLinks = ({ label, files }) => {
+    let fileList = [];
+    if (Array.isArray(files)) {
+        fileList = files;
+    } else if (files && typeof files === 'object') {
+        fileList = (files.url || files.filename || files.path) ? [files] : Object.values(files);
+    } else if (typeof files === 'string' && files.trim() !== '') {
+        fileList = [{ url: files, filename: files.split('/').pop() || 'Attachment' }];
+    }
+
+    return (
+        <div className="space-y-1.5 pt-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> {label} ({fileList.length})
+            </span>
+            {fileList.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic">None attached.</p>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {fileList.map((att, i) => {
+                        const href = typeof att === 'string' ? att : (att?.url || att?.path || '#');
+                        const rawName = typeof att === 'object' ? (att?.filename || att?.name || att?.originalName) : (typeof att === 'string' ? att.split('/').pop() : null);
+                        const filename = rawName || `File ${i + 1}`;
+
+                        return (
+                            <a
+                                key={i}
+                                href={href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-400/50 rounded-lg text-xs transition group shadow-xs"
+                            >
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <FileText className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                                    <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{filename}</span>
+                                </div>
+                                <Download className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0 ml-2" />
+                            </a>
+                        );
+                    })}
+                </div>
+            )}
         </div>
-        }
-    </div>
-);
+    );
+};
 
 const DETAIL_TABS = [
     { id: 'leads', label: '1. Leads (Qualified)', icon: User },
@@ -197,32 +221,7 @@ const LeadDetails = () => {
                         </p>
                     </div>
 
-                    <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center justify-between">
-                            <span>General Attachments ({lead.attachments?.length || 0})</span>
-                        </p>
-                        {!(lead.attachments && lead.attachments.length > 0) ? (
-                            <p className="text-xs text-slate-400 dark:text-slate-500 italic">No general files attached to this lead.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {lead.attachments.map((att, i) => (
-                                    <a
-                                        key={i}
-                                        href={att.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 rounded-lg text-xs transition group"
-                                    >
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <Paperclip className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
-                                            <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{att.filename || `File ${i + 1}`}</span>
-                                        </div>
-                                        <Download className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0 ml-2" />
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <AttachmentLinks label="General Attachments" files={lead.attachments} />
                 </div>
             </div>
         )}

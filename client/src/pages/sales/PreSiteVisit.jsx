@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Eye, Pencil, MapPin, Calendar, UserCheck, Paperclip, ClipboardList, CheckCircle2, Clock } from 'lucide-react';
+import {
+    Search, Eye, Pencil, MapPin, Calendar, UserCheck, Paperclip, ClipboardList, CheckCircle2, Clock,
+    Plus, Trash2, Upload, Link as LinkIcon, X, AlertTriangle, FileText, Check, Layers, Home
+} from 'lucide-react';
 import { leadsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date } from '../../utils/format';
@@ -16,15 +19,41 @@ const SPREADSHEET_SECTIONS = [
         cols: [
             { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
             { key: 'siteAddress', label: 'Site Address' },
-            { key: 'actualSiteVisitDateTime', label: 'Actual Visit Time' },
-            { key: 'assignedInstaller', label: 'Assigned Installer' },
-            { key: 'clientArchitectAvailability', label: 'Client/Architect Availablity' },
+            { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
+            { key: 'assignedInstaller', label: 'Assigned Installer / Measurement Person' },
+            { key: 'clientArchitectAvailability', label: 'Client / Architect Availability' },
             { key: 'scope', label: 'Scope' },
             { key: 'rooms', label: 'Rooms' },
-            { key: 'drawingsRenders', label: 'Drawings & Renders' },
+            { key: 'drawingsRenders', label: 'Drawings / Renders' },
             { key: 'installerAvailability', label: 'Installer Availability' },
         ]
     }
+];
+
+const APPROVED_SCOPE_MASTER = [
+    'Curtains',
+    'Blinds',
+    'Motorization',
+    'Wallpapers',
+    'Upholstery',
+    'Mattresses',
+    'Shutters',
+    'Awnings',
+    'Acoustic Panels',
+    'Other'
+];
+
+const INITIAL_ROOM_MASTER = [
+    'Living Room',
+    'Master Bedroom',
+    'Bedroom 2',
+    'Bedroom 3',
+    'Guest Bedroom',
+    'Dining Room',
+    'Kitchen',
+    'Home Theatre',
+    'Balcony',
+    'Study / Office'
 ];
 
 const getNestedVal = (obj, path) => {
@@ -36,6 +65,45 @@ const getNestedVal = (obj, path) => {
         curr = curr[p];
     }
     return curr;
+};
+
+const parseAvailabilitySlots = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (e) { }
+    const str = String(raw);
+    const parts = str.split(';').map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0) {
+        return parts.map((p, idx) => {
+            if (p.includes(':')) {
+                const [d, t] = p.split(':');
+                return { id: String(idx + 1), date: d ? d.trim() : '', timeSlot: t ? t.trim() : '' };
+            }
+            return { id: String(idx + 1), date: '', timeSlot: p };
+        });
+    }
+    return [{ id: '1', date: '', timeSlot: str }];
+};
+
+const parseAttachments = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (e) { }
+    if (typeof raw === 'string' && raw.trim()) {
+        return raw.split(',').map((s, idx) => ({
+            id: String(idx + 1),
+            name: s.trim(),
+            url: s.trim(),
+            type: s.includes('http') || s.includes('www.') ? 'link' : 'file'
+        }));
+    }
+    return [];
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -65,27 +133,145 @@ const SPREADSHEET_CELL_RENDERERS = {
     siteVisitDueDate: (lead) => {
         const val = lead.siteVisitDueDate || lead.measurement?.dueDate;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="text-slate-700 dark:text-slate-300 text-[11px] font-mono whitespace-nowrap">{date(val)}</span>;
+        const isOverdue = lead.siteVisitRequired && !lead.actualSiteVisitDateTime && new Date(val) < new Date();
+        return (
+            <div className="flex items-center gap-1 justify-center">
+                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {date(val)}
+                </span>
+                {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue" />}
+            </div>
+        );
     },
     actualSiteVisitDateTime: (lead) => {
         const val = lead.actualSiteVisitDateTime;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="text-slate-700 dark:text-slate-300 text-[11px] font-mono whitespace-nowrap">{date(val, { time: true })}</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val, { time: true })}
+            </span>
+        );
     },
-    architectName: (lead) => (
-        <span className="truncate block max-w-[140px] text-slate-700 dark:text-slate-300" title={lead.architect?.name || lead.architectName}>
-            {lead.architect?.name || lead.architectName || '—'}
-        </span>
-    ),
-    assignedInstaller: (lead) => (
-        <span className="truncate block max-w-[130px] font-medium text-slate-800 dark:text-slate-200">
-            {lead.assignedInstaller?.name || lead.assignedInstallerName || lead.installerName || 'Unassigned'}
-        </span>
-    ),
+    siteAddress: (lead) => {
+        const val = lead.siteAddress || lead.location || '';
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex items-start gap-1 max-w-[200px] mx-auto" title={val}>
+                <MapPin className="w-3 h-3 text-brand-500 mt-0.5 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-300 text-xs line-clamp-2 text-left whitespace-normal">
+                    {val}
+                </span>
+            </div>
+        );
+    },
+    assignedInstaller: (lead) => {
+        const installers = Array.isArray(lead.assignedInstallers) && lead.assignedInstallers.length > 0
+            ? lead.assignedInstallers
+            : lead.assignedInstaller
+                ? [lead.assignedInstaller]
+                : [];
+
+        if (installers.length === 0 && !lead.assignedInstallerName) {
+            return <span className="text-slate-400 dark:text-slate-600 text-xs italic">— Unassigned —</span>;
+        }
+
+        const names = installers.map((u) => typeof u === 'object' ? u.name : (lead.assignedInstallerName || 'Installer'));
+        const primary = names[0] || lead.assignedInstallerName || 'Installer';
+        const extraCount = names.length > 1 ? names.length - 1 : 0;
+
+        return (
+            <div className="flex items-center gap-1 justify-center" title={names.join(', ')}>
+                <UserCheck className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span className="truncate max-w-[120px] font-medium text-slate-800 dark:text-slate-200">
+                    {primary}
+                </span>
+                {extraCount > 0 && (
+                    <Badge tone="blue" className="text-[9px] px-1 py-0 font-mono">
+                        +{extraCount}
+                    </Badge>
+                )}
+            </div>
+        );
+    },
+    clientArchitectAvailability: (lead) => {
+        const slots = parseAvailabilitySlots(lead.clientArchitectAvailability);
+        if (slots.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-col gap-0.5 text-left max-w-[180px] mx-auto">
+                {slots.slice(0, 2).map((slot, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 truncate" title={`${slot.date} ${slot.timeSlot}`}>
+                        <Clock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                        <span className="truncate">{slot.date ? `${slot.date}: ${slot.timeSlot}` : slot.timeSlot}</span>
+                    </span>
+                ))}
+                {slots.length > 2 && (
+                    <span className="text-[9px] text-slate-500 font-medium">+{slots.length - 2} more slot(s)</span>
+                )}
+            </div>
+        );
+    },
+    scope: (lead) => {
+        const raw = lead.scope;
+        if (!raw) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const items = typeof raw === 'string' ? raw.split(',').map((s) => s.trim()).filter(Boolean) : Array.isArray(raw) ? raw : [];
+        if (items.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1 max-w-[180px] justify-center">
+                {items.slice(0, 2).map((item, idx) => (
+                    <Badge key={idx} tone="violet" className="text-[10px]">
+                        {item}
+                    </Badge>
+                ))}
+                {items.length > 2 && <Badge tone="slate" className="text-[9px]">+{items.length - 2}</Badge>}
+            </div>
+        );
+    },
+    rooms: (lead) => {
+        const raw = lead.rooms;
+        if (!raw) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const items = typeof raw === 'string' ? raw.split(',').map((s) => s.trim()).filter(Boolean) : Array.isArray(raw) ? raw : [];
+        if (items.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1 max-w-[180px] justify-center">
+                {items.slice(0, 2).map((item, idx) => (
+                    <Badge key={idx} tone="brand" className="text-[10px]">
+                        {item}
+                    </Badge>
+                ))}
+                {items.length > 2 && <Badge tone="slate" className="text-[9px]">+{items.length - 2}</Badge>}
+            </div>
+        );
+    },
+    drawingsRenders: (lead) => {
+        const list = parseAttachments(lead.drawingsRenders);
+        if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex items-center justify-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-400 font-semibold">
+                    <Paperclip className="w-3 h-3 shrink-0" /> {list.length} file(s)/link(s)
+                </span>
+            </div>
+        );
+    },
     installerAvailability: (lead) => {
         const val = lead.installerAvailability || 'AVAILABLE';
-        const tone = val === 'AVAILABLE' ? 'emerald' : val === 'BUSY' ? 'amber' : val === 'ON_SITE' ? 'blue' : val === 'UNAVAILABLE' ? 'rose' : 'slate';
-        return <Badge tone={tone}>{val}</Badge>;
+        let tone = 'emerald';
+        let label = 'Available';
+        if (val === 'PARTIALLY_AVAILABLE') {
+            tone = 'amber';
+            label = 'Partially Available';
+        } else if (val === 'UNAVAILABLE') {
+            tone = 'rose';
+            label = 'Unavailable';
+        } else if (val === 'BUSY') {
+            tone = 'amber';
+            label = 'Busy';
+        } else if (val === 'ON_SITE') {
+            tone = 'blue';
+            label = 'On Site';
+        }
+        return <Badge tone={tone}>{label}</Badge>;
     }
 };
 
@@ -115,27 +301,77 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 
     if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
 
-    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
+    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto" title={String(raw)}>{String(raw)}</span>;
 };
 
 import { getLocalDate, getLocalDateTime } from '../../utils/format';
 
 /* ------------------------------------------------------------- Edit Site Visit Modal */
 const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
+    const initialInstallers = (() => {
+        if (!item) return [];
+        if (Array.isArray(item.assignedInstallers) && item.assignedInstallers.length > 0) {
+            return item.assignedInstallers.map((u) => typeof u === 'object' ? (u._id || u.id) : u);
+        }
+        if (item.assignedInstaller) {
+            const id = typeof item.assignedInstaller === 'object' ? (item.assignedInstaller._id || item.assignedInstaller.id) : item.assignedInstaller;
+            return id ? [id] : [];
+        }
+        return [];
+    })();
+
+    const initialScope = (() => {
+        if (!item?.scope) return { selected: [], customOther: '' };
+        const raw = item.scope;
+        const items = typeof raw === 'string' ? raw.split(',').map((s) => s.trim()).filter(Boolean) : Array.isArray(raw) ? raw : [];
+        const approvedSet = new Set(APPROVED_SCOPE_MASTER);
+        const selected = [];
+        const customParts = [];
+        items.forEach((it) => {
+            if (approvedSet.has(it)) {
+                selected.push(it);
+            } else {
+                customParts.push(it);
+            }
+        });
+        if (customParts.length > 0 && !selected.includes('Other')) {
+            selected.push('Other');
+        }
+        return { selected, customOther: customParts.join(', ') };
+    })();
+
+    const initialRooms = (() => {
+        if (!item?.rooms) return [];
+        const raw = item.rooms;
+        return typeof raw === 'string' ? raw.split(',').map((s) => s.trim()).filter(Boolean) : Array.isArray(raw) ? raw : [];
+    })();
+
+    const initialSlots = parseAvailabilitySlots(item?.clientArchitectAvailability);
+    const initialAttachments = parseAttachments(item?.drawingsRenders);
+
     const [form, setForm] = useState({
         siteVisitRequired: item?.siteVisitRequired ?? true,
-        siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : getLocalDate(),
-        actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
+        siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : '',
+        isCompleted: Boolean(item?.actualSiteVisitDateTime),
+        actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
         siteAddress: item?.siteAddress || item?.location || '',
-        assignedInstaller: item?.assignedInstaller?._id || item?.assignedInstaller || '',
-        clientArchitectAvailability: item?.clientArchitectAvailability || '',
-        scope: item?.scope || '',
-        rooms: item?.rooms || '',
-        drawingsRenders: item?.drawingsRenders || '',
+        assignedInstallers: initialInstallers,
+        availabilitySlots: initialSlots.length > 0 ? initialSlots : [{ id: '1', date: '', timeSlot: '10:00 AM - 01:00 PM' }],
+        scopeSelected: initialScope.selected,
+        scopeCustomOther: initialScope.customOther,
+        roomsSelected: initialRooms,
+        roomMaster: Array.from(new Set([...INITIAL_ROOM_MASTER, ...initialRooms])),
+        newRoomInput: '',
+        attachments: initialAttachments,
+        newLinkUrl: '',
+        newLinkName: '',
         installerAvailability: item?.installerAvailability || 'AVAILABLE',
     });
 
-    const { execute, pending, error } = useAction(
+    const [installerSearch, setInstallerSearch] = useState('');
+    const [validationError, setValidationError] = useState('');
+
+    const { execute, pending, error: apiError } = useAction(
         (payload) => leadsApi.update(item.id || item._id, payload),
         {
             onSuccess: () => {
@@ -145,18 +381,158 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         }
     );
 
-    const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    const toggleScopeOption = (opt) => {
+        setForm((prev) => {
+            const exists = prev.scopeSelected.includes(opt);
+            const next = exists ? prev.scopeSelected.filter((x) => x !== opt) : [...prev.scopeSelected, opt];
+            return { ...prev, scopeSelected: next };
+        });
+    };
+
+    const toggleRoomOption = (opt) => {
+        setForm((prev) => {
+            const exists = prev.roomsSelected.includes(opt);
+            const next = exists ? prev.roomsSelected.filter((x) => x !== opt) : [...prev.roomsSelected, opt];
+            return { ...prev, roomsSelected: next };
+        });
+    };
+
+    const handleAddCustomRoom = () => {
+        const val = form.newRoomInput.trim();
+        if (!val) return;
+        setForm((prev) => ({
+            ...prev,
+            roomMaster: Array.from(new Set([...prev.roomMaster, val])),
+            roomsSelected: Array.from(new Set([...prev.roomsSelected, val])),
+            newRoomInput: ''
+        }));
+    };
+
+    const toggleInstaller = (userId) => {
+        setForm((prev) => {
+            const exists = prev.assignedInstallers.includes(userId);
+            const next = exists ? prev.assignedInstallers.filter((id) => id !== userId) : [...prev.assignedInstallers, userId];
+            return { ...prev, assignedInstallers: next };
+        });
+    };
+
+    const handleAddSlot = () => {
+        setForm((prev) => ({
+            ...prev,
+            availabilitySlots: [
+                ...prev.availabilitySlots,
+                { id: String(Date.now()), date: '', timeSlot: '10:00 AM - 01:00 PM' }
+            ]
+        }));
+    };
+
+    const handleUpdateSlot = (id, key, value) => {
+        setForm((prev) => ({
+            ...prev,
+            availabilitySlots: prev.availabilitySlots.map((s) => (s.id === id ? { ...s, [key]: value } : s))
+        }));
+    };
+
+    const handleRemoveSlot = (id) => {
+        setForm((prev) => ({
+            ...prev,
+            availabilitySlots: prev.availabilitySlots.filter((s) => s.id !== id)
+        }));
+    };
+
+    const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        const newItems = files.map((file) => ({
+            id: String(Date.now() + Math.random()),
+            name: file.name,
+            size: `${(file.size / 1024).toFixed(1)} KB`,
+            type: file.type.includes('image') ? 'image' : file.name.endsWith('.pdf') ? 'pdf' : 'cad',
+            url: URL.createObjectURL(file)
+        }));
+
+        setForm((prev) => ({
+            ...prev,
+            attachments: [...prev.attachments, ...newItems]
+        }));
+    };
+
+    const handleAddLink = () => {
+        if (!form.newLinkUrl.trim()) return;
+        const name = form.newLinkName.trim() || form.newLinkUrl.trim();
+        const linkItem = {
+            id: String(Date.now()),
+            name,
+            url: form.newLinkUrl.trim(),
+            type: 'link'
+        };
+        setForm((prev) => ({
+            ...prev,
+            attachments: [...prev.attachments, linkItem],
+            newLinkUrl: '',
+            newLinkName: ''
+        }));
+    };
+
+    const handleRemoveAttachment = (id) => {
+        setForm((prev) => ({
+            ...prev,
+            attachments: prev.attachments.filter((a) => a.id !== id)
+        }));
+    };
 
     const submit = (e) => {
         e.preventDefault();
+        setValidationError('');
+
+        if (form.siteVisitRequired && !form.siteVisitDueDate) {
+            setValidationError('Site Visit Due Date is mandatory when Site Visit Required is Yes.');
+            return;
+        }
+
+        if (form.isCompleted && !form.actualSiteVisitDateTime) {
+            setValidationError('Actual Site Visit Date & Time is mandatory when the site visit is marked completed.');
+            return;
+        }
+
+        const scopeParts = [...form.scopeSelected.filter((s) => s !== 'Other')];
+        if (form.scopeSelected.includes('Other') && form.scopeCustomOther.trim()) {
+            scopeParts.push(form.scopeCustomOther.trim());
+        }
+        const scopeString = scopeParts.join(', ');
+
+        const roomsString = form.roomsSelected.join(', ');
+
+        const availabilityString = form.availabilitySlots
+            .filter((s) => s.date || s.timeSlot)
+            .map((s) => (s.date ? `${s.date}: ${s.timeSlot}` : s.timeSlot))
+            .join('; ');
+
+        const drawingsString = form.attachments.length > 0 ? JSON.stringify(form.attachments) : '';
+
+        const primaryInstallerId = form.assignedInstallers.length > 0 ? form.assignedInstallers[0] : undefined;
+
         execute({
-            ...form,
             siteVisitRequired: Boolean(form.siteVisitRequired),
-            siteVisitDueDate: form.siteVisitDueDate || undefined,
+            siteVisitDueDate: form.siteVisitRequired ? (form.siteVisitDueDate || undefined) : undefined,
             actualSiteVisitDateTime: form.actualSiteVisitDateTime || undefined,
-            assignedInstaller: form.assignedInstaller || undefined,
+            siteAddress: form.siteAddress || undefined,
+            assignedInstaller: primaryInstallerId || null,
+            assignedInstallers: form.assignedInstallers,
+            clientArchitectAvailability: availabilityString || undefined,
+            scope: scopeString || undefined,
+            rooms: roomsString || undefined,
+            drawingsRenders: drawingsString || undefined,
+            installerAvailability: form.installerAvailability
         });
     };
+
+    const filteredInstallers = installers.filter((u) => {
+        if (!installerSearch) return true;
+        const q = installerSearch.toLowerCase();
+        return (u.name || '').toLowerCase().includes(q) || (u.role || '').toLowerCase().includes(q);
+    });
 
     return (
         <Modal
@@ -164,106 +540,346 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             onClose={onClose}
             title={`Site Visit Details — ${item?.code || ''}`}
             subtitle={`Configure pre-site visit information for ${item?.clientName || ''}`}
-            size="lg"
+            size="xl"
         >
-            <form onSubmit={submit} className="space-y-4">
-                {error && <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg">{error}</div>}
+            <form onSubmit={submit} className="space-y-6">
+                {(validationError || apiError) && (
+                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                        <span>{validationError || apiError}</span>
+                    </div>
+                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Site Visit Requirement">
+                {/* Grid Section 1: Requirement & Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                    <Field label="Site Visit Requirement" required>
                         <Select
                             value={form.siteVisitRequired ? 'YES' : 'NO'}
                             onChange={(e) => setForm((prev) => ({ ...prev, siteVisitRequired: e.target.value === 'YES' }))}
                             options={[
-                                { value: 'YES', label: 'Yes - Site Visit Needed' },
+                                { value: 'YES', label: 'Yes - Site Visit Required' },
                                 { value: 'NO', label: 'No - Not Required' }
                             ]}
                         />
                     </Field>
 
-                    <Field label="Site Visit Due Date">
+                    <Field label="Site Visit Due Date" required={form.siteVisitRequired} hint={form.siteVisitRequired ? 'Mandatory when Site Visit Required is Yes' : ''}>
                         <Input
                             type="date"
                             value={form.siteVisitDueDate}
-                            onChange={set('siteVisitDueDate')}
+                            onChange={(e) => setForm((prev) => ({ ...prev, siteVisitDueDate: e.target.value }))}
                         />
                     </Field>
 
-                    <Field label="Actual Site Visit Date & Time">
-                        <Input
-                            type="datetime-local"
-                            value={form.actualSiteVisitDateTime}
-                            onChange={set('actualSiteVisitDateTime')}
-                        />
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer mb-1.5">
+                                <input
+                                    type="checkbox"
+                                    checked={form.isCompleted}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, isCompleted: e.target.checked }))}
+                                    className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                                />
+                                <span>Mark Site Visit as Completed</span>
+                            </label>
+                            <p className="text-[11px] text-slate-500">Enable when the physical site visit has been completed.</p>
+                        </div>
+
+                        <Field label="Actual Site Visit Date & Time" required={form.isCompleted} hint={form.isCompleted ? 'Mandatory when marked completed' : ''}>
+                            <Input
+                                type="datetime-local"
+                                value={form.actualSiteVisitDateTime}
+                                onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
+                            />
+                        </Field>
+                    </div>
+                </div>
+
+                {/* Grid Section 2: Multiline Site Address */}
+                <Field label="Site Address" hint="Multiline postal address">
+                    <Textarea
+                        rows={3}
+                        placeholder="Enter full multiline postal site address including building, street, landmark, city, and pincode..."
+                        value={form.siteAddress}
+                        onChange={(e) => setForm((prev) => ({ ...prev, siteAddress: e.target.value }))}
+                    />
+                </Field>
+
+                {/* Grid Section 3: Installers & System Availability */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                    <Field label="Assigned Installer / Measurement Person" hint="Searchable; allow multiple users if required">
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    size="sm"
+                                    value={installerSearch}
+                                    onChange={(e) => setInstallerSearch(e.target.value)}
+                                    placeholder="Search installers by name or role..."
+                                    className="pl-8 text-xs"
+                                />
+                            </div>
+
+                            {form.assignedInstallers.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 p-2 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                                    {form.assignedInstallers.map((id) => {
+                                        const u = installers.find((inst) => (inst._id || inst.id) === id);
+                                        return (
+                                            <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                                <UserCheck className="w-3 h-3 shrink-0" />
+                                                <span>{u ? u.name : 'Selected User'}</span>
+                                                <button type="button" onClick={() => toggleInstaller(id)} className="text-slate-400 hover:text-rose-500">
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            <div className="max-h-36 overflow-y-auto p-2 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                                {filteredInstallers.length === 0 ? (
+                                    <div className="text-xs text-slate-400 py-2 text-center">No installers found</div>
+                                ) : (
+                                    filteredInstallers.map((u) => {
+                                        const userId = u._id || u.id;
+                                        const isSelected = form.assignedInstallers.includes(userId);
+                                        return (
+                                            <label key={userId} className="flex items-center justify-between p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer text-xs">
+                                                <span className="text-slate-700 dark:text-slate-200 font-medium">
+                                                    {u.name} <span className="text-slate-400 font-normal">({u.role || 'Team'})</span>
+                                                </span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => toggleInstaller(userId)}
+                                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                            </label>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
                     </Field>
 
-                    <Field label="Assigned Installer">
-                        <Select
-                            value={form.assignedInstaller}
-                            onChange={set('assignedInstaller')}
-                            options={[
-                                { value: '', label: 'Select Installer…' },
-                                ...installers.map((u) => ({ value: u._id || u.id, label: `${u.name} (${u.role || 'Team'})` }))
-                            ]}
-                        />
-                    </Field>
-
-                    <Field label="Installer Availability">
+                    <Field label="Installer Availability" hint="System-derived status">
                         <Select
                             value={form.installerAvailability}
-                            onChange={set('installerAvailability')}
+                            onChange={(e) => setForm((prev) => ({ ...prev, installerAvailability: e.target.value }))}
                             options={[
                                 { value: 'AVAILABLE', label: 'Available' },
-                                { value: 'BUSY', label: 'Busy' },
-                                { value: 'ON_SITE', label: 'On Site' },
+                                { value: 'PARTIALLY_AVAILABLE', label: 'Partially Available' },
                                 { value: 'UNAVAILABLE', label: 'Unavailable' }
                             ]}
                         />
-                    </Field>
-
-                    <Field label="Client / Architect Availability">
-                        <Input
-                            placeholder="e.g. Sat-Sun 10am to 2pm"
-                            value={form.clientArchitectAvailability}
-                            onChange={set('clientArchitectAvailability')}
-                        />
-                    </Field>
-
-                    <Field label="Scope">
-                        <Input
-                            placeholder="e.g. Curtains & Blinds for whole villa"
-                            value={form.scope}
-                            onChange={set('scope')}
-                        />
-                    </Field>
-
-                    <Field label="Rooms">
-                        <Input
-                            placeholder="e.g. Living, Dining, 3 Bedrooms"
-                            value={form.rooms}
-                            onChange={set('rooms')}
-                        />
+                        <div className="mt-2 p-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <span className="text-xs text-slate-500">Current System Status:</span>
+                            {form.installerAvailability === 'AVAILABLE' && <Badge tone="emerald">Available</Badge>}
+                            {form.installerAvailability === 'PARTIALLY_AVAILABLE' && <Badge tone="amber">Partially Available</Badge>}
+                            {form.installerAvailability === 'UNAVAILABLE' && <Badge tone="rose">Unavailable</Badge>}
+                        </div>
                     </Field>
                 </div>
 
-                <Field label="Site Address">
-                    <Textarea
-                        rows={2}
-                        placeholder="Enter full site location address"
-                        value={form.siteAddress}
-                        onChange={set('siteAddress')}
-                    />
+                {/* Grid Section 4: Client / Architect Availability Slots */}
+                <Field label="Client / Architect Availability" hint="Date and time selector — allow one or more availability slots">
+                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        {form.availabilitySlots.map((slot, index) => (
+                            <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <div className="flex-1 min-w-[140px]">
+                                    <Input
+                                        type="date"
+                                        size="sm"
+                                        value={slot.date}
+                                        onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
+                                        placeholder="Availability Date"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-[160px]">
+                                    <Input
+                                        size="sm"
+                                        value={slot.timeSlot}
+                                        onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
+                                        placeholder="e.g. 10:00 AM - 01:00 PM"
+                                    />
+                                </div>
+                                {form.availabilitySlots.length > 1 && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleRemoveSlot(slot.id)}
+                                        className="text-rose-500 hover:text-rose-700"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
+                            Add Availability Slot
+                        </Button>
+                    </div>
                 </Field>
 
-                <Field label="Drawings & Renders Notes">
-                    <Input
-                        placeholder="e.g. CAD layout received, 3D renders attached"
-                        value={form.drawingsRenders}
-                        onChange={set('drawingsRenders')}
-                    />
+                {/* Grid Section 5: Scope & Rooms Multi-select */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Scope */}
+                    <Field label="Scope" hint="Multi-select dropdown from approved scope master; include Other">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                            <div className="flex flex-wrap gap-1.5">
+                                {APPROVED_SCOPE_MASTER.map((opt) => {
+                                    const isSelected = form.scopeSelected.includes(opt);
+                                    return (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            onClick={() => toggleScopeOption(opt)}
+                                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${isSelected
+                                                    ? 'bg-brand-600 text-white shadow-sm ring-1 ring-brand-400'
+                                                    : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                }`}
+                                        >
+                                            {isSelected && <Check className="w-3 h-3 inline mr-1" />}
+                                            {opt}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {form.scopeSelected.includes('Other') && (
+                                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                                    <Input
+                                        size="sm"
+                                        placeholder="Specify custom scope requirements..."
+                                        value={form.scopeCustomOther}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, scopeCustomOther: e.target.value }))}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </Field>
+
+                    {/* Rooms */}
+                    <Field label="Rooms" hint="Multi-select dropdown from room master; allow Add New">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                                {form.roomMaster.map((rm) => {
+                                    const isSelected = form.roomsSelected.includes(rm);
+                                    return (
+                                        <button
+                                            key={rm}
+                                            type="button"
+                                            onClick={() => toggleRoomOption(rm)}
+                                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${isSelected
+                                                    ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400'
+                                                    : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                }`}
+                                        >
+                                            {isSelected && <Check className="w-3 h-3 inline mr-1" />}
+                                            {rm}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                <Input
+                                    size="sm"
+                                    placeholder="Add custom room name..."
+                                    value={form.newRoomInput}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, newRoomInput: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddCustomRoom();
+                                        }
+                                    }}
+                                />
+                                <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={handleAddCustomRoom}>
+                                    Add Room
+                                </Button>
+                            </div>
+                        </div>
+                    </Field>
+                </div>
+
+                {/* Grid Section 6: Drawings & Renders Upload & Links */}
+                <Field label="Drawings / Renders" hint="Allow multiple drawings, images, PDFs and external links">
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-brand-500 dark:hover:border-brand-400 cursor-pointer bg-white dark:bg-slate-950 transition">
+                                <Upload className="w-5 h-5 text-brand-500 mb-1" />
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Upload Files</span>
+                                <span className="text-[10px] text-slate-400">PDFs, Images, CAD DWG/DXF</span>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.png,.jpg,.jpeg,.webp,.dwg,.dxf"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+                            </label>
+
+                            <div className="p-2.5 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">Add Web Link</span>
+                                <Input
+                                    size="sm"
+                                    placeholder="Link Title (e.g. 3D Render Drive Link)"
+                                    value={form.newLinkName}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, newLinkName: e.target.value }))}
+                                />
+                                <div className="flex gap-1.5">
+                                    <Input
+                                        size="sm"
+                                        placeholder="https://..."
+                                        value={form.newLinkUrl}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, newLinkUrl: e.target.value }))}
+                                    />
+                                    <Button type="button" size="sm" variant="secondary" icon={LinkIcon} onClick={handleAddLink}>
+                                        Add
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {form.attachments.length > 0 && (
+                            <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
+                                    Attached Files & Links ({form.attachments.length}):
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                                    {form.attachments.map((att) => (
+                                        <div key={att.id} className="flex items-center justify-between p-2 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                                            <div className="flex items-center gap-2 truncate">
+                                                {att.type === 'link' ? (
+                                                    <LinkIcon className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                                                ) : (
+                                                    <Paperclip className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                                )}
+                                                <a href={att.url} target="_blank" rel="noreferrer" className="truncate text-brand-600 dark:text-brand-400 hover:underline" title={att.name}>
+                                                    {att.name}
+                                                </a>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleRemoveAttachment(att.id)}
+                                                className="text-slate-400 hover:text-rose-500 p-1"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </Field>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
                     <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
                     <Button type="submit" loading={pending}>Save Site Visit Details</Button>
                 </div>

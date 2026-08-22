@@ -142,16 +142,29 @@ const leadSchema = new mongoose.Schema(
       date: Date,
       clientBrief: String,
       consumptionSheet: [attachmentSchema],
+      selectedBoqVersion: String,
       designDirection: String,
+      designDirectionAttachments: [attachmentSchema],
       pricingRange: String,
+      minPricing: Number,
+      maxPricing: Number,
       terms: String,
       refundRevisionClause: String,
+      isRefundClauseLocked: { type: Boolean, default: true },
       approvalStatus: {
         type: String,
         enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
         default: 'PENDING',
       },
       approvedBy: String,
+      revisionHistory: [
+        {
+          version: String,
+          date: Date,
+          createdBy: String,
+          changes: String,
+        },
+      ],
     },
 
     // --- Sales & Commercials: Token / advance discussion.
@@ -160,16 +173,21 @@ const leadSchema = new mongoose.Schema(
       amount: Number,
       status: {
         type: String,
-        enum: ['NOT_DISCUSSED', 'DISCUSSED', 'PENDING', 'RECEIVED', 'WAIVED'],
+        enum: ['NOT_DISCUSSED', 'DISCUSSED', 'PENDING', 'COMMITTED', 'RECEIVED', 'WAIVED', 'REFUNDED', 'Not Discussed', 'Pending', 'Committed', 'Received', 'Waived', 'Refunded'],
         default: 'NOT_DISCUSSED',
       },
       receivedDate: Date,
       clientBudgetResponse: String,
       proposalAttachment: [attachmentSchema],
+      proposal: String,
       budgetEstimate: Number,
       clientResponse: String,
       projectTimeline: String,
+      projectTimelineStart: Date,
+      projectTimelineEnd: Date,
       commercialTerms: String,
+      commercialTermsNotes: String,
+      masterTemplate: String,
     },
 
     // --- Sales & Commercials: Costing.
@@ -193,6 +211,34 @@ const leadSchema = new mongoose.Schema(
         default: 'NOT_REQUIRED',
       },
       hiteshApprovalNotes: String,
+      lineItems: [
+        {
+          description: String,
+          quantity: Number,
+          catalogueCost: Number,
+          landedCost: Number,
+          localFabricCost: Number,
+          labourCost: Number,
+          totalCost: Number,
+        },
+      ],
+      costingHistory: [
+        {
+          version: String,
+          dueDate: Date,
+          catalogueCost: Number,
+          landedCost: Number,
+          localFabricCost: Number,
+          labourCost: Number,
+          sampleCost: Number,
+          totalCost: Number,
+          sellingPrice: Number,
+          calculatedMargin: Number,
+          marginModel: String,
+          savedAt: { type: Date, default: Date.now },
+          notes: String,
+        },
+      ],
     },
 
     // --- Sales & Commercials: Quotation.
@@ -225,7 +271,7 @@ const leadSchema = new mongoose.Schema(
       clientApprovalDate: String,
       clientApprovalStatus: {
         type: String,
-        enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED'],
+        enum: ['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED', 'ON_HOLD', 'DECLINED'],
         default: 'PENDING',
       },
       proofAttachment: [attachmentSchema],
@@ -264,7 +310,27 @@ const leadSchema = new mongoose.Schema(
         enum: ['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
         default: 'PENDING',
       },
-      verifiedDocuments: [attachmentSchema],
+      verifiedDocuments: [
+        new mongoose.Schema(
+          {
+            documentName: String,
+            docType: String,
+            status: {
+              type: String,
+              enum: ['PENDING', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
+              default: 'PENDING',
+            },
+            verifiedBy: String,
+            verifiedAt: Date,
+            url: String,
+            filename: String,
+            mimetype: String,
+            size: Number,
+            caption: String,
+          },
+          { _id: false }
+        ),
+      ],
       documentTypes: [String],
       remarks: String,
       verifiedBy: String,

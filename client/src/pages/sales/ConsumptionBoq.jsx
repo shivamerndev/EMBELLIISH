@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip, Layers, Pencil } from 'lucide-react';
+import {
+    Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip, Layers, Pencil,
+    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Trash2, Percent, UserCheck, Clock, AlertTriangle, FileText, X
+} from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
+import { selectUser } from '../../features/auth/authSlice';
 import useSales from '../../hooks/useSales';
-import { leadsApi } from '../../api';
-import { useAction } from '../../hooks/useAsync';
+import { leadsApi, fabricsApi, usersApi } from '../../api';
+import { useAsync, useAction } from '../../hooks/useAsync';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -30,7 +34,30 @@ const SPREADSHEET_SECTIONS = [
     }
 ];
 
+const APPROVED_UNITS = [
+    'Metre',
+    'Square Metre',
+    'Piece',
+    'Set',
+    'Yard',
+    'Feet',
+    'Square Feet',
+    'Roll'
+];
 
+const LINING_ACCESSORY_MASTER = [
+    'Blackout Lining',
+    'Satin / Soft Lining',
+    'Thermal Interlining',
+    'Sheer Fabric Lining',
+    'Motorized Track System',
+    'Heavy Duty Manual Track',
+    'Decorative Rods & Rings',
+    'Tiebacks & Holdbacks',
+    'Pelmet / Valance Board',
+    'Lead Tape Bottom Weighting',
+    'Side Hooks & Brackets'
+];
 
 const getNestedVal = (obj, path) => {
     if (!obj || !path) return undefined;
@@ -41,6 +68,89 @@ const getNestedVal = (obj, path) => {
         curr = curr[p];
     }
     return curr;
+};
+
+const autoFetchMeasurements = (item) => {
+    if (!item) return '—';
+    if (item.readySize?.finalMeasurements) return String(item.readySize.finalMeasurements);
+    if (item.readySize?.windowSizes) {
+        if (Array.isArray(item.readySize.windowSizes)) {
+            return `Confirmed Measurements (${item.readySize.windowSizes.length} windows recorded)`;
+        }
+        return String(item.readySize.windowSizes);
+    }
+    if (item.measurement?.roomList) return `Measurement Record (${item.measurement.roomList})`;
+    if (item.measurement?.status) return `Measurement Record - ${item.measurement.status}`;
+    return 'Final Confirmed Measurements v1.0';
+};
+
+const autoFetchRooms = (item) => {
+    if (!item) return '';
+    if (item.readySize?.windowSizes) {
+        if (Array.isArray(item.readySize.windowSizes)) {
+            const rooms = item.readySize.windowSizes.map((w) => w.roomName || w.room).filter(Boolean);
+            if (rooms.length > 0) return Array.from(new Set(rooms)).join(', ');
+        }
+    }
+    if (item.measurement?.roomList) return String(item.measurement.roomList);
+    if (item.rooms) return String(item.rooms);
+    return '';
+};
+
+const parseFabricSelections = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+        } catch {
+            return raw.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+    }
+    return [];
+};
+
+const parseLiningAssumptions = (raw) => {
+    if (!raw) return { selected: [], notes: '' };
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+        return {
+            selected: Array.isArray(raw.selected) ? raw.selected : [],
+            notes: raw.notes || ''
+        };
+    }
+    if (typeof raw === 'string') {
+        try {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed === 'object' && parsed !== null) {
+                return {
+                    selected: Array.isArray(parsed.selected) ? parsed.selected : [],
+                    notes: parsed.notes || ''
+                };
+            }
+        } catch {
+            // Check if string contains notes or comma-separated items
+            const parts = raw.split(' | Notes: ');
+            const items = parts[0] ? parts[0].split(',').map((s) => s.trim()).filter(Boolean) : [];
+            const notes = parts[1] || '';
+            return { selected: items, notes };
+        }
+    }
+    return { selected: [], notes: String(raw) };
+};
+
+const getNextVersion = (currentVer) => {
+    if (!currentVer) return 'v1.0';
+    const clean = String(currentVer).replace(/^v/i, '').trim();
+    const parts = clean.split('.');
+    if (parts.length >= 2 && !isNaN(parts[1])) {
+        const minor = parseInt(parts[1], 10) + 1;
+        return `v${parts[0]}.${minor}`;
+    }
+    if (!isNaN(clean)) {
+        return `v${parseInt(clean, 10) + 1}.0`;
+    }
+    return `${currentVer}-rev`;
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -64,10 +174,143 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
+    'consumption.sheetDueDate': (lead) => {
+        const val = lead.consumption?.sheetDueDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const isOverdue = !lead.consumption?.boqVersion && new Date(val) < new Date();
+        return (
+            <div className="flex items-center gap-1 justify-center">
+                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {date(val)}
+                </span>
+                {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue for Consumption BOQ" />}
+            </div>
+        );
+    },
+    'consumption.measurements': (lead) => {
+        const val = lead.consumption?.measurements || autoFetchMeasurements(lead);
+        if (!val || val === '—') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium max-w-[160px] truncate" title={val}>
+                <Ruler className="w-3 h-3 shrink-0 text-emerald-500" />
+                <span className="truncate">{val}</span>
+            </span>
+        );
+    },
+    'consumption.quantity': (lead) => {
+        const qty = lead.consumption?.quantity;
+        const unit = lead.consumption?.unit || '';
+        if (qty === undefined || qty === null || qty === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200">
+                {Number(qty).toLocaleString('en-US', { maximumFractionDigits: 2 })} {unit ? <span className="text-[10px] text-slate-500 font-normal">{unit}</span> : ''}
+            </span>
+        );
+    },
+    'consumption.unit': (lead) => {
+        const unit = lead.consumption?.unit;
+        if (!unit) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <Badge tone="slate" className="text-[10px] font-mono">{unit}</Badge>;
+    },
+    'consumption.wastageAllowance': (lead) => {
+        const raw = lead.consumption?.wastageAllowance;
+        if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const formatted = String(raw).includes('%') ? raw : `${raw}%`;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300/60 dark:border-amber-700/60">
+                <Percent className="w-3 h-3 text-amber-500" />
+                {formatted}
+            </span>
+        );
+    },
+    'consumption.boqVersion': (lead) => {
+        const ver = lead.consumption?.boqVersion;
+        if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <Badge tone="purple" className="font-mono text-[10px] font-bold">{ver}</Badge>;
+    },
+    'consumption.roomList': (lead) => {
+        const rooms = lead.consumption?.roomList || autoFetchRooms(lead);
+        if (!rooms) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const list = typeof rooms === 'string' ? rooms.split(',').map((s) => s.trim()).filter(Boolean) : Array.isArray(rooms) ? rooms : [];
+        if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1 max-w-[180px] justify-center" title={list.join(', ')}>
+                {list.slice(0, 2).map((r, idx) => (
+                    <Badge key={idx} tone="blue" className="text-[10px] max-w-[90px] truncate">
+                        {r}
+                    </Badge>
+                ))}
+                {list.length > 2 && <Badge tone="slate" className="text-[9px]">+{list.length - 2}</Badge>}
+            </div>
+        );
+    },
     'consumption.boqPreparedBy': (lead) => {
         const val = lead.consumption?.boqPreparedBy;
         const name = typeof val === 'object' ? val?.name : val;
-        return <span className="truncate block max-w-[140px] text-slate-700 dark:text-slate-300" title={name || '—'}>{name || '—'}</span>;
+        if (!name) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 max-w-[140px] truncate" title={name}>
+                <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+                <span className="truncate">{name}</span>
+            </span>
+        );
+    },
+    'consumption.boqPreparedDate': (lead) => {
+        const val = lead.consumption?.boqPreparedDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap justify-center">
+                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                {date(val, { time: true })}
+            </span>
+        );
+    },
+    'consumption.fabricDesignSelection': (lead) => {
+        const raw = lead.consumption?.fabricDesignSelection;
+        const list = parseFabricSelections(raw);
+        if (list.length === 0 && typeof raw === 'string' && raw) {
+            return <span className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-[150px] block" title={raw}>{raw}</span>;
+        }
+        if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1 max-w-[180px] justify-center" title={list.join(', ')}>
+                {list.slice(0, 2).map((item, idx) => (
+                    <Badge key={idx} tone="indigo" className="text-[10px] max-w-[100px] truncate">
+                        {item}
+                    </Badge>
+                ))}
+                {list.length > 2 && <Badge tone="slate" className="text-[9px]">+{list.length - 2}</Badge>}
+            </div>
+        );
+    },
+    'consumption.panelCount': (lead) => {
+        const count = lead.consumption?.panelCount;
+        if (count === undefined || count === null || count === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{count} panel(s)</span>;
+    },
+    'consumption.liningAccessoryAssumptions': (lead) => {
+        const raw = lead.consumption?.liningAccessoryAssumptions;
+        const { selected, notes } = parseLiningAssumptions(raw);
+        if (selected.length === 0 && !notes) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-col gap-0.5 items-center justify-center max-w-[180px]">
+                {selected.length > 0 && (
+                    <div className="flex flex-wrap gap-1 justify-center">
+                        {selected.slice(0, 2).map((item, idx) => (
+                            <Badge key={idx} tone="teal" className="text-[9px] max-w-[90px] truncate">
+                                {item}
+                            </Badge>
+                        ))}
+                        {selected.length > 2 && <Badge tone="slate" className="text-[9px]">+{selected.length - 2}</Badge>}
+                    </div>
+                )}
+                {notes && (
+                    <span className="text-[10px] text-slate-500 italic truncate max-w-[150px] block" title={notes}>
+                        "{notes}"
+                    </span>
+                )}
+            </div>
+        );
     },
 };
 
@@ -103,22 +346,63 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 import { getLocalDate } from '../../utils/format';
 
 const EditConsumptionModal = ({ item, onClose, onDone }) => {
+    const currentUser = useSelector(selectUser);
     const existingConsumption = item?.consumption || {};
 
+    // Initial state setup with auto-fetched measurements, room list, version & user
+    const defaultMeasurements = existingConsumption.measurements || autoFetchMeasurements(item);
+    const defaultRooms = existingConsumption.roomList || autoFetchRooms(item);
+    const defaultVersion = existingConsumption.boqVersion || 'v1.0';
+    const defaultPreparedBy = typeof existingConsumption.boqPreparedBy === 'object'
+        ? (existingConsumption.boqPreparedBy?.name || currentUser?.name || '')
+        : (existingConsumption.boqPreparedBy || currentUser?.name || currentUser?.email || 'System User');
+
+    const initialLining = parseLiningAssumptions(existingConsumption.liningAccessoryAssumptions);
+    const initialFabrics = parseFabricSelections(existingConsumption.fabricDesignSelection);
+
     const [form, setForm] = useState({
-        sheetDueDate: existingConsumption.sheetDueDate ? new Date(existingConsumption.sheetDueDate).toISOString().slice(0, 10) : getLocalDate(),
-        measurements: existingConsumption.measurements || '',
-        quantity: existingConsumption.quantity ?? '',
-        unit: existingConsumption.unit || 'meters',
-        wastageAllowance: existingConsumption.wastageAllowance || '',
-        boqVersion: existingConsumption.boqVersion || '',
-        roomList: existingConsumption.roomList || '',
-        boqPreparedBy: typeof existingConsumption.boqPreparedBy === 'object' ? existingConsumption.boqPreparedBy?.name || '' : (existingConsumption.boqPreparedBy || ''),
-        boqPreparedDate: existingConsumption.boqPreparedDate ? new Date(existingConsumption.boqPreparedDate).toISOString().slice(0, 10) : getLocalDate(),
-        fabricDesignSelection: existingConsumption.fabricDesignSelection || '',
-        panelCount: existingConsumption.panelCount ?? '',
-        liningAccessoryAssumptions: existingConsumption.liningAccessoryAssumptions || '',
+        sheetDueDate: existingConsumption.sheetDueDate ? new Date(existingConsumption.sheetDueDate).toISOString().slice(0, 10) : '',
+        measurements: defaultMeasurements,
+        quantity: existingConsumption.quantity !== undefined && existingConsumption.quantity !== null ? String(existingConsumption.quantity) : '',
+        unit: existingConsumption.unit || 'Metre',
+        wastageAllowance: existingConsumption.wastageAllowance ? String(existingConsumption.wastageAllowance).replace('%', '') : '',
+        boqVersion: defaultVersion,
+        roomList: defaultRooms,
+        boqPreparedBy: defaultPreparedBy,
+        boqPreparedDate: existingConsumption.boqPreparedDate
+            ? new Date(existingConsumption.boqPreparedDate).toISOString().slice(0, 16)
+            : new Date().toISOString().slice(0, 16),
+        panelCount: existingConsumption.panelCount !== undefined && existingConsumption.panelCount !== null ? String(existingConsumption.panelCount) : '',
     });
+
+    const [selectedFabrics, setSelectedFabrics] = useState(initialFabrics);
+    const [customFabricInput, setCustomFabricInput] = useState('');
+    const [selectedLinings, setSelectedLinings] = useState(initialLining.selected);
+    const [liningNotes, setLiningNotes] = useState(initialLining.notes);
+    const [autoIncrementVersion, setAutoIncrementVersion] = useState(false);
+    const [validationError, setValidationError] = useState('');
+
+    // Fetch fabric master options
+    const { data: fabricMasterData } = useAsync(() => fabricsApi.list().catch(() => ({ data: [] })), []);
+    const fabricOptions = useMemo(() => {
+        const rawList = Array.isArray(fabricMasterData?.data)
+            ? fabricMasterData.data
+            : Array.isArray(fabricMasterData)
+                ? fabricMasterData
+                : [];
+        return rawList.map((f) => f.name || f.code || f.title).filter(Boolean);
+    }, [fabricMasterData]);
+
+    // Fetch system users for user selection
+    const { data: usersData } = useAsync(() => usersApi.list().catch(() => ({ data: [] })), []);
+    const systemUsers = useMemo(() => {
+        const rawList = Array.isArray(usersData?.data)
+            ? usersData.data
+            : Array.isArray(usersData)
+                ? usersData
+                : [];
+        return rawList.map((u) => u.name || u.email).filter(Boolean);
+    }, [usersData]);
 
     const { execute, pending, error } = useAction(
         (payload) => leadsApi.update(item.id || item._id, { consumption: payload }),
@@ -132,22 +416,90 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
     const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
+    const handleSyncMeasurements = () => {
+        const fetched = autoFetchMeasurements(item);
+        setForm((prev) => ({ ...prev, measurements: fetched }));
+    };
+
+    const handleSyncRooms = () => {
+        const fetched = autoFetchRooms(item);
+        setForm((prev) => ({ ...prev, roomList: fetched }));
+    };
+
+    const handleIncrementVersion = () => {
+        setForm((prev) => ({ ...prev, boqVersion: getNextVersion(prev.boqVersion) }));
+    };
+
+    const toggleFabric = (fabricName) => {
+        setSelectedFabrics((prev) =>
+            prev.includes(fabricName) ? prev.filter((f) => f !== fabricName) : [...prev, fabricName]
+        );
+    };
+
+    const addCustomFabric = () => {
+        if (customFabricInput.trim() && !selectedFabrics.includes(customFabricInput.trim())) {
+            setSelectedFabrics((prev) => [...prev, customFabricInput.trim()]);
+            setCustomFabricInput('');
+        }
+    };
+
+    const toggleLining = (item) => {
+        setSelectedLinings((prev) =>
+            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+        );
+    };
+
     const submit = (e) => {
         e.preventDefault();
+        setValidationError('');
+
+        // --- Form Validations ---
+        let qtyNum = undefined;
+        if (form.quantity !== '') {
+            qtyNum = Number(form.quantity);
+            if (isNaN(qtyNum) || qtyNum < 0) {
+                setValidationError('Consumption Quantity must be a valid positive decimal number.');
+                return;
+            }
+        }
+
+        let panelInt = undefined;
+        if (form.panelCount !== '') {
+            panelInt = Number(form.panelCount);
+            if (!Number.isInteger(panelInt) || panelInt < 0) {
+                setValidationError('Panel Count must be a whole positive integer (0, 1, 2...).');
+                return;
+            }
+        }
+
+        let wastageVal = form.wastageAllowance.trim();
+        if (wastageVal) {
+            const numWastage = Number(wastageVal.replace('%', ''));
+            if (isNaN(numWastage) || numWastage < 0 || numWastage > 100) {
+                setValidationError('Wastage Allowance percentage must be a valid number between 0% and 100%.');
+                return;
+            }
+            wastageVal = `${numWastage}%`;
+        }
+
+        const finalVersion = autoIncrementVersion ? getNextVersion(form.boqVersion) : form.boqVersion;
+        const liningObj = { selected: selectedLinings, notes: liningNotes.trim() };
+        const liningFormatted = JSON.stringify(liningObj);
+
         execute({
             ...existingConsumption,
             sheetDueDate: form.sheetDueDate || undefined,
             measurements: form.measurements || undefined,
-            quantity: form.quantity !== '' ? Number(form.quantity) : undefined,
+            quantity: qtyNum,
             unit: form.unit || undefined,
-            wastageAllowance: form.wastageAllowance || undefined,
-            boqVersion: form.boqVersion || undefined,
+            wastageAllowance: wastageVal || undefined,
+            boqVersion: finalVersion || undefined,
             roomList: form.roomList || undefined,
-            boqPreparedBy: form.boqPreparedBy || undefined,
-            boqPreparedDate: form.boqPreparedDate || undefined,
-            fabricDesignSelection: form.fabricDesignSelection || undefined,
-            panelCount: form.panelCount !== '' ? Number(form.panelCount) : undefined,
-            liningAccessoryAssumptions: form.liningAccessoryAssumptions || undefined,
+            boqPreparedBy: form.boqPreparedBy || currentUser?.name || 'System User',
+            boqPreparedDate: new Date().toISOString(),
+            fabricDesignSelection: JSON.stringify(selectedFabrics),
+            panelCount: panelInt,
+            liningAccessoryAssumptions: liningFormatted,
         });
     };
 
@@ -155,74 +507,337 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Consumption & BOQ Details — ${item?.code || ''}`}
-            subtitle={`Edit consumption sheet and BOQ details for ${item?.clientName || ''}`}
+            title={`Consumption & BOQ Specification — ${item?.code || ''}`}
+            subtitle={`Configure fabric consumption, wastage allowance, versioning, and accessory assumptions for ${item?.clientName || ''}`}
             size="lg"
         >
             <form onSubmit={submit} className="space-y-4">
-                {error && <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg">{error?.message || String(error)}</div>}
+                {(error || validationError) && (
+                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                        <span>{validationError || error?.message || String(error)}</span>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Consumption Sheet Due">
-                        <Input type="date" value={form.sheetDueDate} onChange={set('sheetDueDate')} />
+                    {/* 1. Consumption Sheet Due */}
+                    <Field label="Consumption Sheet Due" hint="Target deadline date for sheet completion">
+                        <Input
+                            type="date"
+                            value={form.sheetDueDate}
+                            onChange={set('sheetDueDate')}
+                        />
                     </Field>
 
-                    <Field label="BOQ / Consumption Sheet Version">
-                        <Input value={form.boqVersion} onChange={set('boqVersion')} placeholder="e.g. v1.0, Final Draft" />
+                    {/* 6. BOQ / Consumption Sheet Version */}
+                    <Field label="BOQ / Consumption Sheet Version" hint="System-generated versioning">
+                        <div className="flex items-center gap-2">
+                            <Input
+                                value={form.boqVersion}
+                                onChange={set('boqVersion')}
+                                placeholder="e.g. v1.0"
+                                className="font-mono"
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleIncrementVersion}
+                                title="Increment Version (e.g. v1.0 -> v1.1)"
+                                icon={RefreshCw}
+                                className="shrink-0"
+                            >
+                                Revise
+                            </Button>
+                        </div>
                     </Field>
 
-                    <Field label="Consumption Quantity">
-                        <Input type="number" step="any" value={form.quantity} onChange={set('quantity')} placeholder="e.g. 150" />
-                    </Field>
-
-                    <Field label="Unit">
-                        <Input value={form.unit} onChange={set('unit')} placeholder="e.g. meters, sqft, pcs" />
-                    </Field>
-
-                    <Field label="Wastage Allowance">
-                        <Input value={form.wastageAllowance} onChange={set('wastageAllowance')} placeholder="e.g. 10%, 2.5 meters" />
-                    </Field>
-
-                    <Field label="Panel Count">
-                        <Input type="number" value={form.panelCount} onChange={set('panelCount')} placeholder="e.g. 12" />
-                    </Field>
-
-                    <Field label="BOQ Prepared By">
-                        <Input value={form.boqPreparedBy} onChange={set('boqPreparedBy')} placeholder="e.g. Designer Name" />
-                    </Field>
-
-                    <Field label="BOQ Prepared Date">
-                        <Input type="date" value={form.boqPreparedDate} onChange={set('boqPreparedDate')} />
-                    </Field>
-
+                    {/* 2. Measurements (Auto-fetch linked measurement record) */}
                     <div className="md:col-span-2">
-                        <Field label="Fabric / Design Selection">
-                            <Input value={form.fabricDesignSelection} onChange={set('fabricDesignSelection')} placeholder="e.g. Velvet Charcoal - Curtains & Sheers" />
+                        <Field label="Linked Measurements Record" hint="Auto-fetched from final confirmed measurement version">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={form.measurements}
+                                        onChange={set('measurements')}
+                                        placeholder="Auto-fetched measurement reference details..."
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleSyncMeasurements}
+                                        icon={Ruler}
+                                        className="shrink-0 text-xs"
+                                    >
+                                        Auto-fetch Final
+                                    </Button>
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 text-emerald-500" />
+                                    <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
+                                </div>
+                            </div>
                         </Field>
                     </div>
 
+                    {/* 7. Room List (Auto-fetched linked room list) */}
                     <div className="md:col-span-2">
-                        <Field label="Room List">
-                            <Textarea rows={2} value={form.roomList} onChange={set('roomList')} placeholder="Master Bedroom, Living Room, Dining..." />
+                        <Field label="Linked Room List" hint="Auto-fetched room list from final measurements">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <Textarea
+                                        rows={2}
+                                        value={form.roomList}
+                                        onChange={set('roomList')}
+                                        placeholder="Master Bedroom, Living Room, Dining..."
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleSyncRooms}
+                                        icon={RefreshCw}
+                                        className="shrink-0 text-xs self-start"
+                                    >
+                                        Sync Rooms
+                                    </Button>
+                                </div>
+                            </div>
                         </Field>
                     </div>
 
-                    <div className="md:col-span-2">
-                        <Field label="Measurements">
-                            <Textarea rows={2} value={form.measurements} onChange={set('measurements')} placeholder="Width x Height details per window..." />
+                    {/* 3. Consumption Quantity */}
+                    <Field label="Consumption Quantity" hint="Decimal quantity for BOQ line">
+                        <Input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={form.quantity}
+                            onChange={set('quantity')}
+                            placeholder="e.g. 150.5"
+                        />
+                    </Field>
+
+                    {/* 4. Unit (Dropdown from approved unit master) */}
+                    <Field label="Unit Master" hint="Select approved measurement unit">
+                        <Select value={form.unit} onChange={set('unit')}>
+                            {APPROVED_UNITS.map((unit) => (
+                                <option key={unit} value={unit}>
+                                    {unit}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+
+                    {/* 5. Wastage Allowance */}
+                    <Field label="Wastage Allowance (%)" hint="Numeric percentage allowance (e.g. 10)">
+                        <div className="relative">
+                            <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={form.wastageAllowance}
+                                onChange={set('wastageAllowance')}
+                                placeholder="e.g. 10"
+                                className="pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
+                        </div>
+                    </Field>
+
+                    {/* 11. Panel Count */}
+                    <Field label="Panel Count" hint="Positive whole integers only">
+                        <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={form.panelCount}
+                            onChange={set('panelCount')}
+                            placeholder="e.g. 12"
+                        />
+                    </Field>
+
+                    {/* 8. BOQ Prepared By (System-generated user field) */}
+                    <Field label="BOQ Prepared By" hint="Captures user preparing the BOQ">
+                        {systemUsers.length > 0 ? (
+                            <Select value={form.boqPreparedBy} onChange={set('boqPreparedBy')}>
+                                <option value={currentUser?.name || currentUser?.email || ''}>
+                                    Current User ({currentUser?.name || currentUser?.email || 'Logged In User'})
+                                </option>
+                                {systemUsers.map((usr) => (
+                                    <option key={usr} value={usr}>
+                                        {usr}
+                                    </option>
+                                ))}
+                            </Select>
+                        ) : (
+                            <Input
+                                value={form.boqPreparedBy}
+                                onChange={set('boqPreparedBy')}
+                                placeholder="User name..."
+                            />
+                        )}
+                    </Field>
+
+                    {/* 9. BOQ Prepared Date (System-generated read-only) */}
+                    <Field label="BOQ Prepared Date & Time" hint="System-generated read-only timestamp">
+                        <Input
+                            type="datetime-local"
+                            value={form.boqPreparedDate}
+                            disabled
+                            className="bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80"
+                        />
+                    </Field>
+
+                    {/* 10. Fabric / Design Selection (Searchable lookup with multi-select) */}
+                    <div className="md:col-span-2 space-y-2">
+                        <Field label="Fabric / Design Selection" hint="Select from approved fabric master or enter multiple items">
+                            <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                                {/* Selected fabric chips */}
+                                <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                                    {selectedFabrics.length === 0 ? (
+                                        <span className="text-xs text-slate-400 italic">No fabrics selected yet. Click options below or type to add.</span>
+                                    ) : (
+                                        selectedFabrics.map((fab) => (
+                                            <span
+                                                key={fab}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-300"
+                                            >
+                                                <Tag className="w-3 h-3 text-brand-500 shrink-0" />
+                                                {fab}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleFabric(fab)}
+                                                    className="ml-1 text-slate-400 hover:text-rose-500 transition-colors"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </span>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Custom fabric adder */}
+                                <div className="flex items-center gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
+                                    <Input
+                                        value={customFabricInput}
+                                        onChange={(e) => setCustomFabricInput(e.target.value)}
+                                        placeholder="Add custom fabric or design name..."
+                                        className="text-xs"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                addCustomFabric();
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={addCustomFabric}
+                                        icon={Plus}
+                                        className="shrink-0 text-xs"
+                                    >
+                                        Add Item
+                                    </Button>
+                                </div>
+
+                                {/* Fabric master quick picker */}
+                                {fabricOptions.length > 0 && (
+                                    <div className="pt-2">
+                                        <span className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">
+                                            Fabric Catalog Master Quick Select:
+                                        </span>
+                                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                                            {fabricOptions.map((option) => {
+                                                const selected = selectedFabrics.includes(option);
+                                                return (
+                                                    <button
+                                                        key={option}
+                                                        type="button"
+                                                        onClick={() => toggleFabric(option)}
+                                                        className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${selected
+                                                            ? 'bg-brand-600 text-white font-semibold shadow-xs'
+                                                            : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-100 dark:hover:bg-slate-700'
+                                                            }`}
+                                                    >
+                                                        {selected && <Check className="w-3 h-3 inline mr-1" />}
+                                                        {option}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </Field>
                     </div>
 
-                    <div className="md:col-span-2">
-                        <Field label="Lining / Accessory Assumptions">
-                            <Textarea rows={2} value={form.liningAccessoryAssumptions} onChange={set('liningAccessoryAssumptions')} placeholder="Blackout lining, motor tracks included..." />
+                    {/* 12. Lining / Accessory Assumptions (Multi-select plus notes) */}
+                    <div className="md:col-span-2 space-y-2">
+                        <Field label="Lining / Accessory Assumptions" hint="Select approved master items and include explanatory notes">
+                            <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <span className="text-[11px] font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
+                                        Approved Lining & Accessory Master Options:
+                                    </span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {LINING_ACCESSORY_MASTER.map((item) => {
+                                            const checked = selectedLinings.includes(item);
+                                            return (
+                                                <label
+                                                    key={item}
+                                                    className={`flex items-center gap-2 p-2 rounded-md border text-xs font-medium cursor-pointer transition-all ${checked
+                                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => toggleLining(item)}
+                                                        className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                                                    />
+                                                    <span>{item}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                                    <Field label="Explanatory Notes & Special Assumptions">
+                                        <Textarea
+                                            rows={2}
+                                            value={liningNotes}
+                                            onChange={(e) => setLiningNotes(e.target.value)}
+                                            placeholder="Provide explanatory notes on blackout lining, motorized track configurations, custom pelmet details..."
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
                         </Field>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" loading={pending}>Save Consumption / BOQ</Button>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={autoIncrementVersion}
+                            onChange={(e) => setAutoIncrementVersion(e.target.checked)}
+                            className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+                        />
+                        <span>Auto-increment revision version on save ({form.boqVersion} → {getNextVersion(form.boqVersion)})</span>
+                    </label>
+
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" loading={pending}>Save Consumption / BOQ</Button>
+                    </div>
                 </div>
             </form>
         </Modal>
@@ -281,7 +896,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's7', on
                                 {visibleSections.map((sec) =>
                                     sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
-                                            {renderSpreadsheetCell(lead, col.key, idx + 1, onView)}
+                                            {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
                                     ))
                                 )}
@@ -349,7 +964,8 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
             lead.studioMeeting?.feedback ||
             lead.studioMeeting?.nextAction ||
             lead.studioMeeting?.attendees ||
-            lead.studioMeeting?.pricingRange
+            lead.studioMeeting?.pricingRange ||
+            lead.consumption?.boqVersion
         )
     );
 
@@ -359,7 +975,8 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
             const version = String(lead.consumption?.boqVersion || '').toLowerCase();
-            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q)) {
+            const fabric = String(lead.consumption?.fabricDesignSelection || '').toLowerCase();
+            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q) && !fabric.includes(q)) {
                 return false;
             }
         }
@@ -392,7 +1009,7 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
                         <Input
                             value={search}
                             onChange={(e) => updateParam('search', e.target.value, '')}
-                            placeholder="Search code, client, BOQ version..."
+                            placeholder="Search code, client, BOQ version, fabric..."
                             className="pl-9"
                         />
                     </div>

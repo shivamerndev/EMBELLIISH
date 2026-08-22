@@ -1,32 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Eye, CheckCircle2, Calendar, Paperclip, ShieldCheck, Pencil, History, RotateCcw, AlertTriangle, ShieldAlert, Clock } from 'lucide-react';
+import {
+    Search,
+    Eye,
+    CheckCircle2,
+    Calendar,
+    Paperclip,
+    ShieldCheck,
+    Pencil,
+    History,
+    RotateCcw,
+    AlertTriangle,
+    Clock,
+    Plus,
+    Trash2,
+    ExternalLink,
+    Link as LinkIcon,
+    Lock,
+    Layers,
+    X,
+    FileText,
+    Check
+} from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
-import { leadsApi, uploadApi } from '../../api';
+import { leadsApi, uploadApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 
 const SPREADSHEET_SECTIONS = [
     {
         id: 's12',
-        title: ' Client Approval',
+        title: 'Client Approval',
         color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/90 dark:text-orange-200 dark:border-orange-700/80',
         cols: [
             { key: 'approval.planned', label: 'Approval Due Date' },
             { key: 'approval.clientApprovalDate', label: 'Client Approval Date' },
             { key: 'approval.clientApprovalStatus', label: 'Client Approval Status' },
-            { key: 'approval.revisions', label: 'Revision Control History' },
             { key: 'approval.proofAttachment', label: 'Approval Proof / Attachment' },
-            { key: 'approval.finalApprovedVersion', label: 'Final Quotation / Proposal Version Approved' },
-            { key: 'presentation.attachment', label: 'Presentation' },
+            { key: 'approval.finalApprovedVersion', label: 'Final Approved Version' },
+            { key: 'presentation.link', label: 'Presentation Link' },
+            { key: 'presentation.attachment', label: 'Presentation Deck' },
             { key: 'presentation.clientSelection', label: 'Client Selection' },
             { key: 'presentation.fabricSelection', label: 'Fabric Selection' },
             { key: 'presentation.designDirection', label: 'Design Direction' },
             { key: 'presentation.revisionNotes', label: 'Revision Notes' },
+            { key: 'approval.revisions', label: 'Revision History Log' },
         ]
     }
+];
+
+const ROOM_OPTIONS = [
+    'Living Room',
+    'Master Bedroom',
+    'Bedroom 2',
+    'Bedroom 3',
+    'Dining Room',
+    'Balcony',
+    'Study Room',
+    'Home Theater',
+    'Guest Room',
+    'General / Whole Site'
 ];
 
 const getNestedVal = (obj, path) => {
@@ -38,6 +73,49 @@ const getNestedVal = (obj, path) => {
         curr = curr[p];
     }
     return curr;
+};
+
+// Safe parsers for subforms stored as JSON or strings
+const parseClientSelections = (raw) => {
+    if (!raw) return [{ item: '', quantity: 1, room: 'Living Room', remarks: '' }];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {
+        // string fallback
+    }
+    return [{ item: String(raw), quantity: 1, room: 'General', remarks: '' }];
+};
+
+const parseFabricSelections = (raw) => {
+    if (!raw) return [{ room: 'Living Room', fabric: '', code: '' }];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {
+        // string fallback
+    }
+    return [{ room: 'Living Room', fabric: String(raw), code: '' }];
+};
+
+const formatDateTime = (raw) => {
+    if (!raw) return null;
+    try {
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return String(raw);
+        return d.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch (e) {
+        return String(raw);
+    }
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -61,13 +139,48 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
+    'approval.planned': (lead) => {
+        const planned = lead.approval?.planned;
+        if (!planned) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-xs font-medium whitespace-nowrap">{date(planned)}</span>;
+    },
+    'approval.clientApprovalDate': (lead) => {
+        const appDate = lead.approval?.clientApprovalDate;
+        if (!appDate) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-xs font-medium whitespace-nowrap">{formatDateTime(appDate)}</span>;
+    },
     'approval.clientApprovalStatus': (lead) => {
         const st = lead.approval?.clientApprovalStatus || 'PENDING';
         const revCount = lead.approval?.revisions?.length || 0;
-        const tone = st === 'APPROVED' ? 'emerald' : st === 'REJECTED' ? 'rose' : st === 'REVISION_REQUESTED' ? 'amber' : 'slate';
+        let tone = 'slate';
+        let label = 'PENDING';
+
+        switch (st) {
+            case 'APPROVED':
+                tone = 'emerald';
+                label = 'APPROVED';
+                break;
+            case 'REVISION_REQUESTED':
+                tone = 'amber';
+                label = 'REVISION REQ';
+                break;
+            case 'ON_HOLD':
+                tone = 'blue';
+                label = 'ON HOLD';
+                break;
+            case 'DECLINED':
+            case 'REJECTED':
+                tone = 'rose';
+                label = 'DECLINED';
+                break;
+            default:
+                tone = 'slate';
+                label = 'PENDING';
+        }
+
         return (
             <div className="flex items-center justify-center gap-1">
-                <Badge tone={tone}>{st}</Badge>
+                <Badge tone={tone}>{label}</Badge>
                 {revCount > 0 && (
                     <Badge tone="amber">
                         <RotateCcw className="w-2.5 h-2.5 inline mr-0.5" /> Rev {revCount}
@@ -76,9 +189,98 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
+    'approval.proofAttachment': (lead) => {
+        const proofs = lead.approval?.proofAttachment || [];
+        if (!proofs.length) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium">
+                <Paperclip className="w-3 h-3 shrink-0 text-emerald-600 dark:text-emerald-400" /> {proofs.length} Proof File(s)
+            </span>
+        );
+    },
+    'approval.finalApprovedVersion': (lead) => {
+        const ver = lead.approval?.finalApprovedVersion || lead.quotation?.version || lead.quotationNo;
+        const isApproved = lead.approval?.clientApprovalStatus === 'APPROVED';
+        if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold ${
+                isApproved
+                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+            }`}>
+                {isApproved && <Lock className="w-2.5 h-2.5 shrink-0 text-emerald-600 dark:text-emerald-400" />}
+                {ver}
+            </span>
+        );
+    },
+    'presentation.link': (lead) => {
+        const link = lead.presentation?.link || lead.presentation?.url;
+        if (!link) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <a
+                href={link}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-brand-600 dark:text-brand-400 hover:underline font-medium"
+            >
+                <LinkIcon className="w-3 h-3 shrink-0" /> Open Link <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+            </a>
+        );
+    },
+    'presentation.attachment': (lead) => {
+        const files = lead.presentation?.attachment || [];
+        if (!files.length) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-indigo-500/10 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-medium">
+                <FileText className="w-3 h-3 shrink-0 text-indigo-500" /> {files.length} Deck(s)
+            </span>
+        );
+    },
+    'presentation.clientSelection': (lead) => {
+        const sel = parseClientSelections(lead.presentation?.clientSelection);
+        const valid = sel.filter((s) => s.item && s.item.trim());
+        if (!valid.length) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-col gap-0.5 text-left max-w-[200px]">
+                <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                    {valid.length} Item(s) Selected
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    {valid.map((v) => `${v.item} (${v.quantity || 1})`).join(', ')}
+                </span>
+            </div>
+        );
+    },
+    'presentation.fabricSelection': (lead) => {
+        const fabs = parseFabricSelections(lead.presentation?.fabricSelection);
+        const valid = fabs.filter((f) => f.fabric && f.fabric.trim());
+        if (!valid.length) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                {valid.slice(0, 2).map((f, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300">
+                        <strong className="font-semibold">{f.room || 'General'}:</strong> {f.fabric}
+                    </span>
+                ))}
+                {valid.length > 2 && (
+                    <span className="text-[10px] text-slate-400 font-semibold">+{valid.length - 2} more</span>
+                )}
+            </div>
+        );
+    },
+    'presentation.designDirection': (lead) => {
+        const dd = lead.presentation?.designDirection;
+        if (!dd) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block text-xs" title={dd}>{dd}</span>;
+    },
+    'presentation.revisionNotes': (lead) => {
+        const notes = lead.presentation?.revisionNotes;
+        if (!notes) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block text-xs" title={notes}>{notes}</span>;
+    },
     'approval.revisions': (lead) => {
         const revs = lead.approval?.revisions || [];
-        if (revs.length === 0) return <span className="text-slate-400 dark:text-slate-600">Base Rev (0)</span>;
+        if (revs.length === 0) return <span className="text-slate-400 dark:text-slate-600">Base (0)</span>;
         return (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold">
                 <RotateCcw className="w-3 h-3 shrink-0" /> {revs.length} Change(s)
@@ -103,17 +305,100 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
         );
     }
 
-    if (raw instanceof Date || (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw))) {
-        return <span className="text-slate-700 dark:text-slate-300 text-[11px] whitespace-nowrap">{date(raw, { time: String(raw).includes('T') })}</span>;
-    }
-
-    if (typeof raw === 'boolean') {
-        return raw ? <Badge tone="emerald">YES</Badge> : <Badge tone="slate">NO</Badge>;
-    }
-
     if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
 
-    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
+    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block text-xs" title={String(raw)}>{String(raw)}</span>;
+};
+
+// Fabric Searchable Combobox Component
+const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState(value || '');
+
+    useEffect(() => {
+        setQuery(value || '');
+    }, [value]);
+
+    const filtered = useMemo(() => {
+        if (!query) return fabricCatalog.slice(0, 30);
+        const q = query.toLowerCase();
+        return fabricCatalog.filter((f) => {
+            const name = String(f.name || f.title || f.fabricName || '').toLowerCase();
+            const code = String(f.code || f.itemCode || '').toLowerCase();
+            const composition = String(f.composition || f.category || '').toLowerCase();
+            return name.includes(q) || code.includes(q) || composition.includes(q);
+        }).slice(0, 30);
+    }, [query, fabricCatalog]);
+
+    const handleSelect = (fab) => {
+        const displayStr = fab.code ? `${fab.name || fab.title} (${fab.code})` : (fab.name || fab.title || String(fab));
+        onChange(displayStr, fab.code || '');
+        setQuery(displayStr);
+        setOpen(false);
+    };
+
+    return (
+        <div className="relative w-full">
+            <div className="relative flex items-center">
+                <Input
+                    value={query}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        onChange(e.target.value, '');
+                        setOpen(true);
+                    }}
+                    onFocus={() => setOpen(true)}
+                    placeholder="Search fabric catalogue or type name..."
+                    className="pr-8 text-xs"
+                />
+                <button
+                    type="button"
+                    onClick={() => setOpen(!open)}
+                    className="absolute right-2 text-slate-400 hover:text-slate-600"
+                >
+                    <Layers className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
+            {open && (
+                <>
+                    <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+                    <div className="absolute z-30 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                        {filtered.length > 0 ? (
+                            filtered.map((fab, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => handleSelect(fab)}
+                                    className="w-full text-left px-3 py-2 hover:bg-brand-50 dark:hover:bg-slate-800/80 transition flex items-center justify-between"
+                                >
+                                    <div>
+                                        <div className="font-semibold text-slate-800 dark:text-slate-200">
+                                            {fab.name || fab.title || fab.fabricName || fab}
+                                        </div>
+                                        {fab.composition && (
+                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                                {fab.composition} {fab.color ? `• ${fab.color}` : ''}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {fab.code && (
+                                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                            {fab.code}
+                                        </span>
+                                    )}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="p-3 text-slate-500 text-center italic text-xs">
+                                No matching catalog fabric. Press enter or leave text as custom entry.
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
+        </div>
+    );
 };
 
 import { getLocalDate } from '../../utils/format';
@@ -121,37 +406,132 @@ import { getLocalDate } from '../../utils/format';
 const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const wasApproved = item?.approval?.clientApprovalStatus === 'APPROVED';
 
+    // Format ISO string to datetime-local format YYYY-MM-DDTHH:mm
+    const toDatetimeLocal = (raw) => {
+        if (!raw) return '';
+        try {
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return '';
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch (e) {
+            return '';
+        }
+    };
+
     const [form, setForm] = useState({
-        planned: item?.approval?.planned ? new Date(item.approval.planned).toISOString().slice(0, 10) : getLocalDate(),
-        clientApprovalDate: item?.approval?.clientApprovalDate ? new Date(item.approval.clientApprovalDate).toISOString().slice(0, 10) : getLocalDate(),
+        planned: item?.approval?.planned || '',
+        clientApprovalDate: toDatetimeLocal(item?.approval?.clientApprovalDate) || '',
         clientApprovalStatus: item?.approval?.clientApprovalStatus || 'PENDING',
-        finalApprovedVersion: item?.approval?.finalApprovedVersion || '',
-        clientSelection: item?.presentation?.clientSelection || '',
-        fabricSelection: item?.presentation?.fabricSelection || '',
+        finalApprovedVersion: item?.approval?.finalApprovedVersion || item?.quotation?.version || (item?.quotationNo ? `QUOT-${item.quotationNo}` : 'v1.0'),
+        presentationLink: item?.presentation?.link || item?.presentation?.url || '',
         designDirection: item?.presentation?.designDirection || '',
         revisionNotes: item?.presentation?.revisionNotes || '',
     });
 
+    // Subforms state
+    const [clientSelections, setClientSelections] = useState(parseClientSelections(item?.presentation?.clientSelection));
+    const [fabricSelections, setFabricSelections] = useState(parseFabricSelections(item?.presentation?.fabricSelection));
+
+    // File attachments state
     const [proofAttachments, setProofAttachments] = useState(item?.approval?.proofAttachment || []);
     const [presentationAttachments, setPresentationAttachments] = useState(item?.presentation?.attachment || []);
     const [uploading, setUploading] = useState(null);
+
+    // Master Fabrics Catalogue list
+    const [fabricCatalog, setFabricCatalog] = useState([]);
 
     // Revision / Change-Control state
     const [revisionReason, setRevisionReason] = useState('');
     const [validationError, setValidationError] = useState('');
     const [showRevisionsHistory, setShowRevisionsHistory] = useState(false);
 
+    useEffect(() => {
+        fabricsApi
+            .list({ limit: 100 })
+            .then((res) => {
+                const itemsList = res.data?.items || res.data || [];
+                setFabricCatalog(itemsList);
+            })
+            .catch(() => {
+                // Fallback catalogue items
+                setFabricCatalog([
+                    { name: 'Linen Sheer White', code: 'FAB-LIN-01', composition: '100% Linen Sheer', color: 'White' },
+                    { name: 'Silk Velvet Navy', code: 'FAB-VEL-02', composition: 'Premium Velvet', color: 'Navy Blue' },
+                    { name: 'Motorized Blackout Sheer', code: 'FAB-[#836444]-03', composition: 'Poly-Blackout', color: 'Charcoal' },
+                    { name: 'Cotton Satin Beige', code: 'FAB-SAT-04', composition: 'Cotton Satin Blend', color: 'Beige' },
+                    { name: 'Jacquard Floral Weave', code: 'FAB-JAC-05', composition: 'Jacquard Brocade', color: 'Gold/Champagne' }
+                ]);
+            });
+    }, []);
+
     const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+    // Client Selection Subform Handlers
+    const addClientSelectionRow = () => {
+        setClientSelections([...clientSelections, { item: '', quantity: 1, room: 'Living Room', remarks: '' }]);
+    };
+
+    const removeClientSelectionRow = (index) => {
+        if (clientSelections.length <= 1) {
+            setClientSelections([{ item: '', quantity: 1, room: 'Living Room', remarks: '' }]);
+            return;
+        }
+        setClientSelections(clientSelections.filter((_, i) => i !== index));
+    };
+
+    const updateClientSelectionRow = (index, field, value) => {
+        const updated = [...clientSelections];
+        updated[index] = { ...updated[index], [field]: value };
+        setClientSelections(updated);
+    };
+
+    // Fabric Selection Subform Handlers
+    const addFabricSelectionRow = () => {
+        setFabricSelections([...fabricSelections, { room: 'Living Room', fabric: '', code: '' }]);
+    };
+
+    const removeFabricSelectionRow = (index) => {
+        if (fabricSelections.length <= 1) {
+            setFabricSelections([{ room: 'Living Room', fabric: '', code: '' }]);
+            return;
+        }
+        setFabricSelections(fabricSelections.filter((_, i) => i !== index));
+    };
+
+    const updateFabricSelectionRow = (index, fabricName, code) => {
+        const updated = [...fabricSelections];
+        updated[index] = { ...updated[index], fabric: fabricName, code: code || updated[index].code };
+        setFabricSelections(updated);
+    };
+
+    const updateFabricRoom = (index, roomName) => {
+        const updated = [...fabricSelections];
+        updated[index] = { ...updated[index], room: roomName };
+        setFabricSelections(updated);
+    };
+
+    // Available quotation / proposal version options for Linked Record selection
+    const availableVersions = useMemo(() => {
+        const setOfVersions = new Set();
+        if (item?.quotation?.version) setOfVersions.add(item.quotation.version);
+        if (item?.quotation?.no) setOfVersions.add(item.quotation.no);
+        if (item?.quotationNo) setOfVersions.add(`QUOT-${item.quotationNo}`);
+        setOfVersions.add('v1.0 (Initial Proposal)');
+        setOfVersions.add('v2.0 (Revised BOQ)');
+        setOfVersions.add('v3.0 (Final Approved Proposal)');
+        return Array.from(setOfVersions);
+    }, [item]);
 
     // Check if selection/approval fields have been modified compared to initial state
     const isSelectionAltered = () => {
         if (!wasApproved) return false;
         const initPlanned = item?.approval?.planned || '';
-        const initDate = item?.approval?.clientApprovalDate || '';
+        const initDate = toDatetimeLocal(item?.approval?.clientApprovalDate) || '';
         const initStatus = item?.approval?.clientApprovalStatus || 'PENDING';
         const initVersion = item?.approval?.finalApprovedVersion || '';
-        const initClientSel = item?.presentation?.clientSelection || '';
-        const initFabricSel = item?.presentation?.fabricSelection || '';
+        const initClientSel = JSON.stringify(parseClientSelections(item?.presentation?.clientSelection));
+        const initFabricSel = JSON.stringify(parseFabricSelections(item?.presentation?.fabricSelection));
         const initDesignDir = item?.presentation?.designDirection || '';
         const initProofStr = JSON.stringify(item?.approval?.proofAttachment || []);
 
@@ -160,8 +540,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             form.clientApprovalDate !== initDate ||
             form.clientApprovalStatus !== initStatus ||
             form.finalApprovedVersion !== initVersion ||
-            form.clientSelection !== initClientSel ||
-            form.fabricSelection !== initFabricSel ||
+            JSON.stringify(clientSelections) !== initClientSel ||
+            JSON.stringify(fabricSelections) !== initFabricSel ||
             form.designDirection !== initDesignDir ||
             JSON.stringify(proofAttachments) !== initProofStr
         );
@@ -222,15 +602,22 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
 
-        // Enforce change-control / revision reason if an approved selection was modified
+        // Mandatory revision notes / reason check if modifying an approved selection
         if (wasApproved && changesInEffect) {
             if (!revisionReason.trim()) {
-                setValidationError('A Revision Reason / Change-Control Description is required when modifying an approved selection.');
+                setValidationError('Mandatory: A Revision Reason / Change-Control Description is required when modifying an approved client selection.');
                 return;
             }
         }
 
         setValidationError('');
+
+        // Sanitize subform data before storing
+        const validClientSelections = clientSelections.filter((s) => s.item && s.item.trim() !== '');
+        const validFabricSelections = fabricSelections.filter((f) => f.fabric && f.fabric.trim() !== '');
+
+        const formattedClientSelStr = JSON.stringify(validClientSelections.length > 0 ? validClientSelections : clientSelections);
+        const formattedFabricSelStr = JSON.stringify(validFabricSelections.length > 0 ? validFabricSelections : fabricSelections);
 
         const existingRevisions = Array.isArray(item?.approval?.revisions) ? item.approval.revisions : [];
         let updatedRevisions = existingRevisions;
@@ -242,9 +629,9 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             const revisionSnapshot = {
                 revisionNumber: revNum,
                 clientApprovalStatus: item?.approval?.clientApprovalStatus || 'APPROVED',
-                finalApprovedVersion: item?.approval?.finalApprovedVersion || 'v1',
-                clientSelection: item?.presentation?.clientSelection || '',
-                fabricSelection: item?.presentation?.fabricSelection || '',
+                finalApprovedVersion: item?.approval?.finalApprovedVersion || 'v1.0',
+                clientSelection: formattedClientSelStr,
+                fabricSelection: formattedFabricSelStr,
                 designDirection: item?.presentation?.designDirection || '',
                 revisionNotes: item?.presentation?.revisionNotes || '',
                 changeReason: revisionReason.trim(),
@@ -254,7 +641,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
 
             updatedRevisions = [...existingRevisions, revisionSnapshot];
 
-            // If user hasn't explicitly set another status, transition to REVISION_REQUESTED
+            // Auto-transition status if modification was made while status was APPROVED
             if (finalStatus === 'APPROVED') {
                 finalStatus = 'REVISION_REQUESTED';
             }
@@ -267,7 +654,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             approval: {
                 ...(item?.approval || {}),
                 planned: form.planned || undefined,
-                clientApprovalDate: form.clientApprovalDate || undefined,
+                clientApprovalDate: form.clientApprovalDate ? new Date(form.clientApprovalDate).toISOString() : undefined,
                 clientApprovalStatus: finalStatus,
                 proofAttachment: proofAttachments,
                 finalApprovedVersion: form.finalApprovedVersion || undefined,
@@ -275,8 +662,10 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             },
             presentation: {
                 ...(item?.presentation || {}),
-                clientSelection: form.clientSelection || undefined,
-                fabricSelection: form.fabricSelection || undefined,
+                link: form.presentationLink || undefined,
+                url: form.presentationLink || undefined,
+                clientSelection: formattedClientSelStr,
+                fabricSelection: formattedFabricSelStr,
                 designDirection: form.designDirection || undefined,
                 revisionNotes: finalNotes || undefined,
                 attachment: presentationAttachments,
@@ -290,9 +679,9 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Edit Client Approval & Presentation — ${item?.clientName || item?.code}`}
-            subtitle="Update client approval dates, status, proof attachments, final approved versions, presentation details, and fabric selections."
-            size="lg"
+            title={`Client Approval & Presentation — ${item?.clientName || item?.code}`}
+            subtitle="Configure approval dates, status, attachments, approved versions, presentations, dynamic selections, fabrics & revision controls."
+            size="xl"
             footer={
                 <>
                     <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -300,21 +689,22 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                         loading={pending}
                         onClick={handleSubmit}
                     >
-                        {wasApproved && changesInEffect ? 'Trigger Revision & Save' : 'Save Details'}
+                        {wasApproved && changesInEffect ? 'Trigger Revision & Save' : 'Save Approval Details'}
                     </Button>
                 </>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
                 {(error || validationError) && (
-                    <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                    <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
                         {error?.message || validationError}
                     </div>
                 )}
 
                 {/* Change Control Warning Banner */}
                 {wasApproved && (
-                    <div className={`p-3.5 rounded-lg border transition-all space-y-2.5 ${changesInEffect
+                    <div className={`p-4 rounded-xl border transition-all space-y-3 ${changesInEffect
                         ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-200'
                         : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
                         }`}>
@@ -324,14 +714,14 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                     <>
                                         <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
                                         <span className="text-amber-800 dark:text-amber-300 font-bold uppercase tracking-wider text-[11px]">
-                                            Approved Selection Under Change Control
+                                            Approved Record Under Change-Control Review
                                         </span>
                                     </>
                                 ) : (
                                     <>
                                         <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                         <span className="text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider text-[11px]">
-                                            Selection Approved & Locked
+                                            Client Approval Secured & Selection Locked
                                         </span>
                                     </>
                                 )}
@@ -343,43 +733,44 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
 
                         <p className="text-xs opacity-90 leading-relaxed">
                             {changesInEffect
-                                ? 'Modifications to an approved selection will trigger a formal revision entry and archive the current selection snapshot into audit history.'
-                                : 'This selection was previously approved. Any changes made below will require a change-control reason and log a new revision.'}
+                                ? 'Modifications to an approved selection will log a formal revision entry into the audit trail and update the approval state.'
+                                : 'This proposal was previously approved. Any changes made below require a mandatory revision note.'}
                         </p>
 
                         {changesInEffect && (
-                            <Field label="Revision Reason / Change Description *" hint="Required for change-control auditing">
+                            <Field label="Revision Reason / Change-Control Note *" hint="Mandatory requirement for auditing post-approval modifications">
                                 <Input
                                     value={revisionReason}
                                     onChange={(e) => {
                                         setRevisionReason(e.target.value);
                                         if (validationError) setValidationError('');
                                     }}
-                                    placeholder="e.g. Client requested fabric change from Linen Sheer to Velvet Navy after initial signoff..."
-                                    className="border-amber-400 dark:border-amber-600 focus:border-amber-500 bg-white/70 dark:bg-slate-900/80"
+                                    placeholder="e.g. Client requested modification of sheer fabric from Linen White to Satin Velvet after initial signoff..."
+                                    className="border-amber-400 dark:border-amber-600 focus:border-amber-500 bg-white/80 dark:bg-slate-900/90 text-xs"
                                 />
                             </Field>
                         )}
                     </div>
                 )}
 
+                {/* 1. Approval Schedule & Status Section */}
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Client Approval Details
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4" /> 1. Client Approval & Version Status
                     </h4>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Approval Due Date">
+                    <Field label="Approval Due Date" hint="Date picker for obtaining approval">
                         <Input type="date" value={form.planned} onChange={set('planned')} />
                     </Field>
-                    <Field label="Client Approval Date">
-                        <Input type="date" value={form.clientApprovalDate} onChange={set('clientApprovalDate')} />
+                    <Field label="Client Approval Date & Time" hint="Actual approval date & time picker">
+                        <Input type="datetime-local" value={form.clientApprovalDate} onChange={set('clientApprovalDate')} />
                     </Field>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Client Approval Status">
+                    <Field label="Client Approval Status" hint="Dropdown status configuration">
                         <Select
                             value={form.clientApprovalStatus}
                             onChange={set('clientApprovalStatus')}
@@ -387,21 +778,47 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                 { value: 'PENDING', label: 'Pending Approval' },
                                 { value: 'APPROVED', label: 'Approved' },
                                 { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
-                                { value: 'REJECTED', label: 'Rejected' },
+                                { value: 'ON_HOLD', label: 'On Hold' },
+                                { value: 'DECLINED', label: 'Declined' },
                             ]}
                         />
                     </Field>
-                    <Field label="Final Approved Version" hint="e.g. QUOT-2026-v2">
-                        <Input value={form.finalApprovedVersion} onChange={set('finalApprovedVersion')} placeholder="e.g. QUOT-2026-v2" />
+
+                    <Field label="Final Quotation / Proposal Version Approved" hint="Linked record / version lock selector">
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Select
+                                    value={form.finalApprovedVersion}
+                                    onChange={set('finalApprovedVersion')}
+                                    options={[
+                                        ...availableVersions.map((v) => ({ value: v, label: v })),
+                                        { value: form.finalApprovedVersion, label: `Custom: ${form.finalApprovedVersion}` }
+                                    ].filter((v, idx, self) => self.findIndex((t) => t.value === v.value) === idx)}
+                                />
+                            </div>
+                            <Input
+                                value={form.finalApprovedVersion}
+                                onChange={set('finalApprovedVersion')}
+                                placeholder="Or enter version..."
+                                className="w-1/2 text-xs font-mono"
+                            />
+                        </div>
                     </Field>
                 </div>
 
-                <Field label="Approval Proof / Attachment">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors">
-                                <Paperclip className="w-3.5 h-3.5" />
-                                {uploading === 'proof' ? 'Uploading...' : 'Upload Proof / Attachment'}
+                {/* 2. Attachments & Presentations Section */}
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                        <Paperclip className="w-4 h-4" /> 2. Approval Proof & Presentation Attachments
+                    </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Approval Proof / Attachment" hint="Signed quotation, email, message screenshot or approval document">
+                        <div className="space-y-2">
+                            <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors w-full justify-center">
+                                <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                {uploading === 'proof' ? 'Uploading Proof File...' : 'Upload Approval Proof Document'}
                                 <input
                                     type="file"
                                     multiple
@@ -410,56 +827,46 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                     onChange={(e) => handleFileUpload(e, 'proof')}
                                 />
                             </label>
+                            {proofAttachments.length > 0 && (
+                                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                    {proofAttachments.map((file, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md bg-emerald-500/5 dark:bg-emerald-950/30 border border-emerald-500/20 text-emerald-900 dark:text-emerald-300">
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                <a href={file.url} target="_blank" rel="noreferrer" className="truncate hover:underline font-medium">
+                                                    {file.filename || file.name || `Proof File ${i + 1}`}
+                                                </a>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveAttachment('proof', i)}
+                                                className="text-slate-400 hover:text-rose-500 font-bold ml-2 p-0.5"
+                                                title="Remove File"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        {proofAttachments.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-1">
-                                {proofAttachments.map((file, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                                        <Paperclip className="w-3 h-3 text-slate-500" />
-                                        <span className="truncate max-w-[150px]">{file.filename || file.name || 'Attachment'}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveAttachment('proof', i)}
-                                            className="text-slate-400 hover:text-rose-500 ml-1 font-bold"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
+                    </Field>
+
+                    <Field label="Presentation Link & Attachments" hint="Link (Canva/Figma URL) or upload final presentation deck">
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    value={form.presentationLink}
+                                    onChange={set('presentationLink')}
+                                    placeholder="https://canva.com/design/... or https://figma.com/..."
+                                    className="pl-9 text-xs"
+                                />
                             </div>
-                        )}
-                    </div>
-                </Field>
 
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-yellow-600 dark:text-yellow-400 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Presentation & Selection Details
-                    </h4>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Client Selection">
-                        <Input value={form.clientSelection} onChange={set('clientSelection')} placeholder="e.g. Option B Sheers & Blackout" />
-                    </Field>
-                    <Field label="Fabric Selection">
-                        <Input value={form.fabricSelection} onChange={set('fabricSelection')} placeholder="e.g. Linen Sheer White / Velvet Navy" />
-                    </Field>
-                </div>
-
-                <Field label="Design Direction">
-                    <Input value={form.designDirection} onChange={set('designDirection')} placeholder="e.g. Modern Minimalist Motorized Tracks" />
-                </Field>
-
-                <Field label="Revision Notes">
-                    <Textarea rows={3} value={form.revisionNotes} onChange={set('revisionNotes')} placeholder="Enter any revision notes or client feedback..." />
-                </Field>
-
-                <Field label="Presentation Attachment">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors">
-                                <Paperclip className="w-3.5 h-3.5" />
-                                {uploading === 'presentation' ? 'Uploading...' : 'Upload Presentation File'}
+                            <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors w-full justify-center">
+                                <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                                {uploading === 'presentation' ? 'Uploading Presentation...' : 'Upload Presentation Deck (PDF/PPT)'}
                                 <input
                                     type="file"
                                     multiple
@@ -468,25 +875,159 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                     onChange={(e) => handleFileUpload(e, 'presentation')}
                                 />
                             </label>
+
+                            {presentationAttachments.length > 0 && (
+                                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                    {presentationAttachments.map((file, i) => (
+                                        <div key={i} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md bg-indigo-500/5 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-900 dark:text-indigo-300">
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+                                                <a href={file.url} target="_blank" rel="noreferrer" className="truncate hover:underline font-medium">
+                                                    {file.filename || file.name || `Presentation Deck ${i + 1}`}
+                                                </a>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveAttachment('presentation', i)}
+                                                className="text-slate-400 hover:text-rose-500 font-bold ml-2 p-0.5"
+                                                title="Remove File"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        {presentationAttachments.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-1">
-                                {presentationAttachments.map((file, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                                        <Paperclip className="w-3 h-3 text-slate-500" />
-                                        <span className="truncate max-w-[150px]">{file.filename || file.name || 'Presentation Deck'}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveAttachment('presentation', i)}
-                                            className="text-slate-400 hover:text-rose-500 ml-1 font-bold"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    </Field>
+                </div>
+
+                {/* 3. Client Selection Repeatable Subform */}
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-4 h-4" /> 3. Client Selection Subform (Approved items, quantities, rooms & remarks)
+                        </h4>
+                        <Button type="button" size="sm" variant="ghost" icon={Plus} onClick={addClientSelectionRow} className="text-xs">
+                            Add Selection Item
+                        </Button>
                     </div>
+                </div>
+
+                <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    {clientSelections.map((row, idx) => (
+                        <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div className="w-full sm:w-1/3">
+                                <Input
+                                    value={row.item || ''}
+                                    onChange={(e) => updateClientSelectionRow(idx, 'item', e.target.value)}
+                                    placeholder="Approved Item (e.g. Motorized Drapes)"
+                                    className="text-xs"
+                                />
+                            </div>
+                            <div className="w-24">
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={row.quantity || 1}
+                                    onChange={(e) => updateClientSelectionRow(idx, 'quantity', Number(e.target.value))}
+                                    placeholder="Qty"
+                                    className="text-xs"
+                                />
+                            </div>
+                            <div className="w-full sm:w-1/4">
+                                <Select
+                                    value={row.room || 'Living Room'}
+                                    onChange={(e) => updateClientSelectionRow(idx, 'room', e.target.value)}
+                                    options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[140px]">
+                                <Input
+                                    value={row.remarks || ''}
+                                    onChange={(e) => updateClientSelectionRow(idx, 'remarks', e.target.value)}
+                                    placeholder="Remarks / specs..."
+                                    className="text-xs"
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                icon={Trash2}
+                                onClick={() => removeClientSelectionRow(idx)}
+                                className="text-slate-400 hover:text-rose-500 shrink-0"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* 4. Searchable Fabric Selection Subform */}
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                            <Layers className="w-4 h-4" /> 4. Fabric Selection (Searchable fabric lookup per room/item)
+                        </h4>
+                        <Button type="button" size="sm" variant="ghost" icon={Plus} onClick={addFabricSelectionRow} className="text-xs">
+                            Add Fabric Selection
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                    {fabricSelections.map((row, idx) => (
+                        <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div className="w-full sm:w-1/3">
+                                <Select
+                                    value={row.room || 'Living Room'}
+                                    onChange={(e) => updateFabricRoom(idx, e.target.value)}
+                                    options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[200px]">
+                                <SearchableFabricSelector
+                                    value={row.fabric || ''}
+                                    onChange={(fabName, code) => updateFabricSelectionRow(idx, fabName, code)}
+                                    fabricCatalog={fabricCatalog}
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                icon={Trash2}
+                                onClick={() => removeFabricSelectionRow(idx)}
+                                className="text-slate-400 hover:text-rose-500 shrink-0"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* 5. Design Direction & Revision Notes (Long Free Text) */}
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4" /> 5. Design Direction & Revision Notes (Long Free Text)
+                    </h4>
+                </div>
+
+                <Field label="Design Direction" hint="Final approved design direction & aesthetic instructions">
+                    <Textarea
+                        rows={3}
+                        value={form.designDirection}
+                        onChange={set('designDirection')}
+                        placeholder="e.g. Modern minimalist floor-to-ceiling motorized sheer drapes with concealed ceiling recess tracks..."
+                        className="text-xs"
+                    />
+                </Field>
+
+                <Field label="Revision Notes" hint="Mandatory for changes after approval; retained in revision history">
+                    <Textarea
+                        rows={3}
+                        value={form.revisionNotes}
+                        onChange={set('revisionNotes')}
+                        placeholder="Enter revision notes, change logs, or client feedback details..."
+                        className="text-xs"
+                    />
                 </Field>
 
                 {/* Revision & Change Control Audit Log */}
@@ -498,7 +1039,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                             className="flex items-center justify-between w-full text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 py-1"
                         >
                             <span className="flex items-center gap-1.5">
-                                <History className="w-3.5 h-3.5 text-amber-500" />
+                                <History className="w-4 h-4 text-amber-500" />
                                 Revision & Change-Control Audit Trail ({revisionsList.length} revision(s))
                             </span>
                             <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium hover:underline">
@@ -507,20 +1048,20 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                         </button>
 
                         {showRevisionsHistory && (
-                            <div className="mt-2 space-y-2 max-h-52 overflow-y-auto pr-1">
+                            <div className="mt-2 space-y-2 max-h-56 overflow-y-auto pr-1">
                                 {revisionsList.slice().reverse().map((rev, idx) => (
-                                    <div key={idx} className="p-2.5 rounded-md bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+                                    <div key={idx} className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
                                         <div className="flex items-center justify-between font-medium">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-2">
                                                 <Badge tone="amber">
                                                     Rev #{rev.revisionNumber || (revisionsList.length - idx)}
                                                 </Badge>
                                                 <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" /> {date(rev.revisedAt, { time: true })}
+                                                    <Clock className="w-3 h-3" /> {formatDateTime(rev.revisedAt)}
                                                 </span>
                                             </div>
                                             <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                                                {rev.finalApprovedVersion ? `Ver: ${rev.finalApprovedVersion}` : 'No version tag'}
+                                                {rev.finalApprovedVersion ? `Version: ${rev.finalApprovedVersion}` : 'No version tag'}
                                             </span>
                                         </div>
 
@@ -531,8 +1072,6 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                         )}
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 pt-0.5">
-                                            <div><strong className="text-slate-700 dark:text-slate-300">Client Selection:</strong> {rev.clientSelection || '—'}</div>
-                                            <div><strong className="text-slate-700 dark:text-slate-300">Fabric Selection:</strong> {rev.fabricSelection || '—'}</div>
                                             <div><strong className="text-slate-700 dark:text-slate-300">Design Direction:</strong> {rev.designDirection || '—'}</div>
                                             <div><strong className="text-slate-700 dark:text-slate-300">Prior Status:</strong> {rev.clientApprovalStatus || 'APPROVED'}</div>
                                         </div>
@@ -569,7 +1108,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', o
                 ))}
             </div>
 
-            <div className="overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative">
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto select-none relative">
                 <table className="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr className="sticky top-0 z-20 text-center shadow-sm bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30">
@@ -578,7 +1117,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', o
                             </th>
                             {visibleSections.map((sec) =>
                                 sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                    <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
+                                    <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-3 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[140px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
                                 ))
@@ -598,7 +1137,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', o
                                 </td>
                                 {visibleSections.map((sec) =>
                                     sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                        <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
+                                        <td key={col.key} className="p-3 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
                                     ))
@@ -672,7 +1211,8 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             (Array.isArray(q.boq) && q.boq.length > 0) ||
             q.discountApprovalStatus === 'APPROVED' ||
             lead.approval?.finalApprovedVersion ||
-            lead.quotationNo
+            lead.quotationNo ||
+            lead.approval?.clientApprovalStatus
         );
     });
 
@@ -682,7 +1222,8 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
             const version = String(lead.approval?.finalApprovedVersion || '').toLowerCase();
-            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q)) {
+            const status = String(lead.approval?.clientApprovalStatus || '').toLowerCase();
+            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q) && !status.includes(q)) {
                 return false;
             }
         }
@@ -691,14 +1232,14 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
 
     const totalCount = quotationReadyLeads.length;
     const approvedCount = quotationReadyLeads.filter((l) => l.approval?.clientApprovalStatus === 'APPROVED').length;
-    const pendingCount = quotationReadyLeads.filter((l) => l.approval?.planned && l.approval?.clientApprovalStatus !== 'APPROVED').length;
+    const pendingCount = quotationReadyLeads.filter((l) => l.approval?.clientApprovalStatus === 'PENDING' || (l.approval?.planned && l.approval?.clientApprovalStatus !== 'APPROVED')).length;
     const revisionsLoggedCount = quotationReadyLeads.filter((l) => (l.approval?.revisions?.length || 0) > 0).length;
 
     return (
         <div>
             <PageHeader
                 title="Client Approval Workspace"
-                subtitle="Track planned approval dates, client approval statuses, proof of signoff attachments, and final approved versions"
+                subtitle="Manage approval due dates, client approval statuses, proof of signoff documents, linked approved versions, presentations, dynamic client selections & searchable fabric lookups"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -715,8 +1256,8 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                         <Input
                             value={search}
                             onChange={(e) => updateParam('search', e.target.value, '')}
-                            placeholder="Search code, client, approved version..."
-                            className="pl-9"
+                            placeholder="Search code, client, version, or status..."
+                            className="pl-9 text-xs"
                         />
                     </div>
 
