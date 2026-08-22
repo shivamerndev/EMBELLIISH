@@ -11,8 +11,18 @@ import { objectId } from '../../project/project/project.validation.js';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'Client name is required'),
-  phone: z.string().min(7, 'A contactable phone number is required'),
-  altPhone: z.string().optional(),
+  phone: z
+    .string()
+    .min(7, 'A contactable phone number is required')
+    .refine((val) => /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
+  altPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
   email: z.string().email().optional().or(z.literal('')),
   company: z.string().optional(),
   gstin: z.string().optional(),

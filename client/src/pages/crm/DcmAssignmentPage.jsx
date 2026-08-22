@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, UserCheck, Check } from 'lucide-react';
 import { leadsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise } from '../../utils/format';
 import {
-  PageHeader, Panel, Button, Modal, Field, Input, Select,
+  PageHeader, Panel, Button, Modal, Field, Input, Select, Textarea,
   Loading, ErrorState, Tabs,
 } from '../../components/ui';
 
@@ -131,6 +132,9 @@ const DCM_MANAGERS_LIST = [
 import { getLocalDate, getLocalDateTime } from '../../utils/format';
 
 const EditAssignmentModal = ({ item, onClose, onDone }) => {
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentUserName = currentUser?.name || currentUser?.email || 'Admin';
+
   const [form, setForm] = useState({
     assignedDcmName: item?.assignedDcmName || '',
     assignmentDueDate: item?.assignmentDueDate ? new Date(item.assignmentDueDate).toISOString().slice(0, 10) : getLocalDate(),
@@ -141,10 +145,12 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
     reassignmentRequired: item?.reassignmentRequired ? 'YES' : 'NO',
     reassignedToName: item?.reassignedToName || '',
     reassignmentReason: item?.reassignmentReason || '',
-    updatedUser: item?.updatedUser || '',
+    updatedUser: currentUserName || item?.updatedUser || '',
   });
 
   const [managerSearch, setManagerSearch] = useState('');
+  const [formError, setFormError] = useState('');
+  const isReassignmentYes = form.reassignmentRequired === 'YES' || form.reassignmentRequired === 'Yes';
 
   const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
 
@@ -190,22 +196,51 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
       setForm((prev) => ({
         ...prev,
         assignedDcmName: selectedDcm.name,
-        dcmActiveProjectCount: selectedDcm.activeProjectCount,
-        dcmCapacityStatus: selectedDcm.capacityStatus,
+        dcmActiveProjectCount: selectedDcm.activeProjectCount ?? 0,
+        dcmCapacityStatus: selectedDcm.capacityStatus || ((selectedDcm.activeProjectCount ?? 0) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
       }));
     } else {
       setForm((prev) => ({
         ...prev,
         assignedDcmName: dcmName,
+        dcmActiveProjectCount: 0,
+        dcmCapacityStatus: 'AVAILABLE',
       }));
     }
   };
 
+  useEffect(() => {
+    if (form.assignedDcmName) {
+      const selectedDcm = dcmList.find((d) => d.name === form.assignedDcmName);
+      if (selectedDcm) {
+        setForm((prev) => ({
+          ...prev,
+          dcmActiveProjectCount: selectedDcm.activeProjectCount ?? 0,
+          dcmCapacityStatus: selectedDcm.capacityStatus || ((selectedDcm.activeProjectCount ?? 0) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
+        }));
+      }
+    }
+  }, [form.assignedDcmName, dcmList]);
+
   const submit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    setFormError('');
+
+    if (isReassignmentYes) {
+      if (!form.reassignedToName?.trim() || form.reassignedToName === 'None / NA') {
+        setFormError('Reassigned To is required when Reassignment Required is Yes.');
+        return;
+      }
+      if (!form.reassignmentReason?.trim()) {
+        setFormError('Reassignment Reason is required when Reassignment Required is Yes.');
+        return;
+      }
+    }
+
     execute({
       ...form,
-      reassignmentRequired: form.reassignmentRequired === 'YES' || form.reassignmentRequired === 'Yes',
+      updatedUser: currentUserName || form.updatedUser || 'Admin',
+      reassignmentRequired: isReassignmentYes,
     });
   };
 
@@ -224,7 +259,9 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
       }
     >
       <form onSubmit={submit} className="space-y-4 pr-1">
-        {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
+        {(error?.message || formError) && (
+          <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error?.message || formError}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Assigned DCM / Manager" required>
@@ -324,7 +361,9 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
           <Field label="DCM Capacity Status">
             <Select
               value={form.dcmCapacityStatus}
-              onChange={set('dcmCapacityStatus')}
+              disabled
+              tabIndex={-1}
+              className="cursor-not-allowed bg-slate-100 dark:bg-slate-800/60 opacity-85 select-none"
               options={[
                 { value: 'AVAILABLE', label: 'Available' },
                 { value: 'OVERLOADED', label: 'Overloaded' },
@@ -332,7 +371,14 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
             />
           </Field>
           <Field label="DCM Active Project Count">
-            <Input type="number" value={form.dcmActiveProjectCount} onChange={set('dcmActiveProjectCount')} />
+            <Input
+              type="number"
+              value={form.dcmActiveProjectCount}
+              readOnly
+              disabled
+              tabIndex={-1}
+              className="cursor-not-allowed bg-slate-100 dark:bg-slate-800/60 font-bold opacity-85 select-none"
+            />
           </Field>
         </div>
 
@@ -364,27 +410,44 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
               ]}
             />
           </Field>
-          <Field label="Reassigned To">
-            <Select
-              value={form.reassignedToName}
-              onChange={set('reassignedToName')}
-              options={[
-                { value: '', label: 'None / NA' },
-                ...dcmList.map((d) => ({
-                  value: d.name,
-                  label: `${d.name} (${humanise(d.role || 'DCM')})`,
-                })),
-              ]}
-            />
-          </Field>
+          {isReassignmentYes && (
+            <Field label="Reassigned To" required={isReassignmentYes}>
+              <Select
+                value={form.reassignedToName}
+                onChange={set('reassignedToName')}
+                required={isReassignmentYes}
+                options={[
+                  { value: '', label: 'None / NA' },
+                  ...dcmList.map((d) => ({
+                    value: d.name,
+                    label: `${d.name} (${humanise(d.role || 'DCM')})`,
+                  })),
+                ]}
+              />
+            </Field>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Reassignment Reason">
-            <Input value={form.reassignmentReason} onChange={set('reassignmentReason')} placeholder="e.g. High workload" />
-          </Field>
+          {isReassignmentYes && (
+            <Field label="Reassignment Reason" required={isReassignmentYes}>
+              <Textarea
+                value={form.reassignmentReason}
+                onChange={set('reassignmentReason')}
+                required={isReassignmentYes}
+                placeholder="Enter detailed reassignment reason..."
+                rows={3}
+              />
+            </Field>
+          )}
           <Field label="Updated User">
-            <Input value={form.updatedUser} onChange={set('updatedUser')} placeholder="e.g. Hitesh" />
+            <Input
+              value={currentUserName || form.updatedUser}
+              readOnly
+              disabled
+              tabIndex={-1}
+              className="cursor-not-allowed bg-slate-100 dark:bg-slate-800/60 font-medium opacity-85 select-none"
+            />
           </Field>
         </div>
       </form>

@@ -8,7 +8,12 @@ import { PERMISSIONS } from '../../../constants/roles.constants.js';
 const vendorSchema = z.object({
   name: z.string().min(2, 'Vendor name is required'),
   contactPerson: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
   email: z.string().email().optional().or(z.literal('')),
   address: z.record(z.any()).optional(),
   gstin: z.string().optional(),

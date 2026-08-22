@@ -5,7 +5,7 @@ import { leadsApi, architectsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise } from '../../utils/format';
 import {
-  PageHeader, Panel, Button, Modal, Field, Input, Select,
+  PageHeader, Panel, Button, Modal, Field, Input, Select, PhoneInput, validatePhoneNumber, EmailInput, validateEmail,
   Textarea, Loading, ErrorState, EmptyState, Tabs,
 } from '../../components/ui';
 
@@ -128,15 +128,13 @@ const AddArchitectModal = ({ open, onClose, onCreated }) => {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Mobile Number">
-            <Input
+            <PhoneInput
               value={newForm.phone}
               onChange={(e) => setNewForm((prev) => ({ ...prev, phone: e.target.value }))}
-              placeholder="e.g. 9876543210"
             />
           </Field>
           <Field label="Email">
-            <Input
-              type="email"
+            <EmailInput
               value={newForm.email}
               onChange={(e) => setNewForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="e.g. architect@example.com"
@@ -374,10 +372,10 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Mobile Number" required>
-            <Input value={form.phone} onChange={set('phone')} placeholder="e.g. 12345678" required />
+            <PhoneInput value={form.phone} onChange={set('phone')} required />
           </Field>
           <Field label="Email">
-            <Input type="email" value={form.email} onChange={set('email')} placeholder="asc@gamil.com" />
+            <EmailInput value={form.email} onChange={set('email')} placeholder="e.g. client@example.com" />
           </Field>
         </div>
 
@@ -669,10 +667,10 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Mobile Number" required>
-            <Input value={form.phone} onChange={set('phone')} required />
+            <PhoneInput value={form.phone} onChange={set('phone')} required />
           </Field>
           <Field label="Email">
-            <Input type="email" value={form.email} onChange={set('email')} />
+            <EmailInput value={form.email} onChange={set('email')} placeholder="e.g. client@example.com" />
           </Field>
         </div>
 

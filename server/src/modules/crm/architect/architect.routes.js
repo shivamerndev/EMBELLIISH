@@ -6,7 +6,12 @@ import { PERMISSIONS } from '../../../constants/roles.constants.js';
 const architectSchema = z.object({
   name: z.string().min(2, 'Architect name is required'),
   firm: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^(\+\d{1,4}[- ]?)?\d{7,15}$/.test(val.trim()), {
+      message: 'Invalid phone number format',
+    }),
   email: z.string().email().optional().or(z.literal('')),
   address: z.record(z.any()).optional(),
   commissionPercent: z.coerce.number().min(0).max(100).optional(),
