@@ -4,12 +4,6 @@ import { useSelector } from 'react-redux';
 import {
   LayoutDashboard,
   Users,
-  Briefcase,
-  Factory,
-  Package,
-  Receipt,
-  BarChart3,
-  UserCog,
   Settings2,
   ChevronDown,
   ChevronRight,
@@ -59,12 +53,7 @@ const NAV = [
       },
     ],
   },
-  { label: 'Projects', path: '/projects', icon: Briefcase, permission: 'project:view' },
-  { label: 'Production', path: '/production', icon: Factory, permission: 'production:view' },
-  { label: 'Inventory', path: '/inventory', icon: Package, permission: 'inventory:view' },
-  { label: 'Accounts', path: '/accounts', icon: Receipt, permission: 'accounts:view' },
-  { label: 'Reports', path: '/reports', icon: BarChart3, permission: 'reports:view' },
-  { label: 'Team', path: '/team', icon: UserCog, permission: 'user:manage' },
+  { label: 'Members', path: '/members', icon: Users },
   { label: 'Settings', path: '/settings', icon: Settings2, permission: 'settings:manage' },
 ];
 

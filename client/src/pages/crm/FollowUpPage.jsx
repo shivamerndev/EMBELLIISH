@@ -55,9 +55,41 @@ import { getLocalDate } from '../../utils/format';
 
 /* ------------------------------------------------------------- Follow-up Form Modal */
 
+const PREDEFINED_NEXT_ACTIONS = [
+  'Approved',
+  'Rejected',
+  'Pending',
+  'Approval Required',
+  'Other',
+  'Text (enter your own)',
+];
+
+const NEXT_ACTION_OPTIONS = [
+  { value: 'Approved', label: 'Approved' },
+  { value: 'Rejected', label: 'Rejected' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Approval Required', label: 'Approval Required' },
+  { value: 'Other', label: 'Other' },
+  { value: 'Text (enter your own)', label: 'Text (enter your own)' },
+];
+
 const EditFollowUpModal = ({ item, onClose, onDone }) => {
+  const initialNextAction = item?.nextAction || '';
+  const isPredefined = PREDEFINED_NEXT_ACTIONS.includes(initialNextAction);
+
+  const [selectedOption, setSelectedOption] = useState(() => {
+    if (!initialNextAction) return 'Pending';
+    if (isPredefined) return initialNextAction;
+    return 'Text (enter your own)';
+  });
+
+  const [customText, setCustomText] = useState(() => {
+    if (initialNextAction && !isPredefined) return initialNextAction;
+    return '';
+  });
+
   const [form, setForm] = useState({
-    nextAction: item?.nextAction || '',
+    nextAction: initialNextAction || 'Pending',
     nextActionDueDate: item?.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : getLocalDate(),
     overallLeadStatus: item?.overallLeadStatus || 'NEW',
   });
@@ -66,6 +98,22 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
     (payload) => leadsApi.update(item.id || item._id, payload),
     { onSuccess: () => { onDone(); onClose(); } }
   );
+
+  const handleSelectNextAction = (e) => {
+    const val = e.target.value;
+    setSelectedOption(val);
+    if (val === 'Text (enter your own)') {
+      setForm((prev) => ({ ...prev, nextAction: customText || 'Text (enter your own)' }));
+    } else {
+      setForm((prev) => ({ ...prev, nextAction: val }));
+    }
+  };
+
+  const handleCustomTextChange = (e) => {
+    const val = e.target.value;
+    setCustomText(val);
+    setForm((prev) => ({ ...prev, nextAction: val.trim() || 'Text (enter your own)' }));
+  };
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
@@ -92,7 +140,22 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
 
         <Field label="Next Action">
-          <Textarea value={form.nextAction} onChange={set('nextAction')} placeholder="e.g. Site visit, follow-up call, send quotation..." />
+          <Select
+            value={selectedOption}
+            onChange={handleSelectNextAction}
+            options={NEXT_ACTION_OPTIONS}
+          />
+          {selectedOption === 'Text (enter your own)' && (
+            <div className="mt-2">
+              <Input
+                type="text"
+                value={customText}
+                onChange={handleCustomTextChange}
+                placeholder="Enter custom next action details..."
+                autoFocus
+              />
+            </div>
+          )}
         </Field>
 
         <div className="grid grid-cols-2 gap-4">

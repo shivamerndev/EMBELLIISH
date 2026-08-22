@@ -32,6 +32,7 @@ import AccountsPage from '../pages/accounts/AccountsPage';
 import ReportsPage from '../pages/reports/ReportsPage';
 import TeamPage from '../pages/team/TeamPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import MembersPage from '../pages/members/MembersPage';
 import NotFound from '../pages/NotFound';
 import Kyc from '../pages/sales/Kyc.jsx';
 
@@ -78,6 +79,7 @@ export const AppRoutes = () => (
         <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/team" element={<TeamPage />} />
+        <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
 
         <Route index element={<Navigate to="/dashboard" replace />} />
