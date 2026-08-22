@@ -164,11 +164,11 @@ export const PhoneInput = ({
           onChange={handleCountryChange}
           disabled={disabled}
           className={cn(
-            'field-input !w-auto !py-2 !px-2 text-xs font-semibold shrink-0 cursor-pointer transition-all duration-150',
+            'field-input !w-auto !py-2 !px-1.5 text-xs font-semibold shrink-0 cursor-pointer transition-all duration-150',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
           style={{
-            minWidth: '105px',
+            minWidth: '78px',
             backgroundColor: 'var(--bg-surface)',
             color: 'var(--text-primary)',
             borderColor: displayError ? '#f43f5e' : 'var(--border-strong)',
@@ -183,7 +183,7 @@ export const PhoneInput = ({
         </select>
 
         {/* Number Input */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[120px]">
           <input
             type="tel"
             id={id}
@@ -195,7 +195,7 @@ export const PhoneInput = ({
             disabled={disabled}
             required={required}
             className={cn(
-              'field-input w-full pr-8 transition-all duration-150',
+              'field-input w-full pr-7 transition-all duration-150',
               displayError && '!border-rose-500/80 focus:!ring-rose-500/30',
               touched && !displayError && nationalNumber && '!border-emerald-500/60 focus:!ring-emerald-500/30',
               className
