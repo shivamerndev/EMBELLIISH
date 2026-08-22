@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil } from 'lucide-react';
+import {
+    Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil,
+    AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert
+} from 'lucide-react';
 import { currency, date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
@@ -11,16 +14,16 @@ import { useAction } from '../../hooks/useAsync';
 const SPREADSHEET_SECTIONS = [
     {
         id: 's9',
-        title: 'Token / Advance',
+        title: 'Token / Advance Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         cols: [
-            { key: 'token.discussionDueDate', label: 'Token Discussion Due Date' },
-            { key: 'token.amount', label: 'Token Amount' },
+            { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
+            { key: 'token.amount', label: 'Token Amount (₹)' },
             { key: 'token.status', label: 'Token Status' },
-            { key: 'token.receivedDate', label: 'Received Date' },
+            { key: 'token.receivedDate', label: 'Token Received Date' },
             { key: 'token.clientBudgetResponse', label: 'Client Budget Response' },
-            { key: 'token.proposalAttachment', label: 'Proposal Attachment' },
-            { key: 'token.budgetEstimate', label: 'Budget Estimate' },
+            { key: 'token.proposal', label: 'Proposal' },
+            { key: 'token.budgetEstimate', label: 'Budget Estimate (₹)' },
             { key: 'token.clientResponse', label: 'Client Response' },
             { key: 'token.projectTimeline', label: 'Project Timeline' },
             { key: 'token.commercialTerms', label: 'Commercial Terms' },
@@ -41,6 +44,45 @@ const SPREADSHEET_SECTIONS = [
     }
 ];
 
+const COMMERCIAL_MASTER_TEMPLATES = [
+    {
+        id: 'standard',
+        name: 'Standard Terms (50-40-10)',
+        terms: '50% Advance Token upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
+    },
+    {
+        id: 'corporate',
+        name: 'Corporate Terms (30-60-10)',
+        terms: '30% Advance Token, 60% upon site delivery, 10% net 30 days post completion.'
+    },
+    {
+        id: 'premium_res',
+        name: 'High-Value Residential (40-50-10)',
+        terms: '40% Advance Token on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
+    },
+    {
+        id: 'custom',
+        name: 'Custom / Negotiated Terms',
+        terms: 'Custom commercial terms negotiated with client.'
+    }
+];
+
+const TOKEN_STATUS_OPTIONS = [
+    { value: 'Not Discussed', label: 'Not Discussed', tone: 'slate' },
+    { value: 'Pending', label: 'Pending', tone: 'amber' },
+    { value: 'Committed', label: 'Committed', tone: 'indigo' },
+    { value: 'Received', label: 'Received', tone: 'emerald' },
+    { value: 'Waived', label: 'Waived', tone: 'purple' },
+    { value: 'Refunded', label: 'Refunded', tone: 'rose' }
+];
+
+const CLIENT_BUDGET_RESPONSE_OPTIONS = [
+    { value: 'Accepted', label: 'Accepted', tone: 'emerald' },
+    { value: 'Revision Required', label: 'Revision Required', tone: 'amber' },
+    { value: 'On Hold', label: 'On Hold', tone: 'blue' },
+    { value: 'Declined', label: 'Declined', tone: 'rose' }
+];
+
 const getNestedVal = (obj, path) => {
     if (!obj || !path) return undefined;
     const parts = path.split('.');
@@ -50,6 +92,19 @@ const getNestedVal = (obj, path) => {
         curr = curr[p];
     }
     return curr;
+};
+
+const normalizeTokenStatus = (st) => {
+    if (!st) return 'Not Discussed';
+    const s = String(st).toUpperCase().replace(/_/g, ' ');
+    if (s.includes('RECEIVED')) return 'Received';
+    if (s.includes('COMMITTED')) return 'Committed';
+    if (s.includes('WAIVED')) return 'Waived';
+    if (s.includes('REFUNDED')) return 'Refunded';
+    if (s.includes('PENDING')) return 'Pending';
+    if (s.includes('NOT DISCUSSED')) return 'Not Discussed';
+    if (s.includes('DISCUSSED')) return 'Pending';
+    return st;
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -73,21 +128,117 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
+    'token.discussionDueDate': (lead) => {
+        const val = lead.token?.discussionDueDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const isOverdue = !lead.token?.receivedDate && new Date(val) < new Date();
+        return (
+            <div className="flex items-center gap-1 justify-center">
+                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {date(val)}
+                </span>
+                {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue" />}
+            </div>
+        );
+    },
+    'token.amount': (lead) => {
+        const val = lead.token?.amount;
+        if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-bold">{currency(val)}</span>;
+    },
     'token.status': (lead) => {
-        const st = lead.token?.status || 'PENDING';
-        const tone = st === 'RECEIVED' || st === 'PAID' ? 'emerald' : st === 'DISCUSSED' ? 'amber' : 'slate';
-        return <Badge tone={tone}>{st}</Badge>;
+        const raw = lead.token?.status;
+        const st = normalizeTokenStatus(raw);
+        const opt = TOKEN_STATUS_OPTIONS.find((o) => o.value.toLowerCase() === st.toLowerCase()) || { tone: 'slate' };
+        return <Badge tone={opt.tone}>{st}</Badge>;
+    },
+    'token.receivedDate': (lead) => {
+        const st = normalizeTokenStatus(lead.token?.status);
+        const val = lead.token?.receivedDate;
+        if (!val) {
+            if (st === 'Received') {
+                return (
+                    <Badge tone="rose" className="text-[10px] animate-pulse">
+                        <AlertTriangle className="w-3 h-3 mr-0.5 inline" /> Required
+                    </Badge>
+                );
+            }
+            return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        }
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val)}
+            </span>
+        );
     },
     'token.clientBudgetResponse': (lead) => {
         const val = lead.token?.clientBudgetResponse;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        const toneMap = {
-            'Accepted': 'emerald',
-            'Revision Required': 'amber',
-            'On Hold': 'blue',
-            'Declined': 'rose',
-        };
-        return <Badge tone={toneMap[val] || 'slate'}>{val}</Badge>;
+        const opt = CLIENT_BUDGET_RESPONSE_OPTIONS.find((o) => o.value === val);
+        return <Badge tone={opt ? opt.tone : 'slate'}>{val}</Badge>;
+    },
+    'token.proposal': (lead) => {
+        const val = lead.token?.proposal || lead.proposal?.noVersion || lead.proposal?.selectedBoqVersion;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                <FileText className="w-3 h-3 text-purple-500 shrink-0" />
+                {val}
+            </span>
+        );
+    },
+    'token.budgetEstimate': (lead) => {
+        const val = lead.token?.budgetEstimate;
+        if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-semibold">{currency(val)}</span>;
+    },
+    'token.clientResponse': (lead) => {
+        const val = lead.token?.clientResponse;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto text-xs" title={val}>
+                {val}
+            </span>
+        );
+    },
+    'token.projectTimeline': (lead) => {
+        const start = lead.token?.projectTimelineStart;
+        const end = lead.token?.projectTimelineEnd;
+        const str = lead.token?.projectTimeline;
+
+        if (start || end) {
+            return (
+                <span className="font-mono text-[11px] text-slate-800 dark:text-slate-200 whitespace-nowrap font-medium">
+                    {start ? date(start) : 'TBD'} → {end ? date(end) : 'TBD'}
+                </span>
+            );
+        }
+
+        if (!str) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-[160px] block mx-auto" title={str}>{str}</span>;
+    },
+    'token.commercialTerms': (lead) => {
+        const terms = lead.token?.commercialTerms;
+        const template = lead.token?.masterTemplate;
+        const notes = lead.token?.commercialTermsNotes;
+
+        if (!terms && !template && !notes) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+
+        return (
+            <div className="max-w-[180px] mx-auto text-left space-y-0.5" title={terms || notes || template}>
+                {template && (
+                    <Badge tone="blue" className="text-[9px] truncate max-w-[170px] block">
+                        {template}
+                    </Badge>
+                )}
+                {(terms || notes) && (
+                    <span className="text-[11px] text-slate-700 dark:text-slate-300 truncate block">
+                        {terms || notes}
+                    </span>
+                )}
+            </div>
+        );
     }
 };
 
@@ -121,28 +272,61 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 
     if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
 
-    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
+    return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto text-xs" title={String(raw)}>{String(raw)}</span>;
 };
 
 /* ------------------------------------------------------------- Edit Token Discussion Modal */
 const EditTokenModal = ({ item, onClose, onDone }) => {
     const tok = item?.token || {};
 
+    const initialStatus = normalizeTokenStatus(tok.status);
+
     const [form, setForm] = useState({
         discussionDueDate: tok.discussionDueDate ? String(tok.discussionDueDate).slice(0, 10) : '',
         amount: tok.amount ?? '',
-        status: tok.status || 'PENDING',
+        status: initialStatus,
         receivedDate: tok.receivedDate ? String(tok.receivedDate).slice(0, 10) : '',
         clientBudgetResponse: tok.clientBudgetResponse || '',
-        budgetEstimate: tok.budgetEstimate ?? '',
+        proposal: tok.proposal || item?.proposal?.noVersion || item?.proposal?.selectedBoqVersion || '',
+        budgetEstimate: tok.budgetEstimate ?? item?.budget ?? '',
         clientResponse: tok.clientResponse || '',
+        projectTimelineStart: tok.projectTimelineStart ? String(tok.projectTimelineStart).slice(0, 10) : '',
+        projectTimelineEnd: tok.projectTimelineEnd ? String(tok.projectTimelineEnd).slice(0, 10) : '',
         projectTimeline: tok.projectTimeline || '',
+        masterTemplate: tok.masterTemplate || '',
         commercialTerms: tok.commercialTerms || '',
+        commercialTermsNotes: tok.commercialTermsNotes || '',
     });
 
-    const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+    const [validationError, setValidationError] = useState('');
 
-    const { execute, pending, error } = useAction(
+    const set = (key) => (e) => {
+        const val = e.target.value;
+        setForm((p) => {
+            const next = { ...p, [key]: val };
+
+            // Dynamic master template selection
+            if (key === 'masterTemplate') {
+                const tmpl = COMMERCIAL_MASTER_TEMPLATES.find((t) => t.name === val);
+                if (tmpl && tmpl.id !== 'custom') {
+                    next.commercialTerms = tmpl.terms;
+                }
+            }
+
+            // Dynamic project timeline update
+            if (key === 'projectTimelineStart' || key === 'projectTimelineEnd') {
+                const start = key === 'projectTimelineStart' ? val : p.projectTimelineStart;
+                const end = key === 'projectTimelineEnd' ? val : p.projectTimelineEnd;
+                if (start && end) {
+                    next.projectTimeline = `${start} to ${end}`;
+                }
+            }
+
+            return next;
+        });
+    };
+
+    const { execute, pending, error: apiError } = useAction(
         (payload) => leadsApi.update(item._id || item.id, { token: payload }),
         {
             onSuccess: () => {
@@ -154,21 +338,42 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setValidationError('');
+
+        // Configuration / Validation rule: Token Received Date is Mandatory when Token Status is Received
+        if (form.status === 'Received' && !form.receivedDate) {
+            setValidationError('Token Received Date is mandatory when Token Status is Received.');
+            return;
+        }
+
         const payload = {
             ...form,
             amount: form.amount === '' ? undefined : Number(form.amount),
             budgetEstimate: form.budgetEstimate === '' ? undefined : Number(form.budgetEstimate),
+            discussionDueDate: form.discussionDueDate || undefined,
+            receivedDate: form.receivedDate || undefined,
+            projectTimelineStart: form.projectTimelineStart || undefined,
+            projectTimelineEnd: form.projectTimelineEnd || undefined,
         };
+
         execute(payload);
     };
+
+    // Proposal version choices candidate list
+    const availableProposals = Array.from(new Set([
+        item?.proposal?.noVersion,
+        item?.proposal?.selectedBoqVersion,
+        ...(item?.proposal?.revisionHistory || []).map((r) => r.version),
+        'v1.0', 'v1.1', 'v2.0'
+    ].filter(Boolean)));
 
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Edit Token & Advance Details — ${item?.clientName || item?.code}`}
-            subtitle="Manage token discussion dates, advance amounts received, client budget responses, and commercial terms."
-            size="lg"
+            title={`Edit Token Discussion & Commercial Details — ${item?.clientName || item?.code}`}
+            subtitle="Configure token discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
+            size="xl"
             footer={
                 <>
                     <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -176,62 +381,202 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                 </>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                    <div className="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-400 rounded-md border border-rose-200 dark:border-rose-800">
-                        {error}
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {(validationError || apiError) && (
+                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                        <span>{validationError || (apiError?.message || String(apiError))}</span>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Token Status">
-                        <Select value={form.status} onChange={set('status')}>
-                            <option value="NOT_DISCUSSED">NOT DISCUSSED</option>
-                            <option value="DISCUSSED">DISCUSSED</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="RECEIVED">RECEIVED</option>
-                            <option value="WAIVED">WAIVED</option>
+                {/* Section 1: Token & Advance Status */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <Wallet className="w-4 h-4 text-amber-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Token & Advance Setup
+                        </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Field label="Token Status" required hint="Current status of the token discussion">
+                            <Select value={form.status} onChange={set('status')}>
+                                {TOKEN_STATUS_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </Select>
+                        </Field>
+
+                        <Field label="Token Discussion Due" hint="Due date for completing the discussion">
+                            <Input type="date" value={form.discussionDueDate} onChange={set('discussionDueDate')} />
+                        </Field>
+
+                        <Field label="Token Amount (₹)" hint="Numeric value in ₹">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                                <Input
+                                    type="number"
+                                    placeholder="e.g. 50000"
+                                    value={form.amount}
+                                    onChange={set('amount')}
+                                    className="pl-7 font-mono"
+                                />
+                            </div>
+                        </Field>
+
+                        <Field
+                            label="Token Received Date"
+                            required={form.status === 'Received'}
+                            hint={form.status === 'Received' ? 'Mandatory when Token Status is Received' : 'Date when token was received'}
+                        >
+                            <Input
+                                type="date"
+                                value={form.receivedDate}
+                                onChange={set('receivedDate')}
+                                className={form.status === 'Received' && !form.receivedDate ? 'border-rose-400 focus:ring-rose-500' : ''}
+                            />
+                        </Field>
+                    </div>
+                </div>
+
+                {/* Section 2: Budget & Proposal Integration */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <FileText className="w-4 h-4 text-purple-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Proposal & Budget Response
+                        </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field label="Proposal Version" hint="Select the proposal version discussed">
+                            <div className="space-y-1.5">
+                                <Select value={form.proposal} onChange={set('proposal')}>
+                                    <option value="">-- Select Proposal Version --</option>
+                                    {availableProposals.map((ver) => (
+                                        <option key={ver} value={ver}>{ver}</option>
+                                    ))}
+                                </Select>
+                                <Input
+                                    size="sm"
+                                    placeholder="Or specify proposal version code..."
+                                    value={form.proposal}
+                                    onChange={set('proposal')}
+                                    className="text-xs font-mono"
+                                />
+                            </div>
+                        </Field>
+
+                        <Field label="Client Budget Response" hint="Select client's budget feedback status">
+                            <Select value={form.clientBudgetResponse} onChange={set('clientBudgetResponse')}>
+                                <option value="">-- Select Response --</option>
+                                {CLIENT_BUDGET_RESPONSE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </Select>
+                        </Field>
+
+                        <Field label="Budget Estimate (₹)" hint="Numeric value in ₹">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                                <Input
+                                    type="number"
+                                    placeholder="e.g. 500000"
+                                    value={form.budgetEstimate}
+                                    onChange={set('budgetEstimate')}
+                                    className="pl-7 font-mono"
+                                />
+                            </div>
+                        </Field>
+                    </div>
+                </div>
+
+                {/* Section 3: Project Timeline (Date-range field) */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <Calendar className="w-4 h-4 text-emerald-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Project Timeline (Proposed Start & Completion Dates)
+                        </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="Proposed Start Date" hint="Proposed start date for project execution">
+                            <Input type="date" value={form.projectTimelineStart} onChange={set('projectTimelineStart')} />
+                        </Field>
+
+                        <Field label="Proposed Completion Date" hint="Proposed target completion date">
+                            <Input type="date" value={form.projectTimelineEnd} onChange={set('projectTimelineEnd')} />
+                        </Field>
+                    </div>
+
+                    {form.projectTimelineStart && form.projectTimelineEnd && (
+                        <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between text-xs">
+                            <span className="text-emerald-800 dark:text-emerald-300 font-medium">Proposed Date Range:</span>
+                            <span className="font-mono font-bold text-emerald-900 dark:text-emerald-200">
+                                {date(form.projectTimelineStart)} → {date(form.projectTimelineEnd)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 4: Commercial Terms (Master-template lookup plus notes) */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <Layers className="w-4 h-4 text-blue-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Commercial Terms (Master Template & Authorised Overrides)
+                        </h4>
+                    </div>
+
+                    <Field label="Commercial Master Template" hint="Pull approved standard terms template">
+                        <Select value={form.masterTemplate} onChange={set('masterTemplate')}>
+                            <option value="">-- Select Master Terms Template --</option>
+                            {COMMERCIAL_MASTER_TEMPLATES.map((tmpl) => (
+                                <option key={tmpl.id} value={tmpl.name}>{tmpl.name}</option>
+                            ))}
                         </Select>
                     </Field>
 
-                    <Field label="Token Discussion Due Date">
-                        <Input type="date" value={form.discussionDueDate} onChange={set('discussionDueDate')} />
+                    <Field label="Approved Commercial Terms" hint="Pulled from template or specified terms">
+                        <Textarea
+                            rows={2}
+                            placeholder="Approved payment milestones and terms..."
+                            value={form.commercialTerms}
+                            onChange={set('commercialTerms')}
+                        />
                     </Field>
 
-                    <Field label="Token Amount (₹)">
-                        <Input type="number" placeholder="e.g. 50000" value={form.amount} onChange={set('amount')} />
-                    </Field>
-
-                    <Field label="Token Received Date">
-                        <Input type="date" value={form.receivedDate} onChange={set('receivedDate')} />
-                    </Field>
-
-                    <Field label="Budget Estimate (₹)">
-                        <Input type="number" placeholder="e.g. 500000" value={form.budgetEstimate} onChange={set('budgetEstimate')} />
-                    </Field>
-
-                    <Field label="Project Timeline">
-                        <Input placeholder="e.g. 4-6 weeks from token receive" value={form.projectTimeline} onChange={set('projectTimeline')} />
+                    <Field label="Authorised Overrides & Notes" hint="Document special management overrides or customized terms">
+                        <Textarea
+                            rows={2}
+                            placeholder="Authorised overrides, special exceptions, or discount clauses..."
+                            value={form.commercialTermsNotes}
+                            onChange={set('commercialTermsNotes')}
+                        />
                     </Field>
                 </div>
 
-                <Field label="Client Budget Response">
-                    <Select value={form.clientBudgetResponse} onChange={set('clientBudgetResponse')}>
-                        <option value="">-- Select Response --</option>
-                        <option value="Accepted">Accepted</option>
-                        <option value="Revision Required">Revision Required</option>
-                        <option value="On Hold">On Hold</option>
-                        <option value="Declined">Declined</option>
-                    </Select>
-                </Field>
+                {/* Section 5: Client Response (Long Free Text) */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <Sparkles className="w-4 h-4 text-indigo-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Client Response & Discussion Comments (Long Free Text)
+                        </h4>
+                    </div>
 
-                <Field label="Client Response / Notes">
-                    <Textarea rows={2} placeholder="General client response during token meeting..." value={form.clientResponse} onChange={set('clientResponse')} />
-                </Field>
-
-                <Field label="Commercial Terms & Conditions">
-                    <Textarea rows={3} placeholder="Special commercial terms negotiated..." value={form.commercialTerms} onChange={set('commercialTerms')} />
-                </Field>
+                    <Field label="Client Response / Feedback" hint="Capture comments, discussion points, and special conditions">
+                        <Textarea
+                            rows={3}
+                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during token discussion..."
+                            value={form.clientResponse}
+                            onChange={set('clientResponse')}
+                        />
+                    </Field>
+                </div>
             </form>
         </Modal>
     );
@@ -351,7 +696,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const approvedLeads = rawLeads.filter((lead) => lead.proposal?.approvalStatus === 'APPROVED' || lead.proposalApprovalStatus === 'APPROVED');
+    const approvedLeads = rawLeads.filter((lead) => lead.proposal?.approvalStatus === 'APPROVED' || lead.proposalApprovalStatus === 'APPROVED' || lead.token);
 
     const filteredLeads = approvedLeads.filter((lead) => {
         if (search) {
@@ -366,7 +711,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     });
 
     const totalCount = approvedLeads.length;
-    const tokenReceivedCount = approvedLeads.filter((l) => l.token?.status === 'RECEIVED' || l.token?.receivedDate).length;
+    const tokenReceivedCount = approvedLeads.filter((l) => normalizeTokenStatus(l.token?.status) === 'Received' || l.token?.receivedDate).length;
     const totalTokenValue = approvedLeads.reduce((acc, l) => acc + Number(l.token?.amount || 0), 0);
     const pendingDiscussions = approvedLeads.filter((l) => l.token?.discussionDueDate && !l.token?.receivedDate).length;
 
@@ -374,7 +719,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
         <div>
             <PageHeader
                 title="Budgeting / Token Discussion"
-                subtitle="Track token advance discussions, token amounts received, client budget responses, proposal attachments, and project commercial timelines"
+                subtitle="Track token advance discussions, token amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

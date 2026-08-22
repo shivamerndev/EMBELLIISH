@@ -102,18 +102,49 @@ const proposalSchema = z
 
 const tokenSchema = z
   .object({
-    discussionDueDate: z.coerce.date().optional(),
-    amount: z.coerce.number().optional(),
-    status: z.enum(['NOT_DISCUSSED', 'DISCUSSED', 'PENDING', 'RECEIVED', 'WAIVED']).optional(),
-    receivedDate: z.coerce.date().optional(),
-    clientBudgetResponse: z.string().optional(),
-    proposalAttachment: z.array(attachmentItemSchema).optional(),
-    budgetEstimate: z.coerce.number().optional(),
-    clientResponse: z.string().optional(),
-    projectTimeline: z.string().optional(),
-    commercialTerms: z.string().optional(),
+    discussionDueDate: z.coerce.date().optional().nullable(),
+    amount: z.coerce.number().optional().nullable(),
+    status: z.string().optional().nullable(),
+    receivedDate: z.coerce.date().optional().nullable(),
+    clientBudgetResponse: z.string().optional().nullable(),
+    proposalAttachment: z.array(attachmentItemSchema).optional().nullable(),
+    proposal: z.string().optional().nullable(),
+    budgetEstimate: z.coerce.number().optional().nullable(),
+    clientResponse: z.string().optional().nullable(),
+    projectTimeline: z.string().optional().nullable(),
+    projectTimelineStart: z.coerce.date().optional().nullable(),
+    projectTimelineEnd: z.coerce.date().optional().nullable(),
+    commercialTerms: z.string().optional().nullable(),
+    commercialTermsNotes: z.string().optional().nullable(),
+    masterTemplate: z.string().optional().nullable(),
   })
   .optional();
+
+const costingLineItemSchema = z.object({
+  description: z.string().optional(),
+  quantity: z.coerce.number().optional(),
+  catalogueCost: z.coerce.number().optional(),
+  landedCost: z.coerce.number().optional(),
+  localFabricCost: z.coerce.number().optional(),
+  labourCost: z.coerce.number().optional(),
+  totalCost: z.coerce.number().optional(),
+});
+
+const costingHistorySchema = z.object({
+  version: z.string().optional(),
+  dueDate: z.coerce.date().optional(),
+  catalogueCost: z.coerce.number().optional(),
+  landedCost: z.coerce.number().optional(),
+  localFabricCost: z.coerce.number().optional(),
+  labourCost: z.coerce.number().optional(),
+  sampleCost: z.coerce.number().optional(),
+  totalCost: z.coerce.number().optional(),
+  sellingPrice: z.coerce.number().optional(),
+  calculatedMargin: z.coerce.number().optional(),
+  marginModel: z.string().optional(),
+  savedAt: z.coerce.date().optional(),
+  notes: z.string().optional(),
+});
 
 const costingSchema = z
   .object({
@@ -132,6 +163,8 @@ const costingSchema = z
     hiteshApprovalRequired: z.boolean().optional(),
     hiteshApprovalStatus: z.enum(['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED']).optional(),
     hiteshApprovalNotes: z.string().optional(),
+    lineItems: z.array(costingLineItemSchema).optional(),
+    costingHistory: z.array(costingHistorySchema).optional(),
   })
   .optional();
 
@@ -173,7 +206,7 @@ const approvalSchema = z
   .object({
     planned: z.string().optional(),
     clientApprovalDate: z.string().optional(),
-    clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
+    clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED', 'ON_HOLD', 'DECLINED']).optional(),
     proofAttachment: z.array(attachmentItemSchema).optional(),
     finalApprovedVersion: z.string().optional(),
     revisions: z.array(approvalRevisionItemSchema).optional(),
@@ -190,12 +223,25 @@ const presentationSchema = z
   })
   .optional();
 
+const kycDocumentItemSchema = z.object({
+  documentName: z.string().optional(),
+  docType: z.string().optional(),
+  status: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
+  verifiedBy: z.string().optional(),
+  verifiedAt: z.union([z.string(), z.date()]).optional(),
+  url: z.string().optional(),
+  filename: z.string().optional(),
+  mimetype: z.string().optional(),
+  size: z.coerce.number().optional(),
+  caption: z.string().optional(),
+});
+
 const kycSchema = z
   .object({
     dueDate: z.union([z.string(), z.date()]).optional(),
     actualDate: z.union([z.string(), z.date()]).optional(),
     status: z.enum(['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
-    verifiedDocuments: z.array(attachmentItemSchema).optional(),
+    verifiedDocuments: z.array(kycDocumentItemSchema).optional(),
     documentTypes: z.array(z.string()).optional(),
     remarks: z.string().optional(),
     verifiedBy: z.string().optional(),
