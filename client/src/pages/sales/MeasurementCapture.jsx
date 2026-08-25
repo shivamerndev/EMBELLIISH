@@ -723,7 +723,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Layers className="w-4 h-4 text-amber-500" /> Pelmet Details Subform ({pelmetDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addPelmetRow}>Add Pelmet</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addPelmetRow}>Add Pelmet</Button>
                             </div>
                             {pelmetDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No pelmet details specified.</p>
@@ -778,7 +778,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Settings className="w-4 h-4 text-indigo-500" /> Channel Details Subform ({channelDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addChannelRow}>Add Channel</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addChannelRow}>Add Channel</Button>
                             </div>
                             {channelDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No channel details specified.</p>
@@ -834,7 +834,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Zap className="w-4 h-4 text-sky-500" /> Motor Details Subform ({motorDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addMotorRow}>Add Motor</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addMotorRow}>Add Motor</Button>
                             </div>
                             {motorDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No motor details specified.</p>
@@ -890,7 +890,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Zap className="w-4 h-4 text-emerald-500" /> Wiring Details Subform ({wiringDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addWiringRow}>Add Wiring Spec</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addWiringRow}>Add Wiring Spec</Button>
                             </div>
                             {wiringDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No wiring details specified.</p>
@@ -1084,7 +1084,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             </div>
 
                             {attachments.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic p-3 border border-dashed rounded-md text-center">No site photos uploaded.</p>
+                                <p className="text-xs text-slate-400 italic p-3  text-center">No site photos uploaded.</p>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
                                     {attachments.map((att, i) => (
@@ -1142,7 +1142,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             </div>
 
                             {drawings.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic p-3 border border-dashed rounded-md text-center">No layout drawings uploaded.</p>
+                                <p className="text-xs text-slate-400 italic p-3 text-center">No layout drawings uploaded.</p>
                             ) : (
                                 <div className="space-y-2 max-h-44 overflow-y-auto">
                                     {drawings.map((dwg, i) => (
@@ -1177,7 +1177,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-                    <Button variant="primary" type="submit" loading={pending}>Save Measurement Capture</Button>
+                    <Button variant="primary" type="submit" loading={pending}>Save Changes</Button>
                 </div>
             </form>
         </Modal>

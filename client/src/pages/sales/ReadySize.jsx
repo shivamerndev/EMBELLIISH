@@ -393,8 +393,8 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             confirmedHeight: w.height || '2100',
             unit: w.unit || 'mm',
             status: 'Confirmed',
-            notes: 'Final ready size confirmed',
-            version: 'v2.0'
+            notes: 'Final size confirmed',
+            version: 'v2.0' 
         }));
     };
 
@@ -551,14 +551,6 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                     </div>
                 )}
 
-                <div className="p-3 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
-                        <span><strong>Auto-fetched Data:</strong> Measurement capture details have been pulled forward into repeatable subforms and grid.</span>
-                    </div>
-                    <Badge tone="blue">Ready Size Workflow</Badge>
-                </div>
-
                 {/* Section 1: Ready Size Due, Confirmed By, Confirmation Date, Site Condition */}
                 <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
@@ -566,7 +558,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         1. Confirmation Header & Site Condition
                     </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Field label="Ready Size Due (Date Picker)">
                             <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                         </Field>
@@ -586,27 +578,16 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                                     value={confirmationDate}
                                     onChange={(e) => setConfirmationDate(e.target.value)}
                                 />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleSetCurrentTime}
-                                    title="Set Current Time"
-                                    className="shrink-0 text-[10px]"
-                                >
-                                    Now
-                                </Button>
                             </div>
                         </Field>
-
-                        <Field label="Ready Size Confirmed By (Multi-select)">
+                    </div>
+                    <Field label="Ready Size Confirmed By">
                             <MultiSelectUsersControl
                                 selectedUsers={confirmedBy}
                                 users={users}
                                 onChange={setConfirmedBy}
                             />
                         </Field>
-                    </div>
                 </Panel>
 
                 {/* Section 2: Repeatable Window Size Subform */}
@@ -614,7 +595,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                     <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <Ruler className="w-4 h-4 text-blue-500" />
-                            2. Window Size (Repeatable Numeric Subform)
+                            2. Window Size
                         </h4>
                         <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddWindow}>
                             Add Window Size
@@ -721,7 +702,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-amber-500" />
-                                4. Pelmet Details (Auto-fetched & Revision-tracked)
+                                4. Pelmet Details
                             </h4>
                             <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddPelmet}>
                                 Add Pelmet
@@ -776,7 +757,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                 <Layers className="w-4 h-4 text-indigo-500" />
-                                5. Channel Details (Auto-fetched & Revision-tracked)
+                                5. Channel Details
                             </h4>
                             <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddChannel}>
                                 Add Channel
@@ -830,7 +811,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                 <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
                         <FileText className="w-4 h-4 text-emerald-500" />
-                        6. Final Measurements (Versioned Measurement Grid)
+                        6. Final Measurements
                     </h4>
 
                     <div className="overflow-x-auto">
