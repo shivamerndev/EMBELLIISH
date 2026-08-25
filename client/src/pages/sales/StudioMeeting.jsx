@@ -637,10 +637,9 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             />
                             <span>Studio Meeting Planned</span>
                         </label>
-                        <span className="text-[11px] text-slate-500">Enable when studio meeting is scheduled or planned for client</span>
                     </div>
 
-                    <Field label="Studio Meeting Due Date" required={isPlanned} hint={isPlanned ? 'Mandatory once studio meeting is planned' : ''}>
+                    <Field label="Studio Meeting Due Date" required={isPlanned}>
                         <Input
                             type="date"
                             value={dueDate}
@@ -649,7 +648,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Actual Meeting Date & Time" hint="Actual date and time when session occurred">
+                    <Field label="Actual Meeting Date & Time">
                         <Input
                             type="datetime-local"
                             value={actualDate}
@@ -657,7 +656,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Meeting Room Readiness" hint="Checklist / Dropdown status">
+                    <Field label="Meeting Room Readiness">
                         <Select
                             value={roomReadiness}
                             onChange={(e) => setRoomReadiness(e.target.value)}
@@ -667,7 +666,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 </div>
 
                 {/* Section 2: Meeting Attendees (Multi-select) */}
-                <Field label="Meeting Attendees" hint="Multi-select contact / user field: Internal users, client contacts, and architects">
+                <Field label="Meeting Attendees" >
                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         {/* Selected Attendees Badges */}
                         {attendees.length > 0 && (
@@ -740,7 +739,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 {/* Section 3: Next Action & Pricing Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Next Action */}
-                    <Field label="Next Action from the Meeting" hint="Select from Next Action master; include Other">
+                    <Field label="Next Action from the Meeting">
                         <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                             <Select
                                 value={nextActionSelected}
@@ -759,7 +758,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                     </Field>
 
                     {/* Pricing Range */}
-                    <Field label="Pricing Range (₹)" hint="Currency range: separate minimum and maximum values in ₹">
+                    <Field label="Pricing Range (₹)">
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
@@ -793,7 +792,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 </div>
 
                 {/* Section 4: Samples Searchable Multi-Select Lookup */}
-                <Field label="Samples Presented" hint="Searchable multi-select lookup: Select from sample/catalogue master or upload swatches">
+                <Field label="Samples Presented">
                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="relative">
@@ -823,6 +822,8 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                                 <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={() => handleAddSampleTag(customSampleInput)}>Add</Button>
                             </div>
                         </div>
+
+{/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
 
                         {/* Catalogue Master Lookup Badges */}
                         <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
@@ -864,7 +865,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
 
                 {/* Section 5: Long Free Text Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Client Feedback / Meeting Outcome" hint="Multiline meeting summary">
+                    <Field label="Client Feedback / Meeting Outcome">
                         <Textarea
                             rows={4}
                             value={feedback}
@@ -873,7 +874,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Architect Brief" hint="Multiline brief">
+                    <Field label="Architect Brief">
                         <Textarea
                             rows={4}
                             value={architectBrief}

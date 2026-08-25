@@ -93,7 +93,7 @@ const autoFetchRooms = (item) => {
         }
     }
     if (item.measurement?.roomList) return String(item.measurement.roomList);
-    if (item.rooms) return String(item.rooms);
+    if (item.rooms) return Array.isArray(item.rooms) ? item.rooms.join(', ') : String(item.rooms);
     return '';
 };
 
@@ -101,11 +101,24 @@ const parseFabricSelections = (raw) => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch {
-            return raw.split(',').map((s) => s.trim()).filter(Boolean);
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'string' && current.length > 0) {
+            return current.split(',').map((s) => s.trim()).filter(Boolean);
         }
     }
     return [];
@@ -113,10 +126,27 @@ const parseFabricSelections = (raw) => {
 
 const parseLiningAssumptions = (raw) => {
     if (!raw) return { selected: [], notes: '' };
-    if (typeof raw === 'object' && !Array.isArray(raw)) {
+    let current = raw;
+    if (typeof current === 'string') {
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
         return {
-            selected: Array.isArray(raw.selected) ? raw.selected : [],
-            notes: raw.notes || ''
+            selected: Array.isArray(current.selected) ? current.selected : [],
+            notes: current.notes || ''
         };
     }
     if (typeof raw === 'string') {
@@ -484,7 +514,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
         const finalVersion = autoIncrementVersion ? getNextVersion(form.boqVersion) : form.boqVersion;
         const liningObj = { selected: selectedLinings, notes: liningNotes.trim() };
-        const liningFormatted = JSON.stringify(liningObj);
 
         execute({
             ...existingConsumption,
@@ -497,9 +526,9 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             roomList: form.roomList || undefined,
             boqPreparedBy: form.boqPreparedBy || currentUser?.name || 'System User',
             boqPreparedDate: new Date().toISOString(),
-            fabricDesignSelection: JSON.stringify(selectedFabrics),
+            fabricDesignSelection: selectedFabrics,
             panelCount: panelInt,
-            liningAccessoryAssumptions: liningFormatted,
+            liningAccessoryAssumptions: liningObj,
         });
     };
 

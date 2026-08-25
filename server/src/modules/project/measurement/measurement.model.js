@@ -55,7 +55,7 @@ const measurementSchema = new mongoose.Schema(
       dropAllowanceInch: { type: Number, min: 0 },
       /** No stitching starts until this is true. */
       confirmed: { type: Boolean, default: false, index: true },
-      confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      confirmedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       confirmedAt: Date,
       note: String,
     },

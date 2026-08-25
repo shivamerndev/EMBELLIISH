@@ -359,7 +359,7 @@ const EditQuotationModal = ({ item, onClose, onDone }) => {
             addSubtotal: form.addSubtotal === true || String(form.addSubtotal) === 'true',
             validity: form.validity || undefined,
             discountApprovalStatus: form.discountApprovalStatus,
-            fabricSelection: JSON.stringify(validFabrics.length > 0 ? validFabrics : fabrics),
+            fabricSelection: validFabrics.length > 0 ? validFabrics : fabrics,
             cataloguePrice: form.cataloguePrice === '' ? 0 : Number(form.cataloguePrice),
             labourPrice: form.labourPrice === '' ? 0 : Number(form.labourPrice),
             samplePrice: form.samplePrice === '' ? 0 : Number(form.samplePrice),
