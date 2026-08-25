@@ -616,8 +616,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
         const validClientSelections = clientSelections.filter((s) => s.item && s.item.trim() !== '');
         const validFabricSelections = fabricSelections.filter((f) => f.fabric && f.fabric.trim() !== '');
 
-        const formattedClientSelStr = JSON.stringify(validClientSelections.length > 0 ? validClientSelections : clientSelections);
-        const formattedFabricSelStr = JSON.stringify(validFabricSelections.length > 0 ? validFabricSelections : fabricSelections);
+        const clientSelVal = validClientSelections.length > 0 ? validClientSelections : clientSelections;
+        const fabricSelVal = validFabricSelections.length > 0 ? validFabricSelections : fabricSelections;
 
         const existingRevisions = Array.isArray(item?.approval?.revisions) ? item.approval.revisions : [];
         let updatedRevisions = existingRevisions;
@@ -630,8 +630,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 revisionNumber: revNum,
                 clientApprovalStatus: item?.approval?.clientApprovalStatus || 'APPROVED',
                 finalApprovedVersion: item?.approval?.finalApprovedVersion || 'v1.0',
-                clientSelection: formattedClientSelStr,
-                fabricSelection: formattedFabricSelStr,
+                clientSelection: clientSelVal,
+                fabricSelection: fabricSelVal,
                 designDirection: item?.presentation?.designDirection || '',
                 revisionNotes: item?.presentation?.revisionNotes || '',
                 changeReason: revisionReason.trim(),
@@ -664,8 +664,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 ...(item?.presentation || {}),
                 link: form.presentationLink || undefined,
                 url: form.presentationLink || undefined,
-                clientSelection: formattedClientSelStr,
-                fabricSelection: formattedFabricSelStr,
+                clientSelection: clientSelVal,
+                fabricSelection: fabricSelVal,
                 designDirection: form.designDirection || undefined,
                 revisionNotes: finalNotes || undefined,
                 attachment: presentationAttachments,

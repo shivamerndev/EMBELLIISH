@@ -121,9 +121,19 @@ const SPREADSHEET_CELL_RENDERERS = {
     'measurement.measuredBy': (lead) => (
         <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300">{lead.measurement?.measuredBy?.name || '—'}</span>
     ),
-    'readySize.confirmedBy': (lead) => (
-        <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300">{lead.readySize?.confirmedBy?.name || '—'}</span>
-    ),
+    'readySize.confirmedBy': (lead) => {
+        const cb = lead.readySize?.confirmedBy;
+        if (!cb) return <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300">—</span>;
+        let names = '—';
+        if (Array.isArray(cb)) {
+            names = cb.map((u) => (typeof u === 'object' ? u?.name || u?.email : String(u))).filter(Boolean).join(', ') || '—';
+        } else if (typeof cb === 'object') {
+            names = cb.name || cb.email || '—';
+        } else {
+            names = String(cb);
+        }
+        return <span className="truncate block max-w-[130px] text-slate-700 dark:text-slate-300" title={names}>{names}</span>;
+    },
 };
 
 const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {

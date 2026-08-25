@@ -562,9 +562,6 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         if (form.scopeSelected.includes('Other') && form.scopeCustomOther.trim()) {
             scopeParts.push(form.scopeCustomOther.trim());
         }
-        const scopeString = scopeParts.join(', ');
-
-        const roomsString = form.roomsSelected.join(', ');
 
         const availabilityString = form.availabilitySlots
             .filter((s) => s.date || s.timeSlot)
@@ -591,8 +588,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             assignedInstaller: primaryInstallerId || null,
             assignedInstallers: form.assignedInstallers,
             clientArchitectAvailability: availabilityString || undefined,
-            scope: scopeString || undefined,
-            rooms: roomsString || undefined,
+            scope: scopeParts,
+            rooms: form.roomsSelected,
             drawingsRenders: drawingsString || undefined,
             installerAvailability: form.installerAvailability
         });

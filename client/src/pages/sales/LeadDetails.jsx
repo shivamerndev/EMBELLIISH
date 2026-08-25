@@ -10,16 +10,24 @@ import { useParams, useSearchParams } from "react-router-dom";
 /** Safely parses stringified JSON or returns raw structure */
 const parseJsonOrArray = (raw) => {
     if (!raw) return null;
-    if (Array.isArray(raw) || typeof raw === 'object') return raw;
+    if (Array.isArray(raw) || (typeof raw === 'object' && raw !== null)) return raw;
     if (typeof raw === 'string') {
-        const trimmed = raw.trim();
-        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-            try {
-                return JSON.parse(trimmed);
-            } catch {
-                return raw;
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
             }
         }
+        return current;
     }
     return raw;
 };
@@ -464,7 +472,9 @@ const LeadDetails = () => {
 
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">Rooms</span>
-                            <span className="text-slate-800 dark:text-slate-200 font-medium">{lead.rooms || '—'}</span>
+                            <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                {Array.isArray(lead.rooms) ? (lead.rooms.length > 0 ? lead.rooms.join(', ') : '—') : lead.rooms || '—'}
+                            </span>
                         </div>
                     </div>
 
@@ -478,7 +488,9 @@ const LeadDetails = () => {
                     {lead.scope && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Scope</span>
-                            <p className="text-slate-700 dark:text-slate-200">{lead.scope}</p>
+                            <p className="text-slate-700 dark:text-slate-200">
+                                {Array.isArray(lead.scope) ? lead.scope.join(', ') : lead.scope}
+                            </p>
                         </div>
                     )}
 
@@ -566,7 +578,14 @@ const LeadDetails = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Meeting Room Readiness" value={lead.readySize?.roomReadiness} />
                         <InfoTile label="Ready Size Due Date" value={lead.readySize?.dueDate ? date(lead.readySize.dueDate) : null} />
-                        <InfoTile label="Ready Size Confirmed By" value={lead.readySize?.confirmedBy?.name} />
+                        <InfoTile
+                            label="Ready Size Confirmed By"
+                            value={
+                                Array.isArray(lead.readySize?.confirmedBy)
+                                    ? lead.readySize.confirmedBy.map((u) => (typeof u === 'object' ? u?.name || u?.email : String(u))).filter(Boolean).join(', ') || null
+                                    : (lead.readySize?.confirmedBy?.name || (typeof lead.readySize?.confirmedBy === 'string' ? lead.readySize.confirmedBy : null))
+                            }
+                        />
                         <InfoTile label="Confirmation Date" value={lead.readySize?.confirmationDate ? date(lead.readySize.confirmationDate) : null} />
                         <InfoTile label="Window Size" value={lead.readySize?.windowSize} />
                         <InfoTile label="Site Condition" value={lead.readySize?.siteCondition} />

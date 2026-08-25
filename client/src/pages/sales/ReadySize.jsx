@@ -89,12 +89,27 @@ const resolveUserNames = (confirmedBy, users = []) => {
 const parseSubformArray = (raw) => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object' && raw !== null) return [raw];
     if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch {
-            return [{ id: '1', name: raw, notes: raw }];
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'object' && current !== null) return [current];
+        if (typeof current === 'string' && current.length > 0) {
+            return [{ id: '1', name: current, notes: current }];
         }
     }
     return [];
@@ -677,7 +692,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                 <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
                         <Ruler className="w-4 h-4 text-emerald-500" />
-                        3. Ready Height (Numeric Measurement Field per Window / Overall)
+                        3. Ready Height
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1011,7 +1026,7 @@ const ReadySize = ({ items: itemsProp = [] }) => {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
-            const confirmedBy = String(lead.readySize?.confirmedBy?.name || lead.readySize?.confirmedBy || '').toLowerCase();
+            const confirmedBy = resolveUserNames(lead.readySize?.confirmedBy, users).toLowerCase();
             if (!code.includes(q) && !clientName.includes(q) && !confirmedBy.includes(q)) {
                 return false;
             }

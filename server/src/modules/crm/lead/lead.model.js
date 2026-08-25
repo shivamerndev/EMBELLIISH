@@ -61,8 +61,8 @@ const leadSchema = new mongoose.Schema(
     siteAddress: String,
     assignedInstaller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     clientArchitectAvailability: String,
-    scope: String,
-    rooms: String,
+    scope: mongoose.Schema.Types.Mixed,
+    rooms: mongoose.Schema.Types.Mixed,
     drawingsRenders: String,
     installerAvailability: {
       type: String,
@@ -82,13 +82,13 @@ const leadSchema = new mongoose.Schema(
       },
       siteAccess: String,
       attachments: [attachmentSchema],
-      roomList: String,
+      roomList: mongoose.Schema.Types.Mixed,
       drawings: [attachmentSchema],
-      pelmetDetails: String,
-      channelDetails: String,
-      motorDetails: String,
-      wiringDetails: String,
-      notes: String,
+      pelmetDetails: mongoose.Schema.Types.Mixed,
+      channelDetails: mongoose.Schema.Types.Mixed,
+      motorDetails: mongoose.Schema.Types.Mixed,
+      wiringDetails: mongoose.Schema.Types.Mixed,
+      notes: mongoose.Schema.Types.Mixed,
     },
 
     // --- Sales & Commercials: Studio Meeting.
@@ -109,30 +109,31 @@ const leadSchema = new mongoose.Schema(
     readySize: {
       roomReadiness: String,
       dueDate: Date,
-      confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      confirmedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       confirmationDate: Date,
-      windowSize: String,
+      windowSize: mongoose.Schema.Types.Mixed,
+      windowSizes: mongoose.Schema.Types.Mixed,
       siteCondition: String,
-      pelmetDetails: String,
-      channelDetails: String,
-      readyHeight: String,
-      finalMeasurements: String,
+      pelmetDetails: mongoose.Schema.Types.Mixed,
+      channelDetails: mongoose.Schema.Types.Mixed,
+      readyHeight: mongoose.Schema.Types.Mixed,
+      finalMeasurements: mongoose.Schema.Types.Mixed,
     },
 
     // --- Sales & Commercials: Consumption / BOQ.
     consumption: {
       sheetDueDate: Date,
-      measurements: String,
+      measurements: mongoose.Schema.Types.Mixed,
       quantity: Number,
       unit: String,
       wastageAllowance: String,
       boqVersion: String,
-      roomList: String,
+      roomList: mongoose.Schema.Types.Mixed,
       boqPreparedBy: String,
       boqPreparedDate: Date,
-      fabricDesignSelection: String,
+      fabricDesignSelection: mongoose.Schema.Types.Mixed,
       panelCount: Number,
-      liningAccessoryAssumptions: String,
+      liningAccessoryAssumptions: mongoose.Schema.Types.Mixed,
     },
 
     // --- Sales & Commercials: Proposal.
@@ -423,6 +424,89 @@ leadSchema.index({ clientName: 'text', companyName: 'text', phone: 'text', locat
 /** Open leads are the ones still worth a follow-up call. */
 leadSchema.virtual('isOpen').get(function isOpen() {
   return ![LEAD_STATUS.CONVERTED, LEAD_STATUS.LOST, LEAD_STATUS.UNQUALIFIED].includes(this.status);
+});
+
+const ARRAY_OR_JSON_FIELDS = [
+  'roomList',
+  'pelmetDetails',
+  'channelDetails',
+  'motorDetails',
+  'wiringDetails',
+  'notes',
+  'finalMeasurements',
+  'windowSizes',
+  'windowSize',
+  'measurements',
+  'fabricDesignSelection',
+  'liningAccessoryAssumptions',
+  'clientSelection',
+  'fabricSelection',
+  'drawingsRenders',
+];
+
+const safeJsonParse = (val) => {
+  if (val === null || val === undefined) return val;
+  if (typeof val === 'string') {
+    let current = val.trim();
+    let depth = 0;
+    while (typeof current === 'string' && depth < 5) {
+      const trimmed = current.trim();
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        try {
+          current = JSON.parse(trimmed);
+          depth++;
+        } catch {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    return current;
+  }
+  return val;
+};
+
+const normalizeLeadArrays = (target) => {
+  if (!target || typeof target !== 'object') return;
+  const sections = ['measurement', 'readySize', 'consumption', 'proposal', 'presentation', 'quotation', 'approval'];
+  sections.forEach((sec) => {
+    if (target[sec] && typeof target[sec] === 'object') {
+      ARRAY_OR_JSON_FIELDS.forEach((key) => {
+        if (key in target[sec]) {
+          target[sec][key] = safeJsonParse(target[sec][key]);
+        }
+      });
+    }
+  });
+  ARRAY_OR_JSON_FIELDS.forEach((key) => {
+    if (key in target) {
+      target[key] = safeJsonParse(target[key]);
+    }
+  });
+};
+
+leadSchema.pre('save', function (next) {
+  normalizeLeadArrays(this);
+  next();
+});
+
+leadSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany', 'update'], function (next) {
+  const update = this.getUpdate();
+  if (update) {
+    normalizeLeadArrays(update);
+    if (update.$set) normalizeLeadArrays(update.$set);
+  }
+  next();
+});
+
+leadSchema.post(['find', 'findOne', 'findOneAndUpdate'], function (docs) {
+  if (!docs) return;
+  if (Array.isArray(docs)) {
+    docs.forEach(normalizeLeadArrays);
+  } else {
+    normalizeLeadArrays(docs);
+  }
 });
 
 applyJsonTransform(leadSchema);

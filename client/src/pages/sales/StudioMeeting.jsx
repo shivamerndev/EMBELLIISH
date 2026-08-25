@@ -823,6 +823,8 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             </div>
                         </div>
 
+{/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
+
                         {/* Catalogue Master Lookup Badges */}
                         <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                             {filteredCandidateSamples.map((samp) => {
