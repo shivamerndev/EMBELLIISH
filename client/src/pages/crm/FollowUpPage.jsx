@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Users, UserCheck, ShieldCheck, Pencil, ArrowRightCircle } from 'lucide-react';
+import { Search, Users, UserCheck, ShieldCheck, Pencil, ArrowRightCircle, ArrowRight } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import {
@@ -223,17 +223,11 @@ export const FollowUpPage = () => {
         title="CRM — Lead Follow-up"
         subtitle="Track the next action, due date, and overall status for every lead in the pipeline"
         actions={
-          <>
-            <Link to="/crm/leads">
-              <Button variant="secondary" icon={Users}>Lead Capture Sheet</Button>
-            </Link>
-            <Link to="/crm/dcm-assignments">
-              <Button variant="secondary" icon={UserCheck}>DCM Assignments</Button>
-            </Link>
-            <Link to="/crm/qualification">
-              <Button variant="secondary" icon={ShieldCheck}>Qualification</Button>
-            </Link>
-          </>
+          <Link to="/crm/clients">
+            <Button icon={ArrowRight}>
+              Move to Clients
+            </Button>
+          </Link>
         }
       />
 
@@ -268,11 +262,11 @@ export const FollowUpPage = () => {
             <table className="min-w-[1100px] w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Code & Client</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead Code & Client</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action Due Date</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Overall Lead Status</th>
-                  <th className="p-2.5 px-3 text-right">Actions</th>
+                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
@@ -285,7 +279,7 @@ export const FollowUpPage = () => {
                 ) : (
                   filtered.map((row) => (
                     <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 whitespace-nowrap">
+                      <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
                         <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                       </td>
@@ -298,7 +292,7 @@ export const FollowUpPage = () => {
                       <td className="p-3 text-center">
                         <OverallStatusBadge value={row.overallLeadStatus} />
                       </td>
-                      <td className="p-3 text-right">
+                      <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
                             Update

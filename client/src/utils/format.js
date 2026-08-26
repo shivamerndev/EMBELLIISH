@@ -130,3 +130,36 @@ export const getLocalTime = () => {
   return `${hours}:${minutes}`;
 };
 
+/** Formats numeric budget values with Indian comma separation (e.g. 10000 -> "10,000", 1000000 -> "10,00,000") */
+export const formatBudgetValue = (val) => {
+  if (val === undefined || val === null || val === '') return '';
+  if (typeof val === 'number') {
+    return val.toLocaleString('en-IN');
+  }
+  const str = String(val).trim();
+  if (!str) return '';
+
+  const hasRupeeSymbol = str.startsWith('₹');
+  const cleanStr = (hasRupeeSymbol ? str.slice(1) : str).replace(/,/g, '').trim();
+
+  if (!isNaN(cleanStr) && cleanStr !== '') {
+    const parts = cleanStr.split('.');
+    const num = Number(parts[0]);
+    if (!isNaN(num)) {
+      const integerPart = num.toLocaleString('en-IN');
+      return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
+    }
+  }
+
+  return str;
+};
+
+/** Formats budget for display with ₹ symbol and commas (e.g. 10000 -> "₹10,000") */
+export const formatBudgetDisplay = (val) => {
+  if (val === undefined || val === null || val === '' || val === '—') return '—';
+  const formatted = formatBudgetValue(val);
+  if (!formatted) return '—';
+  return formatted.startsWith('₹') ? formatted : `₹${formatted}`;
+};
+
+

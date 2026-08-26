@@ -436,7 +436,7 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
 
   if (!open) return null;
 
-  const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
+  const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl', '2xl': 'max-w-6xl', '3xl': 'max-w-7xl', full: 'max-w-[1350px] w-[92vw]' };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
