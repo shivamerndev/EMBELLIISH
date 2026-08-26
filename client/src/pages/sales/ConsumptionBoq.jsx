@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip, Layers, Pencil,
-    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Trash2, Percent, UserCheck, Clock, AlertTriangle, FileText, X
+    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X
 } from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
@@ -11,6 +11,7 @@ import { selectUser } from '../../features/auth/authSlice';
 import useSales from '../../hooks/useSales';
 import { leadsApi, fabricsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -70,17 +71,132 @@ const getNestedVal = (obj, path) => {
     return curr;
 };
 
+const parseSubformArray = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object' && raw !== null) return [raw];
+    if (typeof raw === 'string') {
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'object' && current !== null) return [current];
+    }
+    return [];
+};
+
+const calculateVariance = (prevW, prevH, confW, confH, unit) => {
+    const pw = parseFloat(prevW) || 0;
+    const ph = parseFloat(prevH) || 0;
+    const cw = parseFloat(confW) || 0;
+    const ch = parseFloat(confH) || 0;
+
+    const diffW = cw - pw;
+    const diffH = ch - ph;
+
+    if (diffW === 0 && diffH === 0) return <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Exact Match (0)</span>;
+
+    const signW = diffW > 0 ? `+${diffW}` : `${diffW}`;
+    const signH = diffH > 0 ? `+${diffH}` : `${diffH}`;
+
+    return (
+        <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold text-[11px]">
+            W: {signW}{unit} / H: {signH}{unit}
+        </span>
+    );
+};
+
+const parseGridInitial = (item) => {
+    const existing = item?.consumption?.measurements;
+    const parsedExisting = parseSubformArray(existing);
+    if (parsedExisting.length > 0 && typeof parsedExisting[0] === 'object' && (parsedExisting[0].room || parsedExisting[0].confirmedWidth || parsedExisting[0].width)) {
+        return parsedExisting;
+    }
+
+    const rawFinal = item?.readySize?.finalMeasurements || item?.readySize?.finalMeasurementGrid;
+    const parsedFinal = parseSubformArray(rawFinal);
+    if (parsedFinal.length > 0 && typeof parsedFinal[0] === 'object') {
+        return parsedFinal.map((row, idx) => ({
+            id: row.id || `g-${idx + 1}`,
+            room: row.room || row.roomName || 'Room',
+            windowId: row.windowId || `W-0${idx + 1}`,
+            previousWidth: row.previousWidth || row.width || '1200',
+            previousHeight: row.previousHeight || row.height || '2100',
+            confirmedWidth: row.confirmedWidth || row.width || '1200',
+            confirmedHeight: row.confirmedHeight || row.height || '2100',
+            unit: row.unit || 'mm',
+            status: row.status || 'Confirmed',
+            notes: row.notes || 'Final size confirmed',
+            version: row.version || 'v2.0'
+        }));
+    }
+
+    const rawWindows = item?.readySize?.windowSizes || item?.readySize?.windowSize || item?.measurement?.windowSizes;
+    const parsedWindows = parseSubformArray(rawWindows);
+    if (parsedWindows.length > 0 && typeof parsedWindows[0] === 'object') {
+        return parsedWindows.map((w, idx) => ({
+            id: `g-${idx + 1}`,
+            room: w.room || w.roomName || 'Room',
+            windowId: w.windowId || `W-0${idx + 1}`,
+            previousWidth: w.width || '1200',
+            previousHeight: w.height || '2100',
+            confirmedWidth: w.width || '1200',
+            confirmedHeight: w.height || '2100',
+            unit: w.unit || 'mm',
+            status: 'Confirmed',
+            notes: 'Final size confirmed',
+            version: 'v2.0'
+        }));
+    }
+
+    return [
+        {
+            id: 'g-1',
+            room: 'Living Room',
+            windowId: 'W-01',
+            previousWidth: '1200',
+            previousHeight: '2100',
+            confirmedWidth: '1200',
+            confirmedHeight: '2100',
+            unit: 'mm',
+            status: 'Confirmed',
+            notes: 'Final size confirmed',
+            version: 'v2.0'
+        }
+    ];
+};
+
 const autoFetchMeasurements = (item) => {
     if (!item) return '—';
-    if (item.readySize?.finalMeasurements) return String(item.readySize.finalMeasurements);
+    const rawFinal = item.readySize?.finalMeasurements || item.consumption?.measurements;
+    if (rawFinal) {
+        if (typeof rawFinal === 'string') return rawFinal;
+        const parsed = parseSubformArray(rawFinal);
+        if (parsed.length > 0) return `Confirmed Measurements (${parsed.length} window(s) recorded)`;
+    }
     if (item.readySize?.windowSizes) {
         if (Array.isArray(item.readySize.windowSizes)) {
-            return `Confirmed Measurements (${item.readySize.windowSizes.length} windows recorded)`;
+            return `Confirmed Measurements (${item.readySize.windowSizes.length} window(s) recorded)`;
+        }
+        if (typeof item.readySize.windowSizes === 'object' && item.readySize.windowSizes !== null) {
+            return `Confirmed Measurements (${Object.keys(item.readySize.windowSizes).length} item(s) recorded)`;
         }
         return String(item.readySize.windowSizes);
     }
-    if (item.measurement?.roomList) return `Measurement Record (${item.measurement.roomList})`;
-    if (item.measurement?.status) return `Measurement Record - ${item.measurement.status}`;
+    if (item.measurement?.roomList) return `Measurement Record (${typeof item.measurement.roomList === 'object' ? JSON.stringify(item.measurement.roomList) : item.measurement.roomList})`;
+    if (item.measurement?.status) return `Measurement Record - ${typeof item.measurement.status === 'object' ? JSON.stringify(item.measurement.status) : item.measurement.status}`;
     return 'Final Confirmed Measurements v1.0';
 };
 
@@ -93,7 +209,7 @@ const autoFetchRooms = (item) => {
         }
     }
     if (item.measurement?.roomList) return String(item.measurement.roomList);
-    if (item.rooms) return String(item.rooms);
+    if (item.rooms) return Array.isArray(item.rooms) ? item.rooms.join(', ') : String(item.rooms);
     return '';
 };
 
@@ -101,11 +217,24 @@ const parseFabricSelections = (raw) => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch {
-            return raw.split(',').map((s) => s.trim()).filter(Boolean);
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'string' && current.length > 0) {
+            return current.split(',').map((s) => s.trim()).filter(Boolean);
         }
     }
     return [];
@@ -113,10 +242,27 @@ const parseFabricSelections = (raw) => {
 
 const parseLiningAssumptions = (raw) => {
     if (!raw) return { selected: [], notes: '' };
-    if (typeof raw === 'object' && !Array.isArray(raw)) {
+    let current = raw;
+    if (typeof current === 'string') {
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
         return {
-            selected: Array.isArray(raw.selected) ? raw.selected : [],
-            notes: raw.notes || ''
+            selected: Array.isArray(current.selected) ? current.selected : [],
+            notes: current.notes || ''
         };
     }
     if (typeof raw === 'string') {
@@ -188,12 +334,25 @@ const SPREADSHEET_CELL_RENDERERS = {
         );
     },
     'consumption.measurements': (lead) => {
-        const val = lead.consumption?.measurements || autoFetchMeasurements(lead);
-        if (!val || val === '—') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const raw = lead.consumption?.measurements;
+        let displayVal = '';
+        if (typeof raw === 'string' && raw.trim()) {
+            displayVal = raw;
+        } else if (raw) {
+            const parsed = parseSubformArray(raw);
+            if (parsed.length > 0) {
+                displayVal = `Confirmed Measurements (${parsed.length} window(s) recorded)`;
+            }
+        }
+        if (!displayVal) {
+            displayVal = autoFetchMeasurements(lead);
+        }
+        if (!displayVal || displayVal === '—') return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const textStr = typeof displayVal === 'string' ? displayVal : String(displayVal);
         return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium max-w-[160px] truncate" title={val}>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium max-w-[160px] truncate" title={textStr}>
                 <Ruler className="w-3 h-3 shrink-0 text-emerald-500" />
-                <span className="truncate">{val}</span>
+                <span className="truncate">{textStr}</span>
             </span>
         );
     },
@@ -350,8 +509,12 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const existingConsumption = item?.consumption || {};
 
     // Initial state setup with auto-fetched measurements, room list, version & user
-    const defaultMeasurements = existingConsumption.measurements || autoFetchMeasurements(item);
-    const defaultRooms = existingConsumption.roomList || autoFetchRooms(item);
+    const defaultMeasurements = typeof existingConsumption.measurements === 'string'
+        ? existingConsumption.measurements
+        : autoFetchMeasurements(item);
+    const defaultRooms = typeof existingConsumption.roomList === 'string'
+        ? existingConsumption.roomList
+        : autoFetchRooms(item);
     const defaultVersion = existingConsumption.boqVersion || 'v1.0';
     const defaultPreparedBy = typeof existingConsumption.boqPreparedBy === 'object'
         ? (existingConsumption.boqPreparedBy?.name || currentUser?.name || '')
@@ -375,6 +538,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         panelCount: existingConsumption.panelCount !== undefined && existingConsumption.panelCount !== null ? String(existingConsumption.panelCount) : '',
     });
 
+    const [finalMeasurementsGrid, setFinalMeasurementsGrid] = useState(() => parseGridInitial(item));
     const [selectedFabrics, setSelectedFabrics] = useState(initialFabrics);
     const [customFabricInput, setCustomFabricInput] = useState('');
     const [selectedLinings, setSelectedLinings] = useState(initialLining.selected);
@@ -416,9 +580,15 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
     const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
+    const handleGridChange = (id, field, value) => {
+        setFinalMeasurementsGrid((prev) => prev.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
+    };
+
     const handleSyncMeasurements = () => {
-        const fetched = autoFetchMeasurements(item);
-        setForm((prev) => ({ ...prev, measurements: fetched }));
+        const reFetched = parseGridInitial(item);
+        setFinalMeasurementsGrid(reFetched);
+        const fetchedText = autoFetchMeasurements(item);
+        setForm((prev) => ({ ...prev, measurements: fetchedText }));
     };
 
     const handleSyncRooms = () => {
@@ -484,12 +654,11 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
         const finalVersion = autoIncrementVersion ? getNextVersion(form.boqVersion) : form.boqVersion;
         const liningObj = { selected: selectedLinings, notes: liningNotes.trim() };
-        const liningFormatted = JSON.stringify(liningObj);
 
         execute({
             ...existingConsumption,
             sheetDueDate: form.sheetDueDate || undefined,
-            measurements: form.measurements || undefined,
+            measurements: finalMeasurementsGrid.length > 0 ? finalMeasurementsGrid : (form.measurements || undefined),
             quantity: qtyNum,
             unit: form.unit || undefined,
             wastageAllowance: wastageVal || undefined,
@@ -497,9 +666,9 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             roomList: form.roomList || undefined,
             boqPreparedBy: form.boqPreparedBy || currentUser?.name || 'System User',
             boqPreparedDate: new Date().toISOString(),
-            fabricDesignSelection: JSON.stringify(selectedFabrics),
+            fabricDesignSelection: selectedFabrics,
             panelCount: panelInt,
-            liningAccessoryAssumptions: liningFormatted,
+            liningAccessoryAssumptions: liningObj,
         });
     };
 
@@ -509,7 +678,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             onClose={onClose}
             title={`Consumption & BOQ Specification — ${item?.code || ''}`}
             subtitle={`Configure fabric consumption, wastage allowance, versioning, and accessory assumptions for ${item?.clientName || ''}`}
-            size="lg"
+            size="xl"
         >
             <form onSubmit={submit} className="space-y-4">
                 {(error || validationError) && (
@@ -552,33 +721,86 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                         </div>
                     </Field>
 
-                    {/* 2. Measurements (Auto-fetch linked measurement record) */}
+                    {/* 2. Measurements (Versioned Final Measurement Grid) */}
                     <div className="md:col-span-2">
-                        <Field label="Linked Measurements Record" hint="Auto-fetched from final confirmed measurement version">
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        value={form.measurements}
-                                        onChange={set('measurements')}
-                                        placeholder="Auto-fetched measurement reference details..."
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleSyncMeasurements}
-                                        icon={Ruler}
-                                        className="shrink-0 text-xs"
-                                    >
-                                        Auto-fetch Final
-                                    </Button>
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3 text-emerald-500" />
-                                    <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
-                                </div>
+                        <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-emerald-500" />
+                                    Linked Final Measurements Record
+                                </h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleSyncMeasurements}
+                                    icon={Ruler}
+                                    className="shrink-0 text-xs"
+                                >
+                                    Auto-fetch Final
+                                </Button>
                             </div>
-                        </Field>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
+                                            <th className="p-2">Room & Window</th>
+                                            <th className="p-2">Previous Measurement</th>
+                                            <th className="p-2">Confirmed Width</th>
+                                            <th className="p-2">Confirmed Height</th>
+                                            <th className="p-2">Variance / Deviation</th>
+                                            <th className="p-2">Version</th>
+                                            <th className="p-2">Notes & Adjustments</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                                        {finalMeasurementsGrid.map((gridRow) => (
+                                            <tr key={gridRow.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
+                                                <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                                                    {gridRow.room} ({gridRow.windowId})
+                                                </td>
+                                                <td className="p-1.5 font-mono text-slate-500">
+                                                    {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
+                                                </td>
+                                                <td className="p-1.5 w-[110px]">
+                                                    <Input
+                                                        type="number"
+                                                        value={gridRow.confirmedWidth}
+                                                        onChange={(e) => handleGridChange(gridRow.id, 'confirmedWidth', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="p-1.5 w-[110px]">
+                                                    <Input
+                                                        type="number"
+                                                        value={gridRow.confirmedHeight}
+                                                        onChange={(e) => handleGridChange(gridRow.id, 'confirmedHeight', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="p-1.5">
+                                                    {calculateVariance(gridRow.previousWidth, gridRow.previousHeight, gridRow.confirmedWidth, gridRow.confirmedHeight, gridRow.unit || 'mm')}
+                                                </td>
+                                                <td className="p-1.5">
+                                                    <Badge tone="emerald">{gridRow.version || 'v2.0'}</Badge>
+                                                </td>
+                                                <td className="p-1.5 min-w-[160px]">
+                                                    <Input
+                                                        value={gridRow.notes || ''}
+                                                        onChange={(e) => handleGridChange(gridRow.id, 'notes', e.target.value)}
+                                                        placeholder="Confirmation notes..."
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1">
+                                <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                                <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
+                            </div>
+                        </Panel>
                     </div>
 
                     {/* 7. Room List (Auto-fetched linked room list) */}
@@ -844,7 +1066,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     );
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's7', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's7', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's7';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -887,9 +1109,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's7', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -902,8 +1124,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's7', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit && onEdit(lead)} />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit && onEdit(lead); }} />
                                     </div>
                                 </td>
                             </tr>
@@ -924,6 +1146,7 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const reload = () => {
         setLoading(true);
@@ -1042,6 +1265,7 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingItem(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's7')}
                 />
@@ -1054,6 +1278,13 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

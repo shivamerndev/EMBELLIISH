@@ -11,6 +11,7 @@ import { date, getMediaUrl } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -57,12 +58,27 @@ const SITE_ACCESS_OPTIONS = [
 const safeParseArray = (raw) => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object' && raw !== null) return [raw];
     if (typeof raw === 'string') {
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
-        } catch {
-            return raw.split(',').map((s) => s.trim()).filter(Boolean);
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'object' && current !== null) return [current];
+        if (typeof current === 'string' && current.length > 0) {
+            return current.split(',').map((s) => s.trim()).filter(Boolean);
         }
     }
     return [];
@@ -206,7 +222,24 @@ const SPREADSHEET_CELL_RENDERERS = {
         const rooms = safeParseArray(lead.measurement?.roomList);
         if (!rooms.length) {
             const raw = lead.measurement?.roomList;
-            if (!raw) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+            if (!raw) {
+                const preRooms = safeParseArray(lead.rooms);
+                if (preRooms.length) {
+                    return (
+                        <div className="flex items-center gap-1 flex-wrap max-w-[200px]" title="From Pre-Site Visit">
+                            {preRooms.slice(0, 3).map((r, i) => (
+                                <span key={i} className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-200/80 dark:border-indigo-800/60">
+                                    {r}
+                                </span>
+                            ))}
+                            {preRooms.length > 3 && (
+                                <span className="text-[10px] text-indigo-400 font-medium">+{preRooms.length - 3}</span>
+                            )}
+                        </div>
+                    );
+                }
+                return <span className="text-slate-400 dark:text-slate-600">—</span>;
+            }
             return <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[180px] block">{raw}</span>;
         }
         return (
@@ -337,12 +370,16 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
     const [uploadingDrawings, setUploadingDrawings] = useState(false);
     const [uploadError, setUploadError] = useState(null);
 
+    // Extract rooms selected during Pre-Site Visit
+    const preSiteVisitRooms = safeParseArray(item?.rooms);
+
     // Repeatable Room List
     const [roomList, setRoomList] = useState(() => {
         const parsed = safeParseArray(item?.measurement?.roomList);
         if (parsed.length) return parsed;
         const raw = item?.measurement?.roomList;
-        return raw ? [raw] : [];
+        if (raw) return typeof raw === 'string' ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [raw];
+        return preSiteVisitRooms;
     });
     const [newRoomInput, setNewRoomInput] = useState('');
 
@@ -527,12 +564,12 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             measuredBy: form.measuredBy || undefined,
             attachments,
             drawings,
-            roomList: JSON.stringify(roomList),
-            pelmetDetails: JSON.stringify(pelmetDetails),
-            channelDetails: JSON.stringify(channelDetails),
-            motorDetails: JSON.stringify(motorDetails),
-            wiringDetails: JSON.stringify(wiringDetails),
-            notes: JSON.stringify(gridMeasurements),
+            roomList: roomList,
+            pelmetDetails: pelmetDetails,
+            channelDetails: channelDetails,
+            motorDetails: motorDetails,
+            wiringDetails: wiringDetails,
+            notes: gridMeasurements,
         };
 
         execute(payload);
@@ -597,7 +634,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                 {activeTab === 'basic' && (
                     <div className="space-y-4 pt-2">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Field label="Measured By (Searchable Installer List)">
+                            <Field label="Measured By">
                                 <Select
                                     value={form.measuredBy}
                                     onChange={set('measuredBy')}
@@ -669,10 +706,50 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             <Button type="button" size="sm" onClick={() => addRoom(newRoomInput)} icon={Plus}>Add Room</Button>
                         </div>
 
+                        {/* Pre-Site Visit Selected Rooms */}
+                        {preSiteVisitRooms.length > 0 && (
+                            <div className="space-y-2 p-3 bg-green-50/60 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[11px] font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider flex items-center gap-1.5">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                                        Pre-Site Visit Selected Rooms ({preSiteVisitRooms.length})
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const combined = Array.from(new Set([...roomList, ...preSiteVisitRooms]));
+                                            setRoomList(combined);
+                                        }}
+                                        className="text-[11px] font-semibold text-green-600 dark:text-green-400 hover:underline"
+                                    >
+                                        + Add All Pre-Site Visit Rooms
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {preSiteVisitRooms.map((rm) => {
+                                        const selected = roomList.includes(rm);
+                                        return (
+                                            <button
+                                                key={rm}
+                                                type="button"
+                                                onClick={() => selected ? setRoomList(roomList.filter((r) => r !== rm)) : addRoom(rm)}
+                                                className={`px-2.5 py-1 rounded-full text-xs transition border ${selected
+                                                        ? 'bg-green-600 text-white border-green-600 font-semibold shadow-sm'
+                                                        : 'bg-white dark:bg-slate-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 hover:border-green-500'
+                                                    }`}
+                                            >
+                                                {selected ? '✓ ' : '+ '}{rm}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Quick Suggestions:</label>
                             <div className="flex flex-wrap gap-1.5">
-                                {STANDARD_ROOMS.map((std) => {
+                                {Array.from(new Set([...preSiteVisitRooms, ...STANDARD_ROOMS])).map((std) => {
                                     const selected = roomList.includes(std);
                                     return (
                                         <button
@@ -723,7 +800,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Layers className="w-4 h-4 text-amber-500" /> Pelmet Details Subform ({pelmetDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addPelmetRow}>Add Pelmet</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addPelmetRow}>Add Pelmet</Button>
                             </div>
                             {pelmetDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No pelmet details specified.</p>
@@ -778,7 +855,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Settings className="w-4 h-4 text-indigo-500" /> Channel Details Subform ({channelDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addChannelRow}>Add Channel</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addChannelRow}>Add Channel</Button>
                             </div>
                             {channelDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No channel details specified.</p>
@@ -834,7 +911,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Zap className="w-4 h-4 text-sky-500" /> Motor Details Subform ({motorDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addMotorRow}>Add Motor</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addMotorRow}>Add Motor</Button>
                             </div>
                             {motorDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No motor details specified.</p>
@@ -890,7 +967,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                     <Zap className="w-4 h-4 text-emerald-500" /> Wiring Details Subform ({wiringDetails.length})
                                 </h4>
-                                <Button type="button" size="xs" variant="outline" icon={Plus} onClick={addWiringRow}>Add Wiring Spec</Button>
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addWiringRow}>Add Wiring Spec</Button>
                             </div>
                             {wiringDetails.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic">No wiring details specified.</p>
@@ -958,7 +1035,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             <div className="p-8 text-center border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
                                 <Grid className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                                 <p className="text-xs text-slate-500">No measurement rows added yet.</p>
-                                <Button type="button" size="xs" variant="outline" className="mt-2" onClick={addGridRow}>Add First Window</Button>
+                                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={addGridRow}>Add First Window</Button>
                             </div>
                         ) : (
                             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg max-h-[45vh] overflow-y-auto">
@@ -1084,7 +1161,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             </div>
 
                             {attachments.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic p-3 border border-dashed rounded-md text-center">No site photos uploaded.</p>
+                                <p className="text-xs text-slate-400 italic p-3  text-center">No site photos uploaded.</p>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
                                     {attachments.map((att, i) => (
@@ -1142,7 +1219,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             </div>
 
                             {drawings.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic p-3 border border-dashed rounded-md text-center">No layout drawings uploaded.</p>
+                                <p className="text-xs text-slate-400 italic p-3 text-center">No layout drawings uploaded.</p>
                             ) : (
                                 <div className="space-y-2 max-h-44 overflow-y-auto">
                                     {drawings.map((dwg, i) => (
@@ -1177,14 +1254,14 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-                    <Button variant="primary" type="submit" loading={pending}>Save Measurement Capture</Button>
+                    <Button variant="primary" type="submit" loading={pending}>Save Changes</Button>
                 </div>
             </form>
         </Modal>
     );
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's4', onSectionChange, users = [] }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's4', onSectionChange, users = [] }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's4';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -1227,9 +1304,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's4', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -1242,8 +1319,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's4', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(lead)} />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} />
                                     </div>
                                 </td>
                             </tr>
@@ -1264,6 +1341,7 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
 
@@ -1398,6 +1476,7 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingLead(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's4')}
                     users={usersData}
@@ -1412,6 +1491,13 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                     users={usersData || []}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

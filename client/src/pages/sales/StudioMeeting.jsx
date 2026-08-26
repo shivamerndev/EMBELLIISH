@@ -10,6 +10,7 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, usersApi, architectsApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -637,10 +638,9 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             />
                             <span>Studio Meeting Planned</span>
                         </label>
-                        <span className="text-[11px] text-slate-500">Enable when studio meeting is scheduled or planned for client</span>
                     </div>
 
-                    <Field label="Studio Meeting Due Date" required={isPlanned} hint={isPlanned ? 'Mandatory once studio meeting is planned' : ''}>
+                    <Field label="Studio Meeting Due Date" required={isPlanned}>
                         <Input
                             type="date"
                             value={dueDate}
@@ -649,7 +649,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Actual Meeting Date & Time" hint="Actual date and time when session occurred">
+                    <Field label="Actual Meeting Date & Time">
                         <Input
                             type="datetime-local"
                             value={actualDate}
@@ -657,7 +657,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Meeting Room Readiness" hint="Checklist / Dropdown status">
+                    <Field label="Meeting Room Readiness">
                         <Select
                             value={roomReadiness}
                             onChange={(e) => setRoomReadiness(e.target.value)}
@@ -667,7 +667,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 </div>
 
                 {/* Section 2: Meeting Attendees (Multi-select) */}
-                <Field label="Meeting Attendees" hint="Multi-select contact / user field: Internal users, client contacts, and architects">
+                <Field label="Meeting Attendees" >
                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         {/* Selected Attendees Badges */}
                         {attendees.length > 0 && (
@@ -740,7 +740,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 {/* Section 3: Next Action & Pricing Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Next Action */}
-                    <Field label="Next Action from the Meeting" hint="Select from Next Action master; include Other">
+                    <Field label="Next Action from the Meeting">
                         <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                             <Select
                                 value={nextActionSelected}
@@ -759,7 +759,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                     </Field>
 
                     {/* Pricing Range */}
-                    <Field label="Pricing Range (₹)" hint="Currency range: separate minimum and maximum values in ₹">
+                    <Field label="Pricing Range (₹)">
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
@@ -793,7 +793,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 </div>
 
                 {/* Section 4: Samples Searchable Multi-Select Lookup */}
-                <Field label="Samples Presented" hint="Searchable multi-select lookup: Select from sample/catalogue master or upload swatches">
+                <Field label="Samples Presented">
                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="relative">
@@ -823,6 +823,8 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                                 <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={() => handleAddSampleTag(customSampleInput)}>Add</Button>
                             </div>
                         </div>
+
+{/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
 
                         {/* Catalogue Master Lookup Badges */}
                         <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
@@ -864,7 +866,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
 
                 {/* Section 5: Long Free Text Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Client Feedback / Meeting Outcome" hint="Multiline meeting summary">
+                    <Field label="Client Feedback / Meeting Outcome">
                         <Textarea
                             rows={4}
                             value={feedback}
@@ -873,7 +875,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Architect Brief" hint="Multiline brief">
+                    <Field label="Architect Brief">
                         <Textarea
                             rows={4}
                             value={architectBrief}
@@ -913,7 +915,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
 };
 
 /* ------------------------------------------------------------- Spreadsheet Grid View */
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's5', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's5', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's5';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -956,9 +958,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's5', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -971,8 +973,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's5', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pen} onClick={() => onEdit(lead)} title="Edit Studio Meeting" />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
+                                        <Button size="sm" variant="ghost" icon={Pen} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Studio Meeting" />
                                     </div>
                                 </td>
                             </tr>
@@ -994,6 +996,7 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const [usersList, setUsersList] = useState([]);
     const [architectsList, setArchitectsList] = useState([]);
@@ -1137,6 +1140,7 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingLead(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's5')}
                 />
@@ -1152,6 +1156,13 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
                     fabricsList={fabricsList}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

@@ -10,6 +10,7 @@ import { date, getMediaUrl } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -104,6 +105,46 @@ const parseAttachments = (raw) => {
         }));
     }
     return [];
+};
+
+const parseAddressParts = (addr) => {
+    if (!addr) return { addressLine1: '', postalCode: '', state: '', city: '' };
+    if (typeof addr === 'object') {
+        return {
+            addressLine1: addr.line1 || addr.addressLine1 || addr.street || '',
+            postalCode: addr.pincode || addr.postalCode || addr.zip || '',
+            state: addr.state || '',
+            city: addr.city || ''
+        };
+    }
+    const str = String(addr).trim();
+    if (!str) return { addressLine1: '', postalCode: '', state: '', city: '' };
+
+    const parts = str.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 1) {
+        return { addressLine1: str, postalCode: '', state: '', city: '' };
+    }
+
+    let postalCode = '';
+    let state = '';
+    let city = '';
+    let remaining = [...parts];
+
+    const lastPart = remaining[remaining.length - 1];
+    if (lastPart && (/^\d{3,8}$/.test(lastPart) || (/^[A-Z0-9\s-]{3,10}$/i.test(lastPart) && /\d/.test(lastPart)))) {
+        postalCode = remaining.pop();
+    }
+
+    if (remaining.length >= 3) {
+        state = remaining.pop();
+        city = remaining.pop();
+    } else if (remaining.length === 2) {
+        city = remaining.pop();
+    }
+
+    const addressLine1 = remaining.join(', ');
+
+    return { addressLine1, postalCode, state, city };
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -347,13 +388,17 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 
     const initialSlots = parseAvailabilitySlots(item?.clientArchitectAvailability);
     const initialAttachments = parseAttachments(item?.drawingsRenders);
+    const initialAddress = parseAddressParts(item?.siteAddress || item?.location);
 
     const [form, setForm] = useState({
         siteVisitRequired: item?.siteVisitRequired ?? true,
         siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : '',
         isCompleted: Boolean(item?.actualSiteVisitDateTime),
         actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
-        siteAddress: item?.siteAddress || item?.location || '',
+        addressLine1: initialAddress.addressLine1,
+        postalCode: initialAddress.postalCode,
+        state: initialAddress.state,
+        city: initialAddress.city,
         assignedInstallers: initialInstallers,
         availabilitySlots: initialSlots.length > 0 ? initialSlots : [{ id: '1', date: '', timeSlot: '10:00 AM - 01:00 PM' }],
         scopeSelected: initialScope.selected,
@@ -518,9 +563,6 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         if (form.scopeSelected.includes('Other') && form.scopeCustomOther.trim()) {
             scopeParts.push(form.scopeCustomOther.trim());
         }
-        const scopeString = scopeParts.join(', ');
-
-        const roomsString = form.roomsSelected.join(', ');
 
         const availabilityString = form.availabilitySlots
             .filter((s) => s.date || s.timeSlot)
@@ -531,16 +573,24 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 
         const primaryInstallerId = form.assignedInstallers.length > 0 ? form.assignedInstallers[0] : undefined;
 
+        const addressParts = [
+            form.addressLine1,
+            form.city,
+            form.state,
+            form.postalCode
+        ].map((s) => (s || '').trim()).filter(Boolean);
+        const formattedSiteAddress = addressParts.join(', ');
+
         execute({
             siteVisitRequired: Boolean(form.siteVisitRequired),
             siteVisitDueDate: form.siteVisitRequired ? (form.siteVisitDueDate || undefined) : undefined,
             actualSiteVisitDateTime: form.actualSiteVisitDateTime || undefined,
-            siteAddress: form.siteAddress || undefined,
+            siteAddress: formattedSiteAddress || undefined,
             assignedInstaller: primaryInstallerId || null,
             assignedInstallers: form.assignedInstallers,
             clientArchitectAvailability: availabilityString || undefined,
-            scope: scopeString || undefined,
-            rooms: roomsString || undefined,
+            scope: scopeParts,
+            rooms: form.roomsSelected,
             drawingsRenders: drawingsString || undefined,
             installerAvailability: form.installerAvailability
         });
@@ -613,19 +663,49 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </div>
                 </div>
 
-                {/* Grid Section 2: Multiline Site Address */}
-                <Field label="Site Address" hint="Multiline postal address">
-                    <Textarea
-                        rows={3}
-                        placeholder="Enter full multiline postal site address including building, street, landmark, city, and pincode..."
-                        value={form.siteAddress}
-                        onChange={(e) => setForm((prev) => ({ ...prev, siteAddress: e.target.value }))}
-                    />
-                </Field>
+                {/* Grid Section 2: Site Address Inputs */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <MapPin className="w-3.5 h-3.5 text-brand-500" />
+                        <span>Site Address</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-3">
+                            <Field label="Address Line 1" hint="Building, street, flat no., or landmark">
+                                <Input
+                                    placeholder="Enter address line 1 (building, street, landmark)..."
+                                    value={form.addressLine1}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, addressLine1: e.target.value }))}
+                                />
+                            </Field>
+                        </div>
+                        <Field label="City">
+                            <Input
+                                placeholder="Enter city..."
+                                value={form.city}
+                                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                            />
+                        </Field>
+                        <Field label="State">
+                            <Input
+                                placeholder="Enter state..."
+                                value={form.state}
+                                onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
+                            />
+                        </Field>
+                        <Field label="Postal Code" hint="ZIP / Pincode">
+                            <Input
+                                placeholder="Enter postal code..."
+                                value={form.postalCode}
+                                onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
+                            />
+                        </Field>
+                    </div>
+                </div>
 
                 {/* Grid Section 3: Installers & System Availability */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                    <Field label="Assigned Installer / Measurement Person" hint="Searchable; allow multiple users if required">
+                    <Field label="Assigned Installer / Measurement Person">
                         <div className="space-y-2">
                             <div className="relative">
                                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -665,7 +745,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                         return (
                                             <label key={userId} className="flex items-center justify-between p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer text-xs">
                                                 <span className="text-slate-700 dark:text-slate-200 font-medium">
-                                                    {u.name} <span className="text-slate-400 font-normal">({u.role || 'Team'})</span>
+                                                    {u.name} <span className="text-slate-400 text-[10px] px-1">- {u.role.split("_").join("  ") || 'Team'}</span>
                                                 </span>
                                                 <input
                                                     type="checkbox"
@@ -681,7 +761,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                         </div>
                     </Field>
 
-                    <Field label="Installer Availability" hint="System-derived status">
+                    <Field label="Installer Availability">
                         <Select
                             value={form.installerAvailability}
                             onChange={(e) => setForm((prev) => ({ ...prev, installerAvailability: e.target.value }))}
@@ -701,7 +781,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 </div>
 
                 {/* Grid Section 4: Client / Architect Availability Slots */}
-                <Field label="Client / Architect Availability" hint="Date and time selector — allow one or more availability slots">
+                <Field label="Client / Architect Availability">
                     <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                         {form.availabilitySlots.map((slot, index) => (
                             <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
@@ -744,7 +824,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 {/* Grid Section 5: Scope & Rooms Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Scope */}
-                    <Field label="Scope" hint="Multi-select dropdown from approved scope master; include Other">
+                    <Field label="Scope">
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
                             <div className="flex flex-wrap gap-1.5">
                                 {APPROVED_SCOPE_MASTER.map((opt) => {
@@ -780,7 +860,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </Field>
 
                     {/* Rooms */}
-                    <Field label="Rooms" hint="Multi-select dropdown from room master; allow Add New">
+                    <Field label="Rooms">
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
                             <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
                                 {form.roomMaster.map((rm) => {
@@ -824,7 +904,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 </div>
 
                 {/* Grid Section 6: Drawings & Renders Upload & Links */}
-                <Field label="Drawings / Renders" hint="Allow multiple drawings, images, PDFs and external links">
+                <Field label="Drawings / Renders">
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label className={`flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-brand-500 dark:hover:border-brand-400 cursor-pointer bg-white dark:bg-slate-950 transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -854,7 +934,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">Add Web Link</span>
                                 <Input
                                     size="sm"
-                                    placeholder="Link Title (e.g. 3D Render Drive Link)"
+                                    placeholder="Link Title"
                                     value={form.newLinkName}
                                     onChange={(e) => setForm((prev) => ({ ...prev, newLinkName: e.target.value }))}
                                 />
@@ -923,7 +1003,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 };
 
 /* ------------------------------------------------------------- Matrix Grid View Component */
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's3', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's3';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
     const visibleItems = items.filter((lead) => Boolean(lead.siteVisitDueDate || lead.measurement?.dueDate || lead.dueDate));
@@ -969,9 +1049,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {visibleItems.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -984,8 +1064,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit && onEdit(lead)} />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit && onEdit(lead); }} />
                                     </div>
                                 </td>
                             </tr>
@@ -1007,6 +1087,7 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
     const installersList = Array.isArray(usersData) ? usersData : [];
@@ -1149,6 +1230,7 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(l) => setEditingLead(l)}
+                    onRowClick={(l) => setDrawerLead(l)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's3')}
                 />
@@ -1163,6 +1245,13 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

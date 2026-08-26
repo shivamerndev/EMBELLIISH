@@ -27,13 +27,13 @@ const measurementSchema = z
     status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required']).optional(),
     siteAccess: z.string().optional(),
     attachments: z.array(attachmentItemSchema).optional(),
-    roomList: z.string().optional(),
+    roomList: z.any().optional(),
     drawings: z.array(attachmentItemSchema).optional(),
-    pelmetDetails: z.string().optional(),
-    channelDetails: z.string().optional(),
-    motorDetails: z.string().optional(),
-    wiringDetails: z.string().optional(),
-    notes: z.string().optional(),
+    pelmetDetails: z.any().optional(),
+    channelDetails: z.any().optional(),
+    motorDetails: z.any().optional(),
+    wiringDetails: z.any().optional(),
+    notes: z.any().optional(),
   })
   .optional();
 
@@ -56,31 +56,32 @@ const readySizeSchema = z
   .object({
     roomReadiness: z.string().optional(),
     dueDate: z.coerce.date().optional(),
-    confirmedBy: objectId.optional(),
+    confirmedBy: z.union([z.array(objectId), z.array(z.string()), z.array(z.any()), objectId, z.string()]).optional(),
     confirmationDate: z.coerce.date().optional(),
-    windowSize: z.string().optional(),
+    windowSize: z.any().optional(),
+    windowSizes: z.any().optional(),
     siteCondition: z.string().optional(),
-    pelmetDetails: z.string().optional(),
-    channelDetails: z.string().optional(),
-    readyHeight: z.string().optional(),
-    finalMeasurements: z.string().optional(),
+    pelmetDetails: z.any().optional(),
+    channelDetails: z.any().optional(),
+    readyHeight: z.any().optional(),
+    finalMeasurements: z.any().optional(),
   })
   .optional();
 
 const consumptionSchema = z
   .object({
     sheetDueDate: z.coerce.date().optional(),
-    measurements: z.string().optional(),
+    measurements: z.any().optional(),
     quantity: z.coerce.number().optional(),
     unit: z.string().optional(),
     wastageAllowance: z.string().optional(),
     boqVersion: z.string().optional(),
-    roomList: z.string().optional(),
+    roomList: z.any().optional(),
     boqPreparedBy: z.string().optional(),
     boqPreparedDate: z.coerce.date().optional(),
-    fabricDesignSelection: z.string().optional(),
+    fabricDesignSelection: z.any().optional(),
     panelCount: z.coerce.number().int().optional(),
-    liningAccessoryAssumptions: z.string().optional(),
+    liningAccessoryAssumptions: z.any().optional(),
   })
   .optional();
 
@@ -318,8 +319,8 @@ const createLeadSchema = z.object({
   siteAddress: z.string().optional(),
   assignedInstaller: objectId.optional().nullable(),
   clientArchitectAvailability: z.string().optional(),
-  scope: z.string().optional(),
-  rooms: z.string().optional(),
+  scope: z.union([z.array(z.string()), z.string()]).optional().nullable(),
+  rooms: z.union([z.array(z.string()), z.string()]).optional().nullable(),
   drawingsRenders: z.string().optional(),
   installerAvailability: z.enum(['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE']).optional(),
   measurement: measurementSchema,

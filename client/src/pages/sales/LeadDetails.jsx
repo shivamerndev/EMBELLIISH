@@ -7,13 +7,207 @@ import useSales from "../../hooks/useSales";
 import { useParams, useSearchParams } from "react-router-dom";
 
 
+/** Safely parses stringified JSON or returns raw structure */
+const parseJsonOrArray = (raw) => {
+    if (!raw) return null;
+    if (Array.isArray(raw) || (typeof raw === 'object' && raw !== null)) return raw;
+    if (typeof raw === 'string') {
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        return current;
+    }
+    return raw;
+};
+
+/** Formats any value (primitives, JSON strings, arrays, objects) into clean human-readable tile text */
+const renderFormattedValue = (val) => {
+    if (val === null || val === undefined || val === '') return '—';
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+
+    if (typeof val === 'object' && val !== null && (val.$$typeof || val._isReactElement)) {
+        return val;
+    }
+
+    const parsed = parseJsonOrArray(val);
+
+    if (Array.isArray(parsed)) {
+        if (parsed.length === 0) return '—';
+
+        const formattedItems = parsed.map((item, idx) => {
+            if (typeof item === 'string' || typeof item === 'number') return String(item);
+            if (typeof item === 'object' && item !== null) {
+                const roomStr = item.roomWindow || item.room;
+                if (item.pelmetType) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const type = item.pelmetType || '';
+                    const dims = (item.dimensions && item.dimensions !== '[]') ? ` (${item.dimensions})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `${room}${type}${dims}${notes}`.trim() || `Item ${idx + 1}`;
+                }
+                if (item.channelType || item.channelLength || item.trackLength) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const type = item.channelType || '';
+                    const len = item.channelLength || item.trackLength || (item.dimensions && item.dimensions !== '[]' ? item.dimensions : '');
+                    const lenStr = len ? ` (${len})` : '';
+                    const qtyStr = item.quantity ? ` (Qty: ${item.quantity})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `${room}${type}${lenStr}${qtyStr}${notes}`.trim() || `Item ${idx + 1}`;
+                }
+                if (item.motorBrand || item.motorType) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const brand = item.motorBrand ? `${item.motorBrand} ` : '';
+                    const type = item.motorType || '';
+                    const spec = item.specification ? ` (${item.specification})` : '';
+                    const qty = item.qty || item.quantity ? ` (Qty: ${item.qty || item.quantity})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `${room}${brand}${type}${spec}${qty}${notes}`.trim() || `Item ${idx + 1}`;
+                }
+                if (item.wiringPoint || item.wireType || item.wiringAvailability || item.location || item.powerRequirement) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const avail = item.wiringAvailability ? `${item.wiringAvailability}` : '';
+                    const point = item.location || item.wiringPoint ? ` - ${item.location || item.wiringPoint}` : '';
+                    const type = item.powerRequirement || item.wireType ? ` (${item.powerRequirement || item.wireType})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `${room}${avail}${point}${type}${notes}`.trim() || `Item ${idx + 1}`;
+                }
+                if (item.windowId || (item.width && item.height) || (item.confirmedWidth && item.confirmedHeight)) {
+                    const room = item.room || 'Window';
+                    const win = item.windowId ? ` (${item.windowId})` : '';
+                    const w = item.confirmedWidth || item.width;
+                    const h = item.confirmedHeight || item.height;
+                    const dims = w && h ? `: ${w} x ${h} ${item.unit || 'mm'}` : '';
+                    const qty = item.quantity ? ` (Qty: ${item.quantity})` : '';
+                    return `${room}${win}${dims}${qty}`.trim() || `Item ${idx + 1}`;
+                }
+                if (item.dimensions && item.dimensions !== '[]') {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const dims = item.dimensions;
+                    const qty = item.quantity ? ` (Qty: ${item.quantity})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `${room}${dims}${qty}${notes}`.trim() || `Item ${idx + 1}`;
+                }
+
+                const entries = Object.entries(item)
+                    .filter(([k, v]) => k !== 'id' && k !== '_id' && k !== 'key' && k !== '__v' && v !== null && v !== undefined && String(v).trim() !== '' && String(v) !== '[]')
+                    .map(([k, v]) => `${humanise(k)}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+                return entries.length > 0 ? entries.join(', ') : `Item ${idx + 1}`;
+            }
+            return String(item);
+        }).filter(Boolean);
+
+        return formattedItems.length > 0 ? formattedItems.join(' | ') : '—';
+    }
+
+    if (typeof parsed === 'object' && parsed !== null) {
+        if (parsed.name) return parsed.name;
+        const entries = Object.entries(parsed)
+            .filter(([k, v]) => k !== 'id' && k !== '_id' && k !== 'key' && k !== '__v' && v !== null && v !== undefined && String(v).trim() !== '' && String(v) !== '[]')
+            .map(([k, v]) => `${humanise(k)}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+        return entries.length > 0 ? entries.join(', ') : '—';
+    }
+
+    return String(parsed);
+};
+
+/** Formats multi-line text blocks (e.g. measurements grid, room lists, notes) parsing JSON strings if present */
+const renderFormattedText = (val) => {
+    if (val === null || val === undefined || val === '') return null;
+    const parsed = parseJsonOrArray(val);
+
+    if (Array.isArray(parsed)) {
+        if (parsed.length === 0) return null;
+        const formattedItems = parsed.map((item, idx) => {
+            if (typeof item === 'string' || typeof item === 'number') return `• ${item}`;
+            if (typeof item === 'object' && item !== null) {
+                const roomStr = item.roomWindow || item.room;
+                if (item.windowId || (item.width && item.height) || (item.confirmedWidth && item.confirmedHeight)) {
+                    const room = item.room || 'Window';
+                    const win = item.windowId ? ` (${item.windowId})` : '';
+                    const w = item.confirmedWidth || item.width;
+                    const h = item.confirmedHeight || item.height;
+                    const dims = w && h ? `: ${w} x ${h} ${item.unit || 'mm'}` : '';
+                    const qty = item.quantity ? ` (Qty: ${item.quantity})` : '';
+                    return `• ${room}${win}${dims}${qty}`.trim();
+                }
+                if (item.pelmetType) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const type = item.pelmetType || '';
+                    const dims = (item.dimensions && item.dimensions !== '[]') ? ` (${item.dimensions})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `• ${room}${type}${dims}${notes}`.trim();
+                }
+                if (item.channelType || item.channelLength || item.trackLength) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const type = item.channelType || '';
+                    const len = item.channelLength || item.trackLength || (item.dimensions && item.dimensions !== '[]' ? item.dimensions : '');
+                    const lenStr = len ? ` (${len})` : '';
+                    const qtyStr = item.quantity ? ` (Qty: ${item.quantity})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `• ${room}${type}${lenStr}${qtyStr}${notes}`.trim();
+                }
+                if (item.motorBrand || item.motorType) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const brand = item.motorBrand ? `${item.motorBrand} ` : '';
+                    const type = item.motorType || '';
+                    const spec = item.specification ? ` (${item.specification})` : '';
+                    const qty = item.qty || item.quantity ? ` (Qty: ${item.qty || item.quantity})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `• ${room}${brand}${type}${spec}${qty}${notes}`.trim();
+                }
+                if (item.wiringPoint || item.wireType || item.wiringAvailability || item.location || item.powerRequirement) {
+                    const room = roomStr ? `${roomStr}: ` : '';
+                    const avail = item.wiringAvailability ? `${item.wiringAvailability}` : '';
+                    const point = item.location || item.wiringPoint ? ` - ${item.location || item.wiringPoint}` : '';
+                    const type = item.powerRequirement || item.wireType ? ` (${item.powerRequirement || item.wireType})` : '';
+                    const notes = item.notes ? ` - ${item.notes}` : '';
+                    return `• ${room}${avail}${point}${type}${notes}`.trim();
+                }
+
+                const entries = Object.entries(item)
+                    .filter(([k, v]) => k !== 'id' && k !== '_id' && k !== 'key' && k !== '__v' && v !== null && v !== undefined && String(v).trim() !== '' && String(v) !== '[]')
+                    .map(([k, v]) => `${humanise(k)}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+                return entries.length > 0 ? `• ${entries.join(', ')}` : `• Item ${idx + 1}`;
+            }
+            return `• ${item}`;
+        }).filter(Boolean);
+
+        return formattedItems.join('\n');
+    }
+
+    if (typeof parsed === 'object' && parsed !== null) {
+        const entries = Object.entries(parsed)
+            .filter(([k, v]) => k !== 'id' && k !== '_id' && k !== 'key' && k !== '__v' && v !== null && v !== undefined && String(v).trim() !== '' && String(v) !== '[]')
+            .map(([k, v]) => `${humanise(k)}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+        return entries.join('\n');
+    }
+
+    return String(parsed);
+};
+
 /** Compact label/value tile used across the Sales & Commercials detail panels. */
-const InfoTile = ({ label, value }) => (
-    <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 rounded-lg hover:border-slate-300 dark:hover:border-slate-700/80 transition-colors">
-        <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold tracking-wider">{label}</span>
-        <span className="text-slate-900 dark:text-slate-200 text-xs font-medium leading-relaxed">{value || value === 0 ? value : '—'}</span>
-    </div>
-);
+const InfoTile = ({ label, value }) => {
+    const formatted = renderFormattedValue(value);
+    return (
+        <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 rounded-lg hover:border-slate-300 dark:hover:border-slate-700/80 transition-colors">
+            <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold tracking-wider">{label}</span>
+            <span className="text-slate-900 dark:text-slate-200 text-xs font-medium leading-relaxed block break-words">{formatted}</span>
+        </div>
+    );
+};
 
 /** Downloadable file badges used across the Sales & Commercials detail panels. */
 const AttachmentLinks = ({ label, files }) => {
@@ -82,18 +276,18 @@ const AttachmentLinks = ({ label, files }) => {
 };
 
 const DETAIL_TABS = [
-    { id: 'leads', label: '1. Leads (Qualified)', icon: User },
-    { id: 'pre-site', label: '2. Pre Site Visit', icon: MapPin },
-    { id: 'measurement', label: '3. Measurement Capture', icon: Ruler },
-    { id: 'studio-meeting', label: '4. Studio Meeting', icon: CalendarCheck2 },
-    { id: 'ready-size', label: '5. Ready Size Confirmation', icon: ClipboardList },
-    { id: 'consumption-boq', label: '6. Consumption / BOQ', icon: FileText },
-    { id: 'proposal', label: '7. Proposal Creation', icon: ReceiptText },
-    { id: 'token-discussion', label: '8. Token Discussion', icon: Wallet },
-    { id: 'pricing-costing', label: '9. Pricing & Costing', icon: BadgeDollarSign },
-    { id: 'quotation', label: '10. Quotation Prep', icon: ReceiptText },
-    { id: 'client-approval', label: '11. Client Approval', icon: ShieldCheck },
-    { id: 'kyc', label: '12. KYC & Conversion', icon: PresentationIcon },
+    { id: 'leads', label: 'Leads (Qualified)', icon: User },
+    { id: 'pre-site', label: 'Pre Site Visit', icon: MapPin },
+    { id: 'measurement', label: 'Measurement Capture', icon: Ruler },
+    { id: 'studio-meeting', label: 'Studio Meeting', icon: CalendarCheck2 },
+    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
+    { id: 'consumption-boq', label: 'Consumption / BOQ', icon: FileText },
+    { id: 'proposal', label: 'Proposal Creation', icon: ReceiptText },
+    { id: 'token-discussion', label: 'Token Discussion', icon: Wallet },
+    { id: 'pricing-costing', label: 'Pricing & Costing', icon: BadgeDollarSign },
+    { id: 'quotation', label: 'Quotation Prep', icon: ReceiptText },
+    { id: 'client-approval', label: 'Client Approval', icon: ShieldCheck },
+    { id: 'kyc', label: 'KYC & Conversion', icon: PresentationIcon },
 ];
 
 const LeadDetails = () => {
@@ -106,7 +300,7 @@ const LeadDetails = () => {
         ? searchParams.get('tab')
         : 'leads';
 
-  const handleTabChange = (tabId) => {
+    const handleTabChange = (tabId) => {
         setSearchParams(
             (prev) => {
                 const next = new URLSearchParams(prev);
@@ -186,11 +380,10 @@ const LeadDetails = () => {
                             key={tab.id}
                             type="button"
                             onClick={() => handleTabChange(tab.id)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${
-                                isActive
-                                    ? 'bg-brand-600 dark:bg-brand-500 text-white font-semibold shadow-xs'
-                                    : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${isActive
+                                ? 'bg-brand-600 dark:bg-brand-500 text-white font-semibold shadow-xs'
+                                : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                }`}
                         >
                             <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-brand-600 dark:text-brand-400'}`} />
                             <span className="whitespace-nowrap">{tab.label}</span>
@@ -205,7 +398,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <User className="w-3.5 h-3.5" /> 1. Leads - (Qualified Decision)
+                        <User className="w-3.5 h-3.5" /> Leads - (Qualified Decision)
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="p-3.5 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800/80 rounded-lg space-y-2">
@@ -250,7 +443,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <MapPin className="w-3.5 h-3.5" /> 2. Pre Site Visit
+                        <MapPin className="w-3.5 h-3.5" /> Pre Site Visit
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
@@ -283,7 +476,9 @@ const LeadDetails = () => {
 
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">Rooms</span>
-                            <span className="text-slate-800 dark:text-slate-200 font-medium">{lead.rooms || '—'}</span>
+                            <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                {Array.isArray(lead.rooms) ? (lead.rooms.length > 0 ? lead.rooms.join(', ') : '—') : lead.rooms || '—'}
+                            </span>
                         </div>
                     </div>
 
@@ -297,7 +492,9 @@ const LeadDetails = () => {
                     {lead.scope && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Scope</span>
-                            <p className="text-slate-700 dark:text-slate-200">{lead.scope}</p>
+                            <p className="text-slate-700 dark:text-slate-200">
+                                {Array.isArray(lead.scope) ? lead.scope.join(', ') : lead.scope}
+                            </p>
                         </div>
                     )}
 
@@ -311,7 +508,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Ruler className="w-3.5 h-3.5" /> 3. Measurement Capture
+                        <Ruler className="w-3.5 h-3.5" />Measurement Capture
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Measurement Due Date" value={lead.measurement?.dueDate ? date(lead.measurement.dueDate) : null} />
@@ -328,7 +525,7 @@ const LeadDetails = () => {
                     {lead.measurement?.notes && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Measurements</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.measurement.notes}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.measurement.notes)}</p>
                         </div>
                     )}
                     <AttachmentLinks label="Site Photos / Measurement Attachments" files={lead.measurement?.attachments} />
@@ -342,7 +539,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <CalendarCheck2 className="w-3.5 h-3.5" /> 4. Studio Meeting
+                        <CalendarCheck2 className="w-3.5 h-3.5" />Studio Meeting
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Studio Meeting Due Date" value={lead.studioMeeting?.dueDate ? date(lead.studioMeeting.dueDate) : null} />
@@ -353,19 +550,19 @@ const LeadDetails = () => {
                     {lead.studioMeeting?.feedback && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Client Feedback / Meeting Outcome</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.studioMeeting.feedback}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.studioMeeting.feedback)}</p>
                         </div>
                     )}
                     {lead.studioMeeting?.nextAction && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Next Action from the Meeting</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.studioMeeting.nextAction}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.studioMeeting.nextAction)}</p>
                         </div>
                     )}
                     {lead.studioMeeting?.architectBrief && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Architect Brief</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.studioMeeting.architectBrief}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.studioMeeting.architectBrief)}</p>
                         </div>
                     )}
                     <AttachmentLinks label="Client Drawings" files={lead.studioMeeting?.clientDrawings} />
@@ -380,12 +577,19 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <ClipboardList className="w-3.5 h-3.5" /> 5. Ready Size Confirmation
+                        <ClipboardList className="w-3.5 h-3.5" /> Ready Size Confirmation
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Meeting Room Readiness" value={lead.readySize?.roomReadiness} />
                         <InfoTile label="Ready Size Due Date" value={lead.readySize?.dueDate ? date(lead.readySize.dueDate) : null} />
-                        <InfoTile label="Ready Size Confirmed By" value={lead.readySize?.confirmedBy?.name} />
+                        <InfoTile
+                            label="Ready Size Confirmed By"
+                            value={
+                                Array.isArray(lead.readySize?.confirmedBy)
+                                    ? lead.readySize.confirmedBy.map((u) => (typeof u === 'object' ? u?.name || u?.email : String(u))).filter(Boolean).join(', ') || null
+                                    : (lead.readySize?.confirmedBy?.name || (typeof lead.readySize?.confirmedBy === 'string' ? lead.readySize.confirmedBy : null))
+                            }
+                        />
                         <InfoTile label="Confirmation Date" value={lead.readySize?.confirmationDate ? date(lead.readySize.confirmationDate) : null} />
                         <InfoTile label="Window Size" value={lead.readySize?.windowSize} />
                         <InfoTile label="Site Condition" value={lead.readySize?.siteCondition} />
@@ -396,7 +600,7 @@ const LeadDetails = () => {
                     {lead.readySize?.finalMeasurements && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Final Measurements</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.readySize.finalMeasurements}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.readySize.finalMeasurements)}</p>
                         </div>
                     )}
                 </div>
@@ -408,7 +612,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <FileText className="w-3.5 h-3.5" /> 6. Consumption Sheet / BOQ Dashboard
+                        <FileText className="w-3.5 h-3.5" />Consumption Sheet / BOQ Dashboard
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Consumption Sheet Due" value={lead.consumption?.sheetDueDate ? date(lead.consumption.sheetDueDate) : null} />
@@ -425,13 +629,13 @@ const LeadDetails = () => {
                     {lead.consumption?.roomList && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Room List</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.consumption.roomList}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.consumption.roomList)}</p>
                         </div>
                     )}
                     {lead.consumption?.measurements && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Measurements</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.consumption.measurements}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.consumption.measurements)}</p>
                         </div>
                     )}
                 </div>
@@ -443,7 +647,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <ReceiptText className="w-3.5 h-3.5" /> 7. Proposal Creation
+                        <ReceiptText className="w-3.5 h-3.5" />Proposal Creation
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Proposal Due Date" value={lead.proposal?.dueDate ? date(lead.proposal.dueDate) : null} />
@@ -457,19 +661,19 @@ const LeadDetails = () => {
                     {lead.proposal?.clientBrief && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Client Brief</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.proposal.clientBrief}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.proposal.clientBrief)}</p>
                         </div>
                     )}
                     {lead.proposal?.terms && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Terms</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.proposal.terms}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.proposal.terms)}</p>
                         </div>
                     )}
                     {lead.proposal?.refundRevisionClause && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Refund / Revision Clause</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.proposal.refundRevisionClause}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.proposal.refundRevisionClause)}</p>
                         </div>
                     )}
                     <AttachmentLinks label="Consumption Sheet" files={lead.proposal?.consumptionSheet} />
@@ -482,7 +686,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Wallet className="w-3.5 h-3.5" /> 8. Budgeting / Token Discussion
+                        <Wallet className="w-3.5 h-3.5" />Budgeting / Token Discussion
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Token Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
@@ -497,7 +701,7 @@ const LeadDetails = () => {
                     {lead.token?.commercialTerms && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Commercial Terms</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.token.commercialTerms}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.token.commercialTerms)}</p>
                         </div>
                     )}
                     <AttachmentLinks label="Proposal Attachment" files={lead.token?.proposalAttachment} />
@@ -510,7 +714,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <BadgeDollarSign className="w-3.5 h-3.5" /> 9. Pricing / Material Costing
+                        <BadgeDollarSign className="w-3.5 h-3.5" />Pricing / Material Costing
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Pricing Due Date" value={lead.costing?.dueDate ? date(lead.costing.dueDate) : null} />
@@ -537,7 +741,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <ReceiptText className="w-3.5 h-3.5" /> 10. Quotation Preparation
+                        <ReceiptText className="w-3.5 h-3.5" />Quotation Preparation
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Quotation Due Date" value={lead.quotation?.dueDate ? date(lead.quotation.dueDate) : null} />
@@ -566,7 +770,7 @@ const LeadDetails = () => {
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5" /> 11. Client Approval
+                        <ShieldCheck className="w-3.5 h-3.5" />Client Approval
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <InfoTile label="Approval Due Date" value={lead.approval?.planned} />
@@ -594,7 +798,7 @@ const LeadDetails = () => {
                     {lead.presentation?.revisionNotes && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Revision Notes</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.presentation.revisionNotes}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.presentation.revisionNotes)}</p>
                         </div>
                     )}
                     <AttachmentLinks label="Presentation Attachment" files={lead.presentation?.attachment} />

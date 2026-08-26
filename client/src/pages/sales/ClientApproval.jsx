@@ -23,6 +23,7 @@ import {
     Check
 } from 'lucide-react';
 import { date } from '../../utils/format';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
@@ -616,8 +617,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
         const validClientSelections = clientSelections.filter((s) => s.item && s.item.trim() !== '');
         const validFabricSelections = fabricSelections.filter((f) => f.fabric && f.fabric.trim() !== '');
 
-        const formattedClientSelStr = JSON.stringify(validClientSelections.length > 0 ? validClientSelections : clientSelections);
-        const formattedFabricSelStr = JSON.stringify(validFabricSelections.length > 0 ? validFabricSelections : fabricSelections);
+        const clientSelVal = validClientSelections.length > 0 ? validClientSelections : clientSelections;
+        const fabricSelVal = validFabricSelections.length > 0 ? validFabricSelections : fabricSelections;
 
         const existingRevisions = Array.isArray(item?.approval?.revisions) ? item.approval.revisions : [];
         let updatedRevisions = existingRevisions;
@@ -630,8 +631,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 revisionNumber: revNum,
                 clientApprovalStatus: item?.approval?.clientApprovalStatus || 'APPROVED',
                 finalApprovedVersion: item?.approval?.finalApprovedVersion || 'v1.0',
-                clientSelection: formattedClientSelStr,
-                fabricSelection: formattedFabricSelStr,
+                clientSelection: clientSelVal,
+                fabricSelection: fabricSelVal,
                 designDirection: item?.presentation?.designDirection || '',
                 revisionNotes: item?.presentation?.revisionNotes || '',
                 changeReason: revisionReason.trim(),
@@ -664,8 +665,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 ...(item?.presentation || {}),
                 link: form.presentationLink || undefined,
                 url: form.presentationLink || undefined,
-                clientSelection: formattedClientSelStr,
-                fabricSelection: formattedFabricSelStr,
+                clientSelection: clientSelVal,
+                fabricSelection: fabricSelVal,
                 designDirection: form.designDirection || undefined,
                 revisionNotes: finalNotes || undefined,
                 attachment: presentationAttachments,
@@ -1086,7 +1087,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     );
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's12', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's12';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -1129,9 +1130,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', o
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -1144,8 +1145,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's12', o
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(lead)} title="Edit Approval & Presentation" />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Approval & Presentation" />
                                     </div>
                                 </td>
                             </tr>
@@ -1166,6 +1167,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const reload = () => {
         setLoading(true);
@@ -1289,6 +1291,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingLead(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's12')}
                 />
@@ -1301,6 +1304,13 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

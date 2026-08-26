@@ -22,6 +22,7 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const APPROVED_MARGIN_MODELS = [
     { value: 'Standard Margin', label: 'Standard Margin (25% - 35% Target)' },
@@ -839,7 +840,7 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
     );
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's10', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's10', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's10';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -882,9 +883,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's10', o
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -897,8 +898,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's10', o
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} title="View lead details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(lead)} title="Edit costing parameters" />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View lead details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit costing parameters" />
                                     </div>
                                 </td>
                             </tr>
@@ -919,6 +920,7 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const reload = () => {
         setLoading(true);
@@ -1029,6 +1031,7 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingItem(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's10')}
                 />
@@ -1041,6 +1044,13 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };
