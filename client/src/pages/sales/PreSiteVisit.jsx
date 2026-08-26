@@ -10,6 +10,7 @@ import { date, getMediaUrl } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -1002,7 +1003,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 };
 
 /* ------------------------------------------------------------- Matrix Grid View Component */
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's3', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's3';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
     const visibleItems = items.filter((lead) => Boolean(lead.siteVisitDueDate || lead.measurement?.dueDate || lead.dueDate));
@@ -1048,9 +1049,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {visibleItems.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -1063,8 +1064,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's3', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit && onEdit(lead)} />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit && onEdit(lead); }} />
                                     </div>
                                 </td>
                             </tr>
@@ -1086,6 +1087,7 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
     const installersList = Array.isArray(usersData) ? usersData : [];
@@ -1228,6 +1230,7 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(l) => setEditingLead(l)}
+                    onRowClick={(l) => setDrawerLead(l)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's3')}
                 />
@@ -1242,6 +1245,13 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };

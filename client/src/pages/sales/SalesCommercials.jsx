@@ -7,6 +7,7 @@ import { currency, date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 
 const BUDGET_CLASSIFICATIONS = [
@@ -66,7 +67,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     code: (lead, { onView }) => (
         <button
             type="button"
-            onClick={() => onView(lead)}
+            onClick={(e) => { e.stopPropagation(); onView(lead); }}
             className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
@@ -75,7 +76,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     clientName: (lead, { onView }) => (
         <button
             type="button"
-            onClick={() => onView(lead)}
+            onClick={(e) => { e.stopPropagation(); onView(lead); }}
             className="font-semibold text-slate-900 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-300 text-left truncate block max-w-[160px]"
             title={lead.clientName}
         >
@@ -243,7 +244,7 @@ const SiteVisitModal = ({ lead, onClose, onSave }) => {
     );
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, selectedSection = 's1', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, selectedSection = 's1', onSectionChange }) => {
 
     const navigate = useNavigate();
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's1';
@@ -297,9 +298,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, selectedSecti
 
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -312,8 +313,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, selectedSecti
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                        <Button size="sm" className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 text-xs" onClick={() => onSiteVisit && onSiteVisit(lead)}>Site Visit</Button>
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
+                                        <Button size="sm" className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 text-xs" onClick={(e) => { e.stopPropagation(); onSiteVisit && onSiteVisit(lead); }}>Site Visit</Button>
                                      </div> 
                                 </td>
                             </tr>
@@ -337,6 +338,7 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
     const [error, setError] = useState(errorProp || null);
     const [editingLead, setEditingLead] = useState(null);
     const [siteVisitLead, setSiteVisitLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const reload = () => {
         setLoading(true);
@@ -508,6 +510,7 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
             ) : (
                 <SpreadsheetGridView items={filteredLeads} onView={handleViewLead}
                     onEdit={(l) => setEditingLead(l)} onSiteVisit={(l) => setSiteVisitLead(l)}
+                    onRowClick={(l) => setDrawerLead(l)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's1')} />
             )}
@@ -516,6 +519,17 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                 lead={siteVisitLead}
                 onClose={() => setSiteVisitLead(null)}
                 onSave={reload}
+            />
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+                onSiteVisit={(l) => {
+                    setSiteVisitLead(l);
+                    setDrawerLead(null);
+                }}
             />
         </div>
     );

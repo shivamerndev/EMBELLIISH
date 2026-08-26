@@ -84,10 +84,12 @@ const renderFormattedValue = (val) => {
                     const notes = item.notes ? ` - ${item.notes}` : '';
                     return `${room}${avail}${point}${type}${notes}`.trim() || `Item ${idx + 1}`;
                 }
-                if (item.windowId || (item.width && item.height)) {
+                if (item.windowId || (item.width && item.height) || (item.confirmedWidth && item.confirmedHeight)) {
                     const room = item.room || 'Window';
                     const win = item.windowId ? ` (${item.windowId})` : '';
-                    const dims = item.width && item.height ? `: ${item.width} x ${item.height} ${item.unit || 'mm'}` : '';
+                    const w = item.confirmedWidth || item.width;
+                    const h = item.confirmedHeight || item.height;
+                    const dims = w && h ? `: ${w} x ${h} ${item.unit || 'mm'}` : '';
                     const qty = item.quantity ? ` (Qty: ${item.quantity})` : '';
                     return `${room}${win}${dims}${qty}`.trim() || `Item ${idx + 1}`;
                 }
@@ -132,10 +134,12 @@ const renderFormattedText = (val) => {
             if (typeof item === 'string' || typeof item === 'number') return `• ${item}`;
             if (typeof item === 'object' && item !== null) {
                 const roomStr = item.roomWindow || item.room;
-                if (item.windowId || (item.width && item.height)) {
+                if (item.windowId || (item.width && item.height) || (item.confirmedWidth && item.confirmedHeight)) {
                     const room = item.room || 'Window';
                     const win = item.windowId ? ` (${item.windowId})` : '';
-                    const dims = item.width && item.height ? `: ${item.width} x ${item.height} ${item.unit || 'mm'}` : '';
+                    const w = item.confirmedWidth || item.width;
+                    const h = item.confirmedHeight || item.height;
+                    const dims = w && h ? `: ${w} x ${h} ${item.unit || 'mm'}` : '';
                     const qty = item.quantity ? ` (Qty: ${item.quantity})` : '';
                     return `• ${room}${win}${dims}${qty}`.trim();
                 }

@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, settingsApi, uploadApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -420,7 +421,7 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto text-xs" title={String(raw)}>{String(raw)}</span>;
 };
 
-const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's8', onSectionChange }) => {
+const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's8', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's8';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -463,9 +464,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's8', on
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={() => onView(lead)} className="hover:underline truncate px-2">
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
                                 </td>
@@ -478,8 +479,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, selectedSection = 's8', on
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(lead)} title="Edit Proposal & Terms" />
+                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Proposal & Terms" />
                                     </div>
                                 </td>
                             </tr>
@@ -642,7 +643,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
             onClose={onClose}
             title={`Proposal Creation & Commercial Terms — ${item?.clientName || item?.code}`}
             subtitle="Configure proposal dates, versions, client brief, linked BOQ, design direction, pricing range, and master template terms."
-            size="lg"
+            size="xl"
             footer={
                 <>
                     <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -656,165 +657,195 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                 </>
             }
         >
-            <div className="space-y-4">
+            <div className="space-y-5">
+                {/* Error Alert */}
                 {(validationError || apiError) && (
-                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400 font-medium">
+                    <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-600 dark:text-rose-400 font-medium">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{validationError || apiError?.message}</span>
                     </div>
                 )}
 
-                <div className="p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
-                        <div>
-                            <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Master Template & Field Validations</p>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400">All terms and revision clauses auto-fetch from approved company masters with restricted editing controls.</p>
+                {/* Master Template Notice Bar */}
+                <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+                            <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xs font-semibold text-sky-900 dark:text-sky-200">Company Master Policy Controls</p>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400">All standard terms & revision clauses auto-sync from approved company masters with restricted editing controls.</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            icon={Sparkles}
-                            loading={loadingMasters}
-                            onClick={() => {
-                                handlePullMasterTerms();
-                                handlePullMasterRefundClause();
-                            }}
-                            className="text-xs"
-                        >
-                            Fetch Approved Masters
-                        </Button>
-                    </div>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon={Sparkles}
+                        loading={loadingMasters}
+                        onClick={() => {
+                            handlePullMasterTerms();
+                            handlePullMasterRefundClause();
+                        }}
+                        className="text-xs shrink-0"
+                    >
+                        Fetch Approved Masters
+                    </Button>
                 </div>
 
-                {/* 1. Proposal Due Date, 2. Proposal No./Version, 3. Proposal Date */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Field label="Proposal Due Date *" hint="Required when preparation begins">
-                        <Input
-                            type="date"
-                            value={form.dueDate}
-                            onChange={set('dueDate')}
-                            required
-                            className={!form.dueDate ? 'border-amber-400 dark:border-amber-500/50' : ''}
-                        />
-                    </Field>
+                {/* Section 1: Proposal Details & Key Dates */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3.5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                        <Calendar className="w-4 h-4 text-brand-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Proposal Details & Key Dates
+                        </h4>
+                    </div>
 
-                    <Field label="Proposal No. / Version" hint="Unique number with revision history">
-                        <div className="flex items-center gap-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field label="Proposal Due Date *" hint="Required when preparation begins">
+                            <Input
+                                type="date"
+                                value={form.dueDate}
+                                onChange={set('dueDate')}
+                                required
+                                className={!form.dueDate ? 'border-amber-400 dark:border-amber-500/50' : ''}
+                            />
+                        </Field>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="field-label mb-0">Proposal No. / Version</label>
+                                <button
+                                    type="button"
+                                    onClick={handleGeneratePropNo}
+                                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
+                                    title="Auto-generate or bump version"
+                                >
+                                    <RefreshCw className="w-3 h-3" />Generate
+                                </button>
+                            </div>
                             <Input
                                 value={form.noVersion}
                                 onChange={set('noVersion')}
                                 placeholder="PROP-2026-v1.0"
                                 className="font-mono text-xs"
                             />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                icon={RefreshCw}
-                                onClick={handleGeneratePropNo}
-                                title="Auto-generate or bump version"
-                                className="shrink-0"
-                            />
+                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Unique number with revision history</p>
                         </div>
-                    </Field>
 
-                    <Field label="Proposal Date" hint="Captured when proposal is issued">
-                        <div className="flex items-center gap-1">
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="field-label mb-0">Proposal Date</label>
+                                <button
+                                    type="button"
+                                    onClick={handleSetTodayDate}
+                                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
+                                    title="Set current date"
+                                >
+                                    <Calendar className="w-3 h-3" /> Today
+                                </button>
+                            </div>
                             <Input
                                 type="date"
                                 value={form.date}
                                 onChange={set('date')}
                             />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                icon={Calendar}
-                                onClick={handleSetTodayDate}
-                                title="Set current date"
-                                className="shrink-0 text-xs"
-                            >
-                                Today
-                            </Button>
+                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Captured when proposal is issued</p>
                         </div>
-                    </Field>
+                    </div>
                 </div>
 
-                {/* 4. Client Brief & 5. Consumption Sheet Linked Record */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                        label="Client Brief (Linked long-text)"
-                        hint="Pull from approved client/meeting brief"
-                    >
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-slate-500 font-medium">Source: Studio Meeting / Pre-Site Visit</span>
-                                <button
-                                    type="button"
-                                    onClick={handlePullClientBrief}
-                                    className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
-                                >
-                                    <Sparkles className="w-3 h-3" /> Pull Approved Brief
-                                </button>
+                {/* Section 2: Client Brief & Linked Consumption BOQ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Client Brief */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-brand-500" />
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Client Brief
+                                    </h4>
+                                </div>
+                        
                             </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                                Source: Studio Meeting / Pre-Site Visit
+                            </p>
                             <Textarea
-                                rows={3}
+                                rows={4}
                                 value={form.clientBrief}
                                 onChange={set('clientBrief')}
-                                placeholder="Client requirements, preferences, and meeting notes..."
+                                placeholder="Client requirements, preferences, drape styles, motorization details..."
                             />
                         </div>
-                    </Field>
+                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Pull from approved client/meeting brief</p>
+                    </div>
 
-                    <Field
-                        label="Consumption Sheet (Linked Record)"
-                        hint="Select approved consumption-sheet / BOQ version"
-                    >
-                        <div className="space-y-2">
-                            <Select
-                                value={form.selectedBoqVersion}
-                                onChange={set('selectedBoqVersion')}
-                                options={[
-                                    { value: item?.consumption?.boqVersion || 'BOQ-v1.0 (Approved)', label: `${item?.consumption?.boqVersion || 'BOQ-v1.0'} (Approved)` },
-                                    { value: 'BOQ-v1.1 (Draft)', label: 'BOQ-v1.1 (Draft Revision)' },
-                                    { value: 'BOQ-v2.0 (Final)', label: 'BOQ-v2.0 (Final Sign-off)' },
-                                ]}
-                            />
-                            {item?.consumption && (
-                                <div className="p-2 rounded bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 text-[11px] text-purple-900 dark:text-purple-300 space-y-0.5">
-                                    <p className="font-semibold flex items-center gap-1">
-                                        <Layers className="w-3 h-3 text-purple-600" /> Linked BOQ: {item.consumption.boqVersion || 'v1.0'}
-                                    </p>
-                                    <p>Prepared By: {item.consumption.boqPreparedBy || 'DCM Team'} • Qty: {item.consumption.quantity || '—'} {item.consumption.unit || 'sqft'}</p>
-                                    {item.consumption.fabricDesignSelection && (
-                                        <p className="truncate">Fabric: {item.consumption.fabricDesignSelection}</p>
-                                    )}
-                                </div>
-                            )}
-                            <AttachmentAndLinkUploader
-                                label="Attached BOQ / Consumption Records"
-                                attachments={form.consumptionSheet}
-                                onUpdate={(atts) => setForm((p) => ({ ...p, consumptionSheet: atts }))}
-                                idPrefix="boq-att"
-                            />
+                    {/* Consumption Sheet */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60 mb-3">
+                                <Layers className="w-4 h-4 text-purple-500" />
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                    Consumption Sheet
+                                </h4>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Select
+                                    value={form.selectedBoqVersion}
+                                    onChange={set('selectedBoqVersion')}
+                                    options={[
+                                        { value: item?.consumption?.boqVersion || 'BOQ-v1.0 (Approved)', label: `${item?.consumption?.boqVersion || 'BOQ-v1.0'} (Approved)` },
+                                        { value: 'BOQ-v1.1 (Draft)', label: 'BOQ-v1.1 (Draft Revision)' },
+                                        { value: 'BOQ-v2.0 (Final)', label: 'BOQ-v2.0 (Final Sign-off)' },
+                                    ]}
+                                />
+
+                                {item?.consumption && (
+                                    <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 text-[11px] text-purple-900 dark:text-purple-300 space-y-0.5">
+                                        <p className="font-semibold flex items-center gap-1">
+                                            <Layers className="w-3 h-3 text-purple-600 dark:text-purple-400" /> Linked BOQ: {item.consumption.boqVersion || 'v1.0'}
+                                        </p>
+                                        <p>Prepared By: {item.consumption.boqPreparedBy || 'DCM Team'} • Qty: {item.consumption.quantity || '—'} {item.consumption.unit || 'sqft'}</p>
+                                        {item.consumption.fabricDesignSelection && (
+                                            <p className="truncate">Fabric: {item.consumption.fabricDesignSelection}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                <AttachmentAndLinkUploader
+                                    label="Attached BOQ / Consumption Records"
+                                    attachments={form.consumptionSheet}
+                                    onUpdate={(atts) => setForm((p) => ({ ...p, consumptionSheet: atts }))}
+                                    idPrefix="boq-att"
+                                />
+                            </div>
                         </div>
-                    </Field>
+                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Select approved consumption-sheet / BOQ version</p>
+                    </div>
                 </div>
 
-                {/* 6. Design Direction (Long free text + attachments) */}
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 space-y-3">
-                    <Field label="Design Direction (Long free text)" hint="Multiline description; attachments may be added">
+                {/* Section 3: Design Direction */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3.5">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Design Direction
+                        </h4>
+                    </div>
+
+                    <Field label="Design Direction Vision">
                         <Textarea
                             rows={3}
                             value={form.designDirection}
                             onChange={set('designDirection')}
-                            placeholder="Describe design vision, aesthetic themes, drape styles, tracks, and motorization details..."
+                            placeholder="Describe aesthetic themes, fabric textures, pleat styles, motorization & track specifications..."
                         />
                     </Field>
+
                     <AttachmentAndLinkUploader
                         label="Design Direction Attachments & Moodboard Links"
                         attachments={form.designDirectionAttachments}
@@ -823,14 +854,27 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                     />
                 </div>
 
-                {/* 7. Pricing Range (Currency range: min and max in ₹) */}
-                <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-500/5 space-y-2">
-                    <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        Pricing Range (Currency range in ₹)
-                    </label>
-                    <p className="text-[11px] text-slate-500">Specify separate minimum and maximum values in ₹ to auto-format proposal budget estimate.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="Minimum Value (₹)">
+                {/* Section 4: Pricing Range */}
+                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 space-y-3.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-500/20">
+                        <div className="flex items-center gap-2">
+                            <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <div>
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-300">
+                                    Pricing Range (₹)
+                                </h4>
+                            </div>
+                        </div>
+
+                        {(form.minPricing !== '' || form.maxPricing !== '') && (
+                            <Badge tone="green" className="font-mono text-xs px-2.5 py-1">
+                                Estimate: {formatCurrencyINR(form.minPricing) || '₹0'} - {formatCurrencyINR(form.maxPricing) || '—'}
+                            </Badge>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="Minimum Estimate (₹)">
                             <Input
                                 type="number"
                                 min="0"
@@ -839,7 +883,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                                 onChange={set('minPricing')}
                             />
                         </Field>
-                        <Field label="Maximum Value (₹)">
+                        <Field label="Maximum Estimate (₹)">
                             <Input
                                 type="number"
                                 min="0"
@@ -849,110 +893,82 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                             />
                         </Field>
                     </div>
-                    {(form.minPricing !== '' || form.maxPricing !== '') && (
-                        <p className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400">
-                            Formatted Output: {formatCurrencyINR(form.minPricing) || '₹0'} - {formatCurrencyINR(form.maxPricing) || '—'}
-                        </p>
-                    )}
                 </div>
 
-                {/* 8. Terms (Master-template lookup) */}
-                <Field
-                    label="Standard Terms (Master-template lookup)"
-                    hint="Auto-fetched approved standard commercial terms"
-                >
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1">
-                                <ShieldCheck className="w-3 h-3" /> Standard Master Template
-                            </span>
+                {/* Section 5: Standard Terms */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-indigo-500" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                 Terms
+                            </h4>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handlePullMasterTerms}
+                            className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline"
+                        >
+                            Re-fetch Master Terms
+                        </button>
+                    </div>
+
+                    <Textarea
+                        rows={4}
+                        value={form.terms}
+                        onChange={set('terms')}
+                        placeholder="Standard payment split, validity, and measurement sign-off terms..."
+                    />
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Auto-fetched approved standard commercial terms</p>
+                </div>
+
+                {/* Section 6: Refund & Revision Policy */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                        <div className="flex items-center gap-2">
+                            <RefreshCw className="w-4 h-4 text-amber-500" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Refund & Revision Policy
+                            </h4>
+                            {form.isRefundClauseLocked ? (
+                                <Badge tone="rose" className="text-[10px] py-0 px-1.5 flex items-center gap-0.5">
+                                    <Lock className="w-2.5 h-2.5" /> Locked
+                                </Badge>
+                            ) : (
+                                <Badge tone="amber" className="text-[10px] py-0 px-1.5 flex items-center gap-0.5">
+                                    <Unlock className="w-2.5 h-2.5" /> Editing Unlocked
+                                </Badge>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={handlePullMasterTerms}
+                                onClick={handlePullMasterRefundClause}
                                 className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline"
                             >
-                                Re-fetch Master Terms
+                                Re-fetch
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setForm((p) => ({ ...p, isRefundClauseLocked: !p.isRefundClauseLocked }))}
+                                className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline"
+                            >
+                                {form.isRefundClauseLocked ? 'Unlock Edit' : 'Lock Clause'}
                             </button>
                         </div>
-                        <Textarea
-                            rows={4}
-                            value={form.terms}
-                            onChange={set('terms')}
-                            placeholder="Standard terms and conditions..."
-                        />
                     </div>
-                </Field>
 
-                {/* 9. Refund / Revision Clause (Master-template lookup - Restricted manual editing) */}
-                <Field
-                    label="Refund / Revision Clause (Master-template lookup)"
-                    hint="Auto-fetch approved clause; restricted manual editing"
-                >
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/20">
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-                                {form.isRefundClauseLocked ? (
-                                    <>
-                                        <Lock className="w-3.5 h-3.5 text-rose-500" />
-                                        <span>Restricted to Approved Master Clause</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Unlock className="w-3.5 h-3.5 text-amber-500" />
-                                        <span>Manual Override Enabled</span>
-                                    </>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handlePullMasterRefundClause}
-                                    className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline"
-                                >
-                                    Re-fetch Approved Clause
-                                </button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={form.isRefundClauseLocked ? Unlock : Lock}
-                                    onClick={() => setForm((p) => ({ ...p, isRefundClauseLocked: !p.isRefundClauseLocked }))}
-                                    className="text-[11px]"
-                                >
-                                    {form.isRefundClauseLocked ? 'Unlock Manual Edit' : 'Lock Clause'}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <Textarea
-                            rows={4}
-                            value={form.refundRevisionClause}
-                            onChange={set('refundRevisionClause')}
-                            disabled={form.isRefundClauseLocked}
-                            className={form.isRefundClauseLocked ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-90' : ''}
-                            placeholder="Approved refund & revision policy clause..."
-                        />
-                    </div>
-                </Field>
-
-                {/* Approval Status & Sign-off */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-200 dark:border-slate-800 pt-3">
-                    <Field label="Approval Status (PC / Sr DCM / Hitesh)">
-                        <Select
-                            value={form.approvalStatus}
-                            onChange={set('approvalStatus')}
-                            options={[
-                                { value: 'PENDING', label: 'Pending Approval' },
-                                { value: 'APPROVED', label: 'Approved (PC / Senior DCM / Hitesh)' },
-                                { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
-                                { value: 'REJECTED', label: 'Rejected' },
-                            ]}
-                        />
-                    </Field>
-                    <Field label="Approved By (Approver Name / Role)">
-                        <Input value={form.approvedBy} onChange={set('approvedBy')} placeholder="e.g. Hitesh Sharma / Senior DCM" />
-                    </Field>
+                    <Textarea
+                        rows={4}
+                        value={form.refundRevisionClause}
+                        onChange={set('refundRevisionClause')}
+                        disabled={form.isRefundClauseLocked}
+                        className={form.isRefundClauseLocked ? 'bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed opacity-90' : ''}
+                        placeholder="Approved refund & revision policy clause..."
+                    />
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Auto-fetched approved clause; restricted manual override</p>
                 </div>
+                
             </div>
         </Modal>
     );
@@ -967,6 +983,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
+    const [drawerLead, setDrawerLead] = useState(null);
 
     const reload = () => {
         setLoading(true);
@@ -1078,6 +1095,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                     items={filteredLeads}
                     onView={handleViewLead}
                     onEdit={(lead) => setEditingLead(lead)}
+                    onRowClick={(lead) => setDrawerLead(lead)}
                     selectedSection={selectedSection}
                     onSectionChange={(sec) => updateParam('section', sec, 's8')}
                 />
@@ -1090,6 +1108,13 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                     onDone={reload}
                 />
             )}
+
+            <DetailedDrawer
+                open={Boolean(drawerLead)}
+                lead={drawerLead}
+                onClose={() => setDrawerLead(null)}
+                onViewFull={handleViewLead}
+            />
         </div>
     );
 };
