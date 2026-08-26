@@ -138,9 +138,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.requirementVerified}
               onChange={set('requirementVerified')}
               options={[
-                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
+                { value: 'PENDING', label: 'Pending' },
               ]}
             />
           </Field>
@@ -152,9 +152,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.budgetPricingVerified}
               onChange={set('budgetPricingVerified')}
               options={[
-                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
+                { value: 'PENDING', label: 'Pending' },
               ]}
             />
           </Field>
@@ -163,9 +163,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.timelineConfirmed}
               onChange={set('timelineConfirmed')}
               options={[
-                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
+                { value: 'PENDING', label: 'Pending' },
               ]}
             />
           </Field>
@@ -177,10 +177,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.decisionMakerIdentified}
               onChange={set('decisionMakerIdentified')}
               options={[
-                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
-                { value: 'NOT_KNOWN', label: 'Not Known' },
+                { value: 'PENDING', label: 'Pending' },
               ]}
             />
           </Field>
@@ -189,9 +188,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.siteVisitRequired}
               onChange={set('siteVisitRequired')}
               options={[
-                { value: 'PENDING', label: 'Pending' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
+                { value: 'PENDING', label: 'Pending' },
               ]}
             />
           </Field>
@@ -203,9 +202,9 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               value={form.competitionDetailsCaptured}
               onChange={set('competitionDetailsCaptured')}
               options={[
-                { value: 'NOT_KNOWN', label: 'Not Known' },
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
+                { value: 'NOT_KNOWN', label: 'Not Known' },
               ]}
             />
           </Field>
