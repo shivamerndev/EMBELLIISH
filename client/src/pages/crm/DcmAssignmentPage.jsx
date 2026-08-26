@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, UserCheck, Check } from 'lucide-react';
+import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, ArrowRight, UserCheck, Check } from 'lucide-react';
 import { leadsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise } from '../../utils/format';
@@ -522,17 +522,11 @@ export const DcmAssignmentPage = () => {
         title="CRM — DCM Capacity & Lead Assignment"
         subtitle="Dedicated portal for managing DCM workloads, lead priorities, assignment due dates, capacity statuses, and reassignments"
         actions={
-          <>
-            <Link to="/crm/leads">
-              <Button variant="secondary" icon={Users}>Lead Capture Sheet</Button>
-            </Link>
-            <Link to="/crm/qualification">
-              <Button variant="secondary" icon={ShieldCheck}>Qualification</Button>
-            </Link>
-            <Link to="/crm/follow-ups">
-              <Button variant="secondary" icon={PhoneCall}>Follow-ups</Button>
-            </Link>
-          </>
+          <Link to="/crm/qualification">
+            <Button icon={ArrowRight}>
+              Move to Qualification
+            </Button>
+          </Link>
         }
       />
 
@@ -567,7 +561,7 @@ export const DcmAssignmentPage = () => {
             <table className="min-w-[1900px] w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Code & Client</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead Code & Client</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Due Date</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Capacity Status</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assigned DCM / Manager</th>
@@ -578,7 +572,7 @@ export const DcmAssignmentPage = () => {
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassigned To</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassignment Reason</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Updated User</th>
-                  <th className="p-2.5 px-3 text-right">Actions</th>
+                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
@@ -591,7 +585,7 @@ export const DcmAssignmentPage = () => {
                 ) : (
                   filtered.map((row) => (
                     <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 whitespace-nowrap">
+                      <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                         <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
                         <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                       </td>
@@ -617,7 +611,7 @@ export const DcmAssignmentPage = () => {
                         {row.reassignmentReason || 'N/A'}
                       </td>
                       <td className="p-3 text-slate-700 dark:text-slate-300">{row.updatedUser || '—'}</td>
-                      <td className="p-3 text-right">
+                      <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
                             Edit

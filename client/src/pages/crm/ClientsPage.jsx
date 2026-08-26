@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Users, Building2 } from 'lucide-react';
+import { Search, Users, Building2, ArrowRight } from 'lucide-react';
 import { clientsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
@@ -63,8 +63,10 @@ export const ClientsPage = () => {
         title="Clients"
         subtitle="Converted leads, and every project they have run with Embellish"
         actions={
-          <Link to="/crm/leads">
-            <Button variant="secondary" icon={Users}>Leads</Button>
+          <Link to="/crm/sales-commercials">
+            <Button icon={ArrowRight}>
+              Move to Sales & Commercials
+            </Button>
           </Link>
         }
       />

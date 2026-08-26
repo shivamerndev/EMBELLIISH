@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, ShieldCheck, Users, Pencil, Trash2, ExternalLink, Paperclip, Upload, X, FileText, Image as ImageIcon, ChevronDown, Check } from 'lucide-react';
+import { Plus, Search, PhoneCall, UserCheck, ArrowRightCircle, ArrowRight, ShieldCheck, Users, Pencil, Trash2, ExternalLink, Paperclip, Upload, X, FileText, Image as ImageIcon, ChevronDown, Check, IndianRupee } from 'lucide-react';
 import { leadsApi, architectsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
-import { humanise } from '../../utils/format';
+import { humanise, formatBudgetValue, formatBudgetDisplay } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, PhoneInput, validatePhoneNumber, EmailInput, validateEmail,
   Textarea, Loading, ErrorState, EmptyState, Tabs,
 } from '../../components/ui';
+import LeadDetailsModal from '../../components/crm/LeadDetailsModal';
 
 const STATUS_TABS = [
   { key: 'ALL', label: 'All Leads' },
@@ -405,7 +406,17 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Indicative Budget">
-            <Input value={form.indicativeBudget} onChange={set('indicativeBudget')} placeholder="e.g. 15 L or 1 Cr" />
+            <div className="relative flex items-center">
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                <IndianRupee className="w-4 h-4" />
+              </div>
+              <Input
+                className="pl-9"
+                value={form.indicativeBudget}
+                onChange={(e) => setForm((prev) => ({ ...prev, indicativeBudget: formatBudgetValue(e.target.value) }))}
+                placeholder="e.g. 10,000"
+              />
+            </div>
           </Field>
           <Field label="Budget Classification">
             <Select
@@ -565,7 +576,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     email: l?.email || '',
     source: l?.source || 'Architect Referral',
     architectName: l?.architectName || (typeof l?.architect === 'object' ? l?.architect?.name : l?.architect) || '',
-    indicativeBudget: l?.indicativeBudget || (l?.budget ? `${l.budget}` : ''),
+    indicativeBudget: l?.indicativeBudget ? formatBudgetValue(l.indicativeBudget) : (l?.budget ? formatBudgetValue(l.budget) : ''),
     budgetClassification: l?.budgetClassification || 'A',
     location: l?.location || '',
     previousClientRelationship: l?.previousClientRelationship ? 'YES' : 'NO',
@@ -700,7 +711,17 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Indicative Budget">
-            <Input value={form.indicativeBudget} onChange={set('indicativeBudget')} />
+            <div className="relative flex items-center">
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                <IndianRupee className="w-4 h-4" />
+              </div>
+              <Input
+                className="pl-9"
+                value={form.indicativeBudget}
+                onChange={(e) => setForm((prev) => ({ ...prev, indicativeBudget: formatBudgetValue(e.target.value) }))}
+                placeholder="e.g. 10,000"
+              />
+            </div>
           </Field>
           <Field label="Budget Classification">
             <Select
@@ -891,6 +912,7 @@ export const LeadsPage = () => {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [viewingLead, setViewingLead] = useState(null);
 
   const { data, loading, error, reload } = useAsync(
     () => leadsApi.list({ ...(tab !== 'ALL' && { status: tab }), ...(search && { search }), limit: 100 }).then((r) => r.data),
@@ -922,21 +944,11 @@ export const LeadsPage = () => {
         title="CRM — Lead Capture"
         subtitle="Manage, track, and qualify leads recorded through Architects, Interior Designers, or Direct Channels"
         actions={
-          <>
-            <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
-            <Link to="/crm/dcm-assignments">
-              <Button variant="secondary" icon={UserCheck}>DCM Assignments</Button>
-            </Link>
-            <Link to="/crm/qualification">
-              <Button variant="secondary" icon={ShieldCheck}>Qualification</Button>
-            </Link>
-            <Link to="/crm/follow-ups">
-              <Button variant="secondary" icon={PhoneCall}>Follow-ups</Button>
-            </Link>
-            <Link to="/crm/clients">
-              <Button variant="secondary" icon={Users}>Clients</Button>
-            </Link>
-          </>
+          <Link to="/crm/dcm-assignments">
+            <Button icon={ArrowRight}>
+              Move to DCM Assignments
+            </Button>
+          </Link>
         }
       />
 
@@ -948,8 +960,8 @@ export const LeadsPage = () => {
             onChange={setTab}
           />
         </div>
-        <div className="p-4">
-          <div className="relative max-w-sm">
+        <div className="p-4 flex items-center justify-between gap-3">
+          <div className="relative max-w-sm flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
@@ -958,6 +970,7 @@ export const LeadsPage = () => {
               className="pl-9"
             />
           </div>
+          <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
         </div>
       </Panel>
 
@@ -972,7 +985,7 @@ export const LeadsPage = () => {
             <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead ID</th>
+                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead ID</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
@@ -988,7 +1001,7 @@ export const LeadsPage = () => {
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
                   <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
-                  <th className="p-2.5 px-3 text-right">Actions</th>
+                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
@@ -1007,8 +1020,23 @@ export const LeadsPage = () => {
                     const sourceVal = row.source || row.leadSource || '—';
 
                     return (
-                      <tr key={row._id || row.id} className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800">
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{row.code || '—'}</td>
+                      <tr
+                        key={row._id || row.id}
+                        onClick={() => setViewingLead(row)}
+                        className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer"
+                      >
+                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingLead(row);
+                            }}
+                            className="text-[#836444] dark:text-amber-300 font-bold hover:underline font-mono"
+                          >
+                            {row.code || '—'}
+                          </button>
+                        </td>
                         <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
                         <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
                         <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
@@ -1020,7 +1048,7 @@ export const LeadsPage = () => {
                         </td>
                         <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
                         <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
-                        <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{row.indicativeBudget || (row.budget ? `₹${row.budget}` : '—')}</td>
+                        <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
                         <td className="p-3 text-center">
                           <BudgetClassBadge value={row.budgetClassification || 'A'} />
                         </td>
@@ -1035,7 +1063,7 @@ export const LeadsPage = () => {
                         <td className="p-3 text-center">
                           <ArchitectInvolvedBadge value={row.architectInvolved} />
                         </td>
-                        <td className="p-3">
+                        <td className="p-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col gap-1 max-w-[200px]">
                             {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
                               <div className="flex flex-wrap gap-1 items-center">
@@ -1073,13 +1101,16 @@ export const LeadsPage = () => {
                             )}
                           </div>
                         </td>
-                        <td className="p-3 text-right">
+                        <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               size="sm"
                               variant="secondary"
                               icon={UserCheck}
-                              onClick={() => navigate(`/crm/dcm-assignments?search=${encodeURIComponent(row.code || '')}&assign=true`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/crm/dcm-assignments?search=${encodeURIComponent(row.code || '')}&assign=true`);
+                              }}
                               title={`Assign DCM manager for lead ${row.code}`}
                               className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
                             >
@@ -1087,15 +1118,21 @@ export const LeadsPage = () => {
                             </Button>
                             <button
                               type="button"
-                              onClick={() => setEditing(row)}
-                              title="Edit lead"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewingLead(row);
+                              }}
+                              title="View & Edit lead details"
                               className="p-1.5 text-slate-600 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => setDeleting(row)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleting(row);
+                              }}
                               title="Delete lead"
                               className="p-1.5 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
                             >
@@ -1116,6 +1153,18 @@ export const LeadsPage = () => {
       <NewLeadModal open={creating} onClose={() => setCreating(false)} onCreated={reload} architects={architects} onReloadArchitects={reloadArchitects} />
       {editing && <EditLeadModal lead={editing} onClose={() => setEditing(null)} onDone={reload} architects={architects} onReloadArchitects={reloadArchitects} />}
       {deleting && <DeleteLeadModal lead={deleting} onClose={() => setDeleting(null)} onDone={reload} />}
+
+      <LeadDetailsModal
+        open={Boolean(viewingLead)}
+        leadId={viewingLead?._id || viewingLead?.id}
+        leadData={viewingLead}
+        onClose={() => setViewingLead(null)}
+        onUpdated={() => {
+          reload();
+        }}
+        architects={architects}
+        onReloadArchitects={reloadArchitects}
+      />
     </div>
   );
 };
