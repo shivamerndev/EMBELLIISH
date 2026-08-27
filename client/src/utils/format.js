@@ -162,4 +162,53 @@ export const formatBudgetDisplay = (val) => {
   return formatted.startsWith('₹') ? formatted : `₹${formatted}`;
 };
 
+/** Safe extraction of human-readable error messages from string, objects, API envelopes, and validation errors */
+export const getErrorMessage = (error, defaultMsg = 'Unable to complete request') => {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+
+  if (Array.isArray(error)) {
+    const msgs = error.map((e) => (typeof e === 'string' ? e : e?.message || JSON.stringify(e))).filter(Boolean);
+    return msgs.length > 0 ? msgs.join(', ') : defaultMsg;
+  }
+
+  if (typeof error === 'object') {
+    if (error.errors) {
+      if (typeof error.errors === 'string') return error.errors;
+      if (Array.isArray(error.errors)) {
+        const fieldMsgs = error.errors
+          .map((errItem) => {
+            if (typeof errItem === 'string') return errItem;
+            if (errItem && typeof errItem === 'object') {
+              if (errItem.message) {
+                return errItem.field ? `${errItem.field}: ${errItem.message}` : errItem.message;
+              }
+            }
+            return String(errItem);
+          })
+          .filter(Boolean);
+        if (fieldMsgs.length > 0) return fieldMsgs.join('; ');
+      }
+      if (typeof error.errors === 'object') {
+        const objMsgs = Object.entries(error.errors)
+          .map(([k, v]) => {
+            if (typeof v === 'string') return `${k}: ${v}`;
+            if (Array.isArray(v)) return `${k}: ${v.join(', ')}`;
+            if (v && typeof v === 'object' && v.message) return `${k}: ${v.message}`;
+            return `${k}: ${JSON.stringify(v)}`;
+          })
+          .filter(Boolean);
+        if (objMsgs.length > 0) return objMsgs.join('; ');
+      }
+    }
+
+    if (error.message && typeof error.message === 'string') {
+      return error.message;
+    }
+  }
+
+  return defaultMsg;
+};
+
+
 

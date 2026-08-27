@@ -6,7 +6,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise, formatBudgetValue, formatBudgetDisplay } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, PhoneInput, validatePhoneNumber, EmailInput, validateEmail,
-  Textarea, Loading, ErrorState, EmptyState, Tabs,
+  Textarea, Loading, ErrorState, EmptyState, Tabs, Pagination,
 } from '../../components/ui';
 import LeadDetailsModal from '../../components/crm/LeadDetailsModal';
 
@@ -362,7 +362,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
       <form onSubmit={submit} className="space-y-4 pr-1">
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Client Name" required>
             <Input value={form.clientName} onChange={set('clientName')} placeholder="e.g. D-table Analytics" required />
           </Field>
@@ -371,7 +371,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Mobile Number" required>
             <PhoneInput value={form.phone} onChange={set('phone')} required />
           </Field>
@@ -380,7 +380,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -404,7 +404,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Indicative Budget">
             <div className="relative flex items-center">
               <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -432,7 +432,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Project Location">
             <Input value={form.location} onChange={set('location')} placeholder="e.g. Aurangabad / Mumbai / Pune" />
           </Field>
@@ -448,7 +448,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Existing Relationship Owner">
             <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
@@ -666,8 +666,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     >
       <form onSubmit={submit} className="space-y-4 pr-1">
         {error && <p className="text-xs text-rose-400 p-2 bg-rose-500/10 rounded">{error.message}</p>}
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Client Name" required>
             <Input value={form.clientName} onChange={set('clientName')} required />
           </Field>
@@ -676,7 +675,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Mobile Number" required>
             <PhoneInput value={form.phone} onChange={set('phone')} required />
           </Field>
@@ -685,7 +684,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -709,7 +708,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Indicative Budget">
             <div className="relative flex items-center">
               <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -728,18 +727,18 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
               value={form.budgetClassification}
               onChange={set('budgetClassification')}
               options={[
-                { value: 'A', label: 'A' },
-                { value: 'B', label: 'B' },
-                { value: 'C', label: 'C' },
-                { value: 'D', label: 'D' },
+                { value: 'A', label: 'A (High Priority/Budget)' },
+                { value: 'B', label: 'B (Medium-High)' },
+                { value: 'C', label: 'C (Standard)' },
+                { value: 'D', label: 'D (Basic)' },
               ]}
             />
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Project Location">
-            <Input value={form.location} onChange={set('location')} />
+            <Input value={form.location} onChange={set('location')} placeholder="e.g. Aurangabad / Mumbai / Pune" />
           </Field>
           <Field label="Previous Client Relationship">
             <Select
@@ -753,9 +752,9 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Existing Relationship Owner">
-            <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} />
+            <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
           <Field label="Architect / Designer Involved">
             <Select
@@ -913,6 +912,8 @@ export const LeadsPage = () => {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [viewingLead, setViewingLead] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, loading, error, reload } = useAsync(
     () => leadsApi.list({ ...(tab !== 'ALL' && { status: tab }), ...(search && { search }), limit: 100 }).then((r) => r.data),
@@ -921,9 +922,13 @@ export const LeadsPage = () => {
 
   const { data: architects, reload: reloadArchitects } = useAsync(() => architectsApi.list({ limit: 100 }).then((r) => r.data?.items || []), []);
 
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search]);
+
   // Merge server records with fallback initial sample rows if server returns empty list
   const apiItems = data?.items || [];
-  const leadsList = apiItems || []
+  const leadsList = apiItems || [];
 
   const filteredLeads = leadsList.filter((lead) => {
     if (!search) return true;
@@ -937,6 +942,8 @@ export const LeadsPage = () => {
       lead.architectName?.toLowerCase().includes(q)
     );
   });
+
+  const paginatedLeads = filteredLeads.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div>
@@ -960,8 +967,8 @@ export const LeadsPage = () => {
             onChange={setTab}
           />
         </div>
-        <div className="p-4 flex items-center justify-between gap-3">
-          <div className="relative max-w-sm flex-1">
+        <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:max-w-sm flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
@@ -970,183 +977,176 @@ export const LeadsPage = () => {
               className="pl-9"
             />
           </div>
-          <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
+          <Button icon={Plus} onClick={() => setCreating(true)} className="w-full sm:w-auto shrink-0">New Lead</Button>
         </div>
       </Panel>
 
       {/* Main 16-Column Sheet Table */}
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-hidden flex flex-col">
         {loading ? (
           <Loading />
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead ID</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
-                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                {filteredLeads.length === 0 ? (
-                  <tr>
-                    <td colSpan={17} className="p-8 text-center text-slate-500">
-                      No leads match your filter or search query.
-                    </td>
+          <>
+            <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead ID</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
+                    <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                   </tr>
-                ) : (
-                  filteredLeads.map((row) => {
-                    const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
-                    const archName = row.architectName || (typeof row.architect === 'object' ? (row.architect?.name || row.architect?.firm || row.architect?.architectName) : row.architect) || '—';
-                    const clientNameVal = row.clientName || row.companyName || row.name || '—';
-                    const contactPersonVal = row.contactPerson || row.contactName || '—';
-                    const sourceVal = row.source || row.leadSource || '—';
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                  {filteredLeads.length === 0 ? (
+                    <tr>
+                      <td colSpan={17} className="p-8 text-center text-slate-500">
+                        No leads match your filter or search query.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedLeads.map((row) => {
+                      const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
+                      const archName = row.architectName || (typeof row.architect === 'object' ? (row.architect?.name || row.architect?.firm || row.architect?.architectName) : row.architect) || '—';
+                      const clientNameVal = row.clientName || row.companyName || row.name || '—';
+                      const contactPersonVal = row.contactPerson || row.contactName || '—';
+                      const sourceVal = row.source || row.leadSource || '—';
 
-                    return (
-                      <tr
-                        key={row._id || row.id}
-                        onClick={() => setViewingLead(row)}
-                        className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer"
-                      >
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setViewingLead(row);
-                            }}
-                            className="text-[#836444] dark:text-amber-300 font-bold hover:underline font-mono"
-                          >
-                            {row.code || '—'}
-                          </button>
-                        </td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
-                        <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.email || '—'}</td>
-                        <td className="p-3 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
-                            {sourceVal}
-                          </span>
-                        </td>
-                        <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
-                        <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
-                        <td className="p-3 text-center">
-                          <BudgetClassBadge value={row.budgetClassification || 'A'} />
-                        </td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
-                        <td className="p-3 text-center">
-                          <RelationshipBadge value={row.previousClientRelationship} />
-                        </td>
-                        <td className="p-3 text-slate-700 dark:text-slate-300">{row.existingRelationshipOwner || 'NA'}</td>
-                        <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.requirementSummary || row.requirement || '—'}>
-                          {row.requirementSummary || row.requirement || '—'}
-                        </td>
-                        <td className="p-3 text-center">
-                          <ArchitectInvolvedBadge value={row.architectInvolved} />
-                        </td>
-                        <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex flex-col gap-1 max-w-[200px]">
-                            {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
-                              <div className="flex flex-wrap gap-1 items-center">
-                                {row.attachments.map((att, i) => (
-                                  <a
-                                    key={i}
-                                    href={att.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium truncate max-w-[170px]"
-                                    title={att.filename || att.url}
-                                  >
-                                    <Paperclip className="w-3 h-3 shrink-0 text-slate-500 dark:text-slate-400" />
-                                    <span className="truncate">{att.filename || `File ${i + 1}`}</span>
-                                  </a>
-                                ))}
-                              </div>
-                            ) : null}
-
-                            {row.attachmentUrl ? (
-                              <a
-                                href={row.attachmentUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline max-w-[180px] truncate"
-                                title={row.attachmentUrl}
-                              >
-                                <ExternalLink className="w-3 h-3 shrink-0" />
-                                <span className="truncate">{row.attachmentUrl}</span>
-                              </a>
-                            ) : null}
-
-                            {(!row.attachments || row.attachments.length === 0) && !row.attachmentUrl && (
-                              <span className="text-slate-400 dark:text-slate-600">—</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              icon={UserCheck}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/crm/dcm-assignments?search=${encodeURIComponent(row.code || '')}&assign=true`);
-                              }}
-                              title={`Assign DCM manager for lead ${row.code}`}
-                              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-                            >
-                              Assign DCM
-                            </Button>
+                      return (
+                        <tr
+                          key={row._id || row.id}
+                          onClick={() => setViewingLead(row)}
+                          className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer"
+                        >
+                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setViewingLead(row);
                               }}
-                              title="View & Edit lead details"
-                              className="p-1.5 text-slate-600 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
+                              className="text-[#836444] dark:text-amber-300 font-bold hover:underline font-mono"
                             >
-                              <Pencil className="w-4 h-4" />
+                              {row.code || '—'}
                             </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleting(row);
-                              }}
-                              title="Delete lead"
-                              className="p-1.5 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </td>
+                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
+                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
+                          <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
+                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.email || '—'}</td>
+                          <td className="p-3 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
+                              {sourceVal}
+                            </span>
+                          </td>
+                          <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
+                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
+                          <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
+                          <td className="p-3 text-center">
+                            <BudgetClassBadge value={row.budgetClassification || 'A'} />
+                          </td>
+                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
+                          <td className="p-3 text-center">
+                            <RelationshipBadge value={row.previousClientRelationship} />
+                          </td>
+                          <td className="p-3 text-slate-700 dark:text-slate-300">{row.existingRelationshipOwner || 'NA'}</td>
+                          <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.requirementSummary || row.requirement || '—'}>
+                            {row.requirementSummary || row.requirement || '—'}
+                          </td>
+                          <td className="p-3 text-center">
+                            <ArchitectInvolvedBadge value={row.architectInvolved} />
+                          </td>
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex flex-col gap-1 max-w-[200px]">
+                              {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 items-center">
+                                  {row.attachments.map((att, i) => (
+                                    <a
+                                      key={i}
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium truncate max-w-[170px]"
+                                      title={att.filename || att.url}
+                                    >
+                                      <Paperclip className="w-3 h-3 shrink-0 text-slate-500 dark:text-slate-400" />
+                                      <span className="truncate">{att.filename || `File ${i + 1}`}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              {row.attachmentUrl ? (
+                                <a
+                                  href={row.attachmentUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline max-w-[180px] truncate"
+                                  title={row.attachmentUrl}
+                                >
+                                  <Paperclip className="w-3 h-3 shrink-0" />
+                                  <span className="truncate">View Link</span>
+                                </a>
+                              ) : null}
+
+                              {!row.attachmentUrl && (!row.attachments || row.attachments.length === 0) && (
+                                <span className="text-slate-600 dark:text-slate-500 italic text-[11px]">No docs</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={Pencil}
+                                onClick={() => setEditing(row)}
+                                title="Edit Lead Record"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={Trash2}
+                                onClick={() => setDeleting(row)}
+                                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
+                                title="Delete Lead Record"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={page}
+              totalItems={filteredLeads.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
 

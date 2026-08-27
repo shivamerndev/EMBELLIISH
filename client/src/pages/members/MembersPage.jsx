@@ -34,6 +34,7 @@ import {
   validateEmail,
   Tabs,
   StatusBadge,
+  Pagination,
 } from '../../components/ui';
 
 const ROLE_OPTIONS = [
@@ -530,6 +531,8 @@ export const MembersPage = () => {
   const [viewingMember, setViewingMember] = useState(null);
   const [editingMember, setEditingMember] = useState(null);
   const [deletingMember, setDeletingMember] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Fetch Summary statistics dynamically from backend DB
   const {
@@ -739,8 +742,8 @@ export const MembersPage = () => {
             syncQuery={false}
           />
         </div>
-        <div className="p-4">
-          <div className="relative max-w-sm">
+        <div className="p-3.5 sm:p-4">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
@@ -759,23 +762,35 @@ export const MembersPage = () => {
         ) : membersError ? (
           <ErrorState error={membersError} onRetry={handleRefresh} />
         ) : (
-          <Table
-            columns={columns}
-            rows={filteredMembers}
-            keyField="id"
-            empty={
-              <EmptyState
-                title="No members found"
-                hint="Add a new member to start assigning projects and tracking capacity."
-                icon={Users}
-                action={
-                  <Button size="sm" icon={UserPlus} onClick={() => setModalOpen(true)}>
-                    Add New Member
-                  </Button>
-                }
-              />
-            }
-          />
+          <>
+            <Table
+              columns={columns}
+              rows={filteredMembers.slice((page - 1) * pageSize, page * pageSize)}
+              keyField="id"
+              empty={
+                <EmptyState
+                  title="No members found"
+                  hint="Add a new member to start assigning projects and tracking capacity."
+                  icon={Users}
+                  action={
+                    <Button size="sm" icon={UserPlus} onClick={() => setModalOpen(true)}>
+                      Add New Member
+                    </Button>
+                  }
+                />
+              }
+            />
+            <Pagination
+              currentPage={page}
+              totalItems={filteredMembers.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
 

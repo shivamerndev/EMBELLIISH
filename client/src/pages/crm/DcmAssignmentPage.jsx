@@ -7,7 +7,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, Textarea,
-  Loading, ErrorState, Tabs,
+  Loading, ErrorState, Tabs, Pagination, DelayBadge,
 } from '../../components/ui';
 
 const ASSIGNMENT_TABS = [
@@ -462,12 +462,18 @@ export const DcmAssignmentPage = () => {
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [editing, setEditing] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const autoOpenedRef = useRef(false);
 
   const { data, loading, error, reload } = useAsync(
     () => leadsApi.list({ limit: 100 }).then((r) => r.data),
     []
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search]);
 
   const apiItems = data?.items || [];
   const list = apiItems.length > 0 ? apiItems : INITIAL_SAMPLE_LEADS;
@@ -489,6 +495,8 @@ export const DcmAssignmentPage = () => {
       item.updatedUser?.toLowerCase().includes(q)
     );
   });
+
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => {
     if (searchParams.get('assign') === 'true' && search && filtered.length > 0 && !editing && !autoOpenedRef.current) {
@@ -538,8 +546,8 @@ export const DcmAssignmentPage = () => {
             onChange={setTab}
           />
         </div>
-        <div className="p-4">
-          <div className="relative max-w-sm">
+        <div className="p-3.5 sm:p-4">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
@@ -551,84 +559,104 @@ export const DcmAssignmentPage = () => {
         </div>
       </Panel>
 
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-hidden flex flex-col">
         {loading ? (
           <Loading />
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-[1900px] w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead Code & Client</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Due Date</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Capacity Status</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assigned DCM / Manager</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Date & Time</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Active Project Count</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Lead Priority</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Reassignment Required</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassigned To</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassignment Reason</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Updated User</th>
-                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={12} className="p-8 text-center text-slate-500">
-                      No assignment records found.
-                    </td>
+          <>
+            <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <table className="min-w-[1900px] w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Due Date</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Capacity Status</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assigned DCM / Manager</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Date & Time</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Active Project Count</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Lead Priority</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Reassignment Required</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassigned To</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Reassignment Reason</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Updated User</th>
+                    <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                   </tr>
-                ) : (
-                  filtered.map((row) => (
-                    <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
-                        <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {row.assignmentDueDate ? new Date(row.assignmentDueDate).toLocaleDateString('en-GB') : '—'}
-                      </td>
-                      <td className="p-3 text-center">
-                        <DcmCapacityBadge value={row.dcmCapacityStatus || 'AVAILABLE'} />
-                      </td>
-                      <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">{row.assignedDcmName || '—'}</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {row.assignmentDateTime ? new Date(row.assignmentDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                      </td>
-                      <td className="p-3 text-center font-bold text-slate-800 dark:text-slate-200">{row.dcmActiveProjectCount ?? 0}</td>
-                      <td className="p-3 text-center">
-                        <LeadPriorityBadge value={row.priority || 'MEDIUM'} />
-                      </td>
-                      <td className="p-3 text-center">
-                        <ReassignmentBadge value={row.reassignmentRequired} />
-                      </td>
-                      <td className="p-3 font-medium text-slate-700 dark:text-slate-300">{row.reassignedToName || 'NA'}</td>
-                      <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.reassignmentReason || 'N/A'}>
-                        {row.reassignmentReason || 'N/A'}
-                      </td>
-                      <td className="p-3 text-slate-700 dark:text-slate-300">{row.updatedUser || '—'}</td>
-                      <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
-                            Edit
-                          </Button>
-                          <Link to={`/crm/qualification?search=${encodeURIComponent(row.code || '')}`}>
-                            <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Qualification for this lead">
-                              Qualify
-                            </Button>
-                          </Link>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="p-8 text-center text-slate-500">
+                        No assignment records found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    paginated.map((row) => (
+                      <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
+                          <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {row.assignmentDueDate ? new Date(row.assignmentDueDate).toLocaleDateString('en-GB') : '—'}
+                        </td>
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <DelayBadge
+                            dueDate={row.assignmentDueDate}
+                            isCompleted={Boolean(row.assignedDcmName && row.assignedDcmName !== 'NA' && row.reassignmentRequired !== 'YES')}
+                            fallback={<span className="text-slate-400">—</span>}
+                          />
+                        </td>
+                        <td className="p-3 text-center">
+                          <DcmCapacityBadge value={row.dcmCapacityStatus || 'AVAILABLE'} />
+                        </td>
+                        <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">{row.assignedDcmName || '—'}</td>
+                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {row.assignmentDateTime ? new Date(row.assignmentDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </td>
+                        <td className="p-3 text-center font-bold text-slate-900 dark:text-slate-100">{row.dcmActiveProjectCount ?? 0}</td>
+                        <td className="p-3 text-center">
+                          <LeadPriorityBadge value={row.priority} />
+                        </td>
+                        <td className="p-3 text-center">
+                          <ReassignmentBadge value={row.reassignmentRequired} />
+                        </td>
+                        <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">{row.reassignedToName || 'NA'}</td>
+                        <td className="p-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate" title={row.reassignmentReason || 'N/A'}>
+                          {row.reassignmentReason || 'N/A'}
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-400">{row.updatedUser || '—'}</td>
+                        <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            icon={Pencil}
+                            onClick={() => setEditing(row)}
+                            className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
+                          >
+                            Assign / Edit
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={page}
+              totalItems={filtered.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
 

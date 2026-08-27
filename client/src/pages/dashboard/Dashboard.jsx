@@ -42,7 +42,7 @@ const StageBars = ({ rows, total, tone = 'bg-brand-500' }) => {
     <div className="space-y-2.5 p-5">
       {rows.map((row) => (
         <div key={row.stage || row.status} className="flex items-center gap-3">
-          <span className="w-44 shrink-0 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
+          <span className="w-28 sm:w-44 shrink-0 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
             {row.label || String(row.stage || row.status).replace(/_/g, ' ')}
           </span>
           <div
@@ -84,6 +84,7 @@ export const Dashboard = () => {
     totalLeads: kpis?.totalLeads ?? leads?.total ?? 0,
     newLeads: kpis?.newLeads ?? 0,
     followupToday: kpis?.followupToday ?? 0,
+    overdueActions: alerts?.overdueFollowUps ?? kpis?.overdueFollowUps ?? 0,
     meetingToday: kpis?.meetingToday ?? 0,
     pendingQuotations: kpis?.pendingQuotations ?? 0,
     wonProjects: kpis?.wonProjects ?? leads?.converted ?? 0,
@@ -98,7 +99,7 @@ export const Dashboard = () => {
         subtitle="Every department on the same project record"
       />
 
-      {/* --- 8 Core Metric KPI Cards arranged in responsive 4-column layout --- */}
+      {/* --- Core Metric KPI Cards arranged in responsive 4-column layout --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <StatTile
           label="Total Leads"
@@ -108,19 +109,21 @@ export const Dashboard = () => {
           tone="brand"
         />
         <StatTile
-          label="New Leads"
-          value={number(kpiData.newLeads, 0)}
-          sub="Fresh leads created"
-          icon={UserPlus}
-          tone="amber"
-        />
-        <StatTile
           label="Follow-up Today"
           value={number(kpiData.followupToday, 0)}
           sub="Calls & tasks scheduled"
           icon={PhoneCall}
           tone="blue"
         />
+        <Link to="/crm/follow-ups?tab=OVERDUE" className="block transition-transform hover:-translate-y-0.5">
+          <StatTile
+            label="Overdue Actions"
+            value={number(kpiData.overdueActions, 0)}
+            sub="Click to view late actions"
+            icon={Clock}
+            tone="rose"
+          />
+        </Link>
         <StatTile
           label="Meeting Today"
           value={number(kpiData.meetingToday, 0)}
@@ -165,8 +168,8 @@ export const Dashboard = () => {
             <AlertTriangle className="w-4 h-4" /> Needs attention
           </span>
           {alerts.overdueFollowUps > 0 && (
-            <Link to="/crm/leads" className="flex items-center gap-1.5 text-xs hover:text-brand-400" style={{ color: 'var(--text-secondary)' }}>
-              <Phone className="w-3.5 h-3.5 text-amber-400" /> {alerts.overdueFollowUps} overdue follow-up(s)
+            <Link to="/crm/follow-ups?tab=OVERDUE" className="flex items-center gap-1.5 text-xs hover:text-brand-400 font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <Phone className="w-3.5 h-3.5 text-rose-400" /> {alerts.overdueFollowUps} overdue action(s)
             </Link>
           )}
           {alerts.openSnags > 0 && (

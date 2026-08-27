@@ -5,7 +5,7 @@ import {
     Trash2, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, Plus, X, AlertTriangle, Check, DollarSign, Tag, Clock
 } from 'lucide-react';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, usersApi, architectsApi, fabricsApi } from '../../api';
@@ -19,6 +19,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
         cols: [
             { key: 'studioMeeting.dueDate', label: 'Studio Meeting Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'studioMeeting.date', label: 'Actual Meeting Date & Time' },
             { key: 'studioMeeting.attendees', label: 'Meeting Attendees' },
             { key: 'studioMeeting.clientDrawings', label: 'Client Drawings' },
@@ -80,6 +81,12 @@ const parseAttachmentsOrLinks = (raw) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.studioMeeting?.dueDate}
+            isCompleted={Boolean(lead.studioMeeting?.date || lead.studioMeeting?.status === 'Completed')}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

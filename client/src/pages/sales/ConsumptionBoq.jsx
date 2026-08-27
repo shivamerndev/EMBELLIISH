@@ -5,7 +5,7 @@ import {
     Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X
 } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../features/auth/authSlice';
 import useSales from '../../hooks/useSales';
@@ -20,6 +20,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
         cols: [
             { key: 'consumption.sheetDueDate', label: 'Consumption Sheet Due' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'consumption.measurements', label: 'Measurements' },
             { key: 'consumption.quantity', label: 'Consumption Quantity' },
             { key: 'consumption.unit', label: 'Unit' },
@@ -300,6 +301,12 @@ const getNextVersion = (currentVer) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.consumption?.sheetDueDate || lead.boq?.dueDate}
+            isCompleted={Boolean(lead.consumption?.boqPreparedDate || lead.boq?.status === 'Completed')}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

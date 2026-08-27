@@ -6,7 +6,7 @@ import {
     Loader2, ExternalLink, History, RefreshCw, Layers, Tag, Check, HelpCircle
 } from 'lucide-react';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, settingsApi, uploadApi } from '../../api';
@@ -20,6 +20,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/90 dark:text-sky-200 dark:border-sky-700/80',
         cols: [
             { key: 'proposal.dueDate', label: 'Proposal Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'proposal.noVersion', label: 'Proposal No. / Version' },
             { key: 'proposal.date', label: 'Proposal Date' },
             { key: 'proposal.approvalStatus', label: 'Approval Status' },
@@ -230,6 +231,12 @@ const AttachmentAndLinkUploader = ({ label, attachments = [], onUpdate, idPrefix
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.proposal?.dueDate}
+            isCompleted={Boolean(['Approved', 'Completed', 'Submitted', 'Sent'].includes(lead.proposal?.approvalStatus || lead.proposal?.status) || lead.proposal?.date)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

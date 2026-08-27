@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Users, UserCheck, ShieldCheck, Pencil, ArrowRightCircle, ArrowRight } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select,
-  Textarea, Loading, ErrorState, Tabs,
+  Textarea, Loading, ErrorState, Tabs, Pagination, DelayBadge, getDelayStatus,
 } from '../../components/ui';
+import { getLocalDate } from '../../utils/format';
 
 const FOLLOWUP_TABS = [
   { key: 'ALL', label: 'All Leads' },
@@ -45,13 +46,11 @@ const OverallStatusBadge = ({ value }) => {
   };
   const key = value || 'NEW';
   return (
-    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md shadow-sm ${styles[key] || styles.NEW}`}>
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-md shadow-xs ${styles[key] || styles.NEW}`}>
       {labelMap[key] || key}
     </span>
   );
 };
-
-import { getLocalDate } from '../../utils/format';
 
 /* ------------------------------------------------------------- Follow-up Form Modal */
 
@@ -158,7 +157,7 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
           )}
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Next Action Due Date">
             <Input type="date" value={form.nextActionDueDate} onChange={set('nextActionDueDate')} />
           </Field>
@@ -173,6 +172,7 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
                 { value: 'REJECTED', label: 'Rejected' },
                 { value: 'HOLD', label: 'Hold' },
                 { value: 'FOLLOW_UP', label: 'Followup' },
+                { value: 'APPROVED', label: 'Approved' },
               ]}
             />
           </Field>
@@ -189,21 +189,27 @@ export const FollowUpPage = () => {
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [editing, setEditing] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, loading, error, reload } = useAsync(
     () => leadsApi.list({ limit: 100 }).then((r) => r.data),
     []
   );
 
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search]);
+
   const list = data?.items || [];
-  const today = new Date().toISOString().slice(0, 10);
 
   const filtered = list.filter((item) => {
-    const dueDate = item.nextActionDueDate ? new Date(item.nextActionDueDate).toISOString().slice(0, 10) : null;
     const status = item.overallLeadStatus || 'NEW';
+    const isDone = ['APPROVED', 'REJECTED', 'COMPLETED'].includes(status);
+    const delayInfo = getDelayStatus(item.nextActionDueDate, isDone);
 
-    if (tab === 'DUE_TODAY' && dueDate !== today) return false;
-    if (tab === 'OVERDUE' && !(dueDate && dueDate < today)) return false;
+    if (tab === 'DUE_TODAY' && delayInfo?.type !== 'DUE_TODAY') return false;
+    if (tab === 'OVERDUE' && delayInfo?.type !== 'OVERDUE') return false;
     if (tab === 'APPROVED' && status !== 'APPROVED') return false;
     if (tab === 'REJECTED' && status !== 'REJECTED') return false;
 
@@ -216,6 +222,8 @@ export const FollowUpPage = () => {
       item.nextAction?.toLowerCase().includes(q)
     );
   });
+
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div>
@@ -239,77 +247,98 @@ export const FollowUpPage = () => {
             onChange={setTab}
           />
         </div>
-        <div className="p-4">
-          <div className="relative max-w-sm">
+        <div className="p-3.5 sm:p-4">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Lead ID, Client, Contact, Next Action..."
+              placeholder="Search Lead ID, Client, Contact, Action..."
               className="pl-9"
             />
           </div>
         </div>
       </Panel>
 
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-hidden flex flex-col">
         {loading ? (
           <Loading />
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-[1100px] w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap">
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-20 bg-[#836444]">Lead Code & Client</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action Due Date</th>
-                  <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Overall Lead Status</th>
-                  <th className="p-2.5 px-3 text-right sticky right-0 z-20 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
-                      No leads match your filter or search query.
-                    </td>
+          <>
+            <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <table className="min-w-[1250px] w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Next Action Due Date</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Overall Lead Status</th>
+                    <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                   </tr>
-                ) : (
-                  filtered.map((row) => (
-                    <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
-                        <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
-                      </td>
-                      <td className="p-3 max-w-[260px] truncate text-slate-700 dark:text-slate-300" title={row.nextAction || '—'}>
-                        {row.nextAction || '—'}
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {row.nextActionDueDate ? new Date(row.nextActionDueDate).toLocaleDateString('en-GB') : '—'}
-                      </td>
-                      <td className="p-3 text-center">
-                        <OverallStatusBadge value={row.overallLeadStatus} />
-                      </td>
-                      <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
-                            Update
-                          </Button>
-                          <Link to={`/crm/sales-commercials?search=${encodeURIComponent(row.code || '')}`}>
-                            <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Sales & Commercials for this lead">
-                              Sales
-                            </Button>
-                          </Link>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-500">
+                        No leads match your filter or search query.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    paginated.map((row) => (
+                      <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
+                          <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
+                        </td>
+                        <td className="p-3 max-w-[260px] truncate text-slate-700 dark:text-slate-300" title={row.nextAction || '—'}>
+                          {row.nextAction || '—'}
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {row.nextActionDueDate ? new Date(row.nextActionDueDate).toLocaleDateString('en-GB') : '—'}
+                        </td>
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <DelayBadge
+                            dueDate={row.nextActionDueDate}
+                            isCompleted={['APPROVED', 'REJECTED', 'COMPLETED'].includes(row.overallLeadStatus)}
+                            fallback={<span className="text-slate-400">—</span>}
+                          />
+                        </td>
+                        <td className="p-3 text-center">
+                          <OverallStatusBadge value={row.overallLeadStatus} />
+                        </td>
+                        <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
+                              Update
+                            </Button>
+                            <Link to={`/crm/sales-commercials?search=${encodeURIComponent(row.code || '')}`}>
+                              <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Sales & Commercials for this lead">
+                                Sales
+                              </Button>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={page}
+              totalItems={filtered.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
 

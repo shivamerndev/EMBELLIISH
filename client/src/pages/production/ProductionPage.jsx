@@ -6,7 +6,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { number, humanise, date } from '../../utils/format';
 import {
   PageHeader, Panel, PanelHeader, Table, Tabs, Badge, StatusBadge, Button,
-  Loading, ErrorState, EmptyState, StatTile,
+  Loading, ErrorState, EmptyState, StatTile, Pagination,
 } from '../../components/ui';
 
 const TABS = [
@@ -77,13 +77,22 @@ export const ProductionPage = () => {
   const all = orders || [];
   const onFloor = all.filter((o) => !['PENDING', 'COMPLETED'].includes(o.stage));
   const awaitingQc = all.filter((o) => o.stage === 'CHECKING' && o.qcStatus === 'PENDING');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const reworks = all.filter((o) => o.isRework);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [tab]);
+
+  const paginatedOrders = all.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div>
       <PageHeader title="Production" subtitle="Steps 15–17 — the factory floor across every live project" />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatTile label="Work orders" value={all.length} icon={Factory} />
         <StatTile label="On the floor" value={onFloor.length} tone="violet" icon={Scissors} />
         <StatTile label="Awaiting QC" value={awaitingQc.length} tone="amber" icon={ShieldCheck} />
@@ -102,8 +111,18 @@ export const ProductionPage = () => {
           <Table
             keyField="_id"
             columns={orderColumns}
-            rows={all}
+            rows={paginatedOrders}
             empty={<EmptyState title="Nothing in production" hint="Work orders appear once a project is activated and released to the factory." icon={Factory} />}
+          />
+          <Pagination
+            currentPage={page}
+            totalItems={all.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
           />
         </Panel>
       )}
@@ -116,6 +135,8 @@ export const ProductionPage = () => {
 };
 
 const StitchingTab = ({ onChange }) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, loading, error, reload } = useAsync(
     () => productionApi.list({ stage: 'HAND_WORK,STITCHING', limit: 100 }).then((r) => r.data.items),
     []
@@ -128,13 +149,15 @@ const StitchingTab = ({ onChange }) => {
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const totalRnft = (data || []).reduce((sum, o) => sum + (o.stitchingRnft || 0), 0);
+  const items = data || [];
+  const totalRnft = items.reduce((sum, o) => sum + (o.stitchingRnft || 0), 0);
+  const paginated = items.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <Panel>
       <PanelHeader
         title="Stitching floor"
-        subtitle={`${data?.length || 0} pieces in hand · ${number(totalRnft)} running feet to stitch`}
+        subtitle={`${items.length} pieces in hand · ${number(totalRnft)} running feet to stitch`}
         icon={Scissors}
       />
       {advance.error && <p className="px-5 pt-3 text-xs text-rose-400">{advance.error.message}</p>}
@@ -158,18 +181,33 @@ const StitchingTab = ({ onChange }) => {
             ),
           },
         ]}
-        rows={data || []}
+        rows={paginated}
         empty={<EmptyState title="Stitching queue is empty" icon={Scissors} />}
+      />
+      <Pagination
+        currentPage={page}
+        totalItems={items.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setPage(1);
+        }}
       />
     </Panel>
   );
 };
 
 const QCTab = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, loading, error, reload } = useAsync(() => qcApi.list({ limit: 100 }).then((r) => r.data.items), []);
 
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
+
+  const items = data || [];
+  const paginated = items.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <Panel>
@@ -188,19 +226,34 @@ const QCTab = () => {
           { key: 'inspector', header: 'Inspector', render: (c) => c.inspectedBy?.name || '—' },
           { key: 'when', header: 'When', render: (c) => date(c.inspectedAt) },
         ]}
-        rows={data || []}
+        rows={paginated}
         empty={<EmptyState title="No inspections recorded" icon={ShieldCheck} />}
+      />
+      <Pagination
+        currentPage={page}
+        totalItems={items.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setPage(1);
+        }}
       />
     </Panel>
   );
 };
 
 const DispatchTab = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, loading, error, reload } = useAsync(() => dispatchApi.list({ limit: 100 }).then((r) => r.data.items), []);
   const deliver = useAction((id) => dispatchApi.deliver(id, { receivedBy: 'Client' }), { onSuccess: reload });
 
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
+
+  const items = data || [];
+  const paginated = items.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <Panel>
@@ -226,8 +279,18 @@ const DispatchTab = () => {
               ) : null,
           },
         ]}
-        rows={data || []}
+        rows={paginated}
         empty={<EmptyState title="Nothing dispatched yet" icon={Truck} />}
+      />
+      <Pagination
+        currentPage={page}
+        totalItems={items.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setPage(1);
+        }}
       />
     </Panel>
   );

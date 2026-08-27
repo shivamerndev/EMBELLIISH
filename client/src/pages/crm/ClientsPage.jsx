@@ -5,17 +5,26 @@ import { clientsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
 import {
-  PageHeader, Panel, Table, Button, Input, Loading, ErrorState, EmptyState, StatusBadge,
+  PageHeader, Panel, Table, Button, Input, Loading, ErrorState, EmptyState, StatusBadge, Pagination,
 } from '../../components/ui';
 
 export const ClientsPage = () => {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, loading, error, reload } = useAsync(
     () => clientsApi.list({ ...(search && { search }), limit: 100 }).then((r) => r.data),
     [search]
   );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const clientItems = data?.items || [];
+  const paginatedClients = clientItems.slice((page - 1) * pageSize, page * pageSize);
 
   const { data: detail } = useAsync(
     () => (expanded ? clientsApi.projects(expanded).then((r) => r.data) : Promise.resolve(null)),
@@ -71,8 +80,8 @@ export const ClientsPage = () => {
         }
       />
 
-      <Panel className="mb-4 p-4">
-        <div className="relative max-w-sm">
+      <Panel className="mb-4 p-3.5 sm:p-4">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="w-4 h-4 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             value={search}
@@ -89,11 +98,23 @@ export const ClientsPage = () => {
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <Table
-            columns={columns}
-            rows={data?.items || []}
-            empty={<EmptyState title="No clients yet" hint="Convert a qualified lead to create one." icon={Building2} />}
-          />
+          <>
+            <Table
+              columns={columns}
+              rows={paginatedClients}
+              empty={<EmptyState title="No clients yet" hint="Convert a qualified lead to create one." icon={Building2} />}
+            />
+            <Pagination
+              currentPage={page}
+              totalItems={clientItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
 

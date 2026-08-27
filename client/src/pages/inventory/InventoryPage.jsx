@@ -5,7 +5,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { currency, number, date, humanise } from '../../utils/format';
 import {
   PageHeader, Panel, PanelHeader, Table, Tabs, Badge, StatusBadge, StatTile,
-  Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Checkbox, PhoneInput, EmailInput,
+  Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Checkbox, PhoneInput, EmailInput, Pagination,
 } from '../../components/ui';
 
 const TABS = [
@@ -266,7 +266,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Fabric Form */}
         {type === 'fabric' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Fabric Name" required>
                 <Input value={form.name} onChange={setField('name')} placeholder="e.g. Royal Silk Velvet" required />
               </Field>
@@ -284,7 +284,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Brand">
                 <Input value={form.brand} onChange={setField('brand')} placeholder="Brand name" />
               </Field>
@@ -295,7 +295,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input value={form.colour} onChange={setField('colour')} placeholder="Colour" />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Bolt Width (Inches)">
                 <Input type="number" value={form.widthInch} onChange={setField('widthInch')} />
               </Field>
@@ -306,7 +306,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input type="number" step="0.1" value={form.recommendedFullness} onChange={setField('recommendedFullness')} />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Purchase Cost (₹)">
                 <Input type="number" value={form.purchaseRate} onChange={setField('purchaseRate')} placeholder="0" />
               </Field>
@@ -331,7 +331,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Motor Form */}
         {type === 'motor' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Motor Name" required>
                 <Input value={form.name} onChange={setField('name')} placeholder="e.g. Somfy Glydea Ultra" required />
               </Field>
@@ -349,7 +349,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Brand">
                 <Input value={form.brand} onChange={setField('brand')} placeholder="e.g. Somfy" />
               </Field>
@@ -369,7 +369,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Max Width (Inches)">
                 <Input type="number" value={form.maxWidthInch} onChange={setField('maxWidthInch')} placeholder="Optional" />
               </Field>
@@ -380,7 +380,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input type="number" value={form.sellingRate} onChange={setField('sellingRate')} placeholder="0" />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Vendor">
                 <Select
                   value={form.vendor}
@@ -402,7 +402,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Accessory Form */}
         {type === 'accessory' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Accessory Name" required>
                 <Input value={form.name} onChange={setField('name')} placeholder="e.g. Heavy Duty Track" required />
               </Field>
@@ -425,7 +425,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Brand">
                 <Input value={form.brand} onChange={setField('brand')} placeholder="Brand" />
               </Field>
@@ -436,7 +436,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input value={form.unit} onChange={setField('unit')} placeholder="e.g. meter / piece" />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Purchase Cost (₹)">
                 <Input type="number" value={form.purchaseRate} onChange={setField('purchaseRate')} placeholder="0" />
               </Field>
@@ -461,7 +461,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Vendor Form */}
         {type === 'vendor' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Vendor Name" required>
                 <Input value={form.name} onChange={setField('name')} placeholder="e.g. D Decor Fabrics" required />
               </Field>
@@ -469,7 +469,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input value={form.contactPerson} onChange={setField('contactPerson')} placeholder="Contact name" />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Phone">
                 <PhoneInput value={form.phone} onChange={setField('phone')} />
               </Field>
@@ -480,7 +480,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input value={form.gstin} onChange={setField('gstin')} placeholder="GST Number" />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Lead Time (Days)">
                 <Input type="number" value={form.leadTimeDays} onChange={setField('leadTimeDays')} />
               </Field>
@@ -509,7 +509,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Stock Receive Form */}
         {type === 'stock' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Item Type" required>
                 <Select
                   value={form.stockItemType}
@@ -534,7 +534,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Quantity" required>
                 <Input type="number" value={form.quantity} onChange={setField('quantity')} placeholder="Quantity" required />
               </Field>
@@ -554,7 +554,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
         {/* Purchase Order Form */}
         {type === 'purchase' && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Vendor" required>
                 <Select
                   value={form.vendor}
@@ -576,7 +576,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Select Item from Catalogue">
                 <Select
                   value={form.selectedItem}
@@ -592,7 +592,7 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
                 <Input value={form.name} onChange={setField('name')} placeholder="If not in catalogue" />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Quantity" required>
                 <Input type="number" value={form.quantity} onChange={setField('quantity')} required />
               </Field>
@@ -614,11 +614,20 @@ const AddItemModal = ({ open, onClose, onSuccess, activeTab }) => {
 };
 
 const StockTab = ({ refreshKey }) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, loading, error, reload } = useAsync(() => stockApi.list({ limit: 200 }).then((r) => r.data.items), [refreshKey]);
   const { data: low } = useAsync(() => stockApi.lowStock().then((r) => r.data), [refreshKey]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [refreshKey]);
+
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
+
+  const stockItems = data || [];
+  const paginatedStock = stockItems.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-4">
@@ -657,8 +666,18 @@ const StockTab = ({ refreshKey }) => {
             { key: 'reorder', header: 'Reorder at', align: 'right', render: (s) => number(s.reorderLevel) },
             { key: 'warehouse', header: 'Location', render: (s) => s.warehouse },
           ]}
-          rows={data || []}
+          rows={paginatedStock}
           empty={<EmptyState title="No stock recorded" icon={Package} />}
+        />
+        <Pagination
+          currentPage={page}
+          totalItems={stockItems.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
         />
       </Panel>
     </div>
@@ -666,14 +685,34 @@ const StockTab = ({ refreshKey }) => {
 };
 
 const CatalogueTab = ({ loader, columns, title, subtitle, icon, refreshKey }) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, loading, error, reload } = useAsync(loader, [refreshKey]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [refreshKey, title]);
+
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
+
+  const items = data || [];
+  const paginated = items.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <Panel>
       <PanelHeader title={title} subtitle={subtitle} icon={icon} />
-      <Table columns={columns} rows={data || []} empty={<EmptyState title={`No ${title.toLowerCase()} yet`} />} />
+      <Table columns={columns} rows={paginated} empty={<EmptyState title={`No ${title.toLowerCase()} yet`} />} />
+      <Pagination
+        currentPage={page}
+        totalItems={items.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setPage(1);
+        }}
+      />
     </Panel>
   );
 };

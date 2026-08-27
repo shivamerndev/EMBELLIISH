@@ -276,7 +276,7 @@ export const LeadDetailsModal = ({
   const overallStatus = l.overallLeadStatus || statusVal;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
       {/* Semi-transparent Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-200"
@@ -286,20 +286,20 @@ export const LeadDetailsModal = ({
       />
 
       {/* Main Responsive Enterprise Modal */}
-      <div className="relative w-full max-w-[1300px] w-[92vw] max-h-[88vh] my-auto bg-white dark:bg-[#1a1512] rounded-2xl shadow-2xl border border-amber-900/20 dark:border-slate-800 flex flex-col overflow-hidden text-slate-800 dark:text-slate-200 z-10">
+      <div className="relative w-full max-w-[1300px] max-w-[95vw] max-h-[90vh] my-auto bg-white dark:bg-[#1a1512] rounded-2xl shadow-2xl border border-amber-900/20 dark:border-slate-800 flex flex-col overflow-hidden text-slate-800 dark:text-slate-200 z-10">
 
         {/* Sticky Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-amber-200/80 dark:border-slate-800 bg-[#FAF7F4] dark:bg-[#171310] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#836444]/10 dark:bg-amber-500/15 text-[#836444] dark:text-amber-400 border border-[#836444]/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-amber-200/80 dark:border-slate-800 bg-[#FAF7F4] dark:bg-[#171310] shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-[#836444]/10 dark:bg-amber-500/15 text-[#836444] dark:text-amber-400 border border-[#836444]/20 shrink-0">
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
                   {isEditing ? `Edit Lead — ${codeVal}` : 'Lead Details'}
                 </h3>
-                <span className="px-2.5 py-0.5 text-xs font-mono font-bold rounded-md bg-[#836444] text-white dark:bg-amber-600 dark:text-white shadow-2xs">
+                <span className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-[#836444] text-white dark:bg-amber-600 dark:text-white shadow-2xs shrink-0">
                   {codeVal}
                 </span>
                 <StatusPill
@@ -307,15 +307,15 @@ export const LeadDetailsModal = ({
                   type={statusVal === 'CONVERTED' ? 'emerald' : statusVal === 'QUALIFIED' ? 'sky' : statusVal === 'LOST' ? 'rose' : 'gold'}
                 />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>Client: <strong className="text-slate-800 dark:text-slate-200">{clientNameVal}</strong></span>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <span>Captured: {formatDate(l.captureDateTime || l.createdAt)}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 shrink-0">
             {!isEditing ? (
               <Button
                 variant="secondary"
@@ -338,7 +338,7 @@ export const LeadDetailsModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+              className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
               title="Close modal"
             >
               <X className="w-5 h-5" />
@@ -347,7 +347,7 @@ export const LeadDetailsModal = ({
         </div>
 
         {/* Scrollable Modal Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white dark:bg-[#1a1512]">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-6 bg-white dark:bg-[#1a1512]">
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center justify-between">
               <span>{error}</span>
@@ -360,7 +360,7 @@ export const LeadDetailsModal = ({
             <div className="space-y-6">
 
               {/* Top Highlights Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-300/40 dark:border-amber-800/30">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3.5 sm:p-4 rounded-xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-300/40 dark:border-amber-800/30">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Contact Person</span>
                   <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{contactPersonVal}</span>
@@ -385,7 +385,7 @@ export const LeadDetailsModal = ({
                 {/* Lead Information */}
                 <div>
                   <SectionTitle title="Lead Information" icon={Tag} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Lead ID Code" value={codeVal} icon={Tag} />
                     <FieldTile label="Capture Date & Time" value={formatDate(l.captureDateTime || l.createdAt)} icon={Clock} />
                     <FieldTile label="Lead Source" value={sourceVal} icon={Layers} />
@@ -400,7 +400,7 @@ export const LeadDetailsModal = ({
                 {/* Contact Information */}
                 <div>
                   <SectionTitle title="Contact Information" icon={User} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Contact Person" value={contactPersonVal} icon={User} />
                     <FieldTile label="Client / Company Name" value={clientNameVal} icon={Building} />
                     <FieldTile label="Mobile Number" value={phoneVal} icon={Phone} />
@@ -416,7 +416,7 @@ export const LeadDetailsModal = ({
                 {/* Architect / Designer Information */}
                 <div>
                   <SectionTitle title="Architect / Designer Information" icon={UserCheck} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Architect / Designer Name" value={archNameVal} icon={User} fullWidth />
                     <FieldTile label="Architect Involved" pill={<StatusPill label={archInvolvedVal} type={archInvolvedVal === 'Yes' ? 'emerald' : 'slate'} />} />
                     <FieldTile label="Previous Relationship" pill={<StatusPill label={prevRelVal} type={prevRelVal === 'Yes' ? 'emerald' : 'slate'} />} />
@@ -427,7 +427,7 @@ export const LeadDetailsModal = ({
                 {/* Project Information */}
                 <div>
                   <SectionTitle title="Project Information" icon={Building} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Project Location" value={locationVal} icon={MapPin} />
                     <FieldTile label="Room Count" value={l.roomCount !== undefined ? String(l.roomCount) : '—'} />
                     <FieldTile label="Requirement Summary" value={requirementVal} icon={FileText} fullWidth />
@@ -441,7 +441,7 @@ export const LeadDetailsModal = ({
                 {/* Assignment Information */}
                 <div>
                   <SectionTitle title="Assignment Information" icon={ShieldCheck} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Assigned DCM / Manager" value={assignedDcm} icon={UserCheck} />
                     <FieldTile label="Assignment Due Date" value={assignDueDate} icon={Calendar} />
                     <FieldTile label="Assignment Date & Time" value={assignDateTime} icon={Clock} />
@@ -456,7 +456,7 @@ export const LeadDetailsModal = ({
                 {/* Qualification Information */}
                 <div>
                   <SectionTitle title="Qualification Information" icon={CheckCircle2} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Qualification Decision" pill={<StatusPill label={qualDecision} type={qualDecision === 'APPROVED' ? 'emerald' : qualDecision === 'REJECTED' ? 'rose' : 'amber'} />} />
                     <FieldTile label="Decision Date & Time" value={decisionDateTime} icon={Clock} />
                     <FieldTile label="Requirement Verified" pill={<StatusPill label={reqVerified} type={reqVerified === 'YES' ? 'emerald' : 'slate'} />} />
@@ -474,7 +474,7 @@ export const LeadDetailsModal = ({
                 {/* Follow-Up Information */}
                 <div>
                   <SectionTitle title="Follow-Up Information" icon={Calendar} />
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Next Action" value={nextAction} icon={ArrowRight} fullWidth />
                     <FieldTile label="Next Action Due Date" value={nextActionDueDate} icon={Calendar} />
                     <FieldTile label="Overall Lead Status" pill={<StatusPill label={overallStatus} type="gold" />} />
