@@ -44,7 +44,7 @@ const NAV = [
           { label: 'Ready Size Confirmation', path: '/crm/sales-commercials/ready-size' },
           { label: 'Consumption Sheet/BOQ Dashboard', path: '/crm/sales-commercials/consumption-boq' },
           { label: 'Proposal Creation', path: '/crm/sales-commercials/proposal' },
-          { label: 'Budgeting/Token Discussion', path: '/crm/sales-commercials/token-discussion' },
+          { label: 'Budgeting/Advance Discussion', path: '/crm/sales-commercials/token-discussion' },
           { label: 'Pricing/Material Costing', path: '/crm/sales-commercials/pricing-costing' },
           { label: 'Quotation Preparation', path: '/crm/sales-commercials/quotation' },
           { label: 'Client Approval', path: '/crm/sales-commercials/client-approval' },
