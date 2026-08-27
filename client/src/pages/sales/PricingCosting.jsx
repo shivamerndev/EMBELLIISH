@@ -17,7 +17,7 @@ import {
     Layers
 } from 'lucide-react';
 import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
@@ -40,6 +40,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700/80',
         cols: [
             { key: 'costing.dueDate', label: 'Pricing Due Date', type: 'date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'costing.catalogueCost', label: 'Catalogue Cost (₹)', type: 'currency' },
             { key: 'costing.version', label: 'Costing Version / Revision', type: 'version' },
             { key: 'costing.landedCost', label: 'Landed Cost (₹)', type: 'currency' },
@@ -91,6 +92,12 @@ const getNestedVal = (obj, path) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.costing?.dueDate}
+            isCompleted={Boolean(['Approved', 'Completed'].includes(lead.costing?.status) || lead.costing?.calculatedMargin)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

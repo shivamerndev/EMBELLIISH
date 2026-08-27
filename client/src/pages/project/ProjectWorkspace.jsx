@@ -67,8 +67,8 @@ export const ProjectWorkspace = () => {
 
       {/* Header: who, what, where on the spine, and the one action that moves it. */}
       <Panel className="mb-4">
-        <div className="p-5 flex flex-wrap items-start justify-between gap-6">
-          <div className="min-w-0">
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row items-start justify-between gap-4">
+          <div className="min-w-0 w-full md:w-auto">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-bold text-slate-900 dark:text-slate-400 tracking-tight">{project.name}</h1>
               <Badge tone="slate">{project.code}</Badge>
@@ -89,8 +89,8 @@ export const ProjectWorkspace = () => {
             </div>
           </div>
 
-          <div className="flex items-start gap-6">
-            <div className="text-right">
+          <div className="flex flex-wrap sm:flex-nowrap items-center md:items-start justify-between md:justify-end gap-4 sm:gap-6 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-slate-800">
+            <div className="text-left md:text-right">
               <p className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-500 font-semibold">
                 {project.contractValue ? 'Contract value' : 'Estimated value'}
               </p>
@@ -99,7 +99,7 @@ export const ProjectWorkspace = () => {
               </p>
             </div>
 
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-wrap sm:flex-col items-center sm:items-end gap-2">
               <StatusBadge status={project.stage} label={stageLabel} />
               {project.stage !== 'CLOSED' && (
                 <Button

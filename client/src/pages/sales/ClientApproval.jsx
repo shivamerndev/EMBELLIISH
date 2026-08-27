@@ -22,9 +22,9 @@ import {
     FileText,
     Check
 } from 'lucide-react';
-import { date } from '../../utils/format';
+import { date, getErrorMessage } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, fabricsApi } from '../../api';
@@ -37,6 +37,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/90 dark:text-orange-200 dark:border-orange-700/80',
         cols: [
             { key: 'approval.planned', label: 'Approval Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'approval.clientApprovalDate', label: 'Client Approval Date' },
             { key: 'approval.clientApprovalStatus', label: 'Client Approval Status' },
             { key: 'approval.proofAttachment', label: 'Approval Proof / Attachment' },
@@ -120,6 +121,12 @@ const formatDateTime = (raw) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.approval?.planned || lead.clientApproval?.dueDate}
+            isCompleted={Boolean(['Approved', 'Completed'].includes(lead.approval?.clientApprovalStatus || lead.clientApproval?.status) || lead.approval?.clientApprovalDate)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
@@ -611,6 +618,19 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             }
         }
 
+        let finalStatus = form.clientApprovalStatus;
+        let finalNotes = form.revisionNotes;
+
+        // Mandatory reason check for DECLINED, REJECTED, or ON_HOLD
+        const isNegativeOrHold = ['DECLINED', 'REJECTED', 'ON_HOLD'].includes(finalStatus?.toUpperCase());
+        if (isNegativeOrHold) {
+            const hasNotes = (finalNotes && finalNotes.trim()) || (revisionReason && revisionReason.trim());
+            if (!hasNotes) {
+                setValidationError('A reason is required for declined, rejected, or on-hold approval.');
+                return;
+            }
+        }
+
         setValidationError('');
 
         // Sanitize subform data before storing
@@ -622,8 +642,6 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
 
         const existingRevisions = Array.isArray(item?.approval?.revisions) ? item.approval.revisions : [];
         let updatedRevisions = existingRevisions;
-        let finalStatus = form.clientApprovalStatus;
-        let finalNotes = form.revisionNotes;
 
         if (wasApproved && changesInEffect) {
             const revNum = existingRevisions.length + 1;
@@ -651,13 +669,29 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             finalNotes = form.revisionNotes ? `${revHeader}\n\n${form.revisionNotes}` : revHeader;
         }
 
-        execute({
+        const cleanProofAttachments = (proofAttachments || []).map((file) => ({
+            url: file.url,
+            filename: file.filename || file.name,
+            mimetype: file.mimetype,
+            size: file.size,
+            caption: file.caption,
+        }));
+
+        const cleanPresentationAttachments = (presentationAttachments || []).map((file) => ({
+            url: file.url,
+            filename: file.filename || file.name,
+            mimetype: file.mimetype,
+            size: file.size,
+            caption: file.caption,
+        }));
+
+        const payload = {
             approval: {
                 ...(item?.approval || {}),
                 planned: form.planned || undefined,
                 clientApprovalDate: form.clientApprovalDate ? new Date(form.clientApprovalDate).toISOString() : undefined,
                 clientApprovalStatus: finalStatus,
-                proofAttachment: proofAttachments,
+                proofAttachment: cleanProofAttachments,
                 finalApprovedVersion: form.finalApprovedVersion || undefined,
                 revisions: updatedRevisions,
             },
@@ -669,9 +703,15 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 fabricSelection: fabricSelVal,
                 designDirection: form.designDirection || undefined,
                 revisionNotes: finalNotes || undefined,
-                attachment: presentationAttachments,
+                attachment: cleanPresentationAttachments,
             },
-        });
+        };
+
+        const leadId = item?._id || item?.id;
+        console.log("Client Approval lead ID:", leadId);
+        console.log("Client Approval payload:", payload);
+
+        execute(payload);
     };
 
     const revisionsList = item?.approval?.revisions || [];
@@ -699,7 +739,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 {(error || validationError) && (
                     <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        {error?.message || validationError}
+                        {validationError || getErrorMessage(error, 'Unable to update client approval')}
                     </div>
                 )}
 

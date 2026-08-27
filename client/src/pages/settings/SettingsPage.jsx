@@ -67,7 +67,7 @@ const CompanyTab = ({ settings, save, saving }) => {
       />
 
       <Section title="Identity">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Trading name"><Input value={form.name || ''} onChange={set('name')} placeholder="Embelliish" /></Field>
           <Field label="Legal name"><Input value={form.legalName || ''} onChange={set('legalName')} /></Field>
           <Field label="GSTIN"><Input value={form.gstin || ''} onChange={set('gstin')} /></Field>
@@ -79,7 +79,7 @@ const CompanyTab = ({ settings, save, saving }) => {
       </Section>
 
       <Section title="Registered address">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Line 1"><Input value={form.address?.line1 || ''} onChange={setAddress('line1')} /></Field>
           <Field label="Line 2"><Input value={form.address?.line2 || ''} onChange={setAddress('line2')} /></Field>
           <Field label="City"><Input value={form.address?.city || ''} onChange={setAddress('city')} /></Field>
@@ -89,7 +89,7 @@ const CompanyTab = ({ settings, save, saving }) => {
       </Section>
 
       <Section title="Bank details" hint="Shown on invoices so the client knows where to pay">
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Bank"><Input value={form.bankName || ''} onChange={set('bankName')} /></Field>
           <Field label="Account number"><Input value={form.bankAccount || ''} onChange={set('bankAccount')} /></Field>
           <Field label="IFSC"><Input value={form.bankIfsc || ''} onChange={set('bankIfsc')} /></Field>
@@ -154,7 +154,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
         title="Discount approval"
         hint='Step 7 — "Agar DCM 10% se jyada discount dega, to Founder approval lagega."'
       >
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Founder approval above (%)" hint="A DCM may discount up to this without asking">
             <Input
               type="number"
@@ -175,7 +175,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
       </Section>
 
       <Section title="Payment schedule" hint="Steps 9, 10 and 18 — what new projects inherit">
-        <div className="grid sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Field label="Token (%)">
             <Input type="number" value={form.payment.tokenPercent ?? 10} onChange={setIn('payment', 'tokenPercent')} />
           </Field>
@@ -195,7 +195,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
       </Section>
 
       <Section title="Tax">
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Default GST (%)">
             <Input type="number" step="0.5" value={form.tax.gstPercent ?? 18} onChange={setIn('tax', 'gstPercent')} />
           </Field>
@@ -203,7 +203,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
       </Section>
 
       <Section title="Notifications" hint='Module 19 — "WhatsApp nahi. ERP me."'>
-        <div className="grid sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {[
             ['emailEnabled', 'Also send by email'],
             ['notifyOnStageAdvance', 'When a project moves a stage'],
@@ -236,7 +236,7 @@ const CalculationTab = ({ settings, save, saving }) => {
 
   const group = (title, hint, fields) => (
     <Section title={title} hint={hint}>
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {fields.map(([key, label, step = '0.1']) => (
           <Field key={key} label={label}>
             <Input type="number" step={step} value={form[key] ?? ''} onChange={set(key)} />

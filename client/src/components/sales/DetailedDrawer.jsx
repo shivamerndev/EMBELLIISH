@@ -63,25 +63,25 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
       />
 
       {/* Drawer Container */}
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col z-10 transform transition-transform duration-300 ease-in-out">
+      <div className="relative w-full sm:max-w-xl md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col z-10 transform transition-transform duration-300 ease-in-out">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-start justify-between gap-4">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-start justify-between gap-4">
           <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
+              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 shrink-0">
                 {lead.code || 'NO-ID'}
               </span>
               <StatusBadge status={lead.status || 'NEW'} />
               <Badge tone={budgetTone}>{budgetVal}</Badge>
               <Badge tone={priorityTone}>{priority} PRIORITY</Badge>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
               {lead.clientName || 'Unnamed Client'}
             </h2>
             {lead.location && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate">
                 <MapPin className="w-3.5 h-3.5 text-brand-500 shrink-0" />
-                <span>{lead.location}</span>
+                <span className="truncate">{lead.location}</span>
               </p>
             )}
           </div>
@@ -89,18 +89,18 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+            className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Bar */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/80 px-6 gap-6 text-xs font-medium">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/80 px-4 sm:px-6 gap-4 sm:gap-6 text-xs font-medium overflow-x-auto whitespace-nowrap scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`py-3 border-b-2 transition-colors ${
+            className={`py-3 border-b-2 transition-colors shrink-0 ${
               activeTab === 'overview'
                 ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -111,7 +111,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
           <button
             type="button"
             onClick={() => setActiveTab('commercial')}
-            className={`py-3 border-b-2 transition-colors ${
+            className={`py-3 border-b-2 transition-colors shrink-0 ${
               activeTab === 'commercial'
                 ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -122,7 +122,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
           <button
             type="button"
             onClick={() => setActiveTab('stages')}
-            className={`py-3 border-b-2 transition-colors ${
+            className={`py-3 border-b-2 transition-colors shrink-0 ${
               activeTab === 'stages'
                 ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -133,11 +133,11 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
         </div>
 
         {/* Scrollable Drawer Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Highlight Cards */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80">
                   <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                     Budget Estimate

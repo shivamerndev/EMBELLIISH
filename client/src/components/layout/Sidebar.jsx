@@ -89,7 +89,7 @@ const hasActiveChild = (children, currentPathname, currentSearch) => {
   });
 };
 
-export const Sidebar = ({ isCollapsed = false, onToggle }) => {
+export const Sidebar = ({ isCollapsed = false, onToggle, isMobileOpen = false, onCloseMobile }) => {
   const permissions = useSelector((state) => state.auth?.user?.permissions || []);
   const themeMode = useSelector((state) => state.theme?.mode || 'light');
   const granted = new Set(permissions);
@@ -129,11 +129,21 @@ export const Sidebar = ({ isCollapsed = false, onToggle }) => {
     });
   };
 
+  const handleLinkClick = () => {
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
     <aside
       className={cn(
-        "shrink-0 border-r flex flex-col h-screen sticky top-0 transition-all duration-300 select-none z-30",
-        isCollapsed ? "w-0 border-r-0 opacity-0 overflow-hidden" : "w-64 opacity-100"
+        "shrink-0 border-r flex flex-col h-screen select-none z-50 transition-all duration-300",
+        // Desktop positioning & responsive collapse
+        "hidden md:flex md:sticky md:top-0",
+        isCollapsed ? "md:w-0 md:border-r-0 md:opacity-0 md:overflow-hidden" : "md:w-64 md:opacity-100",
+        // Mobile drawer overlay positioning
+        isMobileOpen ? "!flex fixed inset-y-0 left-0 w-64 shadow-2xl opacity-100 z-50" : ""
       )}
       style={{
         backgroundColor: 'var(--bg-surface-alt)',
@@ -148,8 +158,14 @@ export const Sidebar = ({ isCollapsed = false, onToggle }) => {
           <Logo size="sm" variant="horizontal" showEmblem={false} mode={themeMode === 'dark' ? 'dark' : 'light'} />
           <button
             type="button"
-            onClick={onToggle}
-            title="Collapse Sidebar"
+            onClick={() => {
+              if (isMobileOpen && onCloseMobile) {
+                onCloseMobile();
+              } else if (onToggle) {
+                onToggle();
+              }
+            }}
+            title="Close / Collapse Sidebar"
             className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0 cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -232,6 +248,7 @@ export const Sidebar = ({ isCollapsed = false, onToggle }) => {
                                       <NavLink
                                         key={child.path}
                                         to={child.path}
+                                        onClick={handleLinkClick}
                                         className={cn(
                                           'flex items-center px-2.5 py-1.5 text-[11.5px] font-medium rounded-md transition-all duration-200',
                                           isActive
@@ -254,6 +271,7 @@ export const Sidebar = ({ isCollapsed = false, onToggle }) => {
                           <NavLink
                             key={subGroup.path}
                             to={subGroup.path}
+                            onClick={handleLinkClick}
                             className={cn(
                               'flex items-center px-3 py-2 text-xs font-medium rounded-md transition-all duration-200',
                               isActive
@@ -275,6 +293,7 @@ export const Sidebar = ({ isCollapsed = false, onToggle }) => {
               <NavLink
                 key={item.path}
                 to={item.path}
+                onClick={handleLinkClick}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center px-3.5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',

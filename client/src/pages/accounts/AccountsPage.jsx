@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Receipt, IndianRupee, BookOpen } from 'lucide-react';
 import { invoicesApi, paymentsApi, transactionsApi } from '../../api';
@@ -6,7 +6,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { currency, date, humanise } from '../../utils/format';
 import {
   PageHeader, Panel, PanelHeader, Table, Tabs, StatusBadge, StatTile,
-  Loading, ErrorState, EmptyState,
+  Loading, ErrorState, EmptyState, Pagination,
 } from '../../components/ui';
 
 const TABS = [
@@ -17,6 +17,8 @@ const TABS = [
 
 export const AccountsPage = () => {
   const [tab, setTab] = useState('invoices');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: invoices, loading, error, reload } = useAsync(
     () => invoicesApi.list({ limit: 200 }).then((r) => r.data.items),
@@ -24,6 +26,10 @@ export const AccountsPage = () => {
   );
   const { data: payments } = useAsync(() => paymentsApi.list({ limit: 200 }).then((r) => r.data.items), []);
   const { data: transactions } = useAsync(() => transactionsApi.list({ limit: 200 }).then((r) => r.data.items), []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [tab]);
 
   if (loading) return <Loading />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -44,11 +50,20 @@ export const AccountsPage = () => {
       '—'
     );
 
+  const rawInvoices = invoices || [];
+  const paginatedInvoices = rawInvoices.slice((page - 1) * pageSize, page * pageSize);
+
+  const rawPayments = payments || [];
+  const paginatedPayments = rawPayments.slice((page - 1) * pageSize, page * pageSize);
+
+  const rawTransactions = transactions || [];
+  const paginatedTransactions = rawTransactions.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div>
       <PageHeader title="Accounts" subtitle="Steps 9, 10 and 18 — the money that unlocks the workflow" />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatTile label="Invoiced" value={currency(invoiced, { compact: true })} icon={Receipt} />
         <StatTile label="Collected" value={currency(collected, { compact: true })} tone="green" icon={IndianRupee} />
         <StatTile label="Outstanding" value={currency(outstanding, { compact: true })} tone={outstanding ? 'amber' : 'green'} icon={IndianRupee} />
@@ -84,8 +99,18 @@ export const AccountsPage = () => {
               { key: 'due', header: 'Due', render: (i) => date(i.dueDate) },
               { key: 'status', header: 'Status', render: (i) => <StatusBadge status={i.status} /> },
             ]}
-            rows={invoices || []}
+            rows={paginatedInvoices}
             empty={<EmptyState title="No invoices raised" hint="Approving a quotation raises the token invoice automatically." icon={Receipt} />}
+          />
+          <Pagination
+            currentPage={page}
+            totalItems={rawInvoices.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
           />
         </Panel>
       )}
@@ -104,8 +129,18 @@ export const AccountsPage = () => {
               { key: 'received', header: 'Received', render: (p) => date(p.receivedAt) },
               { key: 'status', header: 'Status', render: (p) => <StatusBadge status={p.status} /> },
             ]}
-            rows={payments || []}
+            rows={paginatedPayments}
             empty={<EmptyState title="No payments recorded" icon={IndianRupee} />}
+          />
+          <Pagination
+            currentPage={page}
+            totalItems={rawPayments.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
           />
         </Panel>
       )}
@@ -136,8 +171,18 @@ export const AccountsPage = () => {
               },
               { key: 'description', header: 'Description', render: (t) => t.description || '—' },
             ]}
-            rows={transactions || []}
+            rows={paginatedTransactions}
             empty={<EmptyState title="No ledger entries yet" icon={BookOpen} />}
+          />
+          <Pagination
+            currentPage={page}
+            totalItems={rawTransactions.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
           />
         </Panel>
       )}

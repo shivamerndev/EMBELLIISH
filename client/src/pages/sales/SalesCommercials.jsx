@@ -4,7 +4,7 @@ import { Plus, Search, Paperclip, Eye, Pencil, UserCheck, Building2, BadgeDollar
 import { leadsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field, Pagination, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -46,7 +46,9 @@ const SPREADSHEET_SECTIONS = [
             { key: 'architectName', label: 'Architect / Designer Name' },
             { key: 'location', label: 'Project Location' },
             { key: 'assignedDCM', label: 'Assigned DCM / Manager' },
-            { key: 'siteVisitRequired', label: 'Site Visit Required' }
+            { key: 'siteVisitRequired', label: 'Site Visit Required' },
+            { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
         ]
     }
 ];
@@ -63,6 +65,12 @@ const getNestedVal = (obj, path) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.siteVisitDueDate}
+            isCompleted={Boolean(lead.siteVisitCompleted || lead.siteVisitRequired === false)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
@@ -247,11 +255,20 @@ const SiteVisitModal = ({ lead, onClose, onSave }) => {
 const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, selectedSection = 's1', onSectionChange }) => {
 
     const navigate = useNavigate();
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's1';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
+    useEffect(() => {
+        setPage(1);
+    }, [items, selectedSection]);
+
+    const paginatedItems = items.slice((page - 1) * pageSize, page * pageSize);
+
     return (
-        <Panel className="overflow-hidden border border-slate-200 dark:border-slate-800">
+        <Panel className="overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col">
 
             {/* Section Tabs Selector */}
             <div className="flex items-center gap-1.5 overflow-x-auto p-2 bg-slate-100/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
@@ -297,7 +314,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, s
                     </thead>
 
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
-                        {items.map((lead, idx) => (
+                        {paginatedItems.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
                                 <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
@@ -322,6 +339,17 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, s
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                currentPage={page}
+                totalItems={items.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                }}
+            />
         </Panel>
     );
 }
@@ -442,9 +470,9 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                 </div>
 
                 {/* Filters Bar */}
-                <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/40">
-                    <div className="relative flex-1 min-w-[220px] max-w-md">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <div className="relative w-full md:max-w-md flex-1">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <Input
                             value={search}
                             onChange={(e) => handleSearchChange(e.target.value)}
@@ -453,9 +481,9 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                         />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Status:</span>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium shrink-0">Status:</span>
                             <Select
                                 value={statusFilter}
                                 onChange={(e) => updateParam('status', e.target.value, 'ALL')}
@@ -467,12 +495,12 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                                     { value: 'CONVERTED', label: 'Converted' },
                                     { value: 'LOST', label: 'Lost' },
                                 ]}
-                                className="w-36 text-xs"
+                                className="w-full sm:w-36 text-xs"
                             />
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Budget:</span>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium shrink-0">Budget:</span>
                             <Select
                                 value={budgetFilter}
                                 onChange={(e) => updateParam('budget', e.target.value, 'ALL')}
@@ -480,7 +508,7 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                                     { value: 'ALL', label: 'All Budget Tiers' },
                                     ...BUDGET_CLASSIFICATIONS,
                                 ]}
-                                className="w-44 text-xs"
+                                className="w-full sm:w-44 text-xs"
                             />
                         </div>
 

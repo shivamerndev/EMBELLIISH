@@ -33,6 +33,7 @@ import {
   StatTile,
   Modal,
   Field,
+  DelayBadge,
 } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
@@ -67,6 +68,7 @@ const SPREADSHEET_SECTIONS = [
       'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
     cols: [
       { key: 'kyc.dueDate', label: 'KYC Due Date' },
+      { key: 'delayStatus', label: 'Delay / SLA Status' },
       { key: 'kyc.actualDate', label: 'KYC Actual Date' },
       { key: 'kyc.status', label: 'KYC Status' },
       { key: 'kyc.verifiedDocuments', label: 'Verified Document List' },
@@ -88,6 +90,12 @@ const getNestedVal = (obj, path) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+  delayStatus: (lead) => (
+    <DelayBadge
+      dueDate={lead.kyc?.dueDate}
+      isCompleted={Boolean(['Completed', 'Approved', 'VERIFIED'].includes(lead.kyc?.status) || lead.kyc?.actualDate)}
+    />
+  ),
   sno: (lead, { sno }) => (
     <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>
   ),

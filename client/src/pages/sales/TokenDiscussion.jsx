@@ -5,7 +5,7 @@ import {
     AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert
 } from 'lucide-react';
 import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
@@ -19,6 +19,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         cols: [
             { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'token.amount', label: 'Token Amount (₹)' },
             { key: 'token.status', label: 'Token Status' },
             { key: 'token.receivedDate', label: 'Token Received Date' },
@@ -109,6 +110,12 @@ const normalizeTokenStatus = (st) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.token?.discussionDueDate}
+            isCompleted={Boolean(lead.token?.receivedDate || lead.token?.status === 'Received')}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

@@ -8,7 +8,7 @@ import {
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -21,6 +21,7 @@ const SPREADSHEET_SECTIONS = [
         cols: [
             { key: 'actualSiteVisitDateTime', label: 'Actual Visit Time' },
             { key: 'measurement.dueDate', label: 'Measurement Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'measurement.date', label: 'Measurement Date' },
             { key: 'measurement.measuredBy', label: 'Measured By' },
             { key: 'measurement.status', label: 'Measurement Status' },
@@ -106,6 +107,12 @@ const resolveUserName = (measuredBy, users = []) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.measurement?.dueDate || lead.measurementDueDate}
+            isCompleted={Boolean(lead.measurement?.date || lead.measurementCompleted || lead.measurement?.status === 'Completed')}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

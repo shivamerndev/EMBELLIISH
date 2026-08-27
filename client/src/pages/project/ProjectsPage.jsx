@@ -7,7 +7,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
 import {
   PageHeader, Panel, Table, Input, Select, StatusBadge, Badge, Progress,
-  Loading, ErrorState, EmptyState,
+  Loading, ErrorState, EmptyState, Pagination,
 } from '../../components/ui';
 
 export const ProjectsPage = () => {
@@ -15,11 +15,20 @@ export const ProjectsPage = () => {
   const stages = useSelector((state) => state.meta.stages);
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, loading, error, reload } = useAsync(
     () => projectsApi.list({ ...(search && { search }), ...(stage && { stage }), limit: 100 }).then((r) => r.data),
     [search, stage]
   );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, stage]);
+
+  const projectItems = data?.items || [];
+  const paginatedProjects = projectItems.slice((page - 1) * pageSize, page * pageSize);
 
   const stageLabel = (key) => stages.find((s) => s.stage === key)?.label || String(key).replace(/_/g, ' ');
   const stageIndex = (key) => stages.findIndex((s) => s.stage === key);
@@ -89,8 +98,8 @@ export const ProjectsPage = () => {
         subtitle="Every live project and where it sits on the spine"
       />
 
-      <Panel className="mb-4 p-4 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[16rem] max-w-sm">
+      <Panel className="mb-4 p-3.5 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative w-full sm:max-w-sm flex-1">
           <Search className="w-4 h-4 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             value={search}
@@ -99,13 +108,15 @@ export const ProjectsPage = () => {
             className="pl-9"
           />
         </div>
-        <Select
-          value={stage}
-          onChange={(e) => setStage(e.target.value)}
-          placeholder="All stages"
-          className="max-w-[16rem]"
-          options={stages.map((s) => ({ value: s.stage, label: s.label }))}
-        />
+        {stages.length > 0 && (
+          <Select
+            value={stage}
+            onChange={(e) => setStage(e.target.value)}
+            placeholder="All stages"
+            options={stages.map((s) => ({ value: s.stage, label: s.label }))}
+            className="w-full sm:w-48 text-xs"
+          />
+        )}
       </Panel>
 
       <Panel>
@@ -114,18 +125,30 @@ export const ProjectsPage = () => {
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
-          <Table
-            columns={columns}
-            rows={data?.items || []}
-            onRowClick={(project) => navigate(`/projects/${project.id}`)}
-            empty={
-              <EmptyState
-                title="No projects yet"
-                hint="Convert a qualified lead in CRM to open the first one."
-                icon={Briefcase}
-              />
-            }
-          />
+          <>
+            <Table
+              columns={columns}
+              rows={paginatedProjects}
+              onRowClick={(project) => navigate(`/projects/${project.id}`)}
+              empty={
+                <EmptyState
+                  title="No projects yet"
+                  hint="Convert a qualified lead in CRM to open the first one."
+                  icon={Briefcase}
+                />
+              }
+            />
+            <Pagination
+              currentPage={page}
+              totalItems={projectItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          </>
         )}
       </Panel>
     </div>

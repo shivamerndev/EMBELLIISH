@@ -4,8 +4,8 @@ import {
     Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip,
     DollarSign, Edit2, Plus, Trash2, ShieldCheck, AlertTriangle, RefreshCw, Layers, Check
 } from 'lucide-react';
-import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { currency, date, getErrorMessage } from '../../utils/format';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
@@ -19,6 +19,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
         cols: [
             { key: 'quotation.dueDate', label: 'Quotation Due Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'quotation.no', label: 'Quotation No.' },
             { key: 'quotation.version', label: 'Quotation Version' },
             { key: 'quotation.date', label: 'Quotation Date' },
@@ -76,6 +77,12 @@ const calculateQuotationTotals = (q) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.quotation?.dueDate}
+            isCompleted={Boolean(['Approved', 'Completed', 'Sent', 'Issued'].includes(lead.quotation?.status) || lead.quotation?.date)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
@@ -384,7 +391,7 @@ const EditQuotationModal = ({ item, onClose, onDone }) => {
                 {(error || validationError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-md font-medium flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>{validationError || error}</span>
+                        <span>{validationError || getErrorMessage(error)}</span>
                     </div>
                 )}
 

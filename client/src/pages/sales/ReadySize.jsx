@@ -5,7 +5,7 @@ import {
     Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText
 } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, usersApi } from '../../api';
@@ -19,6 +19,7 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
         cols: [
             { key: 'readySize.dueDate', label: 'Ready Size Due' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'readySize.confirmedBy', label: 'Ready Size Confirmed By' },
             { key: 'readySize.confirmationDate', label: 'Confirmation Date' },
             { key: 'readySize.windowSizes', label: 'Window Size' },
@@ -117,6 +118,12 @@ const parseSubformArray = (raw) => {
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
+    delayStatus: (lead) => (
+        <DelayBadge
+            dueDate={lead.readySize?.dueDate}
+            isCompleted={Boolean(lead.readySize?.confirmationDate)}
+        />
+    ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button

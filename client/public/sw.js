@@ -43,25 +43,34 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignore non-HTTP/HTTPS requests (e.g. chrome-extension://)
+  // Ignore non-HTTP/HTTPS requests
   if (!url.protocol.startsWith('http')) return;
+
+  // Pass mutation requests (POST, PUT, PATCH, DELETE) straight to network
+  if (request.method !== 'GET' && request.method !== 'HEAD') return;
 
   // 1. Navigation / HTML requests -> Network First, Fallback to index.html for SPA offline
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match('/index.html') || caches.match(request);
+      fetch(request).catch(async () => {
+        const cachedHtml = (await caches.match('/index.html')) || (await caches.match(request));
+        if (cachedHtml) return cachedHtml;
+        return new Response('Offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/html' },
+        });
       })
     );
     return;
   }
 
-  // 2. API requests -> Network First with dynamic cache backup
+  // 2. API GET requests -> Network First with dynamic cache backup
   if (url.pathname.startsWith('/api')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response && response.status === 200 && request.method === 'GET') {
+          if (response && response.status === 200) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);
@@ -69,29 +78,34 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(async () => {
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) return cachedResponse;
+          return new Response(JSON.stringify({ success: false, message: 'Network offline' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        })
     );
     return;
   }
 
-  // 3. Static Assets (CSS, JS, Images, Fonts) -> Cache First, Stale-While-Revalidate
+  // 3. Static Assets (CSS, JS, Images, Fonts) -> Cache First, Network Fallback
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && request.method === 'GET') {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          /* ignore fetch errors when offline */
-        });
-
-      return cachedResponse || fetchPromise;
+    caches.match(request).then(async (cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return networkResponse;
+      } catch (err) {
+        return new Response('Asset unavailable', { status: 404 });
+      }
     })
   );
 });

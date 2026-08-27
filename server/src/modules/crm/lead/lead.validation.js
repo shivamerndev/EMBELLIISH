@@ -169,6 +169,30 @@ const costingSchema = z
   })
   .optional();
 
+const fabricItemSchema = z.object({
+  room: z.string().optional(),
+  fabric: z.string().optional(),
+  quantity: z.coerce.number().optional(),
+  unit: z.string().optional(),
+  rate: z.coerce.number().optional(),
+  price: z.coerce.number().optional(),
+}).passthrough();
+
+const boqItemSchema = z.object({
+  url: z.string().optional(),
+  filename: z.string().optional(),
+  mimetype: z.string().optional(),
+  size: z.coerce.number().optional(),
+  caption: z.string().optional(),
+  room: z.string().optional(),
+  item: z.string().optional(),
+  description: z.string().optional(),
+  quantity: z.coerce.number().optional(),
+  unit: z.string().optional(),
+  rate: z.coerce.number().optional(),
+  amount: z.coerce.number().optional(),
+}).passthrough();
+
 const quotationDetailsSchema = z
   .object({
     dueDate: z.coerce.date().optional(),
@@ -177,25 +201,39 @@ const quotationDetailsSchema = z
     date: z.coerce.date().optional(),
     finalQuotedValue: z.coerce.number().optional(),
     taxes: z.coerce.number().optional(),
-    addSubtotal: z.coerce.number().optional(),
+    addSubtotal: z.union([z.boolean(), z.coerce.number()]).optional(),
     validity: z.string().optional(),
     discountApprovalStatus: z.enum(['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED']).optional(),
-    boq: z.array(attachmentItemSchema).optional(),
-    fabricSelection: z.string().optional(),
+    boq: z.array(boqItemSchema).optional(),
+    fabricSelection: z.union([z.string(), z.array(fabricItemSchema)]).optional(),
     cataloguePrice: z.coerce.number().optional(),
     labourPrice: z.coerce.number().optional(),
     samplePrice: z.coerce.number().optional(),
     discount: z.coerce.number().optional(),
     marginRules: z.string().optional(),
+    boqVersion: z.string().optional(),
   })
   .optional();
+
+const clientSelectionItemSchema = z.object({
+  item: z.string().optional(),
+  quantity: z.coerce.number().optional(),
+  room: z.string().optional(),
+  remarks: z.string().optional(),
+}).passthrough();
+
+const fabricSelectionItemSchema = z.object({
+  room: z.string().optional(),
+  fabric: z.string().optional(),
+  code: z.string().optional(),
+}).passthrough();
 
 const approvalRevisionItemSchema = z.object({
   revisionNumber: z.coerce.number().optional(),
   clientApprovalStatus: z.string().optional(),
   finalApprovedVersion: z.string().optional(),
-  clientSelection: z.string().optional(),
-  fabricSelection: z.string().optional(),
+  clientSelection: z.union([z.string(), z.array(clientSelectionItemSchema)]).optional(),
+  fabricSelection: z.union([z.string(), z.array(fabricSelectionItemSchema)]).optional(),
   designDirection: z.string().optional(),
   revisionNotes: z.string().optional(),
   changeReason: z.string().optional(),
@@ -203,11 +241,16 @@ const approvalRevisionItemSchema = z.object({
   proofAttachment: z.array(attachmentItemSchema).optional(),
 });
 
+const clientApprovalStatusSchema = z.string().transform((val) => {
+  if (!val) return val;
+  return val.trim().toUpperCase().replace(/\s+/g, '_');
+}).pipe(z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED', 'ON_HOLD', 'DECLINED'])).optional();
+
 const approvalSchema = z
   .object({
-    planned: z.string().optional(),
-    clientApprovalDate: z.string().optional(),
-    clientApprovalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED', 'ON_HOLD', 'DECLINED']).optional(),
+    planned: z.union([z.string(), z.date()]).nullable().optional(),
+    clientApprovalDate: z.union([z.string(), z.date()]).nullable().optional(),
+    clientApprovalStatus: clientApprovalStatusSchema,
     proofAttachment: z.array(attachmentItemSchema).optional(),
     finalApprovedVersion: z.string().optional(),
     revisions: z.array(approvalRevisionItemSchema).optional(),
@@ -217,8 +260,10 @@ const approvalSchema = z
 const presentationSchema = z
   .object({
     attachment: z.array(attachmentItemSchema).optional(),
-    clientSelection: z.string().optional(),
-    fabricSelection: z.string().optional(),
+    link: z.string().optional(),
+    url: z.string().optional(),
+    clientSelection: z.union([z.string(), z.array(clientSelectionItemSchema)]).optional(),
+    fabricSelection: z.union([z.string(), z.array(fabricSelectionItemSchema)]).optional(),
     designDirection: z.string().optional(),
     revisionNotes: z.string().optional(),
   })

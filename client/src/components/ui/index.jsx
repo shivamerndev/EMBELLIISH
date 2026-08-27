@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, AlertCircle, Inbox, X } from 'lucide-react';
+import { Loader2, AlertCircle, Inbox, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import cn from '../../utils/cn';
 import { getLocalDate, getLocalDateTime, getLocalTime } from '../../utils/format';
 
@@ -14,10 +14,10 @@ export const Panel = ({ className, children, ...props }) => (
 
 export const PanelHeader = ({ title, subtitle, actions, icon: Icon }) => (
   <div
-    className="flex items-start justify-between gap-4 px-5 py-4 border-b"
+    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b"
     style={{ borderColor: 'var(--border)' }}
   >
-    <div className="flex items-start gap-3 min-w-0">
+    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
       {Icon && <Icon className="w-5 h-5 text-brand-400 mt-0.5 shrink-0" />}
       <div className="min-w-0">
         <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -30,23 +30,23 @@ export const PanelHeader = ({ title, subtitle, actions, icon: Icon }) => (
         )}
       </div>
     </div>
-    {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+    {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
   </div>
 );
 
 export const PageHeader = ({ title, subtitle, actions }) => (
-  <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-    <div>
-      <h1 className="text-2xl font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
+  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+    <div className="min-w-0">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-wide break-words" style={{ color: 'var(--text-primary)' }}>
         {title}
       </h1>
       {subtitle && (
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           {subtitle}
         </p>
       )}
     </div>
-    {actions && <div className="flex items-center gap-2">{actions}</div>}
+    {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
   </div>
 );
 
@@ -105,6 +105,7 @@ export const Button = ({
     <button
       type="button"
       disabled={disabled || loading}
+      aria-busy={loading ? 'true' : undefined}
       style={isThemed ? themedVariantStyle : undefined}
       className={cn(
         'inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-200',
@@ -115,14 +116,14 @@ export const Button = ({
       )}
       {...props}
     >
-      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : Icon && <Icon className="w-4 h-4" />}
+      {loading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" /> : Icon && <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />}
       {children}
     </button>
   );
 };
 
 export const Field = ({ label, error, hint, required, children }) => (
-  <div>
+  <div className="w-full">
     {label && (
       <label className="field-label">
         {label}
@@ -227,7 +228,7 @@ export const Badge = ({ tone = 'slate', className, children }) => {
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap shadow-sm',
+        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border whitespace-nowrap shadow-xs',
         badgeClasses,
         className
       )}
@@ -322,21 +323,21 @@ export const StatTile = ({ label, value, sub, icon: Icon, tone = 'blue' }) => {
   };
 
   return (
-    <Panel className="p-5">
-      <div className="flex items-center justify-between mb-3">
+    <Panel className="p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <span
-          className="text-[11px] font-semibold uppercase tracking-wider"
+          className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: 'var(--text-muted)' }}
         >
           {label}
         </span>
-        {Icon && <Icon className={cn('w-4 h-4', tones[tone] || 'text-brand-400')} />}
+        {Icon && <Icon className={cn('w-4 h-4 shrink-0', tones[tone] || 'text-brand-400')} />}
       </div>
-      <p className="text-2xl font-bold numeric" style={{ color: 'var(--text-primary)' }}>
+      <p className="text-xl sm:text-2xl font-bold numeric break-words" style={{ color: 'var(--text-primary)' }}>
         {value}
       </p>
       {sub && (
-        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs mt-1 break-words" style={{ color: 'var(--text-muted)' }}>
           {sub}
         </p>
       )}
@@ -353,7 +354,7 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
   if (!rows?.length) return empty ?? <EmptyState />;
 
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full overflow-x-auto max-w-full">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
@@ -361,7 +362,7 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
               <th
                 key={column.key}
                 className={cn(
-                  'px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap',
+                  'px-3 sm:px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap',
                   column.align === 'right' ? 'text-right' : 'text-left',
                   column.headerClassName
                 )}
@@ -397,7 +398,7 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
                 <td
                   key={column.key}
                   className={cn(
-                    'px-4 py-2.5',
+                    'px-3 sm:px-4 py-2.5',
                     column.align === 'right' && 'text-right numeric',
                     column.className
                   )}
@@ -419,6 +420,147 @@ export const Table = ({ columns, rows, keyField = 'id', empty, onRowClick, foote
   );
 };
 
+/* ---------------------------------------------------------------- pagination */
+
+export const Pagination = ({
+  currentPage = 1,
+  totalItems = 0,
+  pageSize = 10,
+  pageSizeOptions = [10, 25, 50],
+  onPageChange,
+  onPageSizeChange,
+  className,
+}) => {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const startItem = totalItems === 0 ? 0 : (validPage - 1) * pageSize + 1;
+  const endItem = Math.min(totalItems, validPage * pageSize);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      let start = Math.max(2, validPage - 1);
+      let end = Math.min(totalPages - 1, validPage + 1);
+
+      if (validPage <= 2) {
+        end = 4;
+      } else if (validPage >= totalPages - 1) {
+        start = totalPages - 3;
+      }
+
+      if (start > 2) pages.push('...');
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  if (totalItems === 0) return null;
+
+  return (
+    <div
+      className={cn(
+        'flex flex-col sm:flex-row items-center justify-between gap-3 px-3.5 sm:px-5 py-3 border-t text-xs select-none',
+        className
+      )}
+      style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}
+    >
+      {/* Information text & Page Size selector */}
+      <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto">
+        <span style={{ color: 'var(--text-muted)' }}>
+          Showing <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>{startItem}–{endItem}</strong> of{' '}
+          <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>{totalItems}</strong>
+        </span>
+
+        {onPageSizeChange && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span style={{ color: 'var(--text-muted)' }} className="hidden sm:inline">Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              aria-label="Rows per page"
+              className="px-2 py-1 rounded-md border text-xs bg-[var(--bg-input)] focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
+        {/* Mobile-optimized compact Previous/Next controls */}
+        <button
+          type="button"
+          disabled={validPage <= 1}
+          onClick={() => onPageChange(validPage - 1)}
+          aria-label="Previous Page"
+          className="inline-flex items-center justify-center px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-md border font-medium transition disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--bg-hover)]"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+        >
+          <ChevronLeft className="w-4 h-4 sm:mr-0.5" />
+          <span className="sm:hidden text-xs">Previous</span>
+        </button>
+
+        {/* Page numbers (Desktop/Tablet) */}
+        <div className="hidden sm:flex items-center gap-1">
+          {getPageNumbers().map((p, idx) =>
+            p === '...' ? (
+              <span key={`ellipsis-${idx}`} className="px-1.5 py-1" style={{ color: 'var(--text-muted)' }}>
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange(p)}
+                className={cn(
+                  'w-7 h-7 inline-flex items-center justify-center rounded-md text-xs font-semibold transition',
+                  validPage === p
+                    ? 'bg-brand-600 text-white shadow-xs font-bold'
+                    : 'hover:bg-[var(--bg-hover)]'
+                )}
+                style={validPage !== p ? { color: 'var(--text-secondary)' } : {}}
+              >
+                {p}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Mobile current indicator */}
+        <span className="sm:hidden text-xs font-medium px-2 py-1 rounded bg-[var(--bg-hover)]" style={{ color: 'var(--text-primary)' }}>
+          {validPage} / {totalPages}
+        </span>
+
+        <button
+          type="button"
+          disabled={validPage >= totalPages}
+          onClick={() => onPageChange(validPage + 1)}
+          aria-label="Next Page"
+          className="inline-flex items-center justify-center px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-md border font-medium transition disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--bg-hover)]"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+        >
+          <span className="sm:hidden text-xs">Next</span>
+          <ChevronRight className="w-4 h-4 sm:ml-0.5" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 /* -------------------------------------------------------------------- modal */
 
 export const Modal = ({ open, onClose, title, subtitle, children, footer, size = 'md' }) => {
@@ -436,26 +578,37 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
 
   if (!open) return null;
 
-  const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl', '2xl': 'max-w-6xl', '3xl': 'max-w-7xl', full: 'max-w-[1350px] w-[92vw]' };
+  const sizes = {
+    sm: 'max-w-md',
+    md: 'max-w-xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
+    '2xl': 'max-w-6xl',
+    '3xl': 'max-w-7xl',
+    full: 'max-w-[1350px]',
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-hidden">
       <div
-        className="fixed inset-0 backdrop-blur-sm"
+        className="fixed inset-0 backdrop-blur-xs transition-opacity duration-200"
         style={{ backgroundColor: 'var(--backdrop)' }}
         onClick={onClose}
       />
       <div
-        className={cn('relative w-full my-auto panel shadow-2xl flex flex-col max-h-[85vh]', sizes[size])}
+        className={cn(
+          'relative w-full max-w-[95vw] my-auto panel shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10',
+          sizes[size] || sizes.md
+        )}
         style={{ borderColor: 'var(--border-strong)' }}
       >
-        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-          <div>
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
+          <div className="min-w-0 pr-2">
+            <h3 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {title}
             </h3>
             {subtitle && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
                 {subtitle}
               </p>
             )}
@@ -463,7 +616,8 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg transition"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-lg transition shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             style={{ color: 'var(--text-muted)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'var(--text-primary)';
@@ -477,10 +631,10 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
+        <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 overflow-y-auto flex-1">{children}</div>
         {footer && (
           <div
-            className="flex justify-end gap-2 px-5 py-4 border-t shrink-0"
+            className="flex flex-wrap items-center justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t shrink-0"
             style={{ borderColor: 'var(--border)' }}
           >
             {footer}
@@ -528,9 +682,9 @@ export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = tr
   };
 
   return (
-    <div className="flex gap-1.5 border-b " style={{ borderColor: 'var(--border)' }}>
+    <div className="flex items-center gap-1.5 border-b overflow-x-auto whitespace-nowrap scrollbar-none pb-0.5 max-w-full" style={{ borderColor: 'var(--border)' }}>
       {tabs.map((tab) => (
-        <button key={tab.key} type="button" onClick={() => handleTabClick(tab.key)} className={cn('px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors', active === tab.key ? 'border-brand-500 text-brand-300' : 'border-transparent')}
+        <button key={tab.key} type="button" onClick={() => handleTabClick(tab.key)} className={cn('px-3 py-2 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-colors shrink-0', active === tab.key ? 'border-brand-500 text-brand-300' : 'border-transparent')}
           style={active !== tab.key ? { color: 'var(--text-muted)' } : {}}
           onMouseEnter={(e) => {
             if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)';
@@ -553,5 +707,8 @@ export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = tr
 
 export { PhoneInput, validatePhoneNumber, COUNTRY_CODES } from './PhoneInput';
 export { EmailInput, validateEmail } from './EmailInput';
+export { DelayBadge } from './DelayBadge';
+export { getDelayStatus } from '../../utils/delay';
+
 
 
