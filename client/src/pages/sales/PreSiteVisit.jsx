@@ -7,7 +7,10 @@ import {
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -566,6 +569,15 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             return;
         }
 
+        if (form.siteVisitDueDate && form.actualSiteVisitDateTime) {
+            const dueDateStr = form.siteVisitDueDate.split('T')[0];
+            const actualDateStr = form.actualSiteVisitDateTime.split('T')[0];
+            if (actualDateStr < dueDateStr) {
+                setValidationError('Actual Site Visit Date & Time cannot be earlier than the Pre Site Visit Due Date.');
+                return;
+            }
+        }
+
         const scopeParts = [...form.scopeSelected.filter((s) => s !== 'Other')];
         if (form.scopeSelected.includes('Other') && form.scopeCustomOther.trim()) {
             scopeParts.push(form.scopeCustomOther.trim());
@@ -621,7 +633,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 {(validationError || apiError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
-                        <span>{validationError || apiError}</span>
+                        <span>{validationError || (apiError?.errors?.[0]?.message || apiError?.message || String(apiError))}</span>
                     </div>
                 )}
 
@@ -665,6 +677,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                 type="datetime-local"
                                 value={form.actualSiteVisitDateTime}
                                 onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
+                                min={form.siteVisitDueDate ? `${form.siteVisitDueDate}T00:00` : undefined}
                             />
                         </Field>
                     </div>
@@ -1086,6 +1099,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 
 /* ------------------------------------------------------------- Main PreSiteVisit Component */
 const PreSiteVisit = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1203,6 +1217,8 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                             />
                         </div>
 
+                        <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                         {(visitFilter !== 'ALL' || search || selectedSection !== 's3') && (
                             <Button
                                 variant="ghost"
@@ -1232,6 +1248,28 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                         hint="Try adjusting search or status filters."
                     />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="pre-site"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState
+                                icon={MapPin}
+                                title="No Site Visit Records Found"
+                                hint="Try adjusting search or status filters."
+                            />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

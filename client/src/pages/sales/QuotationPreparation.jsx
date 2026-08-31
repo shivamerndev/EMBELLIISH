@@ -5,7 +5,10 @@ import {
     DollarSign, Edit2, Plus, Trash2, ShieldCheck, AlertTriangle, RefreshCw, Layers, Check
 } from 'lucide-react';
 import { currency, date, getErrorMessage } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
@@ -723,6 +726,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const QuotationPreparation = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -819,6 +823,8 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
                         />
                     </div>
 
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                     {(search || selectedSection !== 's11') && (
                         <Button
                             variant="ghost"
@@ -842,6 +848,24 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={FileSpreadsheet} title="No Approved Quotation Records Found" hint="Only leads with Hitesh-approved pricing appear here. Try adjusting search parameters or approving pricing in Pricing & Costing." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="quotation"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={FileSpreadsheet} title="No Approved Quotation Records Found" hint="Only leads with Hitesh-approved pricing appear here." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

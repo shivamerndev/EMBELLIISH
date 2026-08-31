@@ -34,7 +34,11 @@ import {
   Modal,
   Field,
   DelayBadge,
+  ViewSwitcher,
 } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi } from '../../api';
@@ -791,6 +795,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const Kyc = ({ items: itemsProp = [] }) => {
+  const [viewMode, setViewMode] = useViewMode('table');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { handleFetchLeads } = useSales();
@@ -883,6 +888,8 @@ const Kyc = ({ items: itemsProp = [] }) => {
             />
           </div>
 
+          <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
           {(search || selectedSection !== 's14') && (
             <Button
               variant="ghost"
@@ -910,6 +917,28 @@ const Kyc = ({ items: itemsProp = [] }) => {
             hint="Only leads with completed Client Approval appear here. Try adjusting search parameters or completing Client Approval for leads."
           />
         </Panel>
+      ) : viewMode === 'cards' ? (
+        <CardGridView
+          items={filteredLeads}
+          renderCard={(lead) => (
+            <SalesStageCard
+              lead={lead}
+              stageKey="kyc"
+              onView={handleViewLead}
+              onEdit={(l) => setEditingLead(l)}
+              onRowClick={(l) => setDrawerLead(l)}
+            />
+          )}
+          empty={
+            <Panel className="p-8 text-center">
+              <EmptyState
+                icon={ShieldCheck}
+                title="No KYC Verification Records Found"
+                hint="Only leads with completed Client Approval appear here."
+              />
+            </Panel>
+          }
+        />
       ) : (
         <SpreadsheetGridView
           items={filteredLeads}

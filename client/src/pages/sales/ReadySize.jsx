@@ -5,7 +5,10 @@ import {
     Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText
 } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, usersApi } from '../../api';
@@ -974,6 +977,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const ReadySize = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1074,6 +1078,8 @@ const ReadySize = ({ items: itemsProp = [] }) => {
                         />
                     </div>
 
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                     {(search || selectedSection !== 's6') && (
                         <Button
                             variant="ghost"
@@ -1097,6 +1103,24 @@ const ReadySize = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={CheckSquare} title="No Ready Size Records Found" hint="Try adjusting search parameters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="ready-size"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={CheckSquare} title="No Ready Size Records Found" hint="Try adjusting search parameters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

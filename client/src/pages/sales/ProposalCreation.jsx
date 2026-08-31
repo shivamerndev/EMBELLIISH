@@ -6,7 +6,10 @@ import {
     Loader2, ExternalLink, History, RefreshCw, Layers, Tag, Check, HelpCircle
 } from 'lucide-react';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, settingsApi, uploadApi } from '../../api';
@@ -982,6 +985,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
 };
 
 const ProposalCreation = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1069,6 +1073,8 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                         />
                     </div>
 
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                     <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-400">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Commercial Proposal Records ({filteredLeads.length})
@@ -1097,6 +1103,24 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={FileText} title="No Proposal Records Found" hint="Try adjusting search parameters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="proposal"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={FileText} title="No Proposal Records Found" hint="Try adjusting search parameters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

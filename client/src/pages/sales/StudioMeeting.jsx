@@ -5,7 +5,10 @@ import {
     Trash2, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, Plus, X, AlertTriangle, Check, DollarSign, Tag, Clock
 } from 'lucide-react';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, usersApi, architectsApi, fabricsApi } from '../../api';
@@ -555,6 +558,16 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
             return;
         }
 
+        // 2. Business Rule: Actual Meeting Date & Time MUST NOT be earlier than Studio Meeting Due Date
+        if (dueDate && actualDate) {
+            const dueDateStr = dueDate.split('T')[0];
+            const actualDateStr = actualDate.split('T')[0];
+            if (actualDateStr < dueDateStr) {
+                setValidationError('Actual Meeting Date & Time cannot be earlier than the Studio Meeting Due Date.');
+                return;
+            }
+        }
+
         // Pricing range formatting
         let formattedPricingRange = undefined;
         if (pricingMin || pricingMax) {
@@ -629,7 +642,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 {(validationError || apiError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
-                        <span>{validationError || (apiError?.message || String(apiError))}</span>
+                        <span>{validationError || (apiError?.errors?.[0]?.message || apiError?.message || String(apiError))}</span>
                     </div>
                 )}
 
@@ -661,6 +674,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             type="datetime-local"
                             value={actualDate}
                             onChange={(e) => setActualDate(e.target.value)}
+                            min={dueDate ? `${dueDate}T00:00` : undefined}
                         />
                     </Field>
 
@@ -995,6 +1009,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 
 /* ------------------------------------------------------------- Main Component */
 const StudioMeeting = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1119,6 +1134,8 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
                         />
                     </div>
 
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                     {(search || selectedSection !== 's5') && (
                         <Button
                             variant="ghost"
@@ -1142,6 +1159,24 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={Users} title="No Studio Meeting Records Found" hint="Try adjusting search parameters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="studio"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={Users} title="No Studio Meeting Records Found" hint="Try adjusting search parameters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

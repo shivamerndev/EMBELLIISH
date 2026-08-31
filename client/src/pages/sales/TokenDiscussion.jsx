@@ -5,7 +5,10 @@ import {
     AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert
 } from 'lucide-react';
 import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
@@ -15,14 +18,14 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 const SPREADSHEET_SECTIONS = [
     {
         id: 's9',
-        title: 'Token / Advance Discussion',
+        title: 'Advance Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         cols: [
-            { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
+            { key: 'token.discussionDueDate', label: 'Advance Discussion Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'token.amount', label: 'Token Amount (₹)' },
-            { key: 'token.status', label: 'Token Status' },
-            { key: 'token.receivedDate', label: 'Token Received Date' },
+            { key: 'token.amount', label: 'Advance Amount (₹)' },
+            { key: 'token.status', label: 'Advance Status' },
+            { key: 'token.receivedDate', label: 'Advance Received Date' },
             { key: 'token.clientBudgetResponse', label: 'Client Budget Response' },
             { key: 'token.proposal', label: 'Proposal' },
             { key: 'token.budgetEstimate', label: 'Budget Estimate (₹)' },
@@ -50,17 +53,17 @@ const COMMERCIAL_MASTER_TEMPLATES = [
     {
         id: 'standard',
         name: 'Standard Terms (50-40-10)',
-        terms: '50% Advance Token upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
+        terms: '50% Advance upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
     },
     {
         id: 'corporate',
         name: 'Corporate Terms (30-60-10)',
-        terms: '30% Advance Token, 60% upon site delivery, 10% net 30 days post completion.'
+        terms: '30% Advance, 60% upon site delivery, 10% net 30 days post completion.'
     },
     {
         id: 'premium_res',
         name: 'High-Value Residential (40-50-10)',
-        terms: '40% Advance Token on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
+        terms: '40% Advance on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
     },
     {
         id: 'custom',
@@ -350,9 +353,9 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         e.preventDefault();
         setValidationError('');
 
-        // Configuration / Validation rule: Token Received Date is Mandatory when Token Status is Received
+        // Configuration / Validation rule: Advance Received Date is Mandatory when Advance Status is Received
         if (form.status === 'Received' && !form.receivedDate) {
-            setValidationError('Token Received Date is mandatory when Token Status is Received.');
+            setValidationError('Advance Received Date is mandatory when Advance Status is Received.');
             return;
         }
 
@@ -381,13 +384,13 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Edit Token Discussion & Commercial Details — ${item?.clientName || item?.code}`}
-            subtitle="Configure token discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
+            title={`Edit Advance Discussion & Commercial Details — ${item?.clientName || item?.code}`}
+            subtitle="Configure advance discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
             size="xl"
             footer={
                 <>
                     <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit} loading={pending}>Save Token Details</Button>
+                    <Button onClick={handleSubmit} loading={pending}>Save Advance Details</Button>
                 </>
             }
         >
@@ -399,17 +402,17 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-                {/* Section 1: Token & Advance Status */}
+                {/* Section 1: Advance Status */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
                         <Wallet className="w-4 h-4 text-amber-500" />
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Token & Advance Setup
+                            Advance Setup
                         </h4>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Field label="Token Status" required hint="Current status of the token discussion">
+                        <Field label="Advance Status" required hint="Current status of the advance discussion">
                             <Select value={form.status} onChange={set('status')}>
                                 {TOKEN_STATUS_OPTIONS.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -419,11 +422,11 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                             </Select>
                         </Field>
 
-                        <Field label="Token Discussion Due" hint="Due date for completing the discussion">
+                        <Field label="Advance Discussion Due" hint="Due date for completing the discussion">
                             <Input type="date" value={form.discussionDueDate} onChange={set('discussionDueDate')} />
                         </Field>
 
-                        <Field label="Token Amount (₹)" hint="Numeric value in ₹">
+                        <Field label="Advance Amount (₹)" hint="Numeric value in ₹">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
                                 <Input
@@ -437,9 +440,9 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                         </Field>
 
                         <Field
-                            label="Token Received Date"
+                            label="Advance Received Date"
                             required={form.status === 'Received'}
-                            hint={form.status === 'Received' ? 'Mandatory when Token Status is Received' : 'Date when token was received'}
+                            hint={form.status === 'Received' ? 'Mandatory when Advance Status is Received' : 'Date when advance was received'}
                         >
                             <Input
                                 type="date"
@@ -581,7 +584,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     <Field label="Client Response / Feedback" hint="Capture comments, discussion points, and special conditions">
                         <Textarea
                             rows={3}
-                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during token discussion..."
+                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during advance discussion..."
                             value={form.clientResponse}
                             onChange={set('clientResponse')}
                         />
@@ -651,7 +654,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Token Details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Advance Details" />
                                     </div>
                                 </td>
                             </tr>
@@ -664,6 +667,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const TokenDiscussion = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -678,7 +682,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
         setLoading(true);
         setError(null);
         handleFetchLeads()
-            .catch((err) => setError(err?.message || 'Failed to fetch token discussion data'))
+            .catch((err) => setError(err?.message || 'Failed to fetch advance discussion data'))
             .finally(() => setLoading(false));
     };
 
@@ -729,15 +733,15 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     return (
         <div>
             <PageHeader
-                title="Budgeting / Token Discussion"
-                subtitle="Track token advance discussions, token amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
+                title="Budgeting / Advance Discussion"
+                subtitle="Track advance discussions, advance amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Token Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
-                <StatTile label="Token Received" value={tokenReceivedCount} sub="Advances secured" icon={CheckCircle2} tone="green" />
-                <StatTile label="Total Token Amount" value={currency(totalTokenValue, { compact: true })} sub="Cumulative token value" icon={Wallet} tone="emerald" />
-                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Token meetings due" icon={Calendar} tone="blue" />
+                <StatTile label="Advance Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
+                <StatTile label="Advance Received" value={tokenReceivedCount} sub="Advances secured" icon={CheckCircle2} tone="green" />
+                <StatTile label="Total Advance Amount" value={currency(totalTokenValue, { compact: true })} sub="Cumulative advance value" icon={Wallet} tone="emerald" />
+                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Advance meetings due" icon={Calendar} tone="blue" />
             </div>
 
             <Panel className="mb-4">
@@ -751,6 +755,8 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                             className="pl-9"
                         />
                     </div>
+
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
 
                     {(search || selectedSection !== 's9') && (
                         <Button
@@ -767,14 +773,32 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
 
             {loading ? (
                 <Panel className="p-12 text-center">
-                    <Loading text="Loading Token & Advance Data..." />
+                    <Loading text="Loading Advance Data..." />
                 </Panel>
             ) : error ? (
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={BadgeDollarSign} title="No Token Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState icon={BadgeDollarSign} title="No Advance Records Found" hint="Try adjusting search parameters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="token"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={BadgeDollarSign} title="No Advance Records Found" hint="Try adjusting search parameters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

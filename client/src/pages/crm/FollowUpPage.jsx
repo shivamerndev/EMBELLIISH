@@ -5,8 +5,11 @@ import { leadsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select,
-  Textarea, Loading, ErrorState, Tabs, Pagination, DelayBadge, getDelayStatus,
+  Textarea, Loading, ErrorState, Tabs, Pagination, DelayBadge, getDelayStatus, ViewSwitcher,
 } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import FollowUpCard from '../../components/cards/FollowUpCard';
 import { getLocalDate } from '../../utils/format';
 
 const FOLLOWUP_TABS = [
@@ -185,6 +188,7 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
 /* ------------------------------------------------------------- Main Page Component */
 
 export const FollowUpPage = () => {
+  const [viewMode, setViewMode] = useViewMode('table');
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -247,8 +251,8 @@ export const FollowUpPage = () => {
             onChange={setTab}
           />
         </div>
-        <div className="p-3.5 sm:p-4">
-          <div className="relative w-full sm:max-w-sm">
+        <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:max-w-sm flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
@@ -257,6 +261,7 @@ export const FollowUpPage = () => {
               className="pl-9"
             />
           </div>
+          <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
         </div>
       </Panel>
 
@@ -267,8 +272,22 @@ export const FollowUpPage = () => {
           <ErrorState error={error} onRetry={reload} />
         ) : (
           <>
-            <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
-              <table className="min-w-[1250px] w-full text-left text-xs border-collapse">
+            {viewMode === 'cards' ? (
+              <div className="p-4">
+                <CardGridView
+                  items={paginated}
+                  renderCard={(item) => (
+                    <FollowUpCard
+                      item={item}
+                      onEdit={(i) => setEditing(i)}
+                    />
+                  )}
+                  empty={<div className="p-8 text-center text-slate-500">No follow-up records found.</div>}
+                />
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
+                <table className="min-w-[1500px] w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
@@ -327,6 +346,7 @@ export const FollowUpPage = () => {
                 </tbody>
               </table>
             </div>
+            )}
 
             <Pagination
               currentPage={page}
