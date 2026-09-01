@@ -37,19 +37,59 @@ const measurementSchema = z
   })
   .optional();
 
+const getDateOnlyString = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    const year = val.getFullYear();
+    const month = String(val.getMonth() + 1).padStart(2, '0');
+    const day = String(val.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+};
+
 const studioMeetingSchema = z
   .object({
-    dueDate: z.coerce.date().optional(),
-    date: z.coerce.date().optional(),
-    attendees: z.string().optional(),
+    dueDate: z.coerce.date().optional().nullable(),
+    date: z.coerce.date().optional().nullable(),
+    attendees: z.string().optional().nullable(),
     clientDrawings: z.array(attachmentItemSchema).optional(),
-    feedback: z.string().optional(),
-    nextAction: z.string().optional(),
-    architectBrief: z.string().optional(),
+    feedback: z.string().optional().nullable(),
+    nextAction: z.string().optional().nullable(),
+    architectBrief: z.string().optional().nullable(),
     samples: z.array(attachmentItemSchema).optional(),
     projectPictures: z.array(attachmentItemSchema).optional(),
-    pricingRange: z.string().optional(),
+    pricingRange: z.string().optional().nullable(),
   })
+  .refine(
+    (data) => {
+      if (data?.dueDate && data?.date) {
+        const dueDateStr = getDateOnlyString(data.dueDate);
+        const actualDateStr = getDateOnlyString(data.date);
+        if (dueDateStr && actualDateStr && actualDateStr < dueDateStr) {
+          return false;
+        }
+      }
+      return true;
+    },
+    {
+      message: 'Actual Meeting Date & Time cannot be earlier than the Studio Meeting Due Date.',
+      path: ['date'],
+    }
+  )
   .optional();
 
 const readySizeSchema = z
@@ -294,7 +334,7 @@ const kycSchema = z
   })
   .optional();
 
-const createLeadSchema = z.object({
+const rawCreateLeadSchema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
@@ -359,8 +399,8 @@ const createLeadSchema = z.object({
   overallLeadStatus: z.enum(['NEW', 'ASSIGNED', 'UNDER_QUALIFICATION', 'REJECTED', 'HOLD', 'ON_HOLD', 'FOLLOW_UP', 'FOLLOWUP', 'IN_PROGRESS', 'APPROVED']).optional(),
 
   siteVisitRequired: z.union([z.boolean(), z.enum(['YES', 'NO', 'PENDING'])]).optional(),
-  siteVisitDueDate: z.coerce.date().optional(),
-  actualSiteVisitDateTime: z.coerce.date().optional(),
+  siteVisitDueDate: z.coerce.date().optional().nullable(),
+  actualSiteVisitDateTime: z.coerce.date().optional().nullable(),
   siteAddress: z.string().optional(),
   assignedInstaller: objectId.optional().nullable(),
   clientArchitectAvailability: z.string().optional(),
@@ -381,7 +421,27 @@ const createLeadSchema = z.object({
   kyc: kycSchema,
 });
 
-const updateLeadSchema = createLeadSchema.partial();
+const validateSiteVisitDates = (data) => {
+  if (data?.siteVisitDueDate && data?.actualSiteVisitDateTime) {
+    const dueDateStr = getDateOnlyString(data.siteVisitDueDate);
+    const actualDateStr = getDateOnlyString(data.actualSiteVisitDateTime);
+    if (dueDateStr && actualDateStr && actualDateStr < dueDateStr) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const siteVisitRefinement = [
+  validateSiteVisitDates,
+  {
+    message: 'Actual Site Visit Date & Time cannot be earlier than the Pre Site Visit Due Date.',
+    path: ['actualSiteVisitDateTime'],
+  },
+];
+
+const createLeadSchema = rawCreateLeadSchema.refine(...siteVisitRefinement);
+const updateLeadSchema = rawCreateLeadSchema.partial().refine(...siteVisitRefinement);
 
 const qualifyLeadSchema = z.object({
   qualified: z.boolean(),

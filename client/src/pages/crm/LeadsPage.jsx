@@ -6,8 +6,11 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise, formatBudgetValue, formatBudgetDisplay } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, PhoneInput, validatePhoneNumber, EmailInput, validateEmail,
-  Textarea, Loading, ErrorState, EmptyState, Tabs, Pagination,
+  Textarea, Loading, ErrorState, EmptyState, Tabs, Pagination, ViewSwitcher,
 } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import LeadCard from '../../components/cards/LeadCard';
 import LeadDetailsModal from '../../components/crm/LeadDetailsModal';
 
 const STATUS_TABS = [
@@ -906,6 +909,7 @@ const DeleteLeadModal = ({ lead, onClose, onDone }) => {
 
 export const LeadsPage = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useViewMode('table');
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
@@ -977,7 +981,10 @@ export const LeadsPage = () => {
               className="pl-9"
             />
           </div>
-          <Button icon={Plus} onClick={() => setCreating(true)} className="w-full sm:w-auto shrink-0">New Lead</Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
+            <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+            <Button icon={Plus} onClick={() => setCreating(true)}>New Lead</Button>
+          </div>
         </div>
       </Panel>
 
@@ -989,8 +996,28 @@ export const LeadsPage = () => {
           <ErrorState error={error} onRetry={reload} />
         ) : (
           <>
-            <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
-              <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
+            {viewMode === 'cards' ? (
+              <div className="p-4">
+                <CardGridView
+                  items={paginatedLeads}
+                  renderCard={(lead) => (
+                    <LeadCard
+                      lead={lead}
+                      onView={(l) => setViewingLead(l)}
+                      onEdit={(l) => setEditing(l)}
+                      onDelete={(l) => setDeleting(l)}
+                    />
+                  )}
+                  empty={
+                    <div className="p-8 text-center text-slate-500">
+                      No leads match your filter or search query.
+                    </div>
+                  }
+                />
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
+                <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead ID</th>
@@ -1135,6 +1162,7 @@ export const LeadsPage = () => {
                 </tbody>
               </table>
             </div>
+            )}
 
             <Pagination
               currentPage={page}

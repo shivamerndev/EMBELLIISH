@@ -7,11 +7,15 @@ import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
 import {
   PageHeader, Panel, Table, Input, Select, StatusBadge, Badge, Progress,
-  Loading, ErrorState, EmptyState, Pagination,
+  Loading, ErrorState, EmptyState, Pagination, ViewSwitcher,
 } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import ProjectCard from '../../components/cards/ProjectCard';
 
 export const ProjectsPage = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useViewMode('table');
   const stages = useSelector((state) => state.meta.stages);
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState('');
@@ -117,6 +121,7 @@ export const ProjectsPage = () => {
             className="w-full sm:w-48 text-xs"
           />
         )}
+        <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
       </Panel>
 
       <Panel>
@@ -126,18 +131,40 @@ export const ProjectsPage = () => {
           <ErrorState error={error} onRetry={reload} />
         ) : (
           <>
-            <Table
-              columns={columns}
-              rows={paginatedProjects}
-              onRowClick={(project) => navigate(`/projects/${project.id}`)}
-              empty={
-                <EmptyState
-                  title="No projects yet"
-                  hint="Convert a qualified lead in CRM to open the first one."
-                  icon={Briefcase}
+            {viewMode === 'cards' ? (
+              <div className="p-4">
+                <CardGridView
+                  items={paginatedProjects}
+                  renderCard={(project) => (
+                    <ProjectCard
+                      project={project}
+                      stages={stages}
+                      onClick={(p) => navigate(`/projects/${p.id || p._id}`)}
+                    />
+                  )}
+                  empty={
+                    <EmptyState
+                      title="No projects yet"
+                      hint="Convert a qualified lead in CRM to open the first one."
+                      icon={Briefcase}
+                    />
+                  }
                 />
-              }
-            />
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                rows={paginatedProjects}
+                onRowClick={(project) => navigate(`/projects/${project.id}`)}
+                empty={
+                  <EmptyState
+                    title="No projects yet"
+                    hint="Convert a qualified lead in CRM to open the first one."
+                    icon={Briefcase}
+                  />
+                }
+              />
+            )}
             <Pagination
               currentPage={page}
               totalItems={projectItems.length}

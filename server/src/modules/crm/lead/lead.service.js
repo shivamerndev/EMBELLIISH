@@ -85,11 +85,60 @@ class LeadService extends BaseService {
   }
 
   async update(id, data, user) {
-    await this.getById(id);
+    const existing = await this.getById(id);
     const updateData = { ...data };
     if (user?.name && (!updateData.updatedUser || updateData.updatedUser === '')) {
       updateData.updatedUser = user.name;
     }
+
+    const getDateOnlyString = (val) => {
+      if (!val) return '';
+      if (typeof val === 'string') {
+        const match = val.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+      }
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const year = val.getFullYear();
+        const month = String(val.getMonth() + 1).padStart(2, '0');
+        const day = String(val.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return '';
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch {
+        return '';
+      }
+    };
+
+    if (updateData.studioMeeting) {
+      const mergedDueDate = updateData.studioMeeting.dueDate !== undefined ? updateData.studioMeeting.dueDate : existing.studioMeeting?.dueDate;
+      const mergedActualDate = updateData.studioMeeting.date !== undefined ? updateData.studioMeeting.date : existing.studioMeeting?.date;
+
+      if (mergedDueDate && mergedActualDate) {
+        const dueDateStr = getDateOnlyString(mergedDueDate);
+        const actualDateStr = getDateOnlyString(mergedActualDate);
+        if (dueDateStr && actualDateStr && actualDateStr < dueDateStr) {
+          throw ApiError.badRequest('Actual Meeting Date & Time cannot be earlier than the Studio Meeting Due Date.');
+        }
+      }
+    }
+
+    const mergedSiteVisitDueDate = updateData.siteVisitDueDate !== undefined ? updateData.siteVisitDueDate : existing.siteVisitDueDate;
+    const mergedActualSiteVisitDateTime = updateData.actualSiteVisitDateTime !== undefined ? updateData.actualSiteVisitDateTime : existing.actualSiteVisitDateTime;
+
+    if (mergedSiteVisitDueDate && mergedActualSiteVisitDateTime) {
+      const dueDateStr = getDateOnlyString(mergedSiteVisitDueDate);
+      const actualDateStr = getDateOnlyString(mergedActualSiteVisitDateTime);
+      if (dueDateStr && actualDateStr && actualDateStr < dueDateStr) {
+        throw ApiError.badRequest('Actual Site Visit Date & Time cannot be earlier than the Pre Site Visit Due Date.');
+      }
+    }
+
     return this.repository.update(id, updateData);
   }
 

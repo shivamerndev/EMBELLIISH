@@ -3,12 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, Pencil, Ruler, Calendar, CheckCircle2, Paperclip, ClipboardList,
     Upload, Loader2, Trash2, ExternalLink, Image as ImageIcon, FileText, Plus, X,
-    Layers, Zap, Settings, Grid, AlertCircle, Clock, ShieldAlert, FileCode
+    Layers, Zap, Settings, Grid, AlertCircle, Clock, ShieldAlert, FileCode,
+    ChevronDown, ChevronUp
 } from 'lucide-react';
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -390,45 +394,57 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
     });
     const [newRoomInput, setNewRoomInput] = useState('');
 
-    // Repeatable Pelmet Details
-    const [pelmetDetails, setPelmetDetails] = useState(() => {
-        const parsed = safeParseArray(item?.measurement?.pelmetDetails);
-        if (parsed.length) return parsed;
-        const raw = item?.measurement?.pelmetDetails;
-        return raw ? [{ roomWindow: '', pelmetType: 'Wooden Box', dimensions: raw, notes: '' }] : [];
-    });
-
-    // Repeatable Channel Details
-    const [channelDetails, setChannelDetails] = useState(() => {
-        const parsed = safeParseArray(item?.measurement?.channelDetails);
-        if (parsed.length) return parsed;
-        const raw = item?.measurement?.channelDetails;
-        return raw ? [{ roomWindow: '', channelType: 'Single Track', quantity: 1, dimensions: raw }] : [];
-    });
-
-    // Repeatable Motor Details
-    const [motorDetails, setMotorDetails] = useState(() => {
-        const parsed = safeParseArray(item?.measurement?.motorDetails);
-        if (parsed.length) return parsed;
-        const raw = item?.measurement?.motorDetails;
-        return raw ? [{ motorType: 'Somfy WireFree', quantity: 1, specification: '', notes: raw }] : [];
-    });
-
-    // Repeatable Wiring Details
-    const [wiringDetails, setWiringDetails] = useState(() => {
-        const parsed = safeParseArray(item?.measurement?.wiringDetails);
-        if (parsed.length) return parsed;
-        const raw = item?.measurement?.wiringDetails;
-        return raw ? [{ wiringAvailability: 'Available', location: '', powerRequirement: '230V AC', notes: raw }] : [];
-    });
-
-    // Repeatable Measurements Grid
+    // Consolidated Repeatable Measurements Grid
     const [gridMeasurements, setGridMeasurements] = useState(() => {
-        const parsed = safeParseArray(item?.measurement?.notes);
-        if (parsed.length) return parsed;
-        return [];
+        const parsedGrid = safeParseArray(item?.measurement?.notes);
+        const topPelmets = safeParseArray(item?.measurement?.pelmetDetails);
+        const topChannels = safeParseArray(item?.measurement?.channelDetails);
+        const topMotors = safeParseArray(item?.measurement?.motorDetails);
+        const topWirings = safeParseArray(item?.measurement?.wiringDetails);
+
+        if (!parsedGrid.length) {
+            return [];
+        }
+
+        return parsedGrid.map((row, idx) => {
+            const windowId = row.windowId || row.label || `W-0${idx + 1}`;
+            const room = row.room || 'Living Room';
+
+            const rowPelmets = safeParseArray(row.pelmetDetails);
+            const initialPelmets = rowPelmets.length > 0 ? rowPelmets : topPelmets.filter((p) => (!p.roomWindow || p.roomWindow === windowId || p.roomWindow === room));
+
+            const rowChannels = safeParseArray(row.channelDetails);
+            const initialChannels = rowChannels.length > 0 ? rowChannels : topChannels.filter((c) => (!c.roomWindow || c.roomWindow === windowId || c.roomWindow === room));
+
+            const rowMotors = safeParseArray(row.motorDetails);
+            const initialMotors = rowMotors.length > 0 ? rowMotors : topMotors.filter((m) => (!m.roomWindow || m.roomWindow === windowId || m.roomWindow === room));
+
+            const rowWirings = safeParseArray(row.wiringDetails);
+            const initialWirings = rowWirings.length > 0 ? rowWirings : (idx === 0 ? topWirings : []);
+
+            return {
+                id: row.id || `win-${Date.now()}-${idx}`,
+                room: room,
+                windowId: windowId,
+                frameToFrameWidth: row.frameToFrameWidth ?? row.width ?? '',
+                frameToFrameHeight: row.frameToFrameHeight ?? row.height ?? '',
+                outToOutWidth: row.outToOutWidth ?? '',
+                outToOutHeight: row.outToOutHeight ?? '',
+                curtainReturnLeft: row.curtainReturnLeft ?? '',
+                curtainReturnRight: row.curtainReturnRight ?? '',
+                quantity: row.quantity ?? row.qty ?? 1,
+                unit: row.unit || 'mm',
+                width: row.width ?? row.frameToFrameWidth ?? '',
+                height: row.height ?? row.frameToFrameHeight ?? '',
+                pelmetDetails: initialPelmets,
+                channelDetails: initialChannels,
+                motorDetails: initialMotors,
+                wiringDetails: initialWirings,
+            };
+        });
     });
 
+    const [expandedRowIndex, setExpandedRowIndex] = useState(null);
     const [validationError, setValidationError] = useState(null);
     const [activeTab, setActiveTab] = useState('basic');
 
@@ -527,42 +543,156 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
         setRoomList(roomList.filter((_, i) => i !== index));
     };
 
-    // Pelmet Helpers
-    const addPelmetRow = () => setPelmetDetails([...pelmetDetails, { roomWindow: '', pelmetType: 'Wooden Box', dimensions: '', notes: '' }]);
-    const updatePelmetRow = (i, key, val) => setPelmetDetails(pelmetDetails.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
-    const removePelmetRow = (i) => setPelmetDetails(pelmetDetails.filter((_, idx) => idx !== i));
-
-    // Channel Helpers
-    const addChannelRow = () => setChannelDetails([...channelDetails, { roomWindow: '', channelType: 'Single Track', quantity: 1, dimensions: '' }]);
-    const updateChannelRow = (i, key, val) => setChannelDetails(channelDetails.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
-    const removeChannelRow = (i) => setChannelDetails(channelDetails.filter((_, idx) => idx !== i));
-
-    // Motor Helpers
-    const addMotorRow = () => setMotorDetails([...motorDetails, { motorType: 'Somfy WireFree', quantity: 1, specification: '', notes: '' }]);
-    const updateMotorRow = (i, key, val) => setMotorDetails(motorDetails.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
-    const removeMotorRow = (i) => setMotorDetails(motorDetails.filter((_, idx) => idx !== i));
-
-    // Wiring Helpers
-    const addWiringRow = () => setWiringDetails([...wiringDetails, { wiringAvailability: 'Available', location: '', powerRequirement: '230V AC', notes: '' }]);
-    const updateWiringRow = (i, key, val) => setWiringDetails(wiringDetails.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
-    const removeWiringRow = (i) => setWiringDetails(wiringDetails.filter((_, idx) => idx !== i));
-
     // Measurement Grid Helpers
-    const addGridRow = () => setGridMeasurements([...gridMeasurements, { room: roomList[0] || 'Living Room', windowId: `W-0${gridMeasurements.length + 1}`, width: '', height: '', quantity: 1, unit: 'mm' }]);
-    const updateGridRow = (i, key, val) => setGridMeasurements(gridMeasurements.map((row, idx) => idx === i ? { ...row, [key]: val } : row));
-    const removeGridRow = (i) => setGridMeasurements(gridMeasurements.filter((_, idx) => idx !== i));
+    const addGridRow = () => {
+        const newWinId = `W-0${gridMeasurements.length + 1}`;
+        const newRow = {
+            id: `win-${Date.now()}-${gridMeasurements.length}`,
+            room: roomList[0] || 'Living Room',
+            windowId: newWinId,
+            frameToFrameWidth: '',
+            frameToFrameHeight: '',
+            outToOutWidth: '',
+            outToOutHeight: '',
+            curtainReturnLeft: '',
+            curtainReturnRight: '',
+            quantity: 1,
+            unit: 'mm',
+            width: '',
+            height: '',
+            pelmetDetails: [],
+            channelDetails: [],
+            motorDetails: [],
+            wiringDetails: [],
+        };
+        setGridMeasurements((prev) => [...prev, newRow]);
+        setExpandedRowIndex(gridMeasurements.length);
+    };
+
+    const updateGridRowField = (idx, key, val) => {
+        setGridMeasurements((prev) => prev.map((row, i) => i === idx ? { ...row, [key]: val } : row));
+    };
+
+    const removeGridRow = (idx) => {
+        setGridMeasurements((prev) => prev.filter((_, i) => i !== idx));
+        if (expandedRowIndex === idx) setExpandedRowIndex(null);
+        else if (expandedRowIndex > idx) setExpandedRowIndex(expandedRowIndex - 1);
+    };
+
+    // Repeatable Subform Helpers inside Window Record
+    const addPelmetToWindow = (winIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const newPelmet = { roomWindow: row.windowId || row.room, pelmetType: 'Wooden Box', dimensions: '', notes: '' };
+            return { ...row, pelmetDetails: [...(row.pelmetDetails || []), newPelmet] };
+        }));
+    };
+    const updatePelmetInWindow = (winIdx, pelIdx, key, val) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const updatedPelmets = (row.pelmetDetails || []).map((p, pIdx) => pIdx === pelIdx ? { ...p, [key]: val } : p);
+            return { ...row, pelmetDetails: updatedPelmets };
+        }));
+    };
+    const removePelmetFromWindow = (winIdx, pelIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            return { ...row, pelmetDetails: (row.pelmetDetails || []).filter((_, pIdx) => pIdx !== pelIdx) };
+        }));
+    };
+
+    const addChannelToWindow = (winIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const newChannel = { roomWindow: row.windowId || row.room, channelType: 'Single Track', quantity: 1, dimensions: '' };
+            return { ...row, channelDetails: [...(row.channelDetails || []), newChannel] };
+        }));
+    };
+    const updateChannelInWindow = (winIdx, chIdx, key, val) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const updatedChannels = (row.channelDetails || []).map((c, cIdx) => cIdx === chIdx ? { ...c, [key]: val } : c);
+            return { ...row, channelDetails: updatedChannels };
+        }));
+    };
+    const removeChannelFromWindow = (winIdx, chIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            return { ...row, channelDetails: (row.channelDetails || []).filter((_, cIdx) => cIdx !== chIdx) };
+        }));
+    };
+
+    const addMotorToWindow = (winIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const newMotor = { motorType: 'Somfy WireFree', quantity: 1, specification: '', notes: '' };
+            return { ...row, motorDetails: [...(row.motorDetails || []), newMotor] };
+        }));
+    };
+    const updateMotorInWindow = (winIdx, mIdx, key, val) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const updatedMotors = (row.motorDetails || []).map((m, idx) => idx === mIdx ? { ...m, [key]: val } : m);
+            return { ...row, motorDetails: updatedMotors };
+        }));
+    };
+    const removeMotorFromWindow = (winIdx, mIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            return { ...row, motorDetails: (row.motorDetails || []).filter((_, idx) => idx !== mIdx) };
+        }));
+    };
+
+    const addWiringToWindow = (winIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const newWiring = { wiringAvailability: 'Available', location: '', powerRequirement: '230V AC', notes: '' };
+            return { ...row, wiringDetails: [...(row.wiringDetails || []), newWiring] };
+        }));
+    };
+    const updateWiringInWindow = (winIdx, wIdx, key, val) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            const updatedWirings = (row.wiringDetails || []).map((w, idx) => idx === wIdx ? { ...w, [key]: val } : w);
+            return { ...row, wiringDetails: updatedWirings };
+        }));
+    };
+    const removeWiringFromWindow = (winIdx, wIdx) => {
+        setGridMeasurements((prev) => prev.map((row, i) => {
+            if (i !== winIdx) return row;
+            return { ...row, wiringDetails: (row.wiringDetails || []).filter((_, idx) => idx !== wIdx) };
+        }));
+    };
 
     // Validation & Submission
     const submit = (e) => {
         e.preventDefault();
         setValidationError(null);
 
-        // Validation Rule: Required once the measurement person is assigned
         if (form.measuredBy && !form.dueDate) {
             setValidationError('Measurement Due Date is required once a Measured By technician/installer is assigned.');
             setActiveTab('basic');
             return;
         }
+
+        const processedGrid = gridMeasurements.map((row) => ({
+            ...row,
+            width: row.frameToFrameWidth || row.outToOutWidth || row.width || 0,
+            height: row.frameToFrameHeight || row.outToOutHeight || row.height || 0,
+        }));
+
+        const aggregatedPelmets = processedGrid.flatMap((row) =>
+            (row.pelmetDetails || []).map((p) => ({ ...p, roomWindow: p.roomWindow || row.windowId || row.room }))
+        );
+        const aggregatedChannels = processedGrid.flatMap((row) =>
+            (row.channelDetails || []).map((c) => ({ ...c, roomWindow: c.roomWindow || row.windowId || row.room }))
+        );
+        const aggregatedMotors = processedGrid.flatMap((row) =>
+            (row.motorDetails || []).map((m) => ({ ...m, roomWindow: m.roomWindow || row.windowId || row.room }))
+        );
+        const aggregatedWirings = processedGrid.flatMap((row) =>
+            (row.wiringDetails || []).map((w) => ({ ...w, roomWindow: w.roomWindow || row.windowId || row.room }))
+        );
 
         const payload = {
             ...form,
@@ -572,11 +702,11 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             attachments,
             drawings,
             roomList: roomList,
-            pelmetDetails: pelmetDetails,
-            channelDetails: channelDetails,
-            motorDetails: motorDetails,
-            wiringDetails: wiringDetails,
-            notes: gridMeasurements,
+            pelmetDetails: aggregatedPelmets,
+            channelDetails: aggregatedChannels,
+            motorDetails: aggregatedMotors,
+            wiringDetails: aggregatedWirings,
+            notes: processedGrid,
         };
 
         execute(payload);
@@ -587,7 +717,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             open={Boolean(item)}
             onClose={onClose}
             title={`Capture Measurement Details — ${item?.code || ''}`}
-            subtitle={`Update site measurement configuration, repeaters, and drawings for ${item?.clientName || ''}`}
+            subtitle={`Update site measurement configuration, grid records, and drawings for ${item?.clientName || ''}`}
             size="xl"
         >
             <form onSubmit={submit} className="space-y-4">
@@ -598,7 +728,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                     </div>
                 )}
 
-                {/* Tab Navigation */}
+                {/* Tab Navigation (4 Tabs) */}
                 <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                     <button
                         type="button"
@@ -613,13 +743,6 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                         className={`px-3 py-2 text-xs font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'rooms' ? 'border-brand-600 text-brand-600 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <Layers className="w-3.5 h-3.5" /> Room List ({roomList.length})
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab('subforms')}
-                        className={`px-3 py-2 text-xs font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'subforms' ? 'border-brand-600 text-brand-600 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                    >
-                        <Settings className="w-3.5 h-3.5" /> Pelmet, Channel, Motor & Wiring
                     </button>
                     <button
                         type="button"
@@ -713,7 +836,6 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             <Button type="button" size="sm" onClick={() => addRoom(newRoomInput)} icon={Plus}>Add Room</Button>
                         </div>
 
-                        {/* Pre-Site Visit Selected Rooms */}
                         {preSiteVisitRooms.length > 0 && (
                             <div className="space-y-2 p-3 bg-green-50/60 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 rounded-lg">
                                 <div className="flex items-center justify-between">
@@ -798,339 +920,457 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                     </div>
                 )}
 
-                {/* TAB 3: REPEATABLE SUBFORMS (PELMET, CHANNEL, MOTOR, WIRING) */}
-                {activeTab === 'subforms' && (
-                    <div className="space-y-6 pt-2 max-h-[50vh] overflow-y-auto pr-1">
-                        {/* 1. Pelmet Details */}
-                        <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-900/40">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                    <Layers className="w-4 h-4 text-amber-500" /> Pelmet Details Subform ({pelmetDetails.length})
-                                </h4>
-                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addPelmetRow}>Add Pelmet</Button>
-                            </div>
-                            {pelmetDetails.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic">No pelmet details specified.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {pelmetDetails.map((row, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
-                                            <Input
-                                                placeholder="Room / Window ID"
-                                                value={row.roomWindow}
-                                                onChange={(e) => updatePelmetRow(idx, 'roomWindow', e.target.value)}
-                                                className="text-xs"
-                                            />
-                                            <Select
-                                                value={row.pelmetType}
-                                                onChange={(e) => updatePelmetRow(idx, 'pelmetType', e.target.value)}
-                                                options={[
-                                                    { value: 'Wooden Box', label: 'Wooden Box' },
-                                                    { value: 'Recessed', label: 'Recessed Pelmet' },
-                                                    { value: 'Fabric Covered', label: 'Fabric Covered' },
-                                                    { value: 'Plasterboard', label: 'Plasterboard Coving' },
-                                                    { value: 'Metal', label: 'Metal Concealed' },
-                                                ]}
-                                                className="text-xs"
-                                            />
-                                            <Input
-                                                placeholder="Dimensions (W x H x D)"
-                                                value={row.dimensions}
-                                                onChange={(e) => updatePelmetRow(idx, 'dimensions', e.target.value)}
-                                                className="text-xs"
-                                            />
-                                            <div className="flex items-center gap-1">
-                                                <Input
-                                                    placeholder="Notes"
-                                                    value={row.notes}
-                                                    onChange={(e) => updatePelmetRow(idx, 'notes', e.target.value)}
-                                                    className="text-xs flex-1"
-                                                />
-                                                <button type="button" onClick={() => removePelmetRow(idx)} className="p-1.5 text-slate-400 hover:text-rose-500">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 2. Channel Details */}
-                        <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-900/40">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                    <Settings className="w-4 h-4 text-indigo-500" /> Channel Details Subform ({channelDetails.length})
-                                </h4>
-                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addChannelRow}>Add Channel</Button>
-                            </div>
-                            {channelDetails.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic">No channel details specified.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {channelDetails.map((row, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
-                                            <Input
-                                                placeholder="Room / Window ID"
-                                                value={row.roomWindow}
-                                                onChange={(e) => updateChannelRow(idx, 'roomWindow', e.target.value)}
-                                                className="text-xs"
-                                            />
-                                            <Select
-                                                value={row.channelType}
-                                                onChange={(e) => updateChannelRow(idx, 'channelType', e.target.value)}
-                                                options={[
-                                                    { value: 'Single Track', label: 'Single Track' },
-                                                    { value: 'Double Track', label: 'Double Track' },
-                                                    { value: 'Ceiling Recessed', label: 'Ceiling Recessed' },
-                                                    { value: 'Slimline', label: 'Slimline Track' },
-                                                    { value: 'Heavy Duty', label: 'Heavy Duty Motorised Track' },
-                                                ]}
-                                                className="text-xs"
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Qty"
-                                                value={row.quantity}
-                                                onChange={(e) => updateChannelRow(idx, 'quantity', Number(e.target.value))}
-                                                className="text-xs"
-                                            />
-                                            <div className="flex items-center gap-1">
-                                                <Input
-                                                    placeholder="Dimensions (Length mm)"
-                                                    value={row.dimensions}
-                                                    onChange={(e) => updateChannelRow(idx, 'dimensions', e.target.value)}
-                                                    className="text-xs flex-1"
-                                                />
-                                                <button type="button" onClick={() => removeChannelRow(idx)} className="p-1.5 text-slate-400 hover:text-rose-500">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 3. Motor Details */}
-                        <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-900/40">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                    <Zap className="w-4 h-4 text-sky-500" /> Motor Details Subform ({motorDetails.length})
-                                </h4>
-                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addMotorRow}>Add Motor</Button>
-                            </div>
-                            {motorDetails.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic">No motor details specified.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {motorDetails.map((row, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
-                                            <Select
-                                                value={row.motorType}
-                                                onChange={(e) => updateMotorRow(idx, 'motorType', e.target.value)}
-                                                options={[
-                                                    { value: 'Somfy WireFree', label: 'Somfy WireFree (Battery)' },
-                                                    { value: 'Somfy RTS 230V', label: 'Somfy RTS (230V AC)' },
-                                                    { value: 'Somfy Glydea', label: 'Somfy Glydea' },
-                                                    { value: 'Tuya Smart', label: 'Tuya / Zigbee Motor' },
-                                                    { value: 'Manual Control', label: 'Manual (No Motor)' },
-                                                ]}
-                                                className="text-xs"
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Qty"
-                                                value={row.quantity}
-                                                onChange={(e) => updateMotorRow(idx, 'quantity', Number(e.target.value))}
-                                                className="text-xs"
-                                            />
-                                            <Input
-                                                placeholder="Specification (Nm / Volt / Remote)"
-                                                value={row.specification}
-                                                onChange={(e) => updateMotorRow(idx, 'specification', e.target.value)}
-                                                className="text-xs"
-                                            />
-                                            <div className="flex items-center gap-1">
-                                                <Input
-                                                    placeholder="Notes"
-                                                    value={row.notes}
-                                                    onChange={(e) => updateMotorRow(idx, 'notes', e.target.value)}
-                                                    className="text-xs flex-1"
-                                                />
-                                                <button type="button" onClick={() => removeMotorRow(idx)} className="p-1.5 text-slate-400 hover:text-rose-500">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 4. Wiring Details */}
-                        <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-900/40">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                    <Zap className="w-4 h-4 text-emerald-500" /> Wiring Details Subform ({wiringDetails.length})
-                                </h4>
-                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={addWiringRow}>Add Wiring Spec</Button>
-                            </div>
-                            {wiringDetails.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic">No wiring details specified.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {wiringDetails.map((row, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
-                                            <Select
-                                                value={row.wiringAvailability}
-                                                onChange={(e) => updateWiringRow(idx, 'wiringAvailability', e.target.value)}
-                                                options={[
-                                                    { value: 'Available', label: 'Wiring Available' },
-                                                    { value: 'Restricted', label: 'Work In Progress' },
-                                                    { value: 'Not Available', label: 'Wiring Not Available' },
-                                                ]}
-                                                className="text-xs"
-                                            />
-                                            <Input
-                                                placeholder="Location (e.g. Top Right Corner)"
-                                                value={row.location}
-                                                onChange={(e) => updateWiringRow(idx, 'location', e.target.value)}
-                                                className="text-xs"
-                                            />
-                                            <Select
-                                                value={row.powerRequirement}
-                                                onChange={(e) => updateWiringRow(idx, 'powerRequirement', e.target.value)}
-                                                options={[
-                                                    { value: '230V AC', label: '230V AC Power Point' },
-                                                    { value: '24V DC', label: '24V DC Transformer' },
-                                                    { value: 'Battery/Solar', label: 'Battery / Solar Rechargeable' },
-                                                ]}
-                                                className="text-xs"
-                                            />
-                                            <div className="flex items-center gap-1">
-                                                <Input
-                                                    placeholder="Notes"
-                                                    value={row.notes}
-                                                    onChange={(e) => updateWiringRow(idx, 'notes', e.target.value)}
-                                                    className="text-xs flex-1"
-                                                />
-                                                <button type="button" onClick={() => removeWiringRow(idx)} className="p-1.5 text-slate-400 hover:text-rose-500">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* TAB 4: REPEATABLE MEASUREMENTS GRID */}
+                {/* TAB 3: CONSOLIDATED MEASUREMENTS GRID */}
                 {activeTab === 'grid' && (
                     <div className="space-y-4 pt-2">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">Repeatable Measurement Grid</h4>
-                                <p className="text-[11px] text-slate-500">Capture room, window ID, width, height, quantity and measurement unit</p>
+                                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">Measurements Grid — Room & Window Records</h4>
+                                <p className="text-[11px] text-slate-500">
+                                    Manage Frame to Frame, Out to Out, Curtain Returns (inches), and associated Pelmet, Channel, Motor & Wiring details per window.
+                                </p>
                             </div>
-                            <Button type="button" size="sm" icon={Plus} onClick={addGridRow}>Add Window Measurement</Button>
+                            <Button type="button" size="sm" icon={Plus} onClick={addGridRow}>+ Add Window Measurement</Button>
                         </div>
 
                         {gridMeasurements.length === 0 ? (
                             <div className="p-8 text-center border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
                                 <Grid className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                                 <p className="text-xs text-slate-500">No measurement rows added yet.</p>
-                                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={addGridRow}>Add First Window</Button>
+                                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={addGridRow}>+ Add First Window</Button>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg max-h-[45vh] overflow-y-auto">
-                                <table className="w-full text-left text-xs">
-                                    <thead className="bg-slate-100 dark:bg-slate-900 sticky top-0 font-semibold text-slate-700 dark:text-slate-300">
-                                        <tr>
-                                            <th className="p-2">Room</th>
-                                            <th className="p-2">Window ID</th>
-                                            <th className="p-2">Width</th>
-                                            <th className="p-2">Height</th>
-                                            <th className="p-2 w-20">Qty</th>
-                                            <th className="p-2 w-24">Unit</th>
-                                            <th className="p-2 w-10 text-center">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
-                                        {gridMeasurements.map((row, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                                                <td className="p-2">
-                                                    <Input
-                                                        value={row.room}
-                                                        onChange={(e) => updateGridRow(idx, 'room', e.target.value)}
-                                                        placeholder="Room"
-                                                        className="text-xs"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        value={row.windowId}
-                                                        onChange={(e) => updateGridRow(idx, 'windowId', e.target.value)}
-                                                        placeholder="W-01"
-                                                        className="text-xs font-mono"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        value={row.width}
-                                                        onChange={(e) => updateGridRow(idx, 'width', e.target.value)}
-                                                        placeholder="e.g. 1800"
-                                                        className="text-xs"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        value={row.height}
-                                                        onChange={(e) => updateGridRow(idx, 'height', e.target.value)}
-                                                        placeholder="e.g. 2400"
-                                                        className="text-xs"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        value={row.quantity}
-                                                        onChange={(e) => updateGridRow(idx, 'quantity', Number(e.target.value))}
-                                                        className="text-xs"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Select
-                                                        value={row.unit}
-                                                        onChange={(e) => updateGridRow(idx, 'unit', e.target.value)}
-                                                        options={[
-                                                            { value: 'mm', label: 'mm' },
-                                                            { value: 'cm', label: 'cm' },
-                                                            { value: 'in', label: 'inches' },
-                                                            { value: 'ft', label: 'ft' },
-                                                        ]}
-                                                        className="text-xs"
-                                                    />
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                    <button type="button" onClick={() => removeGridRow(idx)} className="p-1 text-slate-400 hover:text-rose-500">
-                                                        <Trash2 className="w-3.5 h-3.5" />
+                            <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                                {gridMeasurements.map((row, idx) => {
+                                    const isExpanded = expandedRowIndex === idx;
+                                    const pelmetCount = row.pelmetDetails?.length || 0;
+                                    const channelCount = row.channelDetails?.length || 0;
+                                    const motorCount = row.motorDetails?.length || 0;
+                                    const wiringCount = row.wiringDetails?.length || 0;
+
+                                    return (
+                                        <div key={row.id || idx} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-950 transition shadow-sm">
+                                            {/* Summary Row Bar */}
+                                            <div
+                                                onClick={() => setExpandedRowIndex(isExpanded ? null : idx)}
+                                                className={`p-3 flex items-center justify-between cursor-pointer transition ${isExpanded ? 'bg-brand-500/5 dark:bg-brand-950/20 border-b border-slate-200 dark:border-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'}`}
+                                            >
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/20">
+                                                            {row.windowId || `W-0${idx + 1}`}
+                                                        </span>
+                                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                                            {row.room || 'Living Room'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                                                        <span className="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded font-mono">
+                                                            <strong className="text-slate-700 dark:text-slate-300">F2F:</strong> {row.frameToFrameWidth || '—'}×{row.frameToFrameHeight || '—'} {row.unit}
+                                                        </span>
+                                                        <span className="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded font-mono">
+                                                            <strong className="text-slate-700 dark:text-slate-300">O2O:</strong> {row.outToOutWidth || '—'}×{row.outToOutHeight || '—'} {row.unit}
+                                                        </span>
+                                                        <span className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded font-mono">
+                                                            <strong>Return:</strong> L: {row.curtainReturnLeft || 0} in | R: {row.curtainReturnRight || 0} in
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {pelmetCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                                                <Layers className="w-3 h-3" /> {pelmetCount} Pelmet
+                                                            </span>
+                                                        )}
+                                                        {channelCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30">
+                                                                <Settings className="w-3 h-3" /> {channelCount} Channel
+                                                            </span>
+                                                        )}
+                                                        {motorCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/30">
+                                                                <Zap className="w-3 h-3" /> {motorCount} Motor
+                                                            </span>
+                                                        )}
+                                                        {wiringCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                                                                <Zap className="w-3 h-3" /> {wiringCount} Wiring
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); removeGridRow(idx); }}
+                                                        className="p-1.5 text-slate-400 hover:text-rose-500 transition"
+                                                        title="Delete Window Measurement"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                </div>
+                                            </div>
+
+                                            {/* Expanded Window Detail Form */}
+                                            {isExpanded && (
+                                                <div className="p-4 space-y-5 bg-slate-50/60 dark:bg-slate-900/40">
+                                                    {/* Section 1: Basic Window Identifiers & Quantities */}
+                                                    <div>
+                                                        <h5 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Basic Window Details</h5>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                                            <Field label="Room">
+                                                                <Select
+                                                                    value={row.room}
+                                                                    onChange={(e) => updateGridRowField(idx, 'room', e.target.value)}
+                                                                    options={Array.from(new Set([...roomList, 'Living Room', 'Master Bedroom', 'Bedroom 1', 'Guest Room', 'Dining Room'])).map((r) => ({ value: r, label: r }))}
+                                                                />
+                                                            </Field>
+
+                                                            <Field label="Window ID">
+                                                                <Input
+                                                                    value={row.windowId}
+                                                                    onChange={(e) => updateGridRowField(idx, 'windowId', e.target.value)}
+                                                                    placeholder="e.g. W-01"
+                                                                    className="font-mono"
+                                                                />
+                                                            </Field>
+
+                                                            <Field label="Qty">
+                                                                <Input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={row.quantity}
+                                                                    onChange={(e) => updateGridRowField(idx, 'quantity', Math.max(1, Number(e.target.value) || 1))}
+                                                                />
+                                                            </Field>
+
+                                                            <Field label="Unit">
+                                                                <Select
+                                                                    value={row.unit}
+                                                                    onChange={(e) => updateGridRowField(idx, 'unit', e.target.value)}
+                                                                    options={[
+                                                                        { value: 'mm', label: 'mm' },
+                                                                        { value: 'cm', label: 'cm' },
+                                                                        { value: 'in', label: 'inches' },
+                                                                        { value: 'ft', label: 'ft' },
+                                                                    ]}
+                                                                />
+                                                            </Field>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Section 2: Dimension Categories (Frame to Frame & Out to Out) */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Frame to Frame */}
+                                                        <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
+                                                            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                                                <span>Frame to Frame</span>
+                                                                <span className="text-[10px] font-normal text-slate-400">Actual measured opening</span>
+                                                            </label>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <Field label={`F2F Width (${row.unit})`}>
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="e.g. 1800"
+                                                                        value={row.frameToFrameWidth}
+                                                                        onChange={(e) => updateGridRowField(idx, 'frameToFrameWidth', e.target.value)}
+                                                                        className="text-xs font-mono"
+                                                                    />
+                                                                </Field>
+                                                                <Field label={`F2F Height (${row.unit})`}>
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="e.g. 2400"
+                                                                        value={row.frameToFrameHeight}
+                                                                        onChange={(e) => updateGridRowField(idx, 'frameToFrameHeight', e.target.value)}
+                                                                        className="text-xs font-mono"
+                                                                    />
+                                                                </Field>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Out to Out */}
+                                                        <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
+                                                            <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                                                <span>Out to Out</span>
+                                                                <span className="text-[10px] font-normal text-slate-400">Track / pelmet outer span</span>
+                                                            </label>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <Field label={`O2O Width (${row.unit})`}>
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="e.g. 1900"
+                                                                        value={row.outToOutWidth}
+                                                                        onChange={(e) => updateGridRowField(idx, 'outToOutWidth', e.target.value)}
+                                                                        className="text-xs font-mono"
+                                                                    />
+                                                                </Field>
+                                                                <Field label={`O2O Height (${row.unit})`}>
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="e.g. 2500"
+                                                                        value={row.outToOutHeight}
+                                                                        onChange={(e) => updateGridRowField(idx, 'outToOutHeight', e.target.value)}
+                                                                        className="text-xs font-mono"
+                                                                    />
+                                                                </Field>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Section 3: Curtain Returns (Required in Inches) */}
+                                                    <div className="p-3 bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20 rounded-lg space-y-2">
+                                                        <label className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                                                            <span>Curtain Return Measurements</span>
+                                                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Unit: Inches (in)</span>
+                                                        </label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            <Field label="Curtain Return — Left (inches)">
+                                                                <Input
+                                                                    type="number"
+                                                                    placeholder="e.g. 6"
+                                                                    value={row.curtainReturnLeft}
+                                                                    onChange={(e) => updateGridRowField(idx, 'curtainReturnLeft', e.target.value)}
+                                                                    className="text-xs font-mono"
+                                                                />
+                                                            </Field>
+                                                            <Field label="Curtain Return — Right (inches)">
+                                                                <Input
+                                                                    type="number"
+                                                                    placeholder="e.g. 6"
+                                                                    value={row.curtainReturnRight}
+                                                                    onChange={(e) => updateGridRowField(idx, 'curtainReturnRight', e.target.value)}
+                                                                    className="text-xs font-mono"
+                                                                />
+                                                            </Field>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Section 4: Associated Pelmet Details Subform */}
+                                                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-950 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                                <Layers className="w-4 h-4 text-amber-500" /> Pelmet Details ({row.pelmetDetails?.length || 0})
+                                                            </h5>
+                                                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={() => addPelmetToWindow(idx)}>+ Add Pelmet</Button>
+                                                        </div>
+                                                        {(!row.pelmetDetails || row.pelmetDetails.length === 0) ? (
+                                                            <p className="text-xs text-slate-400 italic">No pelmet specified for this window.</p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {row.pelmetDetails.map((pel, pIdx) => (
+                                                                    <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md">
+                                                                        <Select
+                                                                            value={pel.pelmetType}
+                                                                            onChange={(e) => updatePelmetInWindow(idx, pIdx, 'pelmetType', e.target.value)}
+                                                                            options={[
+                                                                                { value: 'Wooden Box', label: 'Wooden Box' },
+                                                                                { value: 'Recessed', label: 'Recessed Pelmet' },
+                                                                                { value: 'Fabric Covered', label: 'Fabric Covered' },
+                                                                                { value: 'Plasterboard', label: 'Plasterboard Coving' },
+                                                                                { value: 'Metal', label: 'Metal Concealed' },
+                                                                            ]}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Input
+                                                                            placeholder="Dimensions (W x H x D)"
+                                                                            value={pel.dimensions}
+                                                                            onChange={(e) => updatePelmetInWindow(idx, pIdx, 'dimensions', e.target.value)}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Input
+                                                                                placeholder="Notes"
+                                                                                value={pel.notes}
+                                                                                onChange={(e) => updatePelmetInWindow(idx, pIdx, 'notes', e.target.value)}
+                                                                                className="text-xs flex-1"
+                                                                            />
+                                                                            <button type="button" onClick={() => removePelmetFromWindow(idx, pIdx)} className="p-1.5 text-slate-400 hover:text-rose-500">
+                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Section 5: Associated Channel Details Subform */}
+                                                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-950 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                                <Settings className="w-4 h-4 text-indigo-500" /> Channel Details ({row.channelDetails?.length || 0})
+                                                            </h5>
+                                                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={() => addChannelToWindow(idx)}>+ Add Channel</Button>
+                                                        </div>
+                                                        {(!row.channelDetails || row.channelDetails.length === 0) ? (
+                                                            <p className="text-xs text-slate-400 italic">No channel specified for this window.</p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {row.channelDetails.map((ch, cIdx) => (
+                                                                    <div key={cIdx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md">
+                                                                        <Select
+                                                                            value={ch.channelType}
+                                                                            onChange={(e) => updateChannelInWindow(idx, cIdx, 'channelType', e.target.value)}
+                                                                            options={[
+                                                                                { value: 'Single Track', label: 'Single Track' },
+                                                                                { value: 'Double Track', label: 'Double Track' },
+                                                                                { value: 'Ceiling Recessed', label: 'Ceiling Recessed' },
+                                                                                { value: 'Slimline', label: 'Slimline Track' },
+                                                                                { value: 'Heavy Duty', label: 'Heavy Duty Motorised Track' },
+                                                                            ]}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Input
+                                                                            type="number"
+                                                                            placeholder="Qty"
+                                                                            value={ch.quantity}
+                                                                            onChange={(e) => updateChannelInWindow(idx, cIdx, 'quantity', Number(e.target.value))}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Input
+                                                                                placeholder="Dimensions / Length"
+                                                                                value={ch.dimensions}
+                                                                                onChange={(e) => updateChannelInWindow(idx, cIdx, 'dimensions', e.target.value)}
+                                                                                className="text-xs flex-1"
+                                                                            />
+                                                                            <button type="button" onClick={() => removeChannelFromWindow(idx, cIdx)} className="p-1.5 text-slate-400 hover:text-rose-500">
+                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Section 6: Associated Motor Details Subform */}
+                                                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-950 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                                <Zap className="w-4 h-4 text-sky-500" /> Motor Details ({row.motorDetails?.length || 0})
+                                                            </h5>
+                                                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={() => addMotorToWindow(idx)}>+ Add Motor</Button>
+                                                        </div>
+                                                        {(!row.motorDetails || row.motorDetails.length === 0) ? (
+                                                            <p className="text-xs text-slate-400 italic">No motor specified for this window.</p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {row.motorDetails.map((m, mIdx) => (
+                                                                    <div key={mIdx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md">
+                                                                        <Select
+                                                                            value={m.motorType}
+                                                                            onChange={(e) => updateMotorInWindow(idx, mIdx, 'motorType', e.target.value)}
+                                                                            options={[
+                                                                                { value: 'Somfy WireFree', label: 'Somfy WireFree (Battery)' },
+                                                                                { value: 'Somfy RTS 230V', label: 'Somfy RTS (230V AC)' },
+                                                                                { value: 'Somfy Glydea', label: 'Somfy Glydea' },
+                                                                                { value: 'Tuya Smart', label: 'Tuya / Zigbee Motor' },
+                                                                                { value: 'Manual Control', label: 'Manual (No Motor)' },
+                                                                            ]}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Input
+                                                                            type="number"
+                                                                            placeholder="Qty"
+                                                                            value={m.quantity}
+                                                                            onChange={(e) => updateMotorInWindow(idx, mIdx, 'quantity', Number(e.target.value))}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Input
+                                                                            placeholder="Specification"
+                                                                            value={m.specification}
+                                                                            onChange={(e) => updateMotorInWindow(idx, mIdx, 'specification', e.target.value)}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Input
+                                                                                placeholder="Notes"
+                                                                                value={m.notes}
+                                                                                onChange={(e) => updateMotorInWindow(idx, mIdx, 'notes', e.target.value)}
+                                                                                className="text-xs flex-1"
+                                                                            />
+                                                                            <button type="button" onClick={() => removeMotorFromWindow(idx, mIdx)} className="p-1.5 text-slate-400 hover:text-rose-500">
+                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Section 7: Associated Wiring Details Subform */}
+                                                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-950 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                                <Zap className="w-4 h-4 text-emerald-500" /> Wiring Details ({row.wiringDetails?.length || 0})
+                                                            </h5>
+                                                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={() => addWiringToWindow(idx)}>+ Add Wiring Spec</Button>
+                                                        </div>
+                                                        {(!row.wiringDetails || row.wiringDetails.length === 0) ? (
+                                                            <p className="text-xs text-slate-400 italic">No wiring details specified for this window.</p>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {row.wiringDetails.map((w, wIdx) => (
+                                                                    <div key={wIdx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md">
+                                                                        <Select
+                                                                            value={w.wiringAvailability}
+                                                                            onChange={(e) => updateWiringInWindow(idx, wIdx, 'wiringAvailability', e.target.value)}
+                                                                            options={[
+                                                                                { value: 'Available', label: 'Wiring Available' },
+                                                                                { value: 'Restricted', label: 'Work In Progress' },
+                                                                                { value: 'Not Available', label: 'Wiring Not Available' },
+                                                                            ]}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Input
+                                                                            placeholder="Location"
+                                                                            value={w.location}
+                                                                            onChange={(e) => updateWiringInWindow(idx, wIdx, 'location', e.target.value)}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <Select
+                                                                            value={w.powerRequirement}
+                                                                            onChange={(e) => updateWiringInWindow(idx, wIdx, 'powerRequirement', e.target.value)}
+                                                                            options={[
+                                                                                { value: '230V AC', label: '230V AC Power Point' },
+                                                                                { value: '24V DC', label: '24V DC Transformer' },
+                                                                                { value: 'Battery/Solar', label: 'Battery / Solar Rechargeable' },
+                                                                            ]}
+                                                                            className="text-xs"
+                                                                        />
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Input
+                                                                                placeholder="Notes"
+                                                                                value={w.notes}
+                                                                                onChange={(e) => updateWiringInWindow(idx, wIdx, 'notes', e.target.value)}
+                                                                                className="text-xs flex-1"
+                                                                            />
+                                                                            <button type="button" onClick={() => removeWiringFromWindow(idx, wIdx)} className="p-1.5 text-slate-400 hover:text-rose-500">
+                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* TAB 5: SITE PHOTOS, DRAWINGS & VERSION HISTORY */}
+                {/* TAB 4: SITE PHOTOS, DRAWINGS & VERSION HISTORY */}
                 {activeTab === 'files' && (
                     <div className="space-y-6 pt-2">
                         {/* Section 1: Site Photos & Attachments */}
@@ -1168,7 +1408,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                             </div>
 
                             {attachments.length === 0 ? (
-                                <p className="text-xs text-slate-400 italic p-3  text-center">No site photos uploaded.</p>
+                                <p className="text-xs text-slate-400 italic p-3 text-center">No site photos uploaded.</p>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
                                     {attachments.map((att, i) => (
@@ -1340,6 +1580,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const MeasurementCapture = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1454,6 +1695,8 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                             />
                         </div>
 
+                        <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                         {(statusFilter !== 'ALL' || search || selectedSection !== 's4') && (
                             <Button
                                 variant="ghost"
@@ -1478,6 +1721,24 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={Ruler} title="No Measurement Records Found" hint="Try adjusting search or status filters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="measurement"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingLead(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={Ruler} title="No Measurement Records Found" hint="Try adjusting search or status filters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}

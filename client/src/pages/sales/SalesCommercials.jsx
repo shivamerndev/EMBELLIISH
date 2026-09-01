@@ -4,7 +4,10 @@ import { Plus, Search, Paperclip, Eye, Pencil, UserCheck, Building2, BadgeDollar
 import { leadsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
 import { currency, date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field, Pagination, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field, Pagination, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -358,6 +361,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, s
 const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetProp = "", error: errorProp = "", items: itemsProp = [] }) => {
 
     const navigate = useNavigate();
+    const [displayMode, setDisplayMode] = useViewMode('table');
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
     const salesLeads = useSelector((state) => state.sales?.leads);
@@ -512,6 +516,8 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                             />
                         </div>
 
+                        <ViewSwitcher view={displayMode} onViewChange={setDisplayMode} />
+
                         {(statusFilter !== 'ALL' || budgetFilter !== 'ALL' || search || (selectedSection && selectedSection !== 's1')) && (
                             <Button variant="ghost" size="sm" onClick={handleResetFilters} className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
                                 Reset Filters
@@ -535,6 +541,25 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                     <EmptyState icon={Users} title="No Sales Leads Found" hint="Try adjusting search or status filters, or capture a new lead."
                         action={<Button icon={Plus} onClick={() => navigate('/crm/leads')} >Capture Sales Lead</Button>} />
                 </Panel>
+            ) : displayMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(l) => (
+                        <SalesStageCard
+                            lead={l}
+                            stageKey="leads"
+                            onView={handleViewLead}
+                            onEdit={(lead) => setEditingLead(lead)}
+                            onRowClick={(lead) => setDrawerLead(lead)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={Users} title="No Sales Leads Found" hint="Try adjusting search or status filters, or capture a new lead."
+                                action={<Button icon={Plus} onClick={() => navigate('/crm/leads')} >Capture Sales Lead</Button>} />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView items={filteredLeads} onView={handleViewLead}
                     onEdit={(l) => setEditingLead(l)} onSiteVisit={(l) => setSiteVisitLead(l)}

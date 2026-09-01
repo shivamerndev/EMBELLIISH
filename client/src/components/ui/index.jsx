@@ -708,7 +708,9 @@ export const Tabs = ({ tabs, active, onChange, paramName = 'tab', syncQuery = tr
 export { PhoneInput, validatePhoneNumber, COUNTRY_CODES } from './PhoneInput';
 export { EmailInput, validateEmail } from './EmailInput';
 export { DelayBadge } from './DelayBadge';
+export { ViewSwitcher } from './ViewSwitcher';
 export { getDelayStatus } from '../../utils/delay';
+
 
 
 

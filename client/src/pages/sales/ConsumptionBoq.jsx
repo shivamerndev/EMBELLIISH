@@ -5,7 +5,10 @@ import {
     Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X
 } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import useViewMode from '../../hooks/useViewMode';
+import CardGridView from '../../components/common/CardGridView';
+import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../features/auth/authSlice';
 import useSales from '../../hooks/useSales';
@@ -1145,6 +1148,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 };
 
 const ConsumptionBoq = ({ items: itemsProp = [] }) => {
+    const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { handleFetchLeads } = useSales();
@@ -1244,6 +1248,8 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
                         />
                     </div>
 
+                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+
                     {(search || selectedSection !== 's7') && (
                         <Button
                             variant="ghost"
@@ -1267,6 +1273,24 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState icon={FileSpreadsheet} title="No BOQ Records Found" hint="Try adjusting search parameters." />
                 </Panel>
+            ) : viewMode === 'cards' ? (
+                <CardGridView
+                    items={filteredLeads}
+                    renderCard={(lead) => (
+                        <SalesStageCard
+                            lead={lead}
+                            stageKey="boq"
+                            onView={handleViewLead}
+                            onEdit={(l) => setEditingItem(l)}
+                            onRowClick={(l) => setDrawerLead(l)}
+                        />
+                    )}
+                    empty={
+                        <Panel className="p-8 text-center">
+                            <EmptyState icon={FileSpreadsheet} title="No BOQ Records Found" hint="Try adjusting search parameters." />
+                        </Panel>
+                    }
+                />
             ) : (
                 <SpreadsheetGridView
                     items={filteredLeads}
