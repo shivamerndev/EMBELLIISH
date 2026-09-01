@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink } from 'lucide-react';
+import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight } from 'lucide-react';
 import { Badge, StatusBadge, Loading } from '../../components/ui';
 import { currency, date, humanise, getMediaUrl } from '../../utils/format';
 import { useSelector } from "react-redux";
 import useSales from "../../hooks/useSales";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { getNextStageUrl } from "../../utils/salesPipeline";
 
 
 /** Safely parses stringified JSON or returns raw structure */
@@ -280,10 +281,10 @@ const DETAIL_TABS = [
     { id: 'pre-site', label: 'Pre Site Visit', icon: MapPin },
     { id: 'measurement', label: 'Measurement Capture', icon: Ruler },
     { id: 'studio-meeting', label: 'Studio Meeting', icon: CalendarCheck2 },
-    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
     { id: 'consumption-boq', label: 'Consumption / BOQ', icon: FileText },
+    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
     { id: 'proposal', label: 'Proposal Creation', icon: ReceiptText },
-    { id: 'token-discussion', label: 'Advance Discussion', icon: Wallet },
+    { id: 'token-discussion', label: 'Token Discussion', icon: Wallet },
     { id: 'pricing-costing', label: 'Pricing & Costing', icon: BadgeDollarSign },
     { id: 'quotation', label: 'Quotation Prep', icon: ReceiptText },
     { id: 'client-approval', label: 'Client Approval', icon: ShieldCheck },
@@ -291,7 +292,7 @@ const DETAIL_TABS = [
 ];
 
 const LeadDetails = () => {
-
+    const navigate = useNavigate();
     const { LeadCode, code } = useParams();
     const targetCode = LeadCode || code;
 
@@ -309,6 +310,16 @@ const LeadDetails = () => {
             },
             { replace: true }
         );
+    };
+
+    const handleNextStepRedirect = () => {
+        const { nextStage, url } = getNextStageUrl(activeDetailTab, lead?.code || targetCode);
+        const matchedTab = DETAIL_TABS.find((t) => t.id === nextStage.key || nextStage.path.endsWith(t.id));
+        if (matchedTab) {
+            handleTabChange(matchedTab.id);
+        } else {
+            navigate(url);
+        }
     };
 
     const { handleGetLead } = useSales();
@@ -363,13 +374,23 @@ const LeadDetails = () => {
 
         {/* Section Tabs */}
         <div className="p-2.5 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex flex-wrap items-center justify-between px-1 gap-2">
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Sales & Commercial Stages
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Active: {DETAIL_TABS.find(t => t.id === activeDetailTab)?.label}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Active: {DETAIL_TABS.find(t => t.id === activeDetailTab)?.label}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleNextStepRedirect}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 dark:bg-amber-600 dark:hover:bg-amber-500 rounded-lg shadow-xs transition-colors cursor-pointer"
+                        title="Move & Redirect to Next Step"
+                    >
+                        Move to Next Step <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
                 {DETAIL_TABS.map((tab) => {
@@ -681,18 +702,18 @@ const LeadDetails = () => {
             </div>
         )}
 
-        {/* STAGE 8: BUDGETING / ADVANCE DISCUSSION */}
+        {/* STAGE 8: BUDGETING / TOKEN DISCUSSION */}
         {activeDetailTab === 'token-discussion' && (
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Wallet className="w-3.5 h-3.5" />Budgeting / Advance Discussion
+                        <Wallet className="w-3.5 h-3.5" />Budgeting / Token Discussion
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Advance Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
-                        <InfoTile label="Advance Amount" value={lead.token?.amount ? currency(lead.token.amount) : null} />
-                        <InfoTile label="Advance Status" value={lead.token?.status ? humanise(lead.token.status) : null} />
-                        <InfoTile label="Advance Received Date" value={lead.token?.receivedDate ? date(lead.token.receivedDate) : null} />
+                        <InfoTile label="Token Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
+                        <InfoTile label="Token Amount" value={lead.token?.amount ? currency(lead.token.amount) : null} />
+                        <InfoTile label="Token Status" value={lead.token?.status ? humanise(lead.token.status) : null} />
+                        <InfoTile label="Token Received Date" value={lead.token?.receivedDate ? date(lead.token.receivedDate) : null} />
                         <InfoTile label="Budget Estimate" value={lead.token?.budgetEstimate ? currency(lead.token.budgetEstimate) : null} />
                         <InfoTile label="Project Timeline" value={lead.token?.projectTimeline} />
                         <InfoTile label="Client Budget Response" value={lead.token?.clientBudgetResponse} />

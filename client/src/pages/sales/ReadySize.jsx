@@ -420,7 +420,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             unit: w.unit || 'mm',
             status: 'Confirmed',
             notes: 'Final size confirmed',
-            version: 'v2.0' 
+            version: 'v2.0'
         }));
     };
 
@@ -608,12 +608,12 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         </Field>
                     </div>
                     <Field label="Ready Size Confirmed By">
-                            <MultiSelectUsersControl
-                                selectedUsers={confirmedBy}
-                                users={users}
-                                onChange={setConfirmedBy}
-                            />
-                        </Field>
+                        <MultiSelectUsersControl
+                            selectedUsers={confirmedBy}
+                            users={users}
+                            onChange={setConfirmedBy}
+                        />
+                    </Field>
                 </Panel>
 
                 {/* Section 2: Repeatable Window Size Subform */}

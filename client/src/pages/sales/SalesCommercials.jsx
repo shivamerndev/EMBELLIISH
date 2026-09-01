@@ -335,7 +335,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, s
                                     <div className="flex items-center justify-end gap-1">
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} />
                                         <Button size="sm" className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 text-xs" onClick={(e) => { e.stopPropagation(); onSiteVisit && onSiteVisit(lead); }}>Site Visit</Button>
-                                     </div> 
+                                    </div>
                                 </td>
                             </tr>
                         ))}

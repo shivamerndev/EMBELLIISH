@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil,
-    AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert
+    AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert, ArrowRight
 } from 'lucide-react';
 import { currency, date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { getNextStageUrl } from '../../utils/salesPipeline';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
@@ -18,14 +19,14 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 const SPREADSHEET_SECTIONS = [
     {
         id: 's9',
-        title: 'Advance Discussion',
+        title: 'Token Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         cols: [
-            { key: 'token.discussionDueDate', label: 'Advance Discussion Due' },
+            { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'token.amount', label: 'Advance Amount (₹)' },
-            { key: 'token.status', label: 'Advance Status' },
-            { key: 'token.receivedDate', label: 'Advance Received Date' },
+            { key: 'token.amount', label: 'Token Amount (₹)' },
+            { key: 'token.status', label: 'Token Status' },
+            { key: 'token.receivedDate', label: 'Token Received Date' },
             { key: 'token.clientBudgetResponse', label: 'Client Budget Response' },
             { key: 'token.proposal', label: 'Proposal' },
             { key: 'token.budgetEstimate', label: 'Budget Estimate (₹)' },
@@ -53,17 +54,17 @@ const COMMERCIAL_MASTER_TEMPLATES = [
     {
         id: 'standard',
         name: 'Standard Terms (50-40-10)',
-        terms: '50% Advance upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
+        terms: '50% Token upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
     },
     {
         id: 'corporate',
         name: 'Corporate Terms (30-60-10)',
-        terms: '30% Advance, 60% upon site delivery, 10% net 30 days post completion.'
+        terms: '30% Token, 60% upon site delivery, 10% net 30 days post completion.'
     },
     {
         id: 'premium_res',
         name: 'High-Value Residential (40-50-10)',
-        terms: '40% Advance on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
+        terms: '40% Token on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
     },
     {
         id: 'custom',
@@ -290,7 +291,9 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 import { getLocalDate } from '../../utils/format';
 
 const EditTokenModal = ({ item, onClose, onDone }) => {
+    const navigate = useNavigate();
     const tok = item?.token || {};
+    const [redirectOnSave, setRedirectOnSave] = useState(false);
 
     const initialStatus = normalizeTokenStatus(tok.status);
 
@@ -345,17 +348,21 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
             onSuccess: () => {
                 onDone();
                 onClose();
+                if (redirectOnSave) {
+                    const { url } = getNextStageUrl('token', item?.code);
+                    navigate(url);
+                }
             },
         }
     );
 
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setValidationError('');
 
-        // Configuration / Validation rule: Advance Received Date is Mandatory when Advance Status is Received
+        // Configuration / Validation rule: Token Received Date is Mandatory when Token Status is Received
         if (form.status === 'Received' && !form.receivedDate) {
-            setValidationError('Advance Received Date is mandatory when Advance Status is Received.');
+            setValidationError('Token Received Date is mandatory when Token Status is Received.');
             return;
         }
 
@@ -372,6 +379,17 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         execute(payload);
     };
 
+    const handleSaveAndRedirect = (e) => {
+        setRedirectOnSave(true);
+        handleSubmit(e);
+    };
+
+    const handleDirectRedirect = () => {
+        onClose();
+        const { url } = getNextStageUrl('token', item?.code);
+        navigate(url);
+    };
+
     // Proposal version choices candidate list
     const availableProposals = Array.from(new Set([
         item?.proposal?.noVersion,
@@ -384,14 +402,35 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Edit Advance Discussion & Commercial Details — ${item?.clientName || item?.code}`}
-            subtitle="Configure advance discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
+            title={`Edit Token Discussion & Commercial Details — ${item?.clientName || item?.code}`}
+            subtitle="Configure token discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
             size="xl"
             footer={
-                <>
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit} loading={pending}>Save Advance Details</Button>
-                </>
+                <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        icon={ArrowRight}
+                        onClick={handleDirectRedirect}
+                        className="text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-50 dark:bg-amber-950/40"
+                        title="Redirect directly to Pricing & Costing"
+                    >
+                        Redirect to Next Step
+                    </Button>
+                    <div className="flex items-center gap-2 ml-auto">
+                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button onClick={(e) => { setRedirectOnSave(false); handleSubmit(e); }} loading={pending && !redirectOnSave}>Save Token Details</Button>
+                        <Button
+                            onClick={handleSaveAndRedirect}
+                            loading={pending && redirectOnSave}
+                            icon={ArrowRight}
+                            className="bg-brand-600 hover:bg-brand-700 text-white"
+                            title="Save changes and redirect to Pricing & Costing"
+                        >
+                            Save & Move to Next Step
+                        </Button>
+                    </div>
+                </div>
             }
         >
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -402,17 +441,17 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-                {/* Section 1: Advance Status */}
+                {/* Section 1: Token Status */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
                         <Wallet className="w-4 h-4 text-amber-500" />
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Advance Setup
+                            Token Setup
                         </h4>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Field label="Advance Status" required hint="Current status of the advance discussion">
+                        <Field label="Token Status" required hint="Current status of the token discussion">
                             <Select value={form.status} onChange={set('status')}>
                                 {TOKEN_STATUS_OPTIONS.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -422,11 +461,11 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                             </Select>
                         </Field>
 
-                        <Field label="Advance Discussion Due" hint="Due date for completing the discussion">
+                        <Field label="Token Discussion Due" hint="Due date for completing the discussion">
                             <Input type="date" value={form.discussionDueDate} onChange={set('discussionDueDate')} />
                         </Field>
 
-                        <Field label="Advance Amount (₹)" hint="Numeric value in ₹">
+                        <Field label="Token Amount (₹)" hint="Numeric value in ₹">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
                                 <Input
@@ -440,9 +479,9 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                         </Field>
 
                         <Field
-                            label="Advance Received Date"
+                            label="Token Received Date"
                             required={form.status === 'Received'}
-                            hint={form.status === 'Received' ? 'Mandatory when Advance Status is Received' : 'Date when advance was received'}
+                            hint={form.status === 'Received' ? 'Mandatory when Token Status is Received' : 'Date when token was received'}
                         >
                             <Input
                                 type="date"
@@ -584,7 +623,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     <Field label="Client Response / Feedback" hint="Capture comments, discussion points, and special conditions">
                         <Textarea
                             rows={3}
-                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during advance discussion..."
+                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during token discussion..."
                             value={form.clientResponse}
                             onChange={set('clientResponse')}
                         />
@@ -596,6 +635,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
 };
 
 const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's9', onSectionChange }) => {
+    const navigate = useNavigate();
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's9';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);
 
@@ -654,7 +694,21 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Advance Details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Token Details" />
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            icon={ArrowRight}
+                                            className="text-[11px] h-7 px-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30 font-medium"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const { url } = getNextStageUrl('token', lead.code);
+                                                navigate(url);
+                                            }}
+                                            title="Move & Redirect to Next Step (Pricing & Costing)"
+                                        >
+                                            Next Step
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -682,7 +736,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
         setLoading(true);
         setError(null);
         handleFetchLeads()
-            .catch((err) => setError(err?.message || 'Failed to fetch advance discussion data'))
+            .catch((err) => setError(err?.message || 'Failed to fetch token discussion data'))
             .finally(() => setLoading(false));
     };
 
@@ -733,15 +787,15 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     return (
         <div>
             <PageHeader
-                title="Budgeting / Advance Discussion"
-                subtitle="Track advance discussions, advance amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
+                title="Budgeting / Token Discussion"
+                subtitle="Track token discussions, token amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Advance Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
-                <StatTile label="Advance Received" value={tokenReceivedCount} sub="Advances secured" icon={CheckCircle2} tone="green" />
-                <StatTile label="Total Advance Amount" value={currency(totalTokenValue, { compact: true })} sub="Cumulative advance value" icon={Wallet} tone="emerald" />
-                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Advance meetings due" icon={Calendar} tone="blue" />
+                <StatTile label="Token Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
+                <StatTile label="Token Received" value={tokenReceivedCount} sub="Tokens secured" icon={CheckCircle2} tone="green" />
+                <StatTile label="Total Token Amount" value={currency(totalTokenValue, { compact: true })} sub="Cumulative token value" icon={Wallet} tone="emerald" />
+                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Token meetings due" icon={Calendar} tone="blue" />
             </div>
 
             <Panel className="mb-4">
@@ -773,13 +827,13 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
 
             {loading ? (
                 <Panel className="p-12 text-center">
-                    <Loading text="Loading Advance Data..." />
+                    <Loading text="Loading Token Data..." />
                 </Panel>
             ) : error ? (
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={BadgeDollarSign} title="No Advance Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState icon={BadgeDollarSign} title="No Token Records Found" hint="Try adjusting search parameters." />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -795,7 +849,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                     )}
                     empty={
                         <Panel className="p-8 text-center">
-                            <EmptyState icon={BadgeDollarSign} title="No Advance Records Found" hint="Try adjusting search parameters." />
+                            <EmptyState icon={BadgeDollarSign} title="No Token Records Found" hint="Try adjusting search parameters." />
                         </Panel>
                     }
                 />

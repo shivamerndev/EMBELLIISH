@@ -665,12 +665,24 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
     };
 
     // Validation & Submission
+    const dueDateOnly = form.dueDate ? form.dueDate.split('T')[0] : '';
+    const actualDateOnly = form.date ? form.date.split('T')[0] : '';
+    const isActualDateBeforeDueDate = Boolean(
+        dueDateOnly && actualDateOnly && actualDateOnly < dueDateOnly
+    );
+
     const submit = (e) => {
         e.preventDefault();
         setValidationError(null);
 
         if (form.measuredBy && !form.dueDate) {
             setValidationError('Measurement Due Date is required once a Measured By technician/installer is assigned.');
+            setActiveTab('basic');
+            return;
+        }
+
+        if (isActualDateBeforeDueDate) {
+            setValidationError(`Actual Measurement Date & Time cannot be earlier than Measurement Due Date (${dueDateOnly}).`);
             setActiveTab('basic');
             return;
         }
@@ -787,8 +799,25 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 )}
                             </Field>
 
-                            <Field label="Actual Measurement Date & Time">
-                                <Input type="datetime-local" value={form.date} onChange={set('date')} />
+                            <Field
+                                label="Actual Measurement Date & Time"
+                                error={isActualDateBeforeDueDate ? 'Actual date cannot be before Measurement Due Date' : undefined}
+                            >
+                                <Input
+                                    type="datetime-local"
+                                    value={form.date}
+                                    onChange={set('date')}
+                                    min={dueDateOnly ? `${dueDateOnly}T00:00` : undefined}
+                                    className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
+                                />
+                                {isActualDateBeforeDueDate && (
+                                    <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                        <div>
+                                            <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Measurement Date & Time cannot be earlier than Measurement Due Date ({date(dueDateOnly)}).
+                                        </div>
+                                    </div>
+                                )}
                             </Field>
 
                             <Field label="Measurement Status">
@@ -863,8 +892,8 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                                 type="button"
                                                 onClick={() => selected ? setRoomList(roomList.filter((r) => r !== rm)) : addRoom(rm)}
                                                 className={`px-2.5 py-1 rounded-full text-xs transition border ${selected
-                                                        ? 'bg-green-600 text-white border-green-600 font-semibold shadow-sm'
-                                                        : 'bg-white dark:bg-slate-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 hover:border-green-500'
+                                                    ? 'bg-green-600 text-white border-green-600 font-semibold shadow-sm'
+                                                    : 'bg-white dark:bg-slate-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 hover:border-green-500'
                                                     }`}
                                             >
                                                 {selected ? '✓ ' : '+ '}{rm}
@@ -886,8 +915,8 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                             type="button"
                                             onClick={() => selected ? setRoomList(roomList.filter((r) => r !== std)) : addRoom(std)}
                                             className={`px-2.5 py-1 rounded-full text-xs transition border ${selected
-                                                    ? 'bg-brand-500/15 text-brand-700 border-brand-500/40 dark:text-brand-300 font-semibold'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand-300'
+                                                ? 'bg-brand-500/15 text-brand-700 border-brand-500/40 dark:text-brand-300 font-semibold'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand-300'
                                                 }`}
                                         >
                                             {selected ? '✓ ' : '+ '}{std}
@@ -1521,8 +1550,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                         type="button"
                         onClick={() => onSectionChange && onSectionChange(sec.id)}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                                ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
+                            ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
                         {sec.title}

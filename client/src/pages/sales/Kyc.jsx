@@ -162,11 +162,10 @@ const SPREADSHEET_CELL_RENDERERS = {
     return (
       <div className="flex flex-col gap-1 items-start">
         <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${
-            verifiedCount === totalCount && totalCount > 0
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${verifiedCount === totalCount && totalCount > 0
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
               : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
-          }`}
+            }`}
         >
           <FileCheck className="w-3 h-3 shrink-0" />
           {verifiedCount}/{totalCount} Verified
@@ -175,13 +174,12 @@ const SPREADSHEET_CELL_RENDERERS = {
           {docs.slice(0, 3).map((d, i) => (
             <span
               key={i}
-              className={`text-[9px] px-1.5 py-0.2 rounded border font-medium truncate ${
-                d.status === 'VERIFIED'
+              className={`text-[9px] px-1.5 py-0.2 rounded border font-medium truncate ${d.status === 'VERIFIED'
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                   : d.status === 'REJECTED'
-                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-              }`}
+                    ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                }`}
               title={`${d.docType || d.documentName || 'Doc'} (${d.status || 'PENDING'})`}
             >
               {d.docType || d.documentName || 'Doc'}
@@ -727,11 +725,10 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
             key={sec.id}
             type="button"
             onClick={() => onSectionChange && onSectionChange(sec.id)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-              currentSection === sec.id
+            className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
                 ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
-            }`}
+              }`}
           >
             {sec.title}
           </button>
