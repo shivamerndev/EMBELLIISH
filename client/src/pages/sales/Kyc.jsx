@@ -16,6 +16,14 @@ import {
   Trash2,
   ExternalLink,
   RefreshCw,
+  Building2,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  FileText,
+  FileSpreadsheet,
+  AlertCircle,
 } from 'lucide-react';
 import { date, dateTime } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -35,6 +43,8 @@ import {
   Field,
   DelayBadge,
   ViewSwitcher,
+  PhoneInput,
+  validatePhoneNumber,
 } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
@@ -43,6 +53,16 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir',
+  'Ladakh', 'Other'
+];
 
 const KYC_DOC_TYPES = [
   'PAN Card',
@@ -57,27 +77,27 @@ const KYC_DOC_TYPES = [
 ];
 
 const STANDARD_KYC_PRESETS = [
-  { docType: 'PAN Card', documentName: 'PAN Card', status: 'PENDING' },
-  { docType: 'GST Certificate', documentName: 'GST Certificate', status: 'PENDING' },
-  { docType: 'Aadhar Card', documentName: 'Aadhar Card / Identity Proof', status: 'PENDING' },
-  { docType: 'Address Proof', documentName: 'Registered Address Proof', status: 'PENDING' },
-  { docType: 'Cancelled Cheque', documentName: 'Cancelled Cheque / Bank Details', status: 'PENDING' },
+  { docType: 'PAN Card', documentName: 'PAN Card', status: 'Pending' },
+  { docType: 'GST Certificate', documentName: 'GST Certificate', status: 'Pending' },
+  { docType: 'Aadhar Card', documentName: 'Aadhar Card / Identity Proof', status: 'Pending' },
+  { docType: 'Address Proof', documentName: 'Registered Address Proof', status: 'Pending' },
+  { docType: 'Cancelled Cheque', documentName: 'Cancelled Cheque / Bank Details', status: 'Pending' },
 ];
 
 const SPREADSHEET_SECTIONS = [
   {
     id: 's14',
-    title: 'KYC Verification',
+    title: 'KYC & Customer Conversion',
     color:
       'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
     cols: [
-      { key: 'kyc.dueDate', label: 'KYC Due Date' },
-      { key: 'delayStatus', label: 'Delay / SLA Status' },
-      { key: 'kyc.actualDate', label: 'KYC Actual Date' },
+      { key: 'kyc.customerType', label: 'Customer Type' },
+      { key: 'kyc.billingLegalName', label: 'Billing / Legal Name' },
+      { key: 'kyc.gstin', label: 'GSTIN' },
       { key: 'kyc.status', label: 'KYC Status' },
-      { key: 'kyc.verifiedDocuments', label: 'Verified Document List' },
       { key: 'kyc.verifiedBy', label: 'Verified By' },
-      { key: 'kyc.remarks', label: 'Verification Remarks' },
+      { key: 'kyc.verificationDate', label: 'Verification Date' },
+      { key: 'kyc.verifiedDocuments', label: 'Verified Document List' },
     ],
   },
 ];
@@ -97,7 +117,7 @@ const SPREADSHEET_CELL_RENDERERS = {
   delayStatus: (lead) => (
     <DelayBadge
       dueDate={lead.kyc?.dueDate}
-      isCompleted={Boolean(['Completed', 'Approved', 'VERIFIED'].includes(lead.kyc?.status) || lead.kyc?.actualDate)}
+      isCompleted={Boolean(['Completed', 'Approved', 'Verified', 'VERIFIED'].includes(lead.kyc?.status) || lead.kyc?.verificationDate || lead.kyc?.actualDate)}
     />
   ),
   sno: (lead, { sno }) => (
@@ -122,19 +142,29 @@ const SPREADSHEET_CELL_RENDERERS = {
       {lead.clientName}
     </button>
   ),
-  'kyc.dueDate': (lead) => {
-    const d = lead.kyc?.dueDate;
-    if (!d) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+  'kyc.customerType': (lead) => {
+    const val = lead.kyc?.customerType || 'Individual';
     return (
-      <span className="inline-flex items-center gap-1 font-mono text-xs text-slate-700 dark:text-slate-300">
-        <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-        {date(d)}
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        {val}
       </span>
     );
   },
-  'kyc.actualDate': (lead) => {
-    const d = lead.kyc?.actualDate;
-    if (!d) return <span className="text-slate-400 dark:text-slate-600 text-[11px] italic">Not Completed</span>;
+  'kyc.billingLegalName': (lead) => {
+    const val = lead.kyc?.billingLegalName || lead.clientName || '—';
+    return <span className="font-medium text-slate-900 dark:text-slate-100 text-xs truncate max-w-[160px] block">{val}</span>;
+  },
+  'kyc.gstin': (lead) => {
+    const isRegistered = lead.kyc?.gstRegistered === 'Yes';
+    const gstin = lead.kyc?.gstin;
+    if (!isRegistered) {
+      return <span className="text-slate-400 dark:text-slate-500 text-[11px] font-mono">No (Not Reg.)</span>;
+    }
+    return <span className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">{gstin || '—'}</span>;
+  },
+  'kyc.verificationDate': (lead) => {
+    const d = lead.kyc?.verificationDate || lead.kyc?.actualDate;
+    if (!d) return <span className="text-slate-400 dark:text-slate-600 text-[11px] italic">Not Verified</span>;
     return (
       <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
         <Clock className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -143,28 +173,32 @@ const SPREADSHEET_CELL_RENDERERS = {
     );
   },
   'kyc.status': (lead) => {
-    const st = lead.kyc?.status || 'PENDING';
+    const st = lead.kyc?.status || 'Pending';
     const toneMap = {
+      Verified: 'emerald',
       VERIFIED: 'emerald',
+      'Correction Required': 'amber',
+      CORRECTION_REQUIRED: 'amber',
+      Pending: 'blue',
+      PENDING: 'blue',
       IN_PROGRESS: 'amber',
-      PENDING: 'slate',
       REJECTED: 'rose',
-      NOT_REQUIRED: 'blue',
+      NOT_REQUIRED: 'slate',
     };
     return <Badge tone={toneMap[st] || 'slate'}>{st.replace('_', ' ')}</Badge>;
   },
   'kyc.verifiedDocuments': (lead) => {
     const docs = lead.kyc?.verifiedDocuments || [];
     if (docs.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-    const verifiedCount = docs.filter((d) => d.status === 'VERIFIED').length;
+    const verifiedCount = docs.filter((d) => d.status === 'Verified' || d.status === 'VERIFIED').length;
     const totalCount = docs.length;
 
     return (
       <div className="flex flex-col gap-1 items-start">
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${verifiedCount === totalCount && totalCount > 0
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+            : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
             }`}
         >
           <FileCheck className="w-3 h-3 shrink-0" />
@@ -174,13 +208,13 @@ const SPREADSHEET_CELL_RENDERERS = {
           {docs.slice(0, 3).map((d, i) => (
             <span
               key={i}
-              className={`text-[9px] px-1.5 py-0.2 rounded border font-medium truncate ${d.status === 'VERIFIED'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                  : d.status === 'REJECTED'
-                    ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+              className={`text-[9px] px-1.5 py-0.2 rounded border font-medium truncate ${d.status === 'Verified' || d.status === 'VERIFIED'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                : d.status === 'REJECTED'
+                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                 }`}
-              title={`${d.docType || d.documentName || 'Doc'} (${d.status || 'PENDING'})`}
+              title={`${d.docType || d.documentName || 'Doc'} (${d.status || 'Pending'})`}
             >
               {d.docType || d.documentName || 'Doc'}
             </span>
@@ -238,30 +272,48 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
   );
 };
 
-import { getLocalDate } from '../../utils/format';
-
 /* ------------------------------------------------------------- Edit KYC Verification Modal */
-const KycEditModal = ({ item, onClose, onDone }) => {
+export const KycEditModal = ({ item, onClose, onDone }) => {
   const currentUser = useSelector((state) => state.auth?.user);
   const currentUserName = currentUser?.name || currentUser?.email || 'System User';
 
   const kycData = item?.kyc || {};
 
-  // Form State
+  // Form State initialized with KYC data, or pre-populated from lead defaults if empty
   const [form, setForm] = useState({
+    customerType: kycData.customerType || 'Individual',
+    billingLegalName: kycData.billingLegalName || item?.companyName || item?.clientName || '',
+    primaryContactPerson: kycData.primaryContactPerson || item?.contactPerson || item?.clientName || '',
+    mobileNumber: kycData.mobileNumber || item?.phone || '',
+    email: kycData.email || item?.email || '',
+    billingAddress: kycData.billingAddress || item?.address?.street || item?.location || '',
+    state: kycData.state || item?.address?.state || 'Maharashtra',
+    pinCode: kycData.pinCode || item?.pinCode || item?.pincode || item?.address?.pincode || '',
+    sameAsBillingAddress: kycData.sameAsBillingAddress || 'Yes',
+    siteDeliveryAddress: kycData.siteDeliveryAddress || item?.siteAddress || item?.address?.street || '',
+    siteContactPerson: kycData.siteContactPerson || kycData.primaryContactPerson || item?.contactPerson || item?.clientName || '',
+    siteContactNumber: kycData.siteContactNumber || kycData.mobileNumber || item?.phone || '',
+    gstRegistered: kycData.gstRegistered || 'No',
+    gstin: kycData.gstin || '',
+    pan: kycData.pan || '',
+    poRequired: kycData.poRequired || 'No',
+    clientPoNumber: kycData.clientPoNumber || '',
+    billingInstructions: kycData.billingInstructions || '',
+    status: kycData.status || 'Pending',
+    verifiedBy: kycData.verifiedBy || '',
+    verificationDate: kycData.verificationDate || kycData.actualDate || '',
     dueDate: kycData.dueDate ? String(kycData.dueDate).slice(0, 10) : '',
-    actualDate: kycData.actualDate ? String(kycData.actualDate) : '',
-    status: kycData.status || 'PENDING',
-    verifiedBy: kycData.verifiedBy || currentUserName,
-    remarks: kycData.remarks || '',
   });
+
+  const [validationError, setValidationError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Repeatable Document Checklist State
   const initialDocs = (kycData.verifiedDocuments || []).map((doc, idx) => ({
     id: doc.id || `doc_${idx}_${Date.now()}`,
     docType: doc.docType || doc.caption || 'PAN Card',
     documentName: doc.documentName || doc.docType || doc.filename || `Document #${idx + 1}`,
-    status: doc.status || (doc.url ? 'VERIFIED' : 'PENDING'),
+    status: doc.status || (doc.url ? 'Verified' : 'Pending'),
     verifiedBy: doc.verifiedBy || kycData.verifiedBy || currentUserName,
     url: doc.url || '',
     filename: doc.filename || doc.name || '',
@@ -272,22 +324,40 @@ const KycEditModal = ({ item, onClose, onDone }) => {
 
   const [docs, setDocs] = useState(initialDocs);
 
-  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    const val = e.target.value;
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
+    }
+    if (validationError) {
+      setValidationError('');
+    }
+    setForm((prev) => {
+      const next = { ...prev, [key]: val };
+      // Keep site address fields synced if sameAsBillingAddress === 'Yes'
+      if (key === 'sameAsBillingAddress' && val === 'Yes') {
+        next.siteDeliveryAddress = prev.billingAddress;
+        next.siteContactPerson = prev.primaryContactPerson;
+        next.siteContactNumber = prev.mobileNumber;
+      }
+      if (key === 'billingAddress' && prev.sameAsBillingAddress === 'Yes') {
+        next.siteDeliveryAddress = val;
+      }
+      if (key === 'primaryContactPerson' && prev.sameAsBillingAddress === 'Yes') {
+        next.siteContactPerson = val;
+      }
+      if (key === 'mobileNumber' && prev.sameAsBillingAddress === 'Yes') {
+        next.siteContactNumber = val;
+      }
+      return next;
+    });
+  };
 
-  // KYC Actual Date is System-generated when KYC status is set to VERIFIED
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
     setForm((prev) => ({
       ...prev,
       status: newStatus,
-      actualDate: newStatus === 'VERIFIED' ? (prev.actualDate || new Date().toISOString()) : prev.actualDate,
-    }));
-  };
-
-  const handleCaptureCurrentTimestamp = () => {
-    setForm((prev) => ({
-      ...prev,
-      actualDate: new Date().toISOString(),
     }));
   };
 
@@ -299,7 +369,7 @@ const KycEditModal = ({ item, onClose, onDone }) => {
         id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         docType: preset?.docType || 'PAN Card',
         documentName: preset?.documentName || preset?.docType || 'PAN Card',
-        status: preset?.status || 'PENDING',
+        status: preset?.status || 'Pending',
         verifiedBy: currentUserName,
         url: '',
         filename: '',
@@ -314,7 +384,7 @@ const KycEditModal = ({ item, onClose, onDone }) => {
       id: `doc_preset_${idx}_${Date.now()}`,
       docType: p.docType,
       documentName: p.documentName,
-      status: 'PENDING',
+      status: 'Pending',
       verifiedBy: currentUserName,
       url: '',
       filename: '',
@@ -328,7 +398,7 @@ const KycEditModal = ({ item, onClose, onDone }) => {
     setDocs((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
-      if (field === 'status' && value === 'VERIFIED' && !next[index].verifiedBy) {
+      if (field === 'status' && (value === 'Verified' || value === 'VERIFIED') && !next[index].verifiedBy) {
         next[index].verifiedBy = currentUserName;
       }
       return next;
@@ -352,7 +422,7 @@ const KycEditModal = ({ item, onClose, onDone }) => {
             filename: uploaded.filename || uploaded.originalname,
             mimetype: uploaded.mimetype,
             size: uploaded.size,
-            status: 'VERIFIED',
+            status: 'Verified',
             verifiedBy: next[index].verifiedBy || currentUserName,
             uploading: false,
           };
@@ -373,14 +443,13 @@ const KycEditModal = ({ item, onClose, onDone }) => {
     setDocs((prev) =>
       prev.map((d) => ({
         ...d,
-        status: 'VERIFIED',
+        status: 'Verified',
         verifiedBy: d.verifiedBy || currentUserName,
       }))
     );
     setForm((prev) => ({
       ...prev,
-      status: 'VERIFIED',
-      actualDate: prev.actualDate || new Date().toISOString(),
+      status: 'Verified',
     }));
   };
 
@@ -394,24 +463,106 @@ const KycEditModal = ({ item, onClose, onDone }) => {
     }
   );
 
+  const validateForm = () => {
+    setValidationError('');
+    setFieldErrors({});
+
+    if (!form.customerType) {
+      return { field: 'customerType', message: 'Customer Type is required' };
+    }
+    if (!form.billingLegalName?.trim()) {
+      return { field: 'billingLegalName', message: 'Billing / Legal Name is required' };
+    }
+    if (!form.primaryContactPerson?.trim()) {
+      return { field: 'primaryContactPerson', message: 'Primary Contact Person is required' };
+    }
+    
+    const mobileCheck = validatePhoneNumber(form.mobileNumber, '+91', true);
+    if (!mobileCheck.isValid) {
+      return {
+        field: 'mobileNumber',
+        message: mobileCheck.error ? `Mobile Number: ${mobileCheck.error}` : 'Mobile Number is required and must be valid',
+      };
+    }
+
+    if (!form.email?.trim()) {
+      return { field: 'email', message: 'Email ID is required' };
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      return { field: 'email', message: 'Please enter a valid Email ID (e.g. client@domain.com)' };
+    }
+
+    if (!form.billingAddress?.trim()) {
+      return { field: 'billingAddress', message: 'Billing Address is required' };
+    }
+    if (!form.state?.trim()) {
+      return { field: 'state', message: 'State is required' };
+    }
+    if (!form.pinCode?.trim()) {
+      return { field: 'pinCode', message: 'PIN Code is required' };
+    }
+    if (!form.gstRegistered) {
+      return { field: 'gstRegistered', message: 'GST Registered selection is required' };
+    }
+
+    if (form.gstRegistered === 'Yes' && !form.gstin?.trim()) {
+      return { field: 'gstin', message: 'GSTIN is required when GST Registered is Yes' };
+    }
+
+    if (form.sameAsBillingAddress === 'No') {
+      if (!form.siteDeliveryAddress?.trim()) {
+        return { field: 'siteDeliveryAddress', message: 'Site / Delivery Address is required when address is different from Billing Address' };
+      }
+      if (!form.siteContactPerson?.trim()) {
+        return { field: 'siteContactPerson', message: 'Site Contact Person is required when address is different from Billing Address' };
+      }
+      
+      const siteMobileCheck = validatePhoneNumber(form.siteContactNumber, '+91', true);
+      if (!siteMobileCheck.isValid) {
+        return {
+          field: 'siteContactNumber',
+          message: siteMobileCheck.error ? `Site Contact Number: ${siteMobileCheck.error}` : 'Site Contact Number is required and must be valid',
+        };
+      }
+    }
+
+    if (form.poRequired === 'Yes' && !form.clientPoNumber?.trim()) {
+      return { field: 'clientPoNumber', message: 'Client PO Number is required when PO is required from client' };
+    }
+
+    return null;
+  };
+
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
 
-    // Compile document types
-    const docTypes = Array.from(new Set(docs.map((d) => d.docType).filter(Boolean)));
+    const err = validateForm();
+    if (err) {
+      setValidationError(err.message);
+      setFieldErrors({ [err.field]: err.message });
 
-    // Auto-update system actualDate if overall status is VERIFIED
-    let actualDateVal = form.actualDate;
-    if (form.status === 'VERIFIED' && !actualDateVal) {
-      actualDateVal = new Date().toISOString();
+      // Auto-scroll and focus on the invalid input field
+      setTimeout(() => {
+        const el = document.getElementById(`kyc_${err.field}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (typeof el.focus === 'function') {
+            el.focus();
+          }
+        }
+      }, 50);
+      return;
     }
+
+    const docTypes = Array.from(new Set(docs.map((d) => d.docType).filter(Boolean)));
 
     const payloadDocs = docs.map((d) => ({
       docType: d.docType,
       documentName: d.documentName || d.docType,
-      status: d.status,
-      verifiedBy: d.verifiedBy || form.verifiedBy || currentUserName,
-      verifiedAt: d.status === 'VERIFIED' ? new Date().toISOString() : undefined,
+      status: d.status || 'Pending',
+      verifiedBy: d.verifiedBy || undefined,
+      verifiedAt: d.status === 'Verified' || d.status === 'VERIFIED' ? new Date().toISOString() : undefined,
       url: d.url || undefined,
       filename: d.filename || undefined,
       mimetype: d.mimetype || undefined,
@@ -419,119 +570,315 @@ const KycEditModal = ({ item, onClose, onDone }) => {
     }));
 
     execute({
-      dueDate: form.dueDate || undefined,
-      actualDate: actualDateVal || undefined,
+      customerType: form.customerType,
+      billingLegalName: form.billingLegalName,
+      primaryContactPerson: form.primaryContactPerson,
+      mobileNumber: String(form.mobileNumber),
+      email: form.email,
+      billingAddress: form.billingAddress,
+      state: form.state,
+      pinCode: String(form.pinCode),
+      sameAsBillingAddress: form.sameAsBillingAddress,
+      siteDeliveryAddress: form.sameAsBillingAddress === 'Yes' ? form.billingAddress : form.siteDeliveryAddress,
+      siteContactPerson: form.sameAsBillingAddress === 'Yes' ? form.primaryContactPerson : form.siteContactPerson,
+      siteContactNumber: form.sameAsBillingAddress === 'Yes' ? String(form.mobileNumber) : String(form.siteContactNumber),
+      gstRegistered: form.gstRegistered,
+      gstin: form.gstRegistered === 'Yes' ? form.gstin : undefined,
+      pan: form.pan || undefined,
+      poRequired: form.poRequired,
+      clientPoNumber: form.poRequired === 'Yes' ? form.clientPoNumber : undefined,
+      billingInstructions: form.billingInstructions || undefined,
       status: form.status,
+      dueDate: form.dueDate || undefined,
       verifiedDocuments: payloadDocs,
       documentTypes: docTypes,
-      verifiedBy: form.verifiedBy || currentUserName,
-      remarks: form.remarks || undefined,
     });
   };
 
-  const verifiedCount = docs.filter((d) => d.status === 'VERIFIED').length;
+  const verifiedCount = docs.filter((d) => d.status === 'Verified' || d.status === 'VERIFIED').length;
   const totalCount = docs.length;
 
   return (
     <Modal
       open={Boolean(item)}
       onClose={onClose}
-      title={`KYC Verification — ${item?.clientName || item?.code}`}
-      subtitle="Manage KYC due date, system-generated actual completion date, and repeatable document checklist."
-      size="xl"
+      title={`KYC & Customer Conversion — ${item?.clientName || item?.code}`}
+      subtitle="Complete client identity, billing, tax, site, and document verification details."
+      size="2xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button loading={pending} onClick={handleSubmit}>
-            Save KYC Details
+            Save KYC & Conversion Details
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <p className="text-xs text-rose-500 font-medium">{error.message}</p>}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {(error || validationError) && (
+          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{validationError || error?.message}</span>
+          </div>
+        )}
 
         <div className="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> Client Identity & KYC Configuration
+            <ShieldCheck className="w-4 h-4" /> Client Identity & Customer Conversion Fields
           </h4>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-            Client: <strong className="text-slate-800 dark:text-slate-200">{item?.clientName}</strong> ({item?.code})
+            Lead Code: <strong className="text-slate-800 dark:text-slate-200">{item?.code}</strong>
           </span>
         </div>
 
-        {/* Top Field Controls: KYC Due Date, KYC Actual Date, Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/70 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
-          {/* Field 1: KYC Due Date (Date picker) */}
-          <Field label="KYC Due Date (Date picker) *">
-            <div className="relative">
-              <Input type="date" value={form.dueDate} onChange={set('dueDate')} />
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">
-              Target due date for completing client KYC verification
-            </span>
-          </Field>
+        {/* SECTION 1: Customer Identity */}
+        <div className="space-y-3 bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">
+            <User className="w-4 h-4 text-brand-600" /> 1. Customer Identity
+          </h5>
 
-          {/* Field 2: KYC Actual Date (System-generated date and time) */}
-          <Field label="KYC Actual Date (System-generated)">
-            <div className="flex items-center gap-2 p-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs">
-              <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              {form.actualDate ? (
-                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono text-[11px] truncate">
-                  {dateTime(form.actualDate)}
-                </span>
-              ) : (
-                <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">
-                  Pending completion...
-                </span>
-              )}
-              {form.status === 'VERIFIED' && (
-                <button
-                  type="button"
-                  onClick={handleCaptureCurrentTimestamp}
-                  title="Update system timestamp to now"
-                  className="ml-auto p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">
-              Captured automatically when KYC is completed
-            </span>
-          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Field label="Customer Type *" error={fieldErrors.customerType}>
+              <Select
+                id="kyc_customerType"
+                value={form.customerType}
+                onChange={set('customerType')}
+                className={fieldErrors.customerType ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                options={[
+                  { value: 'Individual', label: 'Individual' },
+                  { value: 'Company', label: 'Company' },
+                  { value: 'LLP', label: 'LLP' },
+                  { value: 'Partnership', label: 'Partnership' },
+                  { value: 'Other', label: 'Other' },
+                ]}
+              />
+            </Field>
 
-          {/* Overall KYC Verification Status */}
-          <Field label="KYC Verification Status">
-            <Select
-              value={form.status}
-              onChange={handleStatusChange}
-              options={[
-                { value: 'PENDING', label: 'Pending Verification' },
-                { value: 'IN_PROGRESS', label: 'In Progress' },
-                { value: 'VERIFIED', label: 'Verified (Completed)' },
-                { value: 'REJECTED', label: 'Rejected / Disapproved' },
-                { value: 'NOT_REQUIRED', label: 'Not Required' },
-              ]}
-            />
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">
-              Overall client verification status
-            </span>
-          </Field>
+            <Field label="Billing / Legal Name *" error={fieldErrors.billingLegalName}>
+              <Input
+                id="kyc_billingLegalName"
+                value={form.billingLegalName}
+                onChange={set('billingLegalName')}
+                placeholder="Official billing / legal name"
+                className={fieldErrors.billingLegalName ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+              />
+            </Field>
+
+            <Field label="Primary Contact Person *" error={fieldErrors.primaryContactPerson}>
+              <Input
+                id="kyc_primaryContactPerson"
+                value={form.primaryContactPerson}
+                onChange={set('primaryContactPerson')}
+                placeholder="Primary contact name"
+                className={fieldErrors.primaryContactPerson ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+              />
+            </Field>
+
+            <Field label="Mobile Number *" error={fieldErrors.mobileNumber}>
+              <PhoneInput
+                id="kyc_mobileNumber"
+                value={form.mobileNumber}
+                onChange={set('mobileNumber')}
+                placeholder="e.g. 9876543210"
+                error={fieldErrors.mobileNumber}
+                required
+              />
+            </Field>
+
+            <Field label="Email ID *" error={fieldErrors.email}>
+              <Input
+                id="kyc_email"
+                type="email"
+                value={form.email}
+                onChange={set('email')}
+                placeholder="e.g. client@domain.com"
+                className={fieldErrors.email ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+              />
+            </Field>
+          </div>
         </div>
 
-        {/* Field 3: Verified Document List (Repeatable Document Checklist) */}
+        {/* SECTION 2: Address & Location */}
+        <div className="space-y-3 bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">
+            <MapPin className="w-4 h-4 text-brand-600" /> 2. Address & Location
+          </h5>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-3">
+              <Field label="Billing Address *" error={fieldErrors.billingAddress}>
+                <Textarea
+                  id="kyc_billingAddress"
+                  rows={2}
+                  value={form.billingAddress}
+                  onChange={set('billingAddress')}
+                  placeholder="Complete registered billing address..."
+                  className={fieldErrors.billingAddress ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                />
+              </Field>
+            </div>
+
+            <Field label="State *" error={fieldErrors.state}>
+              <Select
+                id="kyc_state"
+                value={form.state}
+                onChange={set('state')}
+                options={INDIAN_STATES.map((s) => ({ value: s, label: s }))}
+                className={fieldErrors.state ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+              />
+            </Field>
+
+            <Field label="PIN Code *" error={fieldErrors.pinCode}>
+              <Input
+                id="kyc_pinCode"
+                type="text"
+                value={form.pinCode}
+                onChange={set('pinCode')}
+                placeholder="e.g. 400001"
+                className={fieldErrors.pinCode ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+              />
+            </Field>
+
+            <Field label="Site Address Same as Billing?">
+              <Select
+                id="kyc_sameAsBillingAddress"
+                value={form.sameAsBillingAddress}
+                onChange={set('sameAsBillingAddress')}
+                options={[
+                  { value: 'Yes', label: 'Yes (Same Address)' },
+                  { value: 'No', label: 'No (Different Site Address)' },
+                ]}
+              />
+            </Field>
+          </div>
+
+          {form.sameAsBillingAddress === 'No' && (
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-amber-500/5 p-3 rounded-lg border border-amber-500/20">
+              <div className="sm:col-span-3">
+                <Field label="Site / Delivery Address *" error={fieldErrors.siteDeliveryAddress}>
+                  <Textarea
+                    id="kyc_siteDeliveryAddress"
+                    rows={2}
+                    value={form.siteDeliveryAddress}
+                    onChange={set('siteDeliveryAddress')}
+                    placeholder="Enter different site/delivery address..."
+                    className={fieldErrors.siteDeliveryAddress ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Site Contact Person *" error={fieldErrors.siteContactPerson}>
+                <Input
+                  id="kyc_siteContactPerson"
+                  value={form.siteContactPerson}
+                  onChange={set('siteContactPerson')}
+                  placeholder="Site contact person name"
+                  className={fieldErrors.siteContactPerson ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                />
+              </Field>
+
+              <Field label="Site Contact Number *" error={fieldErrors.siteContactNumber}>
+                <PhoneInput
+                  id="kyc_siteContactNumber"
+                  value={form.siteContactNumber}
+                  onChange={set('siteContactNumber')}
+                  placeholder="Site contact phone number"
+                  error={fieldErrors.siteContactNumber}
+                  required
+                />
+              </Field>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 3: Tax & Commercials */}
+        <div className="space-y-3 bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">
+            <FileText className="w-4 h-4 text-brand-600" /> 3. Tax & Commercials
+          </h5>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Field label="GST Registered *">
+              <Select
+                id="kyc_gstRegistered"
+                value={form.gstRegistered}
+                onChange={set('gstRegistered')}
+                options={[
+                  { value: 'Yes', label: 'Yes' },
+                  { value: 'No', label: 'No' },
+                ]}
+              />
+            </Field>
+
+            {form.gstRegistered === 'Yes' && (
+              <Field label="GSTIN *" error={fieldErrors.gstin}>
+                <Input
+                  id="kyc_gstin"
+                  value={form.gstin}
+                  onChange={set('gstin')}
+                  placeholder="e.g. 27AAAAA0000A1Z5"
+                  className={fieldErrors.gstin ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                />
+              </Field>
+            )}
+
+            <Field label={`PAN ${['Company', 'LLP', 'Partnership'].includes(form.customerType) ? '*' : '(Optional)'}`}>
+              <Input
+                id="kyc_pan"
+                value={form.pan}
+                onChange={set('pan')}
+                placeholder="e.g. ABCDE1234F"
+              />
+            </Field>
+
+            <Field label={`PO Required from Client ${['Company', 'LLP', 'Partnership'].includes(form.customerType) ? '*' : ''}`}>
+              <Select
+                id="kyc_poRequired"
+                value={form.poRequired}
+                onChange={set('poRequired')}
+                options={[
+                  { value: 'Yes', label: 'Yes' },
+                  { value: 'No', label: 'No' },
+                ]}
+              />
+            </Field>
+
+            {form.poRequired === 'Yes' && (
+              <Field label="Client PO Number *" error={fieldErrors.clientPoNumber}>
+                <Input
+                  id="kyc_clientPoNumber"
+                  value={form.clientPoNumber}
+                  onChange={set('clientPoNumber')}
+                  placeholder="Enter Client Purchase Order No."
+                  className={fieldErrors.clientPoNumber ? '!border-rose-500 focus:!ring-rose-500/30' : ''}
+                />
+              </Field>
+            )}
+
+            <div className="sm:col-span-2">
+              <Field label="Billing Instructions / Name on Invoice (Optional)">
+                <Input
+                  value={form.billingInstructions}
+                  onChange={set('billingInstructions')}
+                  placeholder="Special instructions or specific invoice name..."
+                />
+              </Field>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: Documents */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
             <div>
               <h5 className="text-xs font-bold text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5 uppercase tracking-wide">
                 <FileCheck className="w-4 h-4 text-emerald-600" />
-                Verified Document List (Repeatable Document Checklist)
+                4. KYC / GST Document Upload Checklist
               </h5>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                Record document name, verification status, file attachment, and verified-by user for each document.
+                Upload KYC & GST documents. File references will be persisted under customer conversion records.
               </p>
             </div>
 
@@ -544,7 +891,7 @@ const KycEditModal = ({ item, onClose, onDone }) => {
               </Button>
               {totalCount === 0 && (
                 <Button type="button" size="sm" variant="secondary" onClick={handleLoadStandardPreset}>
-                  Load Standard Checklist
+                  Load Preset Checklist
                 </Button>
               )}
               <Button type="button" size="sm" icon={Plus} onClick={() => handleAddDocRow()}>
@@ -553,12 +900,11 @@ const KycEditModal = ({ item, onClose, onDone }) => {
             </div>
           </div>
 
-          {/* Repeatable Checklist Items Table / List */}
           {docs.length === 0 ? (
             <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 space-y-2">
               <FileCheck className="w-8 h-8 text-slate-400 mx-auto" />
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                No items in the verified document checklist yet.
+                No items in the document upload checklist yet.
               </p>
               <div className="flex justify-center gap-2 pt-1">
                 <Button type="button" size="sm" variant="outline" onClick={handleLoadStandardPreset}>
@@ -570,64 +916,46 @@ const KycEditModal = ({ item, onClose, onDone }) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2.5 max-h-[40vh] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[35vh] overflow-y-auto pr-1">
               {docs.map((doc, idx) => (
                 <div
                   key={doc.id || idx}
                   className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2 transition hover:border-slate-300 dark:hover:border-slate-700"
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-                    {/* Column 1: Document Type & Name */}
-                    <div className="sm:col-span-4 space-y-1">
+                    <div className="sm:col-span-5 space-y-1">
                       <label className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
                         Document Type & Name
                       </label>
-                      <div className="flex gap-1">
-                        <div className="w-full">
-                          <Select
-                            value={doc.docType}
-                            onChange={(e) => {
-                              updateDocItem(idx, 'docType', e.target.value);
-                              if (!doc.documentName || KYC_DOC_TYPES.includes(doc.documentName)) {
-                                updateDocItem(idx, 'documentName', e.target.value);
-                              }
-                            }}
-                            options={KYC_DOC_TYPES.map((t) => ({ value: t, label: t }))}
-                          />
-                        </div>
-                      </div>
+                      <Select
+                        value={doc.docType}
+                        onChange={(e) => {
+                          updateDocItem(idx, 'docType', e.target.value);
+                          if (!doc.documentName || KYC_DOC_TYPES.includes(doc.documentName)) {
+                            updateDocItem(idx, 'documentName', e.target.value);
+                          }
+                        }}
+                        options={KYC_DOC_TYPES.map((t) => ({ value: t, label: t }))}
+                      />
                     </div>
 
-                    {/* Column 2: Verification Status */}
-                    <div className="sm:col-span-3 space-y-1">
+                    <div className="sm:col-span-5 space-y-1">
                       <label className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
                         Verification Status
                       </label>
                       <Select
-                        value={doc.status || 'PENDING'}
+                        value={doc.status || 'Pending'}
                         onChange={(e) => updateDocItem(idx, 'status', e.target.value)}
                         options={[
-                          { value: 'PENDING', label: '⏳ Pending' },
-                          { value: 'VERIFIED', label: '✅ Verified' },
+                          { value: 'Pending', label: '⏳ Pending' },
+                          { value: 'Verified', label: '✅ Verified' },
+                          { value: 'Correction Required', label: '⚠️ Correction Required' },
                           { value: 'REJECTED', label: '❌ Rejected' },
                           { value: 'NOT_REQUIRED', label: '⚪ Not Required' },
                         ]}
                       />
                     </div>
 
-                    {/* Column 3: Verified-By User */}
-                    <div className="sm:col-span-3 space-y-1">
-                      <label className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
-                        Verified-By User
-                      </label>
-                      <Input
-                        value={doc.verifiedBy || ''}
-                        onChange={(e) => updateDocItem(idx, 'verifiedBy', e.target.value)}
-                        placeholder="e.g. Staff Name"
-                      />
-                    </div>
-
-                    {/* Column 4: Row Action (Delete) */}
                     <div className="sm:col-span-2 flex items-center justify-end pt-4">
                       <Button
                         type="button"
@@ -641,7 +969,6 @@ const KycEditModal = ({ item, onClose, onDone }) => {
                     </div>
                   </div>
 
-                  {/* Attachment Row Control */}
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
                     <div className="flex items-center gap-2 overflow-hidden">
                       <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
@@ -693,19 +1020,37 @@ const KycEditModal = ({ item, onClose, onDone }) => {
           )}
         </div>
 
-        {/* Overall Verified By & Remarks */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <Field label="Overall Verified By (Lead Verifier)">
-            <Input value={form.verifiedBy} onChange={set('verifiedBy')} placeholder="e.g. Staff / DCM Name" />
-          </Field>
-          <Field label="Verification Remarks">
-            <Textarea
-              rows={2}
-              value={form.remarks}
-              onChange={set('remarks')}
-              placeholder="Enter verification notes, document validity details..."
-            />
-          </Field>
+        {/* SECTION 5: System Verification Audit */}
+        <div className="space-y-3 bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" /> 5. Verification Status & System Audit
+          </h5>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Field label="KYC Status *">
+              <Select
+                value={form.status}
+                onChange={handleStatusChange}
+                options={[
+                  { value: 'Pending', label: '⏳ Pending' },
+                  { value: 'Verified', label: '✅ Verified' },
+                  { value: 'Correction Required', label: '⚠️ Correction Required' },
+                ]}
+              />
+            </Field>
+
+            <Field label="KYC Verified By (System Controlled)">
+              <div className="p-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300">
+                {form.verifiedBy || (form.status === 'Verified' ? currentUserName : 'System / Admin (Recorded on verification)')}
+              </div>
+            </Field>
+
+            <Field label="KYC Verification Date (System Generated)">
+              <div className="p-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-mono font-medium text-slate-700 dark:text-slate-300">
+                {form.verificationDate ? dateTime(form.verificationDate) : (form.status === 'Verified' ? 'Auto-recorded on save' : 'Not Verified')}
+              </div>
+            </Field>
+          </div>
         </div>
       </form>
     </Modal>
@@ -726,8 +1071,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
             type="button"
             onClick={() => onSectionChange && onSectionChange(sec.id)}
             className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
+              ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
           >
             {sec.title}
@@ -836,18 +1181,19 @@ const Kyc = ({ items: itemsProp = [] }) => {
 
   const rawLeads = itemsProp && itemsProp.length > 0 ? itemsProp : Array.isArray(salesLeads) ? salesLeads : [];
 
-  // Filter only leads whose client approval completed
+  // Filter leads with completed Client Approval or having KYC details
   const approvedLeads = rawLeads.filter(
-    (lead) => lead.approval?.clientApprovalStatus === 'APPROVED' || lead.clientApprovalStatus === 'APPROVED'
+    (lead) => lead.approval?.clientApprovalStatus === 'APPROVED' || lead.clientApprovalStatus === 'APPROVED' || lead.kyc?.status
   );
 
   const filteredLeads = approvedLeads.filter((lead) => {
     if (search) {
       const q = search.toLowerCase();
       const code = String(lead.code || '').toLowerCase();
-      const clientName = String(lead.clientName || '').toLowerCase();
+      const clientName = String(lead.clientName || lead.kyc?.billingLegalName || '').toLowerCase();
       const status = String(lead.kyc?.status || '').toLowerCase();
-      if (!code.includes(q) && !clientName.includes(q) && !status.includes(q)) {
+      const gstin = String(lead.kyc?.gstin || '').toLowerCase();
+      if (!code.includes(q) && !clientName.includes(q) && !status.includes(q) && !gstin.includes(q)) {
         return false;
       }
     }
@@ -855,22 +1201,22 @@ const Kyc = ({ items: itemsProp = [] }) => {
   });
 
   const totalCount = approvedLeads.length;
-  const verifiedCount = approvedLeads.filter((l) => l.kyc?.status === 'VERIFIED').length;
-  const pendingCount = approvedLeads.filter((l) => l.kyc?.status === 'PENDING' || !l.kyc?.status).length;
-  const docAttachedCount = approvedLeads.filter((l) => (l.kyc?.verifiedDocuments?.length || 0) > 0).length;
+  const verifiedCount = approvedLeads.filter((l) => l.kyc?.status === 'Verified' || l.kyc?.status === 'VERIFIED').length;
+  const pendingCount = approvedLeads.filter((l) => !l.kyc?.status || l.kyc?.status === 'Pending' || l.kyc?.status === 'PENDING').length;
+  const docAttachedCount = approvedLeads.filter((l) => (l.kyc?.verifiedDocuments?.length || 0) > 0 || (l.kyc?.documents?.length || 0) > 0).length;
 
   return (
     <div>
       <PageHeader
-        title="KYC Verification Workspace"
-        subtitle="Track client identity verification, manage KYC due dates, system-generated completion dates, and repeatable document checklists."
+        title="KYC & Customer Conversion Workspace"
+        subtitle="Manage client legal identity, billing & site addresses, GST/tax credentials, client PO numbers, and document verification."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatTile label="Total Pipeline Leads" value={totalCount} sub="Clients requiring verification" icon={ShieldCheck} tone="blue" />
-        <StatTile label="Verified KYC" value={verifiedCount} sub="Documents & identity confirmed" icon={CheckCircle2} tone="green" />
-        <StatTile label="Pending Verification" value={pendingCount} sub="Awaiting KYC completion" icon={Clock} tone="amber" />
-        <StatTile label="Documents Attached" value={docAttachedCount} sub="Identity docs on file" icon={FileCheck} tone="brand" />
+        <StatTile label="Total Conversion Pipeline" value={totalCount} sub="Clients requiring KYC conversion" icon={ShieldCheck} tone="blue" />
+        <StatTile label="Verified KYC" value={verifiedCount} sub="Identity & tax verified" icon={CheckCircle2} tone="green" />
+        <StatTile label="Pending Verification" value={pendingCount} sub="Awaiting approval/correction" icon={Clock} tone="amber" />
+        <StatTile label="Documents Attached" value={docAttachedCount} sub="Verification files on record" icon={FileCheck} tone="brand" />
       </div>
 
       <Panel className="mb-4">
@@ -880,7 +1226,7 @@ const Kyc = ({ items: itemsProp = [] }) => {
             <Input
               value={search}
               onChange={(e) => updateParam('search', e.target.value, '')}
-              placeholder="Search code, client name, status..."
+              placeholder="Search code, billing name, GSTIN, status..."
               className="pl-9"
             />
           </div>
@@ -902,7 +1248,7 @@ const Kyc = ({ items: itemsProp = [] }) => {
 
       {loading ? (
         <Panel className="p-12 text-center">
-          <Loading text="Loading KYC Verification Details..." />
+          <Loading text="Loading KYC & Conversion Details..." />
         </Panel>
       ) : error ? (
         <ErrorState error={error} onRetry={reload} />
@@ -910,8 +1256,8 @@ const Kyc = ({ items: itemsProp = [] }) => {
         <Panel className="p-8 text-center">
           <EmptyState
             icon={ShieldCheck}
-            title="No KYC Verification Records Found"
-            hint="Only leads with completed Client Approval appear here. Try adjusting search parameters or completing Client Approval for leads."
+            title="No KYC & Customer Conversion Records Found"
+            hint="Try adjusting search filters or completing Client Approval for leads."
           />
         </Panel>
       ) : viewMode === 'cards' ? (
@@ -930,8 +1276,8 @@ const Kyc = ({ items: itemsProp = [] }) => {
             <Panel className="p-8 text-center">
               <EmptyState
                 icon={ShieldCheck}
-                title="No KYC Verification Records Found"
-                hint="Only leads with completed Client Approval appear here."
+                title="No KYC Conversion Records Found"
+                hint="No records matching current filter."
               />
             </Panel>
           }

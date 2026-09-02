@@ -149,6 +149,7 @@ export const LeadDetailsModal = ({
       indicativeBudget: l.indicativeBudget ? formatBudgetValue(l.indicativeBudget) : (l.budget ? formatBudgetValue(l.budget) : ''),
       budgetClassification: l.budgetClassification || 'A',
       location: l.location || '',
+      pincode: l.pincode || l.pinCode || l.address?.pincode || '',
       priority: l.priority || 'MEDIUM',
       projectType: l.projectType || 'VILLA',
       roomCount: l.roomCount !== undefined ? String(l.roomCount) : '',
@@ -214,6 +215,7 @@ export const LeadDetailsModal = ({
       setLoading(true);
       const payload = {
         ...form,
+        pinCode: form.pincode,
         companyName: form.clientName,
         previousClientRelationship: form.previousClientRelationship === 'YES' || form.previousClientRelationship === 'Yes',
         budget: form.indicativeBudget ? Number(form.indicativeBudget.replace(/[^0-9.]/g, '')) || undefined : undefined,
@@ -248,6 +250,7 @@ export const LeadDetailsModal = ({
   const budgetVal = formatBudgetDisplay(l.indicativeBudget || l.budget);
   const budgetClassVal = l.budgetClassification || 'A';
   const locationVal = l.location || '—';
+  const pincodeVal = l.pincode || l.pinCode || l.address?.pincode || '—';
   const requirementVal = l.requirementSummary || l.requirement || '—';
   const prevRelVal = l.previousClientRelationship ? 'Yes' : 'No';
   const relOwnerVal = l.existingRelationshipOwner || 'NA';
@@ -429,6 +432,7 @@ export const LeadDetailsModal = ({
                   <SectionTitle title="Project Information" icon={Building} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Project Location" value={locationVal} icon={MapPin} />
+                    <FieldTile label="PIN Code" value={pincodeVal} icon={MapPin} />
                     <FieldTile label="Room Count" value={l.roomCount !== undefined ? String(l.roomCount) : '—'} />
                     <FieldTile label="Requirement Summary" value={requirementVal} icon={FileText} fullWidth />
                   </div>
@@ -661,9 +665,12 @@ export const LeadDetailsModal = ({
                   </Field>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Field label="Project Location">
                     <Input value={form.location} onChange={setFormKey('location')} placeholder="Location..." />
+                  </Field>
+                  <Field label="PIN Code">
+                    <Input value={form.pincode} onChange={setFormKey('pincode')} placeholder="e.g. 400001" />
                   </Field>
                   <Field label="Project Type">
                     <Select

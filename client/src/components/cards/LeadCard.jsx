@@ -67,10 +67,12 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
               <span className="truncate">{lead.email}</span>
             </div>
           )}
-          {lead.location && (
+          {(lead.location || lead.pincode || lead.pinCode) && (
             <div className="flex items-center gap-2 truncate">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="truncate">{lead.location}</span>
+              <span className="truncate">
+                {[lead.location, lead.pincode || lead.pinCode].filter(Boolean).join(' - ')}
+              </span>
             </div>
           )}
           <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500">
