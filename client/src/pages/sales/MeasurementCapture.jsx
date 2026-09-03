@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, Pencil, Ruler, Calendar, CheckCircle2, Paperclip, ClipboardList,
@@ -665,12 +665,24 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
     };
 
     // Validation & Submission
+    const dueDateOnly = form.dueDate ? form.dueDate.split('T')[0] : '';
+    const actualDateOnly = form.date ? form.date.split('T')[0] : '';
+    const isActualDateBeforeDueDate = Boolean(
+        dueDateOnly && actualDateOnly && actualDateOnly < dueDateOnly
+    );
+
     const submit = (e) => {
         e.preventDefault();
         setValidationError(null);
 
         if (form.measuredBy && !form.dueDate) {
             setValidationError('Measurement Due Date is required once a Measured By technician/installer is assigned.');
+            setActiveTab('basic');
+            return;
+        }
+
+        if (isActualDateBeforeDueDate) {
+            setValidationError(`Actual Measurement Date & Time cannot be earlier than Measurement Due Date (${dueDateOnly}).`);
             setActiveTab('basic');
             return;
         }
@@ -787,8 +799,25 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 )}
                             </Field>
 
-                            <Field label="Actual Measurement Date & Time">
-                                <Input type="datetime-local" value={form.date} onChange={set('date')} />
+                            <Field
+                                label="Actual Measurement Date & Time"
+                                error={isActualDateBeforeDueDate ? 'Actual date cannot be before Measurement Due Date' : undefined}
+                            >
+                                <Input
+                                    type="datetime-local"
+                                    value={form.date}
+                                    onChange={set('date')}
+                                    min={dueDateOnly ? `${dueDateOnly}T00:00` : undefined}
+                                    className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
+                                />
+                                {isActualDateBeforeDueDate && (
+                                    <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                        <div>
+                                            <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Measurement Date & Time cannot be earlier than Measurement Due Date ({date(dueDateOnly)}).
+                                        </div>
+                                    </div>
+                                )}
                             </Field>
 
                             <Field label="Measurement Status">
@@ -863,8 +892,8 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                                 type="button"
                                                 onClick={() => selected ? setRoomList(roomList.filter((r) => r !== rm)) : addRoom(rm)}
                                                 className={`px-2.5 py-1 rounded-full text-xs transition border ${selected
-                                                        ? 'bg-green-600 text-white border-green-600 font-semibold shadow-sm'
-                                                        : 'bg-white dark:bg-slate-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 hover:border-green-500'
+                                                    ? 'bg-green-600 text-white border-green-600 font-semibold shadow-sm'
+                                                    : 'bg-white dark:bg-slate-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 hover:border-green-500'
                                                     }`}
                                             >
                                                 {selected ? '✓ ' : '+ '}{rm}
@@ -886,8 +915,8 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                             type="button"
                                             onClick={() => selected ? setRoomList(roomList.filter((r) => r !== std)) : addRoom(std)}
                                             className={`px-2.5 py-1 rounded-full text-xs transition border ${selected
-                                                    ? 'bg-brand-500/15 text-brand-700 border-brand-500/40 dark:text-brand-300 font-semibold'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand-300'
+                                                ? 'bg-brand-500/15 text-brand-700 border-brand-500/40 dark:text-brand-300 font-semibold'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand-300'
                                                 }`}
                                         >
                                             {selected ? '✓ ' : '+ '}{std}
@@ -1521,8 +1550,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                         type="button"
                         onClick={() => onSectionChange && onSectionChange(sec.id)}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                                ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
+                            ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
                         {sec.title}
@@ -1579,6 +1608,12 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
     );
 };
 
+import MeasurementToolbar from '../../components/measurement/MeasurementToolbar';
+import ExcelMeasurementGrid from '../../components/measurement/ExcelMeasurementGrid';
+import MeasurementDetailsDrawer from '../../components/measurement/MeasurementDetailsDrawer';
+import MeasurementSkeleton from '../../components/measurement/MeasurementSkeleton';
+import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
+
 const MeasurementCapture = ({ items: itemsProp = [] }) => {
     const [viewMode, setViewMode] = useViewMode('table');
     const navigate = useNavigate();
@@ -1590,6 +1625,31 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
     const [error, setError] = useState(null);
     const [editingLead, setEditingLead] = useState(null);
     const [drawerLead, setDrawerLead] = useState(null);
+
+    // Selected lead for active workspace editing
+    const [activeLeadId, setActiveLeadId] = useState('');
+    const [gridRows, setGridRows] = useState([]);
+    const [saveState, setSaveState] = useState('saved'); // 'saved', 'saving', 'unsaved', 'error'
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Add Window Measurement Modal & Room auto-expansion state
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [lastAddedRoom, setLastAddedRoom] = useState('');
+
+    // Workspace search & filters
+    const [workspaceSearch, setWorkspaceSearch] = useState('');
+    const [workspaceRoomFilter, setWorkspaceRoomFilter] = useState('ALL');
+    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('ALL');
+    const [columnVisibility, setColumnVisibility] = useState({
+        windowSize: true,
+        pelmetSize: true,
+        wire: true,
+        returnSize: true,
+        fabricRequirement: true,
+    });
+
+    // Inspector Drawer State for row details
+    const [inspectorRowIndex, setInspectorRowIndex] = useState(null);
 
     const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
 
@@ -1626,7 +1686,6 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
     };
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
-
     const visitedLeads = rawLeads.filter((lead) => Boolean(lead.actualSiteVisitDateTime));
 
     const filteredLeads = visitedLeads.filter((lead) => {
@@ -1650,35 +1709,160 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
         return true;
     });
 
+    // Auto-select initial lead for workspace
+    useEffect(() => {
+        if (filteredLeads.length > 0 && !activeLeadId) {
+            const firstId = filteredLeads[0].id || filteredLeads[0]._id;
+            setActiveLeadId(firstId);
+        }
+    }, [filteredLeads, activeLeadId]);
+
+    // Sync active lead's grid rows when activeLeadId changes or leads reload
+    const activeLead = useMemo(() => {
+        return filteredLeads.find((l) => (l.id || l._id) === activeLeadId) || filteredLeads[0] || null;
+    }, [filteredLeads, activeLeadId]);
+
+    useEffect(() => {
+        if (activeLead?.measurement?.notes) {
+            const parsed = safeParseArray(activeLead.measurement.notes);
+            if (parsed.length > 0) {
+                setGridRows(parsed);
+            } else {
+                setGridRows([]);
+            }
+            setSaveState('saved');
+        } else {
+            setGridRows([]);
+            setSaveState('saved');
+        }
+    }, [activeLead]);
+
+    // Handle grid row updates
+    const handleGridRowsUpdate = (newRows) => {
+        setGridRows(newRows);
+        setSaveState('unsaved');
+    };
+
+    // Save grid rows to backend API
+    const handleSaveWorkspaceChanges = async () => {
+        if (!activeLead) return;
+        setIsSaving(true);
+        setSaveState('saving');
+        try {
+            const targetId = activeLead.id || activeLead._id;
+            const updatedMeasurement = {
+                ...(activeLead.measurement || {}),
+                notes: gridRows,
+            };
+            await leadsApi.update(targetId, { measurement: updatedMeasurement });
+            setSaveState('saved');
+            handleFetchLeads();
+        } catch (err) {
+            console.error('Failed to save measurement grid:', err);
+            setSaveState('error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Open Add Window Measurement Modal
+    const handleOpenAddWindowModal = () => {
+        setIsAddModalOpen(true);
+    };
+
+    // Confirm creation of new window measurement in selected room
+    const handleConfirmAddMeasurement = (newRow) => {
+        setGridRows((prevRows) => [...prevRows, newRow]);
+        setLastAddedRoom(newRow.room);
+        setSaveState('unsaved');
+    };
+
+    // Toggle column visibility groups
+    const handleToggleColumnGroup = (groupKey) => {
+        setColumnVisibility((prev) => ({
+            ...prev,
+            [groupKey]: !prev[groupKey],
+        }));
+    };
+
+    // Inspector Drawer handlers
+    const handleOpenRowDetails = (row, rowIndex) => {
+        setInspectorRowIndex(rowIndex);
+    };
+
+    const handleSaveRowDetails = (rowIndex, updatedRow) => {
+        if (rowIndex === null || rowIndex === undefined) return;
+        const updatedRows = [...gridRows];
+        updatedRows[rowIndex] = updatedRow;
+        handleGridRowsUpdate(updatedRows);
+    };
+
+    // Aggregate dynamic room list options for workspace toolbar & modal dropdown
+    const availableRooms = useMemo(() => {
+        const roomsSet = new Set();
+        if (activeLead?.measurement?.roomList) {
+            safeParseArray(activeLead.measurement.roomList).forEach((r) => roomsSet.add(r));
+        }
+        if (activeLead?.rooms) {
+            safeParseArray(activeLead.rooms).forEach((r) => roomsSet.add(r));
+        }
+        gridRows.forEach((r) => {
+            if (r.room) roomsSet.add(r.room);
+        });
+        return Array.from(roomsSet);
+    }, [gridRows, activeLead]);
+
     const totalCount = visitedLeads.length;
     const completedCount = visitedLeads.filter((l) => l.measurement?.status === 'FINAL' || l.measurement?.status === 'COMPLETED' || l.measurement?.date).length;
     const pendingCount = visitedLeads.filter((l) => l.measurement?.status === 'PENDING' || l.measurement?.status === 'PROVISIONAL' || l.measurement?.status === 'REVISIT_REQUIRED').length;
     const siteAccessReady = visitedLeads.filter((l) => l.measurement?.siteAccess === 'Available').length;
 
     return (
-        <div>
+        <div className="space-y-4">
             <PageHeader
-                title="Measurement Capture (Site Details)"
-                subtitle="Track on-site measurement schedules, measured-by assignments, site access, pelmet/channel/motor details, versioned drawings, and measurement grids"
+                title="Measurement Capture Workspace"
+                subtitle="High-density SaaS measurement workstation with live calculations, sticky identity columns, inline editing, versioned blueprints, and room grouping"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            {/* Context Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
                 <StatTile label="Total Measurement Leads" value={totalCount} sub="Active site pipeline" icon={Ruler} tone="teal" />
                 <StatTile label="Completed Measurements" value={completedCount} sub="Site data captured" icon={CheckCircle2} tone="green" />
                 <StatTile label="Pending Schedules" value={pendingCount} sub="Awaiting site visit" icon={Calendar} tone="amber" />
                 <StatTile label="Site Access Available" value={siteAccessReady} sub="Ready for technician" icon={ClipboardList} tone="blue" />
             </div>
 
-            <Panel className="mb-4">
+            {/* Filter & View Control Bar */}
+            <Panel className="mb-2">
                 <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/40">
-                    <div className="relative flex-1 min-w-[220px] max-w-md">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <Input
-                            value={search}
-                            onChange={(e) => updateParam('search', e.target.value, '')}
-                            placeholder="Search code, client name, measured by..."
-                            className="pl-9"
-                        />
+                    <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[240px]">
+                        <div className="relative flex-1 min-w-[200px] max-w-sm">
+                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Input
+                                value={search}
+                                onChange={(e) => updateParam('search', e.target.value, '')}
+                                placeholder="Search client code or name..."
+                                className="pl-9 text-xs"
+                            />
+                        </div>
+
+                        {/* Active Lead Selection for Workspace */}
+                        {filteredLeads.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold shrink-0">Active Project:</span>
+                                <select
+                                    value={activeLeadId}
+                                    onChange={(e) => setActiveLeadId(e.target.value)}
+                                    className="px-2.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-brand-500/40 rounded-lg text-brand-700 dark:text-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer shadow-xs max-w-[220px] truncate"
+                                >
+                                    {filteredLeads.map((l) => (
+                                        <option key={l.id || l._id} value={l.id || l._id}>
+                                            {l.code} — {l.clientName || 'Client'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -1691,30 +1875,29 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                                     { value: 'ALL', label: 'All Statuses' },
                                     ...STATUS_OPTIONS
                                 ]}
-                                className="w-48 text-xs"
+                                className="w-40 text-xs"
                             />
                         </div>
 
                         <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
 
-                        {(statusFilter !== 'ALL' || search || selectedSection !== 's4') && (
+                        {activeLead && (
                             <Button
-                                variant="ghost"
                                 size="sm"
-                                onClick={() => setSearchParams({})}
-                                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                variant="outline"
+                                icon={Pencil}
+                                onClick={() => setEditingLead(activeLead)}
                             >
-                                Reset Filters
+                                Site Visit & Setup
                             </Button>
                         )}
                     </div>
                 </div>
             </Panel>
 
+            {/* --- MAIN MEASUREMENT WORKSPACE AREA --- */}
             {loading ? (
-                <Panel className="p-12 text-center">
-                    <Loading text="Loading Measurement Details..." />
-                </Panel>
+                <MeasurementSkeleton />
             ) : error ? (
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
@@ -1739,7 +1922,38 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                         </Panel>
                     }
                 />
+            ) : viewMode === 'table' ? (
+                /* --- PRIMARY SaaS MEASUREMENT WORKSPACE --- */
+                <div className="space-y-2">
+                    <MeasurementToolbar
+                        searchQuery={workspaceSearch}
+                        onSearchChange={setWorkspaceSearch}
+                        roomFilter={workspaceRoomFilter}
+                        onRoomFilterChange={setWorkspaceRoomFilter}
+                        typeFilter={workspaceTypeFilter}
+                        onTypeFilterChange={setWorkspaceTypeFilter}
+                        roomOptions={availableRooms}
+                        columnVisibility={columnVisibility}
+                        onToggleColumnGroup={handleToggleColumnGroup}
+                        saveState={saveState}
+                        onSaveChanges={handleSaveWorkspaceChanges}
+                        onAddMeasurement={handleOpenAddWindowModal}
+                        isSaving={isSaving}
+                    />
+
+                    <ExcelMeasurementGrid
+                        rows={gridRows}
+                        onUpdateRows={handleGridRowsUpdate}
+                        searchQuery={workspaceSearch}
+                        roomFilter={workspaceRoomFilter}
+                        typeFilter={workspaceTypeFilter}
+                        columnVisibility={columnVisibility}
+                        onOpenDetails={handleOpenRowDetails}
+                        lastAddedRoom={lastAddedRoom}
+                    />
+                </div>
             ) : (
+                /* --- ALTERNATE COMPACT SPREADSHEET OVERVIEW VIEW --- */
                 <SpreadsheetGridView
                     items={filteredLeads}
                     onView={handleViewLead}
@@ -1751,6 +1965,7 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                 />
             )}
 
+            {/* Full Site Details Modal */}
             {editingLead && (
                 <EditMeasurementModal
                     item={editingLead}
@@ -1760,14 +1975,35 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                 />
             )}
 
+            {/* Lead Summary Drawer */}
             <DetailedDrawer
                 open={Boolean(drawerLead)}
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
             />
+
+            {/* Row Specifications Inspector Drawer */}
+            <MeasurementDetailsDrawer
+                open={inspectorRowIndex !== null}
+                row={inspectorRowIndex !== null ? gridRows[inspectorRowIndex] : null}
+                rowIndex={inspectorRowIndex}
+                onClose={() => setInspectorRowIndex(null)}
+                onSaveRowDetails={handleSaveRowDetails}
+            />
+
+            {/* Add Window Measurement Modal (Dynamic Room Selection) */}
+            <AddWindowMeasurementModal
+                open={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddMeasurement={handleConfirmAddMeasurement}
+                availableRooms={availableRooms}
+                existingRows={gridRows}
+                preselectedRoom={workspaceRoomFilter !== 'ALL' ? workspaceRoomFilter : ''}
+            />
         </div>
     );
 };
 
 export default MeasurementCapture;
+

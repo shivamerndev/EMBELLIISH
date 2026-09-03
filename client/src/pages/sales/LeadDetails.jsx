@@ -1,10 +1,12 @@
-import { useEffect } from "react";
-import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink } from 'lucide-react';
-import { Badge, StatusBadge, Loading } from '../../components/ui';
-import { currency, date, humanise, getMediaUrl } from '../../utils/format';
+import { useEffect, useState } from "react";
+import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight, Pencil, FileCheck } from 'lucide-react';
+import { Badge, StatusBadge, Loading, Button } from '../../components/ui';
+import { currency, date, dateTime, humanise, getMediaUrl } from '../../utils/format';
 import { useSelector } from "react-redux";
 import useSales from "../../hooks/useSales";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { getNextStageUrl } from "../../utils/salesPipeline";
+import { KycEditModal } from "./Kyc";
 
 
 /** Safely parses stringified JSON or returns raw structure */
@@ -280,10 +282,10 @@ const DETAIL_TABS = [
     { id: 'pre-site', label: 'Pre Site Visit', icon: MapPin },
     { id: 'measurement', label: 'Measurement Capture', icon: Ruler },
     { id: 'studio-meeting', label: 'Studio Meeting', icon: CalendarCheck2 },
-    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
     { id: 'consumption-boq', label: 'Consumption / BOQ', icon: FileText },
+    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
     { id: 'proposal', label: 'Proposal Creation', icon: ReceiptText },
-    { id: 'token-discussion', label: 'Advance Discussion', icon: Wallet },
+    { id: 'token-discussion', label: 'Token Discussion', icon: Wallet },
     { id: 'pricing-costing', label: 'Pricing & Costing', icon: BadgeDollarSign },
     { id: 'quotation', label: 'Quotation Prep', icon: ReceiptText },
     { id: 'client-approval', label: 'Client Approval', icon: ShieldCheck },
@@ -291,7 +293,7 @@ const DETAIL_TABS = [
 ];
 
 const LeadDetails = () => {
-
+    const navigate = useNavigate();
     const { LeadCode, code } = useParams();
     const targetCode = LeadCode || code;
 
@@ -311,6 +313,17 @@ const LeadDetails = () => {
         );
     };
 
+    const handleNextStepRedirect = () => {
+        const { nextStage, url } = getNextStageUrl(activeDetailTab, lead?.code || targetCode);
+        const matchedTab = DETAIL_TABS.find((t) => t.id === nextStage.key || nextStage.path.endsWith(t.id));
+        if (matchedTab) {
+            handleTabChange(matchedTab.id);
+        } else {
+            navigate(url);
+        }
+    };
+
+    const [isKycModalOpen, setIsKycModalOpen] = useState(false);
     const { handleGetLead } = useSales();
     const lead = useSelector((state) => state.sales?.currentLead);
 
@@ -363,13 +376,23 @@ const LeadDetails = () => {
 
         {/* Section Tabs */}
         <div className="p-2.5 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex flex-wrap items-center justify-between px-1 gap-2">
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Sales & Commercial Stages
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Active: {DETAIL_TABS.find(t => t.id === activeDetailTab)?.label}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Active: {DETAIL_TABS.find(t => t.id === activeDetailTab)?.label}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleNextStepRedirect}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 dark:bg-amber-600 dark:hover:bg-amber-500 rounded-lg shadow-xs transition-colors cursor-pointer"
+                        title="Move & Redirect to Next Step"
+                    >
+                        Move to Next Step <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
                 {DETAIL_TABS.map((tab) => {
@@ -411,6 +434,7 @@ const LeadDetails = () => {
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Mobile Number:</strong> <span className="text-slate-900 dark:text-slate-200 font-mono">{lead.phone}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Email:</strong> <span className="text-slate-800 dark:text-slate-200">{lead.email || '—'}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Location:</strong> <span className="text-slate-800 dark:text-slate-200">{lead.location || '—'}</span></p>
+                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">PIN Code:</strong> <span className="text-slate-800 dark:text-slate-200 font-mono">{lead.pincode || lead.pinCode || lead.address?.pincode || '—'}</span></p>
                             </div>
                         </div>
 
@@ -681,18 +705,18 @@ const LeadDetails = () => {
             </div>
         )}
 
-        {/* STAGE 8: BUDGETING / ADVANCE DISCUSSION */}
+        {/* STAGE 8: BUDGETING / TOKEN DISCUSSION */}
         {activeDetailTab === 'token-discussion' && (
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Wallet className="w-3.5 h-3.5" />Budgeting / Advance Discussion
+                        <Wallet className="w-3.5 h-3.5" />Budgeting / Token Discussion
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Advance Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
-                        <InfoTile label="Advance Amount" value={lead.token?.amount ? currency(lead.token.amount) : null} />
-                        <InfoTile label="Advance Status" value={lead.token?.status ? humanise(lead.token.status) : null} />
-                        <InfoTile label="Advance Received Date" value={lead.token?.receivedDate ? date(lead.token.receivedDate) : null} />
+                        <InfoTile label="Token Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
+                        <InfoTile label="Token Amount" value={lead.token?.amount ? currency(lead.token.amount) : null} />
+                        <InfoTile label="Token Status" value={lead.token?.status ? humanise(lead.token.status) : null} />
+                        <InfoTile label="Token Received Date" value={lead.token?.receivedDate ? date(lead.token.receivedDate) : null} />
                         <InfoTile label="Budget Estimate" value={lead.token?.budgetEstimate ? currency(lead.token.budgetEstimate) : null} />
                         <InfoTile label="Project Timeline" value={lead.token?.projectTimeline} />
                         <InfoTile label="Client Budget Response" value={lead.token?.clientBudgetResponse} />
@@ -786,24 +810,77 @@ const LeadDetails = () => {
         {/* STAGE 12: KYC / CUSTOMER CONVERSION */}
         {activeDetailTab === 'kyc' && (
             <div className="space-y-4">
-                <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <PresentationIcon className="w-3.5 h-3.5" /> 12. KYC / Customer Conversion
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Client Selection" value={lead.presentation?.clientSelection} />
-                        <InfoTile label="Fabric Selection" value={lead.presentation?.fabricSelection} />
-                        <InfoTile label="Design Direction" value={lead.presentation?.designDirection} />
+                <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" /> 12. KYC & Customer Conversion Details
+                        </p>
+                        <Button size="sm" variant="outline" icon={Pencil} onClick={() => setIsKycModalOpen(true)}>
+                            Edit KYC & Conversion Details
+                        </Button>
                     </div>
-                    {lead.presentation?.revisionNotes && (
-                        <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
-                            <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Revision Notes</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.presentation.revisionNotes)}</p>
+
+                    {/* Section 1: Customer Identity */}
+                    <div className="space-y-2">
+                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Customer Identity</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <InfoTile label="Customer Type" value={lead.kyc?.customerType || 'Individual'} />
+                            <InfoTile label="Billing / Legal Name" value={lead.kyc?.billingLegalName || lead.clientName} />
+                            <InfoTile label="Primary Contact Person" value={lead.kyc?.primaryContactPerson || lead.contactPerson || lead.clientName} />
+                            <InfoTile label="Mobile Number" value={lead.kyc?.mobileNumber || lead.phone} />
+                            <InfoTile label="Email ID" value={lead.kyc?.email || lead.email} />
                         </div>
-                    )}
-                    <AttachmentLinks label="Presentation Attachment" files={lead.presentation?.attachment} />
+                    </div>
+
+                    {/* Section 2: Address & Location */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Address & Location</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <InfoTile label="Billing Address" value={lead.kyc?.billingAddress || lead.address?.street || lead.location} />
+                            <InfoTile label="State" value={lead.kyc?.state || lead.address?.state || 'Maharashtra'} />
+                            <InfoTile label="PIN Code" value={lead.kyc?.pinCode || lead.address?.pincode} />
+                            <InfoTile label="Same as Billing Address" value={lead.kyc?.sameAsBillingAddress || 'Yes'} />
+                            <InfoTile label="Site / Delivery Address" value={lead.kyc?.siteDeliveryAddress || lead.siteAddress} />
+                            <InfoTile label="Site Contact Person" value={lead.kyc?.siteContactPerson} />
+                            <InfoTile label="Site Contact Number" value={lead.kyc?.siteContactNumber} />
+                        </div>
+                    </div>
+
+                    {/* Section 3: Tax & Commercials */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Tax & Commercials</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <InfoTile label="GST Registered" value={lead.kyc?.gstRegistered || 'No'} />
+                            <InfoTile label="GSTIN" value={lead.kyc?.gstin || (lead.kyc?.gstRegistered === 'No' ? 'Not Registered' : null)} />
+                            <InfoTile label="PAN" value={lead.kyc?.pan} />
+                            <InfoTile label="PO Required from Client" value={lead.kyc?.poRequired || 'No'} />
+                            <InfoTile label="Client PO Number" value={lead.kyc?.clientPoNumber} />
+                            <InfoTile label="Billing Instructions" value={lead.kyc?.billingInstructions} />
+                        </div>
+                    </div>
+
+                    {/* Section 4: System Verification Audit */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Verification Status & Audit</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <InfoTile label="KYC Status" value={lead.kyc?.status ? humanise(lead.kyc.status) : 'Pending'} />
+                            <InfoTile label="KYC Verified By" value={lead.kyc?.verifiedBy} />
+                            <InfoTile label="KYC Verification Date" value={lead.kyc?.verificationDate || lead.kyc?.actualDate ? dateTime(lead.kyc?.verificationDate || lead.kyc?.actualDate) : null} />
+                        </div>
+                    </div>
+
+                    {/* Section 5: Documents */}
+                    <AttachmentLinks label="KYC / GST Document Uploads" files={lead.kyc?.verifiedDocuments || lead.kyc?.documents} />
                 </div>
             </div>
+        )}
+
+        {isKycModalOpen && (
+            <KycEditModal
+                item={lead}
+                onClose={() => setIsKycModalOpen(false)}
+                onDone={() => handleGetLead(targetCode)}
+            />
         )}
     </div>
 };

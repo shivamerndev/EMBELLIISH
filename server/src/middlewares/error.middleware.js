@@ -37,6 +37,14 @@ const errorMiddleware = (err, req, res, next) => {
   } else if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Your session has expired. Please sign in again.';
+  } else if (
+    err.name === 'MongooseError' ||
+    err.name === 'MongoServerSelectionError' ||
+    err.name === 'MongoNetworkError' ||
+    err.message?.includes('buffering timed out')
+  ) {
+    statusCode = 503;
+    message = 'Database service unavailable. Please check your MongoDB connection.';
   }
 
   // Genuine faults get a stack trace; expected refusals are just noted.

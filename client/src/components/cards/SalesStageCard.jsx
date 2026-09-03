@@ -1,7 +1,9 @@
 import React from 'react';
-import { Eye, Pencil, MapPin, Calendar, UserCheck, Paperclip, DollarSign, CheckCircle2, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, Pencil, MapPin, Calendar, UserCheck, Paperclip, DollarSign, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { Button, Badge, DelayBadge } from '../ui';
 import { currency, date } from '../../utils/format';
+import { getNextStageUrl } from '../../utils/salesPipeline';
 
 const BUDGET_TONES = {
   ECONOMY: 'slate',
@@ -12,6 +14,7 @@ const BUDGET_TONES = {
 };
 
 export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) => {
+  const navigate = useNavigate();
   const code = lead.code || 'LD';
   const clientName = lead.clientName || lead.companyName || '—';
   const location = lead.siteAddress || lead.location || '—';
@@ -49,6 +52,12 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
     } else if (onView) {
       onView(lead);
     }
+  };
+
+  const handleNextStepRedirect = (e) => {
+    e.stopPropagation();
+    const { url } = getNextStageUrl(stageKey, lead.code);
+    navigate(url);
   };
 
   return (
@@ -109,7 +118,7 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
       </div>
 
       {/* Card Footer Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto gap-1" onClick={(e) => e.stopPropagation()}>
         <span className="text-[10px] text-slate-400 font-mono">
           {dueDate ? date(dueDate) : '—'}
         </span>
@@ -133,6 +142,16 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
               title="Edit / Update Stage"
             />
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            icon={ArrowRight}
+            className="text-[11px] h-7 px-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30"
+            onClick={handleNextStepRedirect}
+            title="Move & Redirect to Next Step"
+          >
+            Next Step
+          </Button>
         </div>
       </div>
     </div>

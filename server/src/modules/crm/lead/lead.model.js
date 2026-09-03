@@ -25,6 +25,8 @@ const leadSchema = new mongoose.Schema(
     previousClientRelationship: { type: Boolean, default: false },
     existingRelationshipOwner: { type: String, trim: true, default: 'NA' },
     location: { type: String, trim: true },
+    pincode: { type: String, trim: true },
+    pinCode: { type: String, trim: true },
     priority: {
       type: String,
       enum: ['HIGH', 'MEDIUM', 'LOW'],
@@ -305,15 +307,51 @@ const leadSchema = new mongoose.Schema(
       revisionNotes: String,
     },
 
-    // --- Sales & Commercials: KYC Verification.
+    // --- Sales & Commercials: KYC Verification / Customer Conversion.
     kyc: {
       dueDate: Date,
       actualDate: Date,
+      verificationDate: Date,
       status: {
         type: String,
-        enum: ['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
-        default: 'PENDING',
+        enum: ['Pending', 'Verified', 'Correction Required', 'PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED', 'CORRECTION_REQUIRED'],
+        default: 'Pending',
       },
+      customerType: {
+        type: String,
+        enum: ['Individual', 'Company', 'LLP', 'Partnership', 'Other'],
+        default: 'Individual',
+      },
+      billingLegalName: { type: String, trim: true },
+      primaryContactPerson: { type: String, trim: true },
+      mobileNumber: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
+      billingAddress: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pinCode: { type: String, trim: true },
+      gstRegistered: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No',
+      },
+      gstin: { type: String, trim: true },
+      pan: { type: String, trim: true },
+      sameAsBillingAddress: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'Yes',
+      },
+      siteDeliveryAddress: { type: String, trim: true },
+      siteContactPerson: { type: String, trim: true },
+      siteContactNumber: { type: String, trim: true },
+      poRequired: {
+        type: String,
+        enum: ['Yes', 'No'],
+        default: 'No',
+      },
+      clientPoNumber: { type: String, trim: true },
+      billingInstructions: { type: String, trim: true },
+      documents: [attachmentSchema],
       verifiedDocuments: [
         new mongoose.Schema(
           {
@@ -321,8 +359,8 @@ const leadSchema = new mongoose.Schema(
             docType: String,
             status: {
               type: String,
-              enum: ['PENDING', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
-              default: 'PENDING',
+              enum: ['Pending', 'Verified', 'Correction Required', 'PENDING', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED'],
+              default: 'Pending',
             },
             verifiedBy: String,
             verifiedAt: Date,
@@ -491,6 +529,12 @@ const normalizeLeadArrays = (target) => {
 
 leadSchema.pre('save', function (next) {
   normalizeLeadArrays(this);
+  const code = this.pincode || this.pinCode || this.address?.pincode;
+  if (code) {
+    this.pincode = code;
+    this.pinCode = code;
+    if (this.address) this.address.pincode = code;
+  }
   next();
 });
 
@@ -499,6 +543,12 @@ leadSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany', 'update'], functi
   if (update) {
     normalizeLeadArrays(update);
     if (update.$set) normalizeLeadArrays(update.$set);
+    const code = update.pincode || update.pinCode || update.$set?.pincode || update.$set?.pinCode || update.address?.pincode || update.$set?.['address.pincode'];
+    if (code) {
+      if (!update.$set) update.$set = {};
+      update.$set.pincode = code;
+      update.$set.pinCode = code;
+    }
   }
   next();
 });

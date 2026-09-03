@@ -148,6 +148,10 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, ...p
       else if (type === 'datetime-local') defaultVal = getLocalDateTime();
       else if (type === 'time') defaultVal = getLocalTime();
 
+      if (props.min && defaultVal && defaultVal < props.min) {
+        defaultVal = props.min;
+      }
+
       if (defaultVal) {
         onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });
       }
@@ -161,6 +165,10 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, ...p
       if (type === 'date') defaultVal = getLocalDate();
       else if (type === 'datetime-local') defaultVal = getLocalDateTime();
       else if (type === 'time') defaultVal = getLocalTime();
+
+      if (props.min && defaultVal && defaultVal < props.min) {
+        defaultVal = props.min;
+      }
 
       if (defaultVal) {
         onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });

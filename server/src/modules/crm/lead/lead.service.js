@@ -139,6 +139,26 @@ class LeadService extends BaseService {
       }
     }
 
+    if (updateData.kyc) {
+      const existingKyc = existing.kyc || {};
+      const statusInput = updateData.kyc.status;
+      const isVerified = statusInput === 'Verified' || statusInput === 'VERIFIED';
+      
+      if (isVerified) {
+        const userName = user?.name || user?.email || user?.username || 'System Admin';
+        updateData.kyc.verifiedBy = userName;
+        updateData.kyc.verificationDate = new Date();
+        updateData.kyc.actualDate = new Date();
+        updateData.kyc.status = 'Verified';
+      } else {
+        const wasCorrectionRequired = existingKyc.status === 'Correction Required' || existingKyc.status === 'CORRECTION_REQUIRED';
+        if (wasCorrectionRequired && (!statusInput || statusInput === 'Correction Required' || statusInput === 'CORRECTION_REQUIRED')) {
+          // Resubmission after correction resets status to Pending for review
+          updateData.kyc.status = 'Pending';
+        }
+      }
+    }
+
     return this.repository.update(id, updateData);
   }
 

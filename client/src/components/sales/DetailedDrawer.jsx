@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   User,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   Clock,
   ArrowUpRight,
+  ArrowRight,
   Tag,
   UserCheck,
   Paperclip,
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Badge, Button, StatusBadge } from '../ui';
 import { currency, date, humanise, getMediaUrl } from '../../utils/format';
+import { getNextStageUrl } from '../../utils/salesPipeline';
 
 const BUDGET_TONES = {
   ECONOMY: 'slate',
@@ -48,6 +51,7 @@ const parseAttachmentsOrLinks = (raw) => {
 };
 
 const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -533,6 +537,20 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
             </Button>
           )}
           <div className="flex items-center gap-2 ml-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              icon={ArrowRight}
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 font-semibold"
+              onClick={() => {
+                const { url } = getNextStageUrl(lead.stage || 'token', lead.code);
+                navigate(url);
+                onClose?.();
+              }}
+              title="Move to Next Step & Redirect"
+            >
+              Move to Next Step
+            </Button>
             {onViewFull && (
               <Button
                 size="sm"

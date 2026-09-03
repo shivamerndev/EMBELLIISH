@@ -621,6 +621,12 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         return (u.name || '').toLowerCase().includes(q) || (u.role || '').toLowerCase().includes(q);
     });
 
+    const siteVisitDueDateOnly = form.siteVisitDueDate ? form.siteVisitDueDate.split('T')[0] : '';
+    const actualSiteVisitDateOnly = form.actualSiteVisitDateTime ? form.actualSiteVisitDateTime.split('T')[0] : '';
+    const isActualDateBeforeDueDate = Boolean(
+        siteVisitDueDateOnly && actualSiteVisitDateOnly && actualSiteVisitDateOnly < siteVisitDueDateOnly
+    );
+
     return (
         <Modal
             open={Boolean(item)}
@@ -672,13 +678,27 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                             <p className="text-[11px] text-slate-500">Enable when the physical site visit has been completed.</p>
                         </div>
 
-                        <Field label="Actual Site Visit Date & Time" required={form.isCompleted} hint={form.isCompleted ? 'Mandatory when marked completed' : ''}>
+                        <Field
+                            label="Actual Site Visit Date & Time"
+                            required={form.isCompleted}
+                            hint={form.isCompleted ? 'Mandatory when marked completed' : ''}
+                            error={isActualDateBeforeDueDate ? 'Actual date cannot be before Site Visit Due Date' : undefined}
+                        >
                             <Input
                                 type="datetime-local"
                                 value={form.actualSiteVisitDateTime}
                                 onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
-                                min={form.siteVisitDueDate ? `${form.siteVisitDueDate}T00:00` : undefined}
+                                min={siteVisitDueDateOnly ? `${siteVisitDueDateOnly}T00:00` : undefined}
+                                className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
                             />
+                            {isActualDateBeforeDueDate && (
+                                <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                    <div>
+                                        <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Site Visit Date & Time cannot be earlier than Site Visit Due Date ({date(siteVisitDueDateOnly)}).
+                                    </div>
+                                </div>
+                            )}
                         </Field>
                     </div>
                 </div>
@@ -855,8 +875,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                             type="button"
                                             onClick={() => toggleScopeOption(opt)}
                                             className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${isSelected
-                                                    ? 'bg-brand-600 text-white shadow-sm ring-1 ring-brand-400'
-                                                    : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                ? 'bg-brand-600 text-white shadow-sm ring-1 ring-brand-400'
+                                                : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                                                 }`}
                                         >
                                             {isSelected && <Check className="w-3 h-3 inline mr-1" />}
@@ -891,8 +911,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                             type="button"
                                             onClick={() => toggleRoomOption(rm)}
                                             className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${isSelected
-                                                    ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400'
-                                                    : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400'
+                                                : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                                                 }`}
                                         >
                                             {isSelected && <Check className="w-3 h-3 inline mr-1" />}

@@ -630,6 +630,12 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
         return s.toLowerCase().includes(sampleSearch.toLowerCase());
     });
 
+    const dueDateOnly = dueDate ? dueDate.split('T')[0] : '';
+    const actualDateOnly = actualDate ? actualDate.split('T')[0] : '';
+    const isActualDateBeforeDueDate = Boolean(
+        dueDateOnly && actualDateOnly && actualDateOnly < dueDateOnly
+    );
+
     return (
         <Modal
             open={Boolean(item)}
@@ -669,13 +675,25 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Actual Meeting Date & Time">
+                    <Field
+                        label="Actual Meeting Date & Time"
+                        error={isActualDateBeforeDueDate ? 'Actual date cannot be before Studio Meeting Due Date' : undefined}
+                    >
                         <Input
                             type="datetime-local"
                             value={actualDate}
                             onChange={(e) => setActualDate(e.target.value)}
-                            min={dueDate ? `${dueDate}T00:00` : undefined}
+                            min={dueDateOnly ? `${dueDateOnly}T00:00` : undefined}
+                            className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
                         />
+                        {isActualDateBeforeDueDate && (
+                            <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                <div>
+                                    <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Meeting Date & Time cannot be earlier than Studio Meeting Due Date ({date(dueDateOnly)}).
+                                </div>
+                            </div>
+                        )}
                     </Field>
 
                     <Field label="Meeting Room Readiness">
@@ -845,7 +863,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             </div>
                         </div>
 
-{/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
+                        {/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
 
                         {/* Catalogue Master Lookup Badges */}
                         <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">

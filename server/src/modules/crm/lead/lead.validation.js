@@ -312,7 +312,7 @@ const presentationSchema = z
 const kycDocumentItemSchema = z.object({
   documentName: z.string().optional(),
   docType: z.string().optional(),
-  status: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
+  status: z.string().optional(),
   verifiedBy: z.string().optional(),
   verifiedAt: z.union([z.string(), z.date()]).optional(),
   url: z.string().optional(),
@@ -324,13 +324,72 @@ const kycDocumentItemSchema = z.object({
 
 const kycSchema = z
   .object({
-    dueDate: z.union([z.string(), z.date()]).optional(),
-    actualDate: z.union([z.string(), z.date()]).optional(),
-    status: z.enum(['PENDING', 'IN_PROGRESS', 'VERIFIED', 'REJECTED', 'NOT_REQUIRED']).optional(),
+    dueDate: z.union([z.string(), z.date()]).optional().nullable(),
+    actualDate: z.union([z.string(), z.date()]).optional().nullable(),
+    verificationDate: z.union([z.string(), z.date()]).optional().nullable(),
+    status: z.string().optional(),
+    customerType: z.enum(['Individual', 'Company', 'LLP', 'Partnership', 'Other']).optional(),
+    billingLegalName: z.string().optional().nullable(),
+    primaryContactPerson: z.string().optional().nullable(),
+    mobileNumber: z.string().optional().nullable(),
+    email: z.string().optional().nullable(),
+    billingAddress: z.string().optional().nullable(),
+    state: z.string().optional().nullable(),
+    pinCode: z.string().optional().nullable(),
+    gstRegistered: z.enum(['Yes', 'No']).optional(),
+    gstin: z.string().optional().nullable(),
+    pan: z.string().optional().nullable(),
+    sameAsBillingAddress: z.enum(['Yes', 'No']).optional(),
+    siteDeliveryAddress: z.string().optional().nullable(),
+    siteContactPerson: z.string().optional().nullable(),
+    siteContactNumber: z.string().optional().nullable(),
+    poRequired: z.enum(['Yes', 'No']).optional(),
+    clientPoNumber: z.string().optional().nullable(),
+    billingInstructions: z.string().optional().nullable(),
+    documents: z.array(attachmentItemSchema).optional(),
     verifiedDocuments: z.array(kycDocumentItemSchema).optional(),
     documentTypes: z.array(z.string()).optional(),
-    remarks: z.string().optional(),
-    verifiedBy: z.string().optional(),
+    remarks: z.string().optional().nullable(),
+    verifiedBy: z.string().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.gstRegistered === 'Yes' && (!data.gstin || !data.gstin.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'GSTIN is required when GST Registered is Yes',
+        path: ['gstin'],
+      });
+    }
+    if (data.sameAsBillingAddress === 'No') {
+      if (!data.siteDeliveryAddress || !data.siteDeliveryAddress.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Site / Delivery Address is required when address is different from Billing Address',
+          path: ['siteDeliveryAddress'],
+        });
+      }
+      if (!data.siteContactPerson || !data.siteContactPerson.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Site Contact Person is required when address is different from Billing Address',
+          path: ['siteContactPerson'],
+        });
+      }
+      if (!data.siteContactNumber || !data.siteContactNumber.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Site Contact Number is required when address is different from Billing Address',
+          path: ['siteContactNumber'],
+        });
+      }
+    }
+    if (data.poRequired === 'Yes' && (!data.clientPoNumber || !data.clientPoNumber.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Client PO Number is required when PO is required from client',
+        path: ['clientPoNumber'],
+      });
+    }
   })
   .optional();
 
@@ -351,6 +410,8 @@ const rawCreateLeadSchema = z.object({
   previousClientRelationship: z.boolean().optional(),
   existingRelationshipOwner: z.string().optional(),
   location: z.string().optional(),
+  pincode: z.string().optional(),
+  pinCode: z.string().optional(),
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   address: addressSchema,
   projectType: z

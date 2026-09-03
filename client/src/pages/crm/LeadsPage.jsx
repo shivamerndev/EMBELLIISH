@@ -282,6 +282,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
     indicativeBudget: '',
     budgetClassification: 'A',
     location: '',
+    pincode: '',
     previousClientRelationship: 'NO',
     existingRelationshipOwner: 'NA',
     requirementSummary: '',
@@ -342,6 +343,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
     event.preventDefault();
     execute({
       ...form,
+      pinCode: form.pincode,
       previousClientRelationship: form.previousClientRelationship === 'YES' || form.previousClientRelationship === 'Yes',
       companyName: form.clientName,
       budget: form.indicativeBudget ? Number(form.indicativeBudget.replace(/[^0-9.]/g, '')) || undefined : undefined,
@@ -439,6 +441,12 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           <Field label="Project Location">
             <Input value={form.location} onChange={set('location')} placeholder="e.g. Aurangabad / Mumbai / Pune" />
           </Field>
+          <Field label="PIN Code">
+            <Input value={form.pincode} onChange={set('pincode')} placeholder="e.g. 400001" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Previous Client Relationship">
             <Select
               value={form.previousClientRelationship}
@@ -448,6 +456,9 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
                 { value: 'YES', label: 'Yes' },
               ]}
             />
+          </Field>
+          <Field label="Existing Relationship Owner">
+            <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
         </div>
 
@@ -582,6 +593,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     indicativeBudget: l?.indicativeBudget ? formatBudgetValue(l.indicativeBudget) : (l?.budget ? formatBudgetValue(l.budget) : ''),
     budgetClassification: l?.budgetClassification || 'A',
     location: l?.location || '',
+    pincode: l?.pincode || l?.pinCode || l?.address?.pincode || '',
     previousClientRelationship: l?.previousClientRelationship ? 'YES' : 'NO',
     existingRelationshipOwner: l?.existingRelationshipOwner || 'NA',
     requirementSummary: l?.requirementSummary || l?.requirement || '',
@@ -649,6 +661,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     event.preventDefault();
     execute({
       ...form,
+      pinCode: form.pincode,
       previousClientRelationship: form.previousClientRelationship === 'YES' || form.previousClientRelationship === 'Yes',
     });
   };
@@ -743,6 +756,12 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           <Field label="Project Location">
             <Input value={form.location} onChange={set('location')} placeholder="e.g. Aurangabad / Mumbai / Pune" />
           </Field>
+          <Field label="PIN Code">
+            <Input value={form.pincode} onChange={set('pincode')} placeholder="e.g. 400001" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Previous Client Relationship">
             <Select
               value={form.previousClientRelationship}
@@ -752,6 +771,9 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
                 { value: 'YES', label: 'Yes' },
               ]}
             />
+          </Field>
+          <Field label="Existing Relationship Owner">
+            <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
         </div>
 
@@ -943,6 +965,8 @@ export const LeadsPage = () => {
       lead.contactPerson?.toLowerCase().includes(q) ||
       lead.phone?.includes(q) ||
       lead.location?.toLowerCase().includes(q) ||
+      lead.pincode?.includes(q) ||
+      lead.pinCode?.includes(q) ||
       lead.architectName?.toLowerCase().includes(q)
     );
   });
@@ -1031,6 +1055,7 @@ export const LeadsPage = () => {
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">PIN Code</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
@@ -1042,7 +1067,7 @@ export const LeadsPage = () => {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                   {filteredLeads.length === 0 ? (
                     <tr>
-                      <td colSpan={17} className="p-8 text-center text-slate-500">
+                      <td colSpan={18} className="p-8 text-center text-slate-500">
                         No leads match your filter or search query.
                       </td>
                     </tr>
@@ -1088,6 +1113,7 @@ export const LeadsPage = () => {
                             <BudgetClassBadge value={row.budgetClassification || 'A'} />
                           </td>
                           <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
+                          <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
                           <td className="p-3 text-center">
                             <RelationshipBadge value={row.previousClientRelationship} />
                           </td>
