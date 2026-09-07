@@ -384,14 +384,6 @@ const LeadDetails = () => {
                     <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         Active: {DETAIL_TABS.find(t => t.id === activeDetailTab)?.label}
                     </span>
-                    <button
-                        type="button"
-                        onClick={handleNextStepRedirect}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 dark:bg-amber-600 dark:hover:bg-amber-500 rounded-lg shadow-xs transition-colors cursor-pointer"
-                        title="Move & Redirect to Next Step"
-                    >
-                        Move to Next Step <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
                 </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 overflow-x-auto">

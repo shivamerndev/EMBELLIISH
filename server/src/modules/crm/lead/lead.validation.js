@@ -1,41 +1,83 @@
 import { z } from 'zod';
 import { objectId } from '../../project/project/project.validation.js';
 
+const coerceOptionalDate = z.preprocess((val) => {
+  if (val === '' || val === null || val === undefined) return undefined;
+  return val;
+}, z.coerce.date().optional().nullable());
+
+const flexibleObjectId = z.preprocess((val) => {
+  if (val === '' || val === null || val === undefined) return undefined;
+  if (typeof val === 'object' && val !== null) {
+    if (val._id) return String(val._id);
+    if (val.id) return String(val.id);
+  }
+  return val;
+}, z.string().regex(/^[0-9a-fA-F]{24}$/, 'Must be a valid id').optional().nullable());
+
 const addressSchema = z
   .object({
-    line1: z.string().optional(),
-    line2: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    pincode: z.string().optional(),
+    line1: z.string().optional().nullable(),
+    line2: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    state: z.string().optional().nullable(),
+    pincode: z.string().optional().nullable(),
   })
-  .optional();
+  .passthrough()
+  .optional()
+  .nullable();
 
-const attachmentItemSchema = z.object({
-  url: z.string().optional(),
-  filename: z.string().optional(),
-  mimetype: z.string().optional(),
-  size: z.coerce.number().optional(),
-  caption: z.string().optional(),
-});
+const attachmentItemSchema = z
+  .object({
+    url: z.string().optional().nullable(),
+    filename: z.string().optional().nullable(),
+    mimetype: z.string().optional().nullable(),
+    size: z.coerce.number().optional().nullable(),
+    caption: z.string().optional().nullable(),
+    uploadedBy: flexibleObjectId,
+    uploadedAt: z.union([z.string(), z.date()]).optional().nullable(),
+    storage: z.string().optional().nullable(),
+    version: z.coerce.number().optional().nullable(),
+  })
+  .passthrough();
 
 const measurementSchema = z
   .object({
-    dueDate: z.coerce.date().optional(),
-    date: z.coerce.date().optional(),
-    measuredBy: objectId.optional(),
-    status: z.enum(['PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REVISIT_REQUIRED', 'PROVISIONAL', 'FINAL', 'RE_MEASUREMENT_REQUIRED', 'Provisional', 'Final', 'Re-measurement Required']).optional(),
-    siteAccess: z.string().optional(),
-    attachments: z.array(attachmentItemSchema).optional(),
-    roomList: z.any().optional(),
-    drawings: z.array(attachmentItemSchema).optional(),
-    pelmetDetails: z.any().optional(),
-    channelDetails: z.any().optional(),
-    motorDetails: z.any().optional(),
-    wiringDetails: z.any().optional(),
-    notes: z.any().optional(),
+    dueDate: coerceOptionalDate,
+    date: coerceOptionalDate,
+    measuredBy: flexibleObjectId,
+    status: z
+      .union([
+        z.enum([
+          'PENDING',
+          'SCHEDULED',
+          'IN_PROGRESS',
+          'COMPLETED',
+          'REVISIT_REQUIRED',
+          'PROVISIONAL',
+          'FINAL',
+          'RE_MEASUREMENT_REQUIRED',
+          'Provisional',
+          'Final',
+          'Re-measurement Required',
+        ]),
+        z.string(),
+      ])
+      .optional()
+      .nullable(),
+    siteAccess: z.string().optional().nullable(),
+    attachments: z.array(z.any()).optional().nullable(),
+    roomList: z.any().optional().nullable(),
+    drawings: z.array(z.any()).optional().nullable(),
+    pelmetDetails: z.any().optional().nullable(),
+    channelDetails: z.any().optional().nullable(),
+    motorDetails: z.any().optional().nullable(),
+    wiringDetails: z.any().optional().nullable(),
+    notes: z.any().optional().nullable(),
   })
-  .optional();
+  .passthrough()
+  .optional()
+  .nullable();
 
 const getDateOnlyString = (val) => {
   if (!val) return '';

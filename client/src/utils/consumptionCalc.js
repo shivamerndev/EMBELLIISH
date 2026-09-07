@@ -46,9 +46,12 @@ export function calculateRowConsumption(row = {}) {
     } else if (unit === 'cm') {
         widthInch = rawW / 2.54;
         heightInch = rawH / 2.54;
-    } else if (unit === 'ft') {
+    } else if (unit === 'ft' || unit === 'feet') {
         widthInch = rawW * 12;
         heightInch = rawH * 12;
+    } else if (unit === 'in' || unit === 'inch' || unit === 'inches') {
+        widthInch = rawW;
+        heightInch = rawH;
     }
 
     const particular = String(row.particular || row.windowType || 'MAIN_CURTAIN').toUpperCase();

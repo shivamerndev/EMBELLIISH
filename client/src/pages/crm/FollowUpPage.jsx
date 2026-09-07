@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Users, UserCheck, ShieldCheck, Pencil, ArrowRightCircle, ArrowRight } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
@@ -96,9 +96,18 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
     overallLeadStatus: item?.overallLeadStatus || 'NEW',
   });
 
+  const navigate = useNavigate();
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(item.id || item._id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+        const code = item?.code || '';
+        navigate(`/crm/clients${code ? `?search=${encodeURIComponent(code)}` : ''}`);
+      }
+    }
   );
 
   const handleSelectNextAction = (e) => {
@@ -134,7 +143,7 @@ const EditFollowUpModal = ({ item, onClose, onDone }) => {
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending}>Save Follow-up</Button>
+          <Button onClick={submit} loading={pending}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -234,13 +243,6 @@ export const FollowUpPage = () => {
       <PageHeader
         title="CRM — Lead Follow-up"
         subtitle="Track the next action, due date, and overall status for every lead in the pipeline"
-        actions={
-          <Link to="/crm/clients">
-            <Button icon={ArrowRight}>
-              Move to Clients
-            </Button>
-          </Link>
-        }
       />
 
       <Panel className="mb-4">

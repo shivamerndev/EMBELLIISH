@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Users, UserCheck, PhoneCall, Pencil, ArrowRightCircle, ArrowRight } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
@@ -77,9 +77,18 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     rejectionHoldReason: item?.rejectionHoldReason || '',
   });
 
+  const navigate = useNavigate();
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(item.id || item._id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+        const code = item?.code || '';
+        navigate(`/crm/follow-ups${code ? `?search=${encodeURIComponent(code)}` : ''}`);
+      }
+    }
   );
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -123,7 +132,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending}>Save Qualification</Button>
+          <Button onClick={submit} loading={pending}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -284,13 +293,6 @@ export const QualificationPage = () => {
       <PageHeader
         title="CRM — Lead Qualification"
         subtitle="Verify requirement, budget, timeline, and decision maker before approving or rejecting a lead"
-        actions={
-          <Link to="/crm/follow-ups">
-            <Button icon={ArrowRight}>
-              Move to Follow-ups
-            </Button>
-          </Link>
-        }
       />
 
       <Panel className="mb-4">

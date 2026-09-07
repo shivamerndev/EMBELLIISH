@@ -71,13 +71,6 @@ export const ClientsPage = () => {
       <PageHeader
         title="Clients"
         subtitle="Converted leads, and every project they have run with Embellish"
-        actions={
-          <Link to="/crm/sales-commercials">
-            <Button icon={ArrowRight}>
-              Move to Sales & Commercials
-            </Button>
-          </Link>
-        }
       />
 
       <Panel className="mb-4 p-3.5 sm:p-4">
