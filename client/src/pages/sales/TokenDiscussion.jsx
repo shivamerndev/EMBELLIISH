@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil,
@@ -294,6 +294,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
     const navigate = useNavigate();
     const tok = item?.token || {};
     const [redirectOnSave, setRedirectOnSave] = useState(false);
+    const redirectRef = useRef(false);
 
     const initialStatus = normalizeTokenStatus(tok.status);
 
@@ -343,12 +344,16 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
     };
 
     const { execute, pending, error: apiError } = useAction(
-        (payload) => leadsApi.update(item._id || item.id, { token: payload }),
+        async ({ payload, shouldRedirect }) => {
+            const res = await leadsApi.update(item._id || item.id, { token: payload });
+            return { res, shouldRedirect };
+        },
         {
-            onSuccess: () => {
+            onSuccess: (data) => {
+                const shouldRedirect = data?.shouldRedirect ?? redirectRef.current;
                 onDone();
                 onClose();
-                if (redirectOnSave) {
+                if (shouldRedirect) {
                     const { url } = getNextStageUrl('token', item?.code);
                     navigate(url);
                 }
@@ -356,7 +361,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         }
     );
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e, shouldRedirect = false) => {
         if (e) e.preventDefault();
         setValidationError('');
 
@@ -376,12 +381,13 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
             projectTimelineEnd: form.projectTimelineEnd || undefined,
         };
 
-        execute(payload);
+        redirectRef.current = shouldRedirect;
+        setRedirectOnSave(shouldRedirect);
+        execute({ payload, shouldRedirect });
     };
 
     const handleSaveAndRedirect = (e) => {
-        setRedirectOnSave(true);
-        handleSubmit(e);
+        handleSubmit(e, true);
     };
 
     const handleDirectRedirect = () => {
@@ -419,7 +425,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     </Button>
                     <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                        <Button onClick={(e) => { setRedirectOnSave(false); handleSubmit(e); }} loading={pending && !redirectOnSave}>Save Token Details</Button>
+                        <Button onClick={(e) => handleSubmit(e, false)} loading={pending && !redirectOnSave}>Save Token Details</Button>
                         <Button
                             onClick={handleSaveAndRedirect}
                             loading={pending && redirectOnSave}

@@ -193,7 +193,7 @@ const PreviewModal = ({ boq, project, preview, previewing = false, onClose }) =>
                                         <th rowSpan={3} className="border-r border-black px-2 py-1.5 min-w-[100px] bg-[#d9d9d9]">Area</th>
                                         <th rowSpan={3} className="border-r border-black px-2 py-1.5 min-w-[110px] bg-[#d9d9d9]">Particular</th>
                                         <th colSpan={4} className="border-r border-black px-1 py-1 bg-white">Window size (In inches)</th>
-                                        <th colSpan={4} className="border-r border-black px-1 py-1 bg-white">Pelmet Size</th>
+                                        <th colSpan={4} className="border-r border-black px-1 py-1 bg-white">Pelmet Size (Inches)</th>
                                         <th colSpan={2} className="border-r border-black px-1 py-1 bg-white">Wire</th>
                                         <th rowSpan={3} className="border-r border-black px-1 py-1.5 w-10 bg-white">Rnft</th>
                                         <th rowSpan={3} className="border-r border-black px-1 py-1.5 w-12 bg-white">Roman Sqft</th>

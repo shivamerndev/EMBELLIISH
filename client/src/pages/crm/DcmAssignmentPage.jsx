@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, ArrowRight, UserCheck, Check } from 'lucide-react';
 import { leadsApi, usersApi } from '../../api';
@@ -186,9 +186,18 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
     );
   }, [dcmList, managerSearch]);
 
+  const navigate = useNavigate();
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(item.id || item._id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+        const code = item?.code || '';
+        navigate(`/crm/qualification${code ? `?search=${encodeURIComponent(code)}` : ''}`);
+      }
+    }
   );
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -257,7 +266,7 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending}>Save Assignment</Button>
+          <Button onClick={submit} loading={pending}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -533,13 +542,6 @@ export const DcmAssignmentPage = () => {
       <PageHeader
         title="CRM — DCM Capacity & Lead Assignment"
         subtitle="Dedicated portal for managing DCM workloads, lead priorities, assignment due dates, capacity statuses, and reassignments"
-        actions={
-          <Link to="/crm/qualification">
-            <Button icon={ArrowRight}>
-              Move to Qualification
-            </Button>
-          </Link>
-        }
       />
 
       <Panel className="mb-4">

@@ -205,10 +205,10 @@ const NewDrawingModal = ({ open, onClose, projectId, rooms, onDone }) => {
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <Field label="Pelmet depth"><Input type="number" value={form.pelmetDepthInch} onChange={set('pelmetDepthInch')} /></Field>
-          <Field label="Pelmet drop"><Input type="number" value={form.pelmetDropInch} onChange={set('pelmetDropInch')} /></Field>
-          <Field label="Finished height"><Input type="number" value={form.finishedHeightInch} onChange={set('finishedHeightInch')} /></Field>
-          <Field label="Floor clearance"><Input type="number" value={form.floorClearanceInch} onChange={set('floorClearanceInch')} /></Field>
+          <Field label="Pelmet depth (in)"><Input type="number" value={form.pelmetDepthInch} onChange={set('pelmetDepthInch')} /></Field>
+          <Field label="Pelmet drop (in)"><Input type="number" value={form.pelmetDropInch} onChange={set('pelmetDropInch')} /></Field>
+          <Field label="Finished height (in)"><Input type="number" value={form.finishedHeightInch} onChange={set('finishedHeightInch')} /></Field>
+          <Field label="Floor clearance (in)"><Input type="number" value={form.floorClearanceInch} onChange={set('floorClearanceInch')} /></Field>
         </div>
 
         <div className="grid grid-cols-3 gap-4">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, Pencil, Check, Calendar, User, Mail, Phone, MapPin, Building, FileText,
   Paperclip, ShieldCheck, UserCheck, Clock, Tag, AlertCircle, ExternalLink, Eye,
@@ -81,6 +82,7 @@ export const LeadDetailsModal = ({
   architects = [],
   onReloadArchitects,
 }) => {
+  const navigate = useNavigate();
   const [lead, setLead] = useState(leadData || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -228,6 +230,9 @@ export const LeadDetailsModal = ({
       setLead(updatedItem);
       setIsEditing(false);
       if (onUpdated) onUpdated(updatedItem);
+      if (onClose) onClose();
+      const code = updatedItem.code || lead?.code || '';
+      navigate(`/crm/dcm-assignments${code ? `?search=${encodeURIComponent(code)}&assign=true` : ''}`);
     } catch (err) {
       console.error('Failed to update lead:', err);
       setError(err?.message || 'Failed to save lead updates');
@@ -809,7 +814,7 @@ export const LeadDetailsModal = ({
               loading={loading}
               className="bg-[#836444] hover:bg-[#6e5338] text-white font-semibold"
             >
-              Save Changes
+              Save and Move to Next Step
             </Button>
           </div>
         )}

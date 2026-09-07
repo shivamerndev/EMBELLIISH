@@ -612,9 +612,18 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     }
   }, [lead]);
 
+  const navigate = useNavigate();
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(lead.id || lead._id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => {
+        onDone();
+        onClose();
+        const code = lead?.code || '';
+        navigate(`/crm/dcm-assignments${code ? `?search=${encodeURIComponent(code)}&assign=true` : ''}`);
+      }
+    }
   );
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -676,7 +685,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending}>Save Changes</Button>
+          <Button onClick={submit} loading={pending}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -978,13 +987,6 @@ export const LeadsPage = () => {
       <PageHeader
         title="CRM — Lead Capture"
         subtitle="Manage, track, and qualify leads recorded through Architects, Interior Designers, or Direct Channels"
-        actions={
-          <Link to="/crm/dcm-assignments">
-            <Button icon={ArrowRight}>
-              Move to DCM Assignments
-            </Button>
-          </Link>
-        }
       />
 
       <Panel className="mb-4">

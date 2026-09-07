@@ -706,11 +706,19 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             (row.wiringDetails || []).map((w) => ({ ...w, roomWindow: w.roomWindow || row.windowId || row.room }))
         );
 
+        let measuredById = form.measuredBy;
+        if (typeof measuredById === 'object' && measuredById !== null) {
+            measuredById = measuredById._id || measuredById.id || '';
+        }
+        if (typeof measuredById === 'string') {
+            measuredById = measuredById.trim();
+        }
+
         const payload = {
             ...form,
             dueDate: form.dueDate || undefined,
             date: form.date || undefined,
-            measuredBy: form.measuredBy || undefined,
+            measuredBy: measuredById || undefined,
             attachments,
             drawings,
             roomList: roomList,
@@ -734,9 +742,20 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
         >
             <form onSubmit={submit} className="space-y-4">
                 {(error || validationError) && (
-                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4 shrink-0" />
-                        <span>{validationError || error?.message || String(error)}</span>
+                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex flex-col gap-1">
+                        <div className="flex items-center gap-2 font-semibold">
+                            <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+                            <span>{validationError || error?.message || String(error)}</span>
+                        </div>
+                        {error?.errors && Array.isArray(error.errors) && error.errors.length > 0 && (
+                            <ul className="list-disc list-inside pl-5 space-y-0.5 text-[11px]">
+                                {error.errors.map((err, i) => (
+                                    <li key={i}>
+                                        <span className="font-mono font-medium">{err.field}:</span> {err.message}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 )}
 

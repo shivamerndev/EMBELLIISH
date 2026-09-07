@@ -47,6 +47,7 @@ const APPROVED_UNITS = [
     'Yard',
     'Feet',
     'Square Feet',
+    'Inches',
     'Roll'
 ];
 
