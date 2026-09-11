@@ -355,8 +355,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
       open={open}
       onClose={onClose}
       title="Capture New Lead"
-      subtitle="Step 1 — Lead Capture sheet entry form"
-      size="lg"
+      size="xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -385,7 +384,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -399,6 +398,19 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
               ]}
             />
           </Field>
+
+           <Field label="Architect / Designer Involved">
+            <Select
+              value={form.architectInvolved}
+              onChange={set('architectInvolved')}
+              options={[
+                { value: 'Yes', label: 'Yes' },
+                { value: 'No', label: 'No' },
+                { value: 'Not Known', label: 'Not Known' },
+              ]}
+            />
+          </Field>
+          
           <Field label="Architect / Designer Name">
             <SearchableArchitectSelect
               value={form.architectName}
@@ -428,7 +440,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
               value={form.budgetClassification}
               onChange={set('budgetClassification')}
               options={[
-                { value: 'A', label: 'A (High Priority/Budget)' },
+                { value: 'A', label: 'A (High Priority)' },
                 { value: 'B', label: 'B (Medium-High)' },
                 { value: 'C', label: 'C (Standard)' },
                 { value: 'D', label: 'D (Basic)' },
@@ -446,7 +458,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Previous Client Relationship">
             <Select
               value={form.previousClientRelationship}
@@ -460,24 +472,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           <Field label="Existing Relationship Owner">
             <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Existing Relationship Owner">
-            <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
-          </Field>
-          <Field label="Architect / Designer Involved">
-            <Select
-              value={form.architectInvolved}
-              onChange={set('architectInvolved')}
-              options={[
-                { value: 'Yes', label: 'Yes' },
-                { value: 'No', label: 'No' },
-                { value: 'Not Known', label: 'Not Known' },
-              ]}
-            />
-          </Field>
-        </div>
+        </div> */}
 
         <Field label="Requirement Summary">
           <Textarea value={form.requirementSummary} onChange={set('requirementSummary')} placeholder="As per given document..." />
@@ -681,7 +676,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
       onClose={onClose}
       title={`Edit Lead — ${lead?.code || ''}`}
       subtitle={`Update capture details for ${lead?.clientName || ''}`}
-      size="lg"
+      size="xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -709,7 +704,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -723,6 +718,19 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
               ]}
             />
           </Field>
+
+           <Field label="Architect / Designer Involved">
+            <Select
+              value={form.architectInvolved}
+              onChange={set('architectInvolved')}
+              options={[
+                { value: 'Yes', label: 'Yes' },
+                { value: 'No', label: 'No' },
+                { value: 'Not Known', label: 'Not Known' },
+              ]}
+            />
+          </Field>
+
           <Field label="Architect / Designer Name">
             <SearchableArchitectSelect
               value={form.architectName}
@@ -732,6 +740,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
             />
           </Field>
         </div>
+
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Indicative Budget">
@@ -747,6 +756,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
               />
             </div>
           </Field>
+
           <Field label="Budget Classification">
             <Select
               value={form.budgetClassification}
@@ -770,7 +780,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Previous Client Relationship">
             <Select
               value={form.previousClientRelationship}
@@ -784,23 +794,13 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           <Field label="Existing Relationship Owner">
             <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Existing Relationship Owner">
+          {/* <Field label="Existing Relationship Owner">
             <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
-          </Field>
-          <Field label="Architect / Designer Involved">
-            <Select
-              value={form.architectInvolved}
-              onChange={set('architectInvolved')}
-              options={[
-                { value: 'Yes', label: 'Yes' },
-                { value: 'No', label: 'No' },
-                { value: 'Not Known', label: 'Not Known' },
-              ]}
-            />
-          </Field>
+          </Field> */}
+        
         </div>
 
         <Field label="Requirement Summary">
