@@ -3,10 +3,10 @@ import ApiError from '../../core/ApiError.js';
 import logger from '../../config/logger.js';
 import NotificationModel from './notification.model.js';
 import UserModel from '../user/user.model.js';
-import ProjectModel from '../project/project/project.model.js';
 import settingsService from '../settings/settings.service.js';
 import mailService from '../../services/mail.service.js';
 import { ROLE_PERMISSIONS } from '../../constants/roles.constants.js';
+
 
 /**
  * Module 19 — Notifications.
@@ -28,33 +28,6 @@ const usersWithPermission = async (permission) => {
     isActive: true,
     $or: [{ role: { $in: roles } }, { permissions: permission }],
   })
-    .select('name email role')
-    .lean();
-};
-
-/** The people actually attached to a project — its DCM, coordinator, installer. */
-const projectTeam = async (projectId) => {
-  if (!projectId) return [];
-
-  const project = await ProjectModel.findById(projectId)
-    .select('assignedDCM projectCoordinator designer executionEngineer installer createdBy')
-    .lean();
-  if (!project) return [];
-
-  const ids = [
-    project.assignedDCM,
-    project.projectCoordinator,
-    project.designer,
-    project.executionEngineer,
-    project.installer,
-    project.createdBy,
-  ]
-    .filter(Boolean)
-    .map(String);
-
-  if (!ids.length) return [];
-
-  return UserModel.find({ _id: { $in: [...new Set(ids)] }, isActive: true })
     .select('name email role')
     .lean();
 };
@@ -109,9 +82,9 @@ class NotificationService {
     return this.send(await usersWithPermission(permission), payload, triggeredBy);
   }
 
-  /** Tell the people on this project. */
-  async toProjectTeam(projectId, payload, triggeredBy) {
-    return this.send(await projectTeam(projectId), { ...payload, project: projectId }, triggeredBy);
+  /** @deprecated Projects module removed. No-op kept for API compatibility. */
+  async toProjectTeam(_projectId, _payload, _triggeredBy) {
+    return { created: 0 };
   }
 
   async toUsers(userIds = [], payload, triggeredBy) {
@@ -190,4 +163,4 @@ class NotificationService {
 const notify = new NotificationService();
 
 export default notify;
-export { notify, usersWithPermission, projectTeam };
+export { notify, usersWithPermission };

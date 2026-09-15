@@ -5,7 +5,9 @@ import FabricModel from './fabric.model.js';
 import { nextCode } from '../../../core/sequence.js';
 import { UOM } from '../../../constants/product.constants.js';
 import { PERMISSIONS } from '../../../constants/roles.constants.js';
-import { objectId } from '../../project/project/project.validation.js';
+
+const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Must be a valid ObjectId');
+
 
 const fabricSchema = z.object({
   name: z.string().min(2, 'Fabric name is required'),

@@ -3,19 +3,14 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Users,
-  UserPlus,
   PhoneCall,
   CalendarCheck,
   FileText,
   Trophy,
   XCircle,
   TrendingUp,
-  Briefcase,
-  IndianRupee,
-  Factory,
   AlertTriangle,
   Phone,
-  PackageX,
   Activity,
   Clock,
 } from 'lucide-react';
@@ -29,8 +24,6 @@ import {
   StatTile,
   Loading,
   ErrorState,
-  Progress,
-  Badge,
   StatusBadge,
 } from '../../components/ui';
 
@@ -76,13 +69,11 @@ export const Dashboard = () => {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return null;
 
-  const { kpis, recentActivities, leads, projects, money, production, alerts } = data;
-  const activeStages = projects.byStage.filter((stage) => stage.count > 0);
+  const { kpis, recentActivities, leads, alerts } = data;
 
   // Fallback calculations for maximum compatibility
   const kpiData = {
     totalLeads: kpis?.totalLeads ?? leads?.total ?? 0,
-    newLeads: kpis?.newLeads ?? 0,
     followupToday: kpis?.followupToday ?? 0,
     overdueActions: alerts?.overdueFollowUps ?? kpis?.overdueFollowUps ?? 0,
     meetingToday: kpis?.meetingToday ?? 0,
@@ -96,10 +87,10 @@ export const Dashboard = () => {
     <div>
       <PageHeader
         title={`Good day, ${user?.name?.split(' ')[0] || 'there'}`}
-        subtitle="Every department on the same project record"
+        subtitle="CRM & Sales pipeline at a glance"
       />
 
-      {/* --- Core Metric KPI Cards arranged in responsive 4-column layout --- */}
+      {/* --- Core Metric KPI Cards --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <StatTile
           label="Total Leads"
@@ -115,19 +106,17 @@ export const Dashboard = () => {
           icon={PhoneCall}
           tone="blue"
         />
-        <Link to="/crm/follow-ups?tab=OVERDUE" className="block transition-transform hover:-translate-y-0.5">
-          <StatTile
-            label="Overdue Actions"
-            value={number(kpiData.overdueActions, 0)}
-            sub="Click to view late actions"
-            icon={Clock}
-            tone="rose"
-          />
-        </Link>
+        <StatTile
+          label="Overdue Actions"
+          value={number(kpiData.overdueActions, 0)}
+          sub="Delayed leads & follow-ups"
+          icon={Clock}
+          tone="rose"
+        />
         <StatTile
           label="Meeting Today"
           value={number(kpiData.meetingToday, 0)}
-          sub="Meetings & site visits"
+          sub="Studio meetings & site visits"
           icon={CalendarCheck}
           tone="violet"
         />
@@ -162,45 +151,19 @@ export const Dashboard = () => {
       </div>
 
       {/* --- Alerts Banner --- */}
-      {(alerts?.openSnags > 0 || alerts?.overdueFollowUps > 0 || alerts?.lowStockItems > 0) && (
+      {alerts?.overdueFollowUps > 0 && (
         <Panel className="mb-6 p-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-amber-500/30 bg-amber-500/[0.05]">
           <span className="flex items-center gap-2 text-xs font-semibold text-amber-400">
             <AlertTriangle className="w-4 h-4" /> Needs attention
           </span>
-          {alerts.overdueFollowUps > 0 && (
-            <Link to="/crm/follow-ups?tab=OVERDUE" className="flex items-center gap-1.5 text-xs hover:text-brand-400 font-medium" style={{ color: 'var(--text-secondary)' }}>
-              <Phone className="w-3.5 h-3.5 text-rose-400" /> {alerts.overdueFollowUps} overdue action(s)
-            </Link>
-          )}
-          {alerts.openSnags > 0 && (
-            <Link to="/projects" className="flex items-center gap-1.5 text-xs hover:text-brand-400" style={{ color: 'var(--text-secondary)' }}>
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> {alerts.openSnags} open snag(s)
-            </Link>
-          )}
-          {alerts.lowStockItems > 0 && (
-            <Link to="/inventory" className="flex items-center gap-1.5 text-xs hover:text-brand-400" style={{ color: 'var(--text-secondary)' }}>
-              <PackageX className="w-3.5 h-3.5 text-amber-400" /> {alerts.lowStockItems} item(s) below reorder level
-            </Link>
-          )}
+          <Link to="/crm/delayed-leads" className="flex items-center gap-1.5 text-xs hover:text-brand-400 font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <Phone className="w-3.5 h-3.5 text-rose-400" /> {alerts.overdueFollowUps} overdue lead action(s)
+          </Link>
         </Panel>
       )}
 
-      {/* --- Pipeline Charts & Recent Activities Section --- */}
+      {/* --- Lead Pipeline & Recent Activities --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Panel>
-          <PanelHeader
-            title="Projects across the spine"
-            subtitle="Where every live project currently sits"
-            icon={Briefcase}
-            actions={<Link to="/projects" className="text-xs text-brand-400 hover:text-brand-300 font-medium">View all</Link>}
-          />
-          {activeStages.length ? (
-            <StageBars rows={activeStages} total={projects.total} tone="bg-brand-500" />
-          ) : (
-            <p className="p-5 text-sm" style={{ color: 'var(--text-muted)' }}>No active projects yet.</p>
-          )}
-        </Panel>
-
         <Panel>
           <PanelHeader
             title="Lead pipeline"
@@ -208,21 +171,17 @@ export const Dashboard = () => {
             icon={Users}
             actions={<Link to="/crm/leads" className="text-xs text-brand-400 hover:text-brand-300 font-medium">View all</Link>}
           />
-          <StageBars rows={leads.byStatus} total={leads.total} tone="bg-amber-600" />
+          <StageBars rows={leads?.byStatus || []} total={leads?.total} tone="bg-amber-600" />
         </Panel>
-      </div>
 
-      {/* --- 9th Feature: Recent Activities Widget & Factory Floor --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Activities Section */}
-        <Panel className="lg:col-span-1">
+        <Panel>
           <PanelHeader
             title="Recent Activities"
-            subtitle="Latest follow-ups & CRM events"
+            subtitle="Latest CRM events & lead updates"
             icon={Activity}
             actions={
               <Link to="/crm/leads" className="text-xs text-brand-400 hover:text-brand-300 font-medium">
-                All follow-ups
+                View all leads
               </Link>
             }
           />
@@ -247,7 +206,7 @@ export const Dashboard = () => {
                     )}
                     <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                       <span className="font-medium truncate">
-                        {act.lead?.clientName || act.project?.name || 'CRM Event'}
+                        {act.lead?.clientName || 'CRM Event'}
                       </span>
                       <span className="shrink-0 text-[10px]" style={{ color: 'var(--text-muted)' }}>
                         {new Date(act.createdAt).toLocaleDateString('en-IN', {
@@ -266,46 +225,9 @@ export const Dashboard = () => {
             )}
           </div>
         </Panel>
-
-        {/* Factory Floor Section */}
-        <Panel className="lg:col-span-2">
-          <PanelHeader
-            title="Factory floor"
-            subtitle="Work orders by production stage"
-            icon={Factory}
-            actions={<Badge tone="brand">{production.total} work orders</Badge>}
-          />
-          {production.total ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-px" style={{ backgroundColor: 'var(--border)' }}>
-              {production.byStage.map((stage) => (
-                <div key={stage.stage} className="p-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
-                  <p
-                    className="text-[10px] font-semibold uppercase tracking-wider mb-2 leading-tight h-6 truncate"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {stage.stage.replace(/_/g, ' ')}
-                  </p>
-                  <p className="text-xl font-bold numeric" style={{ color: 'var(--text-primary)' }}>
-                    {stage.count}
-                  </p>
-                  <Progress
-                    value={production.total ? (stage.count / production.total) * 100 : 0}
-                    className="mt-2"
-                    tone="brand"
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="p-5 text-sm" style={{ color: 'var(--text-muted)' }}>
-              Nothing on the factory floor right now.
-            </p>
-          )}
-        </Panel>
       </div>
     </div>
   );
 };
 
 export default Dashboard;
-
