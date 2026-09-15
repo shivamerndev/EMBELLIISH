@@ -3,9 +3,6 @@ import BaseRepository from '../../../core/BaseRepository.js';
 import ApiError from '../../../core/ApiError.js';
 import { nextCode } from '../../../core/sequence.js';
 import LeadModel from './lead.model.js';
-import ClientModel from '../client/client.model.js';
-import FollowUpModel from '../followup/followup.model.js';
-import projectService from '../../project/project/project.service.js';
 import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
 
 const leadRepository = new BaseRepository(LeadModel, {
@@ -162,11 +159,8 @@ class LeadService extends BaseService {
     return this.repository.update(id, updateData);
   }
 
-  /**
-   * Turns a qualified lead into a client and opens their project at the start of
-   * the spine. Idempotent by design — a double-click must not create two villas.
-   */
-  async convert(id, { projectName, siteAddress, estimatedValue } = {}, user) {
+  /** Marks a qualified lead as converted (KYC route handles the full customer conversion flow). */
+  async convert(id, _payload, user) {
     const lead = await this.#load(id);
 
     if (lead.status === LEAD_STATUS.CONVERTED) {
@@ -176,45 +170,12 @@ class LeadService extends BaseService {
       throw ApiError.workflow('Only a qualified lead can be converted. Qualify it first.');
     }
 
-    // Reuse an existing client on the same phone rather than duplicating them.
-    let client = await ClientModel.findOne({ phone: lead.phone });
-    if (!client) {
-      client = await ClientModel.create({
-        code: await nextCode('CL'),
-        name: lead.clientName,
-        company: lead.companyName,
-        phone: lead.phone,
-        email: lead.email,
-        architect: lead.architect,
-        siteAddress: siteAddress || lead.address,
-        billingAddress: siteAddress || lead.address,
-        sourceLead: lead._id,
-        accountOwner: lead.assignedDCM || user?.id,
-      });
-    }
-
-    const project = await projectService.create(
-      {
-        name: projectName || `${lead.clientName} — ${lead.projectType || 'Project'}`,
-        client: client._id,
-        architect: lead.architect,
-        lead: lead._id,
-        siteAddress: siteAddress || lead.address,
-        projectType: lead.projectType,
-        assignedDCM: lead.assignedDCM,
-        estimatedValue: estimatedValue ?? lead.budget ?? 0,
-      },
-      user
-    );
-
     lead.status = LEAD_STATUS.CONVERTED;
-    lead.convertedClient = client._id;
-    lead.convertedProject = project._id;
     lead.convertedAt = new Date();
-    lead.history.push({ action: 'CONVERTED', to: LEAD_STATUS.CONVERTED, note: project.code, by: user?.id });
+    lead.history.push({ action: 'CONVERTED', to: LEAD_STATUS.CONVERTED, by: user?.id });
     await lead.save();
 
-    return { lead: lead.toJSON(), client: client.toJSON(), project };
+    return lead.toJSON();
   }
 
   async markLost(id, { reason }, user) {
@@ -226,24 +187,23 @@ class LeadService extends BaseService {
     return lead.toJSON();
   }
 
-  /** Logs a call and schedules the next one in a single step. */
+  /** Logs a follow-up note directly on the lead history. */
   async addFollowUp(id, data, user) {
     const lead = await this.#load(id);
-
-    const followUp = await FollowUpModel.create({
-      ...data,
-      lead: lead._id,
-      owner: data.owner || lead.assignedDCM || user?.id,
-      createdBy: user?.id,
-    });
 
     if (data.nextFollowUpAt) {
       lead.nextFollowUpAt = data.nextFollowUpAt;
       if (lead.status === LEAD_STATUS.NEW) lead.status = LEAD_STATUS.CONTACTED;
-      await lead.save();
     }
 
-    return followUp.toJSON();
+    lead.history.push({
+      action: 'FOLLOW_UP',
+      note: data.notes || data.subject,
+      by: user?.id,
+    });
+
+    await lead.save();
+    return lead.toJSON();
   }
 
   /** Pipeline counts by status, for the CRM funnel. */

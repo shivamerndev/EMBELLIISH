@@ -5,7 +5,6 @@ import ApiError from '../../core/ApiError.js';
 import { sendSuccess } from '../../utils/responseHandler.js';
 import UserModel from '../user/user.model.js';
 import ArchitectModel from '../crm/architect/architect.model.js';
-import ProjectModel from '../project/project/project.model.js';
 import LeadModel from '../crm/lead/lead.model.js';
 import { ROLES } from '../../constants/roles.constants.js';
 
@@ -94,7 +93,6 @@ router.get(
   asyncHandler(async (req, res) => {
     const users = await UserModel.find({ isActive: true }).select('role').lean();
     const architectsCount = await ArchitectModel.countDocuments({ isActive: true });
-    const totalProjects = await ProjectModel.countDocuments();
 
     let totalDcms = 0;
     let totalManagers = 0;
@@ -131,7 +129,6 @@ router.get(
       totalDcms,
       totalManagers,
       totalArchitects,
-      totalProjects,
     });
   })
 );
@@ -144,42 +141,25 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const users = await UserModel.find().sort({ createdAt: -1 }).lean();
-    const projects = await ProjectModel.find()
-      .select('assignedDCM projectCoordinator designer executionEngineer installer architect code name')
-      .lean();
     const leads = await LeadModel.find()
-      .select('assignedDCM assignedDcmName architect architectName')
+      .select('assignedDCM assignedDcmName architect architectName status')
       .lean();
 
     const membersList = users.map((user) => {
       const userIdStr = user._id.toString();
       const userNameLower = (user.name || '').toLowerCase().trim();
 
-      // Count matching project assignments
-      let assignedProjectsCount = 0;
-      for (const p of projects) {
-        let isAssigned = false;
-        if (p.assignedDCM && p.assignedDCM.toString() === userIdStr) isAssigned = true;
-        if (p.projectCoordinator && p.projectCoordinator.toString() === userIdStr) isAssigned = true;
-        if (p.designer && p.designer.toString() === userIdStr) isAssigned = true;
-        if (p.executionEngineer && p.executionEngineer.toString() === userIdStr) isAssigned = true;
-        if (p.installer && p.installer.toString() === userIdStr) isAssigned = true;
-        if (p.architect && p.architect.toString() === userIdStr) isAssigned = true;
-        if (isAssigned) assignedProjectsCount += 1;
-      }
-
-      // Count active lead assignments if project count is 0
-      if (assignedProjectsCount === 0) {
-        for (const l of leads) {
-          if (l.assignedDCM && l.assignedDCM.toString() === userIdStr) {
-            assignedProjectsCount += 1;
-          } else if (l.assignedDcmName && l.assignedDcmName.toLowerCase().trim() === userNameLower) {
-            assignedProjectsCount += 1;
-          }
+      // Count active lead assignments as the workload proxy
+      let assignedLeadsCount = 0;
+      for (const l of leads) {
+        if (l.assignedDCM && l.assignedDCM.toString() === userIdStr) {
+          assignedLeadsCount += 1;
+        } else if (l.assignedDcmName && l.assignedDcmName.toLowerCase().trim() === userNameLower) {
+          assignedLeadsCount += 1;
         }
       }
 
-      const workload = calculateWorkload(assignedProjectsCount);
+      const workload = calculateWorkload(assignedLeadsCount);
 
       return {
         id: user._id.toString(),
@@ -190,7 +170,7 @@ router.get(
         role: user.role,
         displayRole: formatRoleLabel(user.role),
         department: user.department || 'General',
-        projectCount: assignedProjectsCount,
+        projectCount: assignedLeadsCount,
         workload,
         isActive: user.isActive ?? true,
         createdAt: user.createdAt,
@@ -300,20 +280,18 @@ router.get(
     }
 
     const userIdStr = user._id.toString();
-    const projects = await ProjectModel.find({
+    const userNameLower = (user.name || '').toLowerCase().trim();
+
+    // Count leads assigned to this member as the workload metric
+    const assignedLeads = await LeadModel.find({
       $or: [
         { assignedDCM: user._id },
-        { projectCoordinator: user._id },
-        { designer: user._id },
-        { executionEngineer: user._id },
-        { installer: user._id },
-        { architect: user._id },
       ],
     })
-      .select('code name stage contractValue estimatedValue siteAddress createdAt')
+      .select('code clientName status')
       .lean();
 
-    const workload = calculateWorkload(projects.length);
+    const workload = calculateWorkload(assignedLeads.length);
 
     return sendSuccess(res, 'Member details retrieved', {
       id: user._id.toString(),
@@ -324,15 +302,13 @@ router.get(
       role: user.role,
       displayRole: formatRoleLabel(user.role),
       department: user.department || 'General',
-      projectCount: projects.length,
+      projectCount: assignedLeads.length,
       workload,
-      assignedProjects: projects.map((p) => ({
-        id: p._id.toString(),
-        code: p.code,
-        name: p.name,
-        stage: p.stage,
-        value: p.contractValue || p.estimatedValue || 0,
-        city: p.siteAddress?.city || '',
+      assignedLeads: assignedLeads.map((l) => ({
+        id: l._id.toString(),
+        code: l.code,
+        name: l.clientName,
+        status: l.status,
       })),
       isActive: user.isActive ?? true,
       createdAt: user.createdAt,

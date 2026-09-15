@@ -7,8 +7,6 @@ import Dashboard from '../pages/dashboard/Dashboard';
 import LeadsPage from '../pages/crm/LeadsPage';
 import DcmAssignmentPage from '../pages/crm/DcmAssignmentPage';
 import QualificationPage from '../pages/crm/QualificationPage';
-import FollowUpPage from '../pages/crm/FollowUpPage';
-import ReassignDcmPage from '../pages/crm/ReassignDcmPage';
 
 // Sales and Commercials Pages
 import SalesCommercialsPage from '../pages/sales/SalesCommercials.jsx';
@@ -23,19 +21,11 @@ import TokenDiscussion from '../pages/sales/TokenDiscussion.jsx';
 import PricingCosting from '../pages/sales/PricingCosting.jsx';
 import QuotationPreparation from '../pages/sales/QuotationPreparation.jsx';
 import ClientApproval from '../pages/sales/ClientApproval.jsx';
-
-import ClientsPage from '../pages/crm/ClientsPage';
-import ProjectsPage from '../pages/project/ProjectsPage';
-import ProjectWorkspace from '../pages/project/ProjectWorkspace';
-import ProductionPage from '../pages/production/ProductionPage';
-import InventoryPage from '../pages/inventory/InventoryPage';
-import AccountsPage from '../pages/accounts/AccountsPage';
-import ReportsPage from '../pages/reports/ReportsPage';
-import TeamPage from '../pages/team/TeamPage';
-import SettingsPage from '../pages/settings/SettingsPage';
-import MembersPage from '../pages/members/MembersPage';
-import NotFound from '../pages/NotFound';
 import Kyc from '../pages/sales/Kyc.jsx';
+
+import MembersPage from '../pages/members/MembersPage';
+import SettingsPage from '../pages/settings/SettingsPage';
+import NotFound from '../pages/NotFound';
 
 export const AppRoutes = () => (
   <Routes>
@@ -52,9 +42,8 @@ export const AppRoutes = () => (
         <Route path="/crm/leads" element={<LeadsPage />} />
         <Route path="/crm/dcm-assignments" element={<DcmAssignmentPage />} />
         <Route path="/crm/qualification" element={<QualificationPage />} />
-        <Route path="/crm/follow-ups" element={<FollowUpPage />} />
-        <Route path="/crm/reassign-dcm" element={<ReassignDcmPage />} />
-        <Route path="/crm/delayed-leads" element={<Navigate to="/crm/reassign-dcm" replace />} />
+        {/* Delayed Leads - filters the leads list by overdue/delayed status */}
+        <Route path="/crm/delayed-leads" element={<LeadsPage initialFilter="delayed" />} />
 
         {/* Sales and Commercials Sub-Routes */}
         <Route path="/crm/sales-commercials" element={<Navigate to="/crm/sales-commercials/leads" replace />} />
@@ -72,16 +61,6 @@ export const AppRoutes = () => (
         <Route path="/crm/sales-commercials/client-approval" element={<ClientApproval />} />
         <Route path="/crm/sales-commercials/kyc" element={<Kyc />} />
 
-        <Route path="/crm/clients" element={<ClientsPage />} />
-
-        <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/projects/:id" element={<ProjectWorkspace />} />
-
-        <Route path="/production" element={<ProductionPage />} />
-        <Route path="/inventory" element={<InventoryPage />} />
-        <Route path="/accounts" element={<AccountsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/team" element={<TeamPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
 
