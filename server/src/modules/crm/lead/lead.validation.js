@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { objectId } from '../../project/project/project.validation.js';
+
+// Zod helper re-used throughout lead validation (formerly imported from project.validation.js)
+const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Must be a valid ObjectId');
+
 
 const coerceOptionalDate = z.preprocess((val) => {
   if (val === '' || val === null || val === undefined) return undefined;
