@@ -631,8 +631,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Site Visit Details — ${item?.code || ''}`}
-            subtitle={`Configure pre-site visit information for ${item?.clientName || ''}`}
+            title={`Site Visit Details — ${item?.clientName || ''}`}
             size="xl"
         >
             <form onSubmit={submit} className="space-y-6">
@@ -644,7 +643,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 )}
 
                 {/* Grid Section 1: Requirement & Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+
                     <Field label="Site Visit Requirement" required>
                         <Select
                             value={form.siteVisitRequired ? 'YES' : 'NO'}
@@ -656,7 +656,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                         />
                     </Field>
 
-                    <Field label="Site Visit Due Date" required={form.siteVisitRequired} hint={form.siteVisitRequired ? 'Mandatory when Site Visit Required is Yes' : ''}>
+                    <Field label="Site Visit Due Date" required={form.siteVisitRequired}>
                         <Input
                             type="date"
                             value={form.siteVisitDueDate}
@@ -664,43 +664,29 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                         />
                     </Field>
 
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800/80">
-                        <div>
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer mb-1.5">
-                                <input
-                                    type="checkbox"
-                                    checked={form.isCompleted}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, isCompleted: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
-                                />
-                                <span>Mark Site Visit as Completed</span>
-                            </label>
-                            <p className="text-[11px] text-slate-500">Enable when the physical site visit has been completed.</p>
-                        </div>
-
-                        <Field
-                            label="Actual Site Visit Date & Time"
-                            required={form.isCompleted}
-                            hint={form.isCompleted ? 'Mandatory when marked completed' : ''}
-                            error={isActualDateBeforeDueDate ? 'Actual date cannot be before Site Visit Due Date' : undefined}
-                        >
-                            <Input
-                                type="datetime-local"
-                                value={form.actualSiteVisitDateTime}
-                                onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
-                                min={siteVisitDueDateOnly ? `${siteVisitDueDateOnly}T00:00` : undefined}
-                                className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
-                            />
-                            {isActualDateBeforeDueDate && (
-                                <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
-                                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
-                                    <div>
-                                        <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Site Visit Date & Time cannot be earlier than Site Visit Due Date ({date(siteVisitDueDateOnly)}).
-                                    </div>
+                    <Field
+                        label="Actual Site Visit Date & Time"
+                        required={form.isCompleted}
+                        hint={form.isCompleted ? 'Mandatory when marked completed' : ''}
+                        error={isActualDateBeforeDueDate ? 'Actual date cannot be before Site Visit Due Date' : undefined}
+                    >
+                        <Input
+                            type="datetime-local"
+                            value={form.actualSiteVisitDateTime}
+                            onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
+                            min={siteVisitDueDateOnly ? `${siteVisitDueDateOnly}T00:00` : undefined}
+                            className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
+                        />
+                        {isActualDateBeforeDueDate && (
+                            <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                <div>
+                                    <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Site Visit Date & Time cannot be earlier than Site Visit Due Date ({date(siteVisitDueDateOnly)}).
                                 </div>
-                            )}
-                        </Field>
-                    </div>
+                            </div>
+                        )}
+                    </Field>
+
                 </div>
 
                 {/* Grid Section 2: Site Address Inputs */}
@@ -733,7 +719,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                 onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
                             />
                         </Field>
-                        <Field label="Postal Code" hint="ZIP / Pincode">
+                        <Field label="Postal Code">
                             <Input
                                 placeholder="Enter postal code..."
                                 value={form.postalCode}
@@ -820,8 +806,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </Field>
                 </div>
 
-                {/* Grid Section 4: Client / Architect Availability Slots */}
-                <Field label="Client / Architect Availability">
+                {/* Grid Section 4: Responsible Person Availability Slots */}
+                <Field label="Responsible Person Availability">
                     <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                         {form.availabilitySlots.map((slot, index) => (
                             <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
@@ -936,7 +922,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                     }}
                                 />
                                 <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={handleAddCustomRoom}>
-                                    Add Room
+                                    Add
                                 </Button>
                             </div>
                         </div>
@@ -1034,8 +1020,21 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 </Field>
 
                 <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+
+                    <div className='flex justify-start w-full'>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-200 cursor-pointer mb-1.5">
+                                <input
+                                    type="checkbox"
+                                    checked={form.isCompleted}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, isCompleted: e.target.checked }))}
+                                    className="w-5 h-5 accent-green-500 rounded text-brand-600 focus:ring-brand-500"
+                                />
+                                <span>Mark Site Visit as Completed</span>
+                            </label>
+                        </div>
+
                     <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-                    <Button type="submit" loading={pending}>Save Site Visit Details</Button>
+                    <Button className={`whitespace-nowrap`} type="submit" loading={pending}>Save Visit Details</Button>
                 </div>
             </form>
         </Modal>
