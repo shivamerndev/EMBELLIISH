@@ -119,11 +119,10 @@ const DcmCapacityBadge = ({ value }) => {
   const isAvailable = value === 'AVAILABLE' || !value || value === 'Available';
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-2xs transition-colors ${
-        isAvailable
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-2xs transition-colors ${isAvailable
           ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
           : 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
-      }`}
+        }`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
       {isAvailable ? 'Available' : 'Overloaded'}
@@ -345,19 +344,17 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
                   key={dcm._id || dcm.name}
                   type="button"
                   onClick={() => handleSelectDcm(dcm.name)}
-                  className={`text-left p-2.5 rounded-lg border text-xs transition-all duration-150 flex items-center justify-between gap-2 ${
-                    isSelected
+                  className={`text-left p-2.5 rounded-lg border text-xs transition-all duration-150 flex items-center justify-between gap-2 ${isSelected
                       ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-xs'
                       : 'border-stone-200 dark:border-[#2e251e] bg-white dark:bg-[#1a1512] hover:border-amber-500/40 hover:bg-stone-50 dark:hover:bg-[#251e18]'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
-                        isSelected
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${isSelected
                           ? 'bg-amber-600 text-white'
                           : 'bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300'
-                      }`}
+                        }`}
                     >
                       {initials}
                     </div>
@@ -391,14 +388,9 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Assignment Date">
-            <Input type="date" value={form.assignmentDueDate} onChange={setField('assignmentDueDate')} />
-          </Field>
-          <Field label="Assignment Date & Time">
-            <Input type="datetime-local" value={form.assignmentDateTime} onChange={setField('assignmentDateTime')} />
-          </Field>
-        </div>
+        <Field label="Assignment Date & Time">
+          <Input type="datetime-local" value={form.assignmentDateTime} onChange={setField('assignmentDateTime')} />
+        </Field>
       </form>
     </Modal>
   );
@@ -505,7 +497,7 @@ export const ReassignDcmPage = () => {
   }, [tab, search]);
 
   const apiItems = data?.items || [];
-  
+
   // Filter for qualified leads
   const qualifiedApiItems = apiItems.filter(
     (i) => i.status === 'QUALIFIED' || i.qualificationDecision === 'APPROVED'
@@ -582,11 +574,12 @@ export const ReassignDcmPage = () => {
               </div>
             ) : (
               <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
-                <table className="min-w-[1700px] w-full text-left text-xs border-collapse">
+                <table className="min-w-[1850px] w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Status</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assigned DCM / Manager</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Load</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Lead Priority</th>
@@ -599,7 +592,7 @@ export const ReassignDcmPage = () => {
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="p-8 text-center text-slate-500">
+                        <td colSpan={10} className="p-8 text-center text-slate-500">
                           No qualified leads found for DCM reassignment.
                         </td>
                       </tr>
@@ -614,6 +607,13 @@ export const ReassignDcmPage = () => {
                             <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40">
                               QUALIFIED
                             </span>
+                          </td>
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <DelayBadge
+                              dueDate={row.assignmentDueDate || row.dueDate || row.qualificationDueDate || row.createdAt}
+                              isCompleted={Boolean(row.assignedDcmName && row.assignedDcmName !== 'NA' && !row.reassignmentRequired)}
+                              fallback={<span className="text-slate-400">—</span>}
+                            />
                           </td>
                           <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">{row.assignedDcmName || 'Unassigned'}</td>
                           <td className="p-3 text-center">

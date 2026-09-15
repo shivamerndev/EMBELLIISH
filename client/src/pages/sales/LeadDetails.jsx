@@ -480,7 +480,9 @@ const LeadDetails = () => {
 
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">Assigned Installer / Measurement</span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-200">{lead.assignedInstaller?.name || lead.assignedInstallerName || 'Unassigned'}</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-200">
+                                {lead.installerName ? `${lead.installerName}${lead.installerPhone ? ` (${lead.installerPhone})` : ''}` : (lead.assignedInstaller?.name || lead.assignedInstallerName || 'Unassigned')}
+                            </span>
                         </div>
 
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg">

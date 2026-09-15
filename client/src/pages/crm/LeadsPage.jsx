@@ -6,12 +6,13 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import { humanise, formatBudgetValue, formatBudgetDisplay } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, PhoneInput, validatePhoneNumber, EmailInput, validateEmail,
-  Textarea, Loading, ErrorState, EmptyState, Tabs, Pagination, ViewSwitcher,
+  Textarea, Loading, ErrorState, EmptyState, Tabs, Pagination, ViewSwitcher, DelayBadge,
 } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import LeadCard from '../../components/cards/LeadCard';
 import LeadDetailsModal from '../../components/crm/LeadDetailsModal';
+import { ReassignDcmModal } from './ReassignDcmPage';
 
 const STATUS_TABS = [
   { key: 'ALL', label: 'All Leads' },
@@ -946,6 +947,7 @@ export const LeadsPage = () => {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [reassigningLead, setReassigningLead] = useState(null);
   const [viewingLead, setViewingLead] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -1014,7 +1016,7 @@ export const LeadsPage = () => {
         </div>
       </Panel>
 
-      {/* Main 16-Column Sheet Table */}
+      {/* Main Sheet Table & Card View */}
       <Panel className="overflow-hidden flex flex-col">
         {loading ? (
           <Loading />
@@ -1032,6 +1034,7 @@ export const LeadsPage = () => {
                       onView={(l) => setViewingLead(l)}
                       onEdit={(l) => setEditing(l)}
                       onDelete={(l) => setDeleting(l)}
+                      onReassign={(l) => setReassigningLead(l)}
                     />
                   )}
                   empty={
@@ -1043,7 +1046,7 @@ export const LeadsPage = () => {
               </div>
             ) : (
               <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
-                <table className="min-w-[2300px] w-full text-left text-xs border-collapse">
+                <table className="min-w-[2400px] w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead ID</th>
@@ -1053,6 +1056,7 @@ export const LeadsPage = () => {
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
+                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
                     <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
@@ -1069,7 +1073,7 @@ export const LeadsPage = () => {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                   {filteredLeads.length === 0 ? (
                     <tr>
-                      <td colSpan={18} className="p-8 text-center text-slate-500">
+                      <td colSpan={19} className="p-8 text-center text-slate-500">
                         No leads match your filter or search query.
                       </td>
                     </tr>
@@ -1085,7 +1089,7 @@ export const LeadsPage = () => {
                         <tr
                           key={row._id || row.id}
                           onClick={() => setViewingLead(row)}
-                          className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer"
+                          className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer group"
                         >
                           <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <button
@@ -1109,6 +1113,13 @@ export const LeadsPage = () => {
                             </span>
                           </td>
                           <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <DelayBadge
+                              dueDate={row.assignmentDueDate || row.dueDate || row.qualificationDueDate || row.createdAt}
+                              isCompleted={row.status === 'CONVERTED' || row.status === 'QUALIFIED'}
+                              fallback={<span className="text-slate-400">—</span>}
+                            />
+                          </td>
                           <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
                           <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
                           <td className="p-3 text-center">
@@ -1165,7 +1176,17 @@ export const LeadsPage = () => {
                             </div>
                           </td>
                           <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                icon={UserCheck}
+                                onClick={() => setReassigningLead(row)}
+                                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
+                                title="Reassign DCM"
+                              >
+                                Reassign DCM
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1209,6 +1230,7 @@ export const LeadsPage = () => {
       <NewLeadModal open={creating} onClose={() => setCreating(false)} onCreated={reload} architects={architects} onReloadArchitects={reloadArchitects} />
       {editing && <EditLeadModal lead={editing} onClose={() => setEditing(null)} onDone={reload} architects={architects} onReloadArchitects={reloadArchitects} />}
       {deleting && <DeleteLeadModal lead={deleting} onClose={() => setDeleting(null)} onDone={reload} />}
+      {reassigningLead && <ReassignDcmModal item={reassigningLead} onClose={() => setReassigningLead(null)} onDone={reload} />}
 
       <LeadDetailsModal
         open={Boolean(viewingLead)}

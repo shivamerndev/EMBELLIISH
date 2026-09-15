@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Trash2, Eye, Phone, Mail, MapPin, Paperclip, User, IndianRupee } from 'lucide-react';
+import { Pencil, Trash2, Eye, Phone, Mail, MapPin, Paperclip, User, IndianRupee, UserCheck } from 'lucide-react';
 import { Button, DelayBadge } from '../ui';
 import { formatBudgetDisplay } from '../../utils/format';
 
@@ -17,7 +17,7 @@ const BudgetClassBadge = ({ value }) => {
   );
 };
 
-export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
+export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
   const formattedDate = lead.captureDateTime || (lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-GB') : '—');
   const clientNameVal = lead.clientName || lead.companyName || lead.name || '—';
   const contactPersonVal = lead.contactPerson || lead.contactName || '—';
@@ -47,7 +47,7 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
             </h4>
           </div>
           <DelayBadge
-            dueDate={lead.dueDate || lead.qualificationDueDate || lead.createdAt}
+            dueDate={lead.assignmentDueDate || lead.dueDate || lead.qualificationDueDate || lead.createdAt}
             isCompleted={lead.status === 'CONVERTED' || lead.status === 'QUALIFIED'}
             fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
           />
@@ -79,6 +79,12 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
               </span>
             </div>
           )}
+          {lead.assignedDcmName && (
+            <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500 font-medium">
+              <span>Assigned DCM:</span>
+              <span className="font-bold text-amber-700 dark:text-amber-300">{lead.assignedDcmName}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500">
             <span>Budget: <strong className="text-slate-800 dark:text-slate-200">{formatBudgetDisplay(lead.indicativeBudget || lead.budget)}</strong></span>
             {archName && <span className="truncate max-w-[120px]" title={`Architect: ${archName}`}>Arch: {archName}</span>}
@@ -96,7 +102,19 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
         <span className="text-[10px] text-slate-400 font-mono">{formattedDate}</span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {onReassign && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={UserCheck}
+              onClick={() => onReassign(lead)}
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
+              title="Reassign DCM"
+            >
+              Reassign DCM
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
