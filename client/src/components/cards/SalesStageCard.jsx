@@ -82,7 +82,11 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
               {clientName}
             </h4>
           </div>
-          <DelayBadge dueDate={dueDate} isCompleted={isCompleted} />
+          <DelayBadge
+            dueDate={dueDate}
+            isCompleted={isCompleted}
+            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+          />
         </div>
 
         {/* Details grid */}

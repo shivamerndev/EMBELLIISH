@@ -26,8 +26,9 @@ const OverallStatusBadge = ({ value }) => {
 export const FollowUpCard = ({ item, onEdit, onView }) => {
   const clientNameVal = item.clientName || item.companyName || item.name || '—';
   const contactPersonVal = item.contactPerson || item.contactName || '—';
-  const followUpDateVal = item.followUpDate || item.nextFollowUpDate || item.dueDate;
+  const followUpDateVal = item.nextActionDueDate || item.followUpDate || item.nextFollowUpDate || item.dueDate || item.createdAt;
   const assignedPersonVal = item.assignedPerson || item.assignedDcmName || item.assignedDcm?.name || 'Unassigned';
+  const isDone = ['APPROVED', 'REJECTED', 'COMPLETED'].includes(item.overallLeadStatus || item.overallStatus);
 
   return (
     <div
@@ -42,13 +43,17 @@ export const FollowUpCard = ({ item, onEdit, onView }) => {
               <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {item.code || 'LD'}
               </span>
-              <OverallStatusBadge value={item.overallStatus || item.status} />
+              <OverallStatusBadge value={item.overallLeadStatus || item.overallStatus || item.status} />
             </div>
             <h4 className="font-bold text-base text-slate-900 dark:text-slate-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               {clientNameVal}
             </h4>
           </div>
-          <DelayBadge dueDate={followUpDateVal} isCompleted={item.overallStatus === 'APPROVED' || item.overallStatus === 'REJECTED'} />
+          <DelayBadge
+            dueDate={followUpDateVal}
+            isCompleted={isDone}
+            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+          />
         </div>
 
         {/* Info */}

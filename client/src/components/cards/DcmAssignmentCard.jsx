@@ -33,6 +33,7 @@ const LeadPriorityBadge = ({ value }) => {
 export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
   const clientNameVal = item.clientName || item.companyName || item.name || '—';
   const contactPersonVal = item.contactPerson || item.contactName || '—';
+  const dueDateVal = item.assignmentDueDate || item.dueDate || item.createdAt;
   const dcmName = item.assignedDcmName || item.assignedDcm?.name || 'Unassigned';
 
   return (
@@ -54,7 +55,11 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
               {clientNameVal}
             </h4>
           </div>
-          <DelayBadge dueDate={item.assignmentDueDate || item.dueDate} isCompleted={Boolean(item.assignedDcmName && !item.reassignmentRequired)} />
+          <DelayBadge
+            dueDate={dueDateVal}
+            isCompleted={Boolean(item.assignedDcmName && item.assignedDcmName !== 'NA' && !item.reassignmentRequired)}
+            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+          />
         </div>
 
         {/* Contact Info */}

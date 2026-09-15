@@ -31,7 +31,7 @@ const NAV = [
           { label: 'Leads', path: '/crm/leads' },
           { label: 'DCM Assignment', path: '/crm/dcm-assignments' },
           { label: 'Qualification', path: '/crm/qualification' },
-          { label: "Delayed Leads", path: '/crm/delayed-leads' },
+          { label: "Reassign DCM", path: '/crm/reassign-dcm' },
           // { label: 'Follow Ups', path: '/crm/follow-ups' },
         ],
       },

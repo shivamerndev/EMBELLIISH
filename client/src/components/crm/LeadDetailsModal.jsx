@@ -10,6 +10,7 @@ import { formatBudgetValue, formatBudgetDisplay } from '../../utils/format';
 import {
   Field, Input, Select, PhoneInput, EmailInput, Textarea, Button, Badge
 } from '../ui';
+import { ReassignDcmModal } from '../../pages/crm/ReassignDcmPage';
 
 /** Safely format date string into localized DD/MM/YYYY HH:mm */
 const formatDate = (val) => {
@@ -87,6 +88,7 @@ export const LeadDetailsModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
 
   // Edit form state
   const [form, setForm] = useState({});
@@ -325,14 +327,24 @@ export const LeadDetailsModal = ({
 
           <div className="flex items-center justify-end gap-2 shrink-0">
             {!isEditing ? (
-              <Button
-                variant="secondary"
-                icon={Pencil}
-                onClick={startEditing}
-                className="bg-[#836444]/10 hover:bg-[#836444]/20 text-[#836444] dark:text-amber-300 border-[#836444]/30 font-semibold text-xs"
-              >
-                Edit Lead
-              </Button>
+              <>
+                <Button
+                  variant="primary"
+                  icon={UserCheck}
+                  onClick={() => setShowReassignModal(true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
+                >
+                  Reassign DCM
+                </Button>
+                <Button
+                  variant="secondary"
+                  icon={Pencil}
+                  onClick={startEditing}
+                  className="bg-[#836444]/10 hover:bg-[#836444]/20 text-[#836444] dark:text-amber-300 border-[#836444]/30 font-semibold text-xs"
+                >
+                  Edit Lead
+                </Button>
+              </>
             ) : (
               <Button
                 variant="ghost"
@@ -452,7 +464,7 @@ export const LeadDetailsModal = ({
                   <SectionTitle title="Assignment Information" icon={ShieldCheck} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <FieldTile label="Assigned DCM / Manager" value={assignedDcm} icon={UserCheck} />
-                    <FieldTile label="Assignment Due Date" value={assignDueDate} icon={Calendar} />
+                    <FieldTile label="Assignment  Date" value={assignDueDate} icon={Calendar} />
                     <FieldTile label="Assignment Date & Time" value={assignDateTime} icon={Clock} />
                     <FieldTile label="DCM Capacity Status" pill={<StatusPill label={dcmCapacity} type={dcmCapacity === 'AVAILABLE' ? 'emerald' : 'amber'} />} />
                     <FieldTile label="DCM Active Projects" value={String(dcmActiveCount)} />
@@ -820,6 +832,24 @@ export const LeadDetailsModal = ({
               Save and Move to Next Step
             </Button>
           </div>
+        )}
+
+        {showReassignModal && (
+          <ReassignDcmModal
+            item={lead}
+            onClose={() => setShowReassignModal(false)}
+            onDone={() => {
+              setShowReassignModal(false);
+              const currentId = lead?._id || lead?.id || leadId;
+              if (currentId) {
+                leadsApi.get(currentId).then((res) => {
+                  const item = res.data?.item || res.data;
+                  if (item) setLead(item);
+                });
+              }
+              if (onUpdated) onUpdated();
+            }}
+          />
         )}
 
       </div>

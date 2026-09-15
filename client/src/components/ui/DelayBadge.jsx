@@ -12,7 +12,7 @@ const DELAY_BADGE_STYLES = {
     dot: 'bg-amber-500 animate-pulse',
   },
   rose: {
-    container: 'bg-rose-50 text-rose-900 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 font-bold shadow-2xs',
+    container: 'bg-rose-100 text-rose-800 border-rose-400 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-600 font-bold shadow-xs ring-1 ring-rose-500/20',
     dot: 'bg-rose-600 animate-pulse',
   },
 };
