@@ -472,7 +472,7 @@ export const LeadDetailsModal = ({
                     <FieldTile label="Budget Verified" pill={<StatusPill label={budgetVerified} type={budgetVerified === 'YES' ? 'emerald' : 'slate'} />} />
                     <FieldTile label="Timeline Confirmed" pill={<StatusPill label={timelineConfirmed} type={timelineConfirmed === 'YES' ? 'emerald' : 'slate'} />} />
                     <FieldTile label="Decision Maker Identified" pill={<StatusPill label={decisionMaker} type={decisionMaker === 'YES' ? 'emerald' : 'slate'} />} />
-                    <FieldTile label="Rejection / Hold Reason" value={rejectionReason} fullWidth />
+                    <FieldTile label="Note" value={rejectionReason} fullWidth />
                   </div>
                 </div>
               </div>
@@ -645,6 +645,19 @@ export const LeadDetailsModal = ({
                       />
                     </div>
                   </Field>
+
+                       <Field label="Architect / Designer Involved">
+                    <Select
+                      value={form.architectInvolved}
+                      onChange={setFormKey('architectInvolved')}
+                      options={[
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' },
+                        { value: 'Not Known', label: 'Not Known' },
+                      ]}
+                    />
+                  </Field>
+
                   <Field label="Budget Classification">
                     <Select
                       value={form.budgetClassification}
@@ -699,18 +712,8 @@ export const LeadDetailsModal = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Field label="Architect / Designer Involved">
-                    <Select
-                      value={form.architectInvolved}
-                      onChange={setFormKey('architectInvolved')}
-                      options={[
-                        { value: 'Yes', label: 'Yes' },
-                        { value: 'No', label: 'No' },
-                        { value: 'Not Known', label: 'Not Known' },
-                      ]}
-                    />
-                  </Field>
-                  <Field label="Previous Client Relationship">
+             
+                  {/* <Field label="Previous Client Relationship">
                     <Select
                       value={form.previousClientRelationship}
                       onChange={setFormKey('previousClientRelationship')}
@@ -719,10 +722,10 @@ export const LeadDetailsModal = ({
                         { value: 'YES', label: 'Yes' },
                       ]}
                     />
-                  </Field>
-                  <Field label="Existing Relationship Owner">
+                  </Field> */}
+                  {/* <Field label="Existing Relationship Owner">
                     <Input value={form.existingRelationshipOwner} onChange={setFormKey('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
-                  </Field>
+                  </Field> */}
                 </div>
 
                 <Field label="Requirement Summary">

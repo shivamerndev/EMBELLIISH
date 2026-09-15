@@ -70,7 +70,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     budgetPricingVerified: item?.budgetPricingVerified || 'PENDING',
     timelineConfirmed: item?.timelineConfirmed || 'PENDING',
     decisionMakerIdentified: item?.decisionMakerIdentified || 'PENDING',
-    siteVisitRequired: item?.siteVisitRequired === false ? 'NO' : item?.siteVisitRequired === true ? 'YES' : (item?.siteVisitRequired || 'PENDING'),
+    // siteVisitRequired: item?.siteVisitRequired === false ? 'NO' : item?.siteVisitRequired === true ? 'YES' : (item?.siteVisitRequired || 'PENDING'),
     competitionDetailsCaptured: item?.competitionDetailsCaptured || 'NOT_KNOWN',
     qualificationDecision: item?.qualificationDecision || 'PENDING',
     decisionDateTime: item?.decisionDateTime ? new Date(item.decisionDateTime).toISOString().slice(0, 16) : getLocalDateTime(),
@@ -106,7 +106,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
 
     const payload = {
       ...form,
-      siteVisitRequired: form.siteVisitRequired === 'YES' ? true : form.siteVisitRequired === 'NO' ? false : 'PENDING',
+      // siteVisitRequired: form.siteVisitRequired === 'YES' ? true : form.siteVisitRequired === 'NO' ? false : 'PENDING',
       decisionDateTime: form.decisionDateTime || (form.qualificationDecision !== 'PENDING' ? new Date().toISOString() : undefined),
     };
 
@@ -126,9 +126,8 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     <Modal
       open={Boolean(item)}
       onClose={onClose}
-      title={`Qualify Lead — ${item?.code || ''}`}
-      subtitle={`Verify requirement, budget, and timeline for ${item?.clientName || ''}`}
-      size="lg"
+      title={`Qualify Lead — ${item?.clientName || ''}`}
+      size="xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -195,20 +194,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               ]}
             />
           </Field>
-          <Field label="Site Visit Required">
-            <Select
-              value={form.siteVisitRequired}
-              onChange={set('siteVisitRequired')}
-              options={[
-                { value: 'YES', label: 'Yes' },
-                { value: 'NO', label: 'No' },
-                { value: 'PENDING', label: 'Pending' },
-              ]}
-            />
-          </Field>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Competition Details Captured">
             <Select
               value={form.competitionDetailsCaptured}
@@ -220,6 +206,27 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               ]}
             />
           </Field>
+
+
+          {/* <Field label="Site Visit Required">
+            <Select
+              value={form.siteVisitRequired}
+              onChange={set('siteVisitRequired')}
+              options={[
+                { value: 'YES', label: 'Yes' },
+                { value: 'NO', label: 'No' },
+                { value: 'PENDING', label: 'Pending' },
+              ]}
+            />
+          </Field> */}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <Field label="Decision Date & Time">
+            <Input type="datetime-local" value={form.decisionDateTime} onChange={set('decisionDateTime')} />
+          </Field>
+
           <Field label="Qualification Decision">
             <Select
               value={form.qualificationDecision}
@@ -232,13 +239,11 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
               ]}
             />
           </Field>
+
+
         </div>
 
-        <Field label="Decision Date & Time">
-          <Input type="datetime-local" value={form.decisionDateTime} onChange={set('decisionDateTime')} />
-        </Field>
-
-        <Field label="Rejection / Hold Reason" required={isReasonRequired}>
+        <Field label="Notes" required={isReasonRequired}>
           <Textarea
             value={form.rejectionHoldReason}
             onChange={set('rejectionHoldReason')}
@@ -340,78 +345,86 @@ export const QualificationPage = () => {
             ) : (
               <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <table className="min-w-[1700px] w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Qualification Due Date</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Requirement Verified</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget / Pricing Verified</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Timeline Confirmed</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Decision Maker Identified</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Site Visit Required</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Competition Details Captured</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Qualification Decision</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Decision Date & Time</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Rejection / Hold Reason</th>
-                    <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={13} className="p-8 text-center text-slate-500">
-                        No leads match your filter or search query.
-                      </td>
+                  <thead>
+                    <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Qualification Due Date</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Requirement Verified</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget / Pricing Verified</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Timeline Confirmed</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Decision Maker Identified</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Site Visit Required</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Competition Details Captured</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Qualification Decision</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Decision Date & Time</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Rejection / Hold Reason</th>
+                      <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                     </tr>
-                  ) : (
-                    paginated.map((row) => (
-                      <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
-                          <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                          {row.qualificationDueDate ? new Date(row.qualificationDueDate).toLocaleDateString('en-GB') : '—'}
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap">
-                          <DelayBadge
-                            dueDate={row.qualificationDueDate}
-                            isCompleted={['APPROVED', 'REJECTED'].includes(row.qualificationDecision)}
-                            fallback={<span className="text-slate-400">—</span>}
-                          />
-                        </td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.requirementVerified} /></td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.budgetPricingVerified} /></td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.timelineConfirmed} /></td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.decisionMakerIdentified} /></td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.siteVisitRequired === false ? 'NO' : row.siteVisitRequired === true ? 'YES' : (row.siteVisitRequired || 'PENDING')} /></td>
-                        <td className="p-3 text-center"><TriStateBadge value={row.competitionDetailsCaptured} /></td>
-                        <td className="p-3 text-center"><DecisionBadge value={row.qualificationDecision} /></td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                          {row.decisionDateTime ? new Date(row.decisionDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                        </td>
-                        <td className="p-3 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={row.rejectionHoldReason || '—'}>
-                          {row.rejectionHoldReason || '—'}
-                        </td>
-                        <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
-                              Qualify
-                            </Button>
-                            <Link to={`/crm/follow-ups?search=${encodeURIComponent(row.code || '')}`}>
-                              <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Follow-up for this lead">
-                                Follow-up
-                              </Button>
-                            </Link>
-                          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={13} className="p-8 text-center text-slate-500">
+                          No leads match your filter or search query.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      paginated.map((row) => (
+                        <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
+                            <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
+                          </td>
+                          <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                            {row.qualificationDueDate ? new Date(row.qualificationDueDate).toLocaleDateString('en-GB') : '—'}
+                          </td>
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <DelayBadge
+                              dueDate={row.qualificationDueDate}
+                              isCompleted={['APPROVED', 'REJECTED'].includes(row.qualificationDecision)}
+                              fallback={<span className="text-slate-400">—</span>}
+                            />
+                          </td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.requirementVerified} /></td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.budgetPricingVerified} /></td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.timelineConfirmed} /></td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.decisionMakerIdentified} /></td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.siteVisitRequired === false ? 'NO' : row.siteVisitRequired === true ? 'YES' : (row.siteVisitRequired || 'PENDING')} /></td>
+                          <td className="p-3 text-center"><TriStateBadge value={row.competitionDetailsCaptured} /></td>
+                          <td className="p-3 text-center"><DecisionBadge value={row.qualificationDecision} /></td>
+                          <td className="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                            {row.decisionDateTime ? new Date(row.decisionDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          </td>
+                          <td className="p-3 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={row.rejectionHoldReason || '—'}>
+                            {row.rejectionHoldReason || '—'}
+                          </td>
+                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
+                                Qualify
+                              </Button>
+
+                              {/* <Link to={`/crm/follow-ups?search=${encodeURIComponent(row.code || '')}`}>
+                                <Button className="whitespace-nowrap" size="sm" variant="secondary" title="Go to Follow-up for this lead">
+                                  Follow-up
+                                </Button>
+                              </Link> */}
+
+                              <Link to={`/crm/sales-commercials?search=${encodeURIComponent(row.code || '')}`}>
+                                <Button size="sm" variant="secondary" icon={ArrowRightCircle} title="Go to Sales & Commercials for this lead">
+                                  Sales
+                                </Button>
+                              </Link>
+
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             <Pagination

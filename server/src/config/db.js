@@ -3,6 +3,8 @@ import env from './env.js';
 import logger from './logger.js';
 import registerModels from '../core/registerModels.js';
 import { seedUsers } from '../seeds/seed-users.js';
+import dns from "dns"
+dns.setServers(["8.8.8.8"])
 
 export const connectDB = async () => {
   registerModels();
