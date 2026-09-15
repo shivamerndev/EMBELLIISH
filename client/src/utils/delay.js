@@ -15,7 +15,7 @@ import { date } from './format';
  * @returns {object | null} { type, days, label, tone, icon, tooltip, formattedDueDate }
  */
 export const getDelayStatus = (dueDateValue, isCompleted = false) => {
-  if (!dueDateValue || isCompleted) return null;
+  if (!dueDateValue) return null;
 
   const due = new Date(dueDateValue);
   if (isNaN(due.getTime())) return null;
@@ -28,6 +28,9 @@ export const getDelayStatus = (dueDateValue, isCompleted = false) => {
   const diffMs = dueReset.getTime() - todayReset.getTime();
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
   const formattedDueDate = date(dueReset);
+
+  // If completed on time or in advance, return null
+  if (isCompleted && diffDays >= 0) return null;
 
   if (diffDays > 0) {
     const daysStr = diffDays === 1 ? '1 Day' : `${diffDays} Days`;

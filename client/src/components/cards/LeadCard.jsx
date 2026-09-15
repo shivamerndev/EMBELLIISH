@@ -46,7 +46,11 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete }) => {
               {clientNameVal}
             </h4>
           </div>
-          <DelayBadge dueDate={lead.dueDate || lead.qualificationDueDate || lead.createdAt} isCompleted={lead.status === 'CONVERTED' || lead.status === 'QUALIFIED'} />
+          <DelayBadge
+            dueDate={lead.dueDate || lead.qualificationDueDate || lead.createdAt}
+            isCompleted={lead.status === 'CONVERTED' || lead.status === 'QUALIFIED'}
+            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+          />
         </div>
 
         {/* Contact info & Meta */}

@@ -260,7 +260,7 @@ Allocates qualified leads to Design & Client Managers (DCMs) based on capacity, 
 | Field | What it means | What to enter / select | Required? | Example |
 | :--- | :--- | :--- | :--- | :--- |
 | **Assigned DCM Name** | DCM staff member responsible for lead. | Select DCM from available dropdown list. | **Yes** | `Hitesh Sharma` / `Rahul Verma` |
-| **Assignment Due Date** | Date by which DCM must contact client. | Pick target date. | **Yes** | `2026-08-30` |
+| **Assignment  Date** | Date by which DCM must contact client. | Pick target date. | **Yes** | `2026-08-30` |
 | **Priority** | Urgency of assignment. | Select `HIGH`, `MEDIUM`, or `LOW`. | **Yes** | `HIGH` |
 | **Assignment Date & Time** | Timestamp of allocation. | Auto-filled or pick date-time. | No | `28/08/2026 14:00` |
 | **Reassignment Required** | Whether lead needs to be moved to another DCM. | Select `NO` or `YES`. | **Yes** | `YES` |

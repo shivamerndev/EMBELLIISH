@@ -289,7 +289,7 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
               required
             />
           </Field>
-          <Field label="Assignment Due Date" required>
+          <Field label="Assignment Date" required>
             <Input type="date" value={form.assignmentDueDate} onChange={set('assignmentDueDate')} required />
           </Field>
         </div>
@@ -411,46 +411,6 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Reassignment Required">
-            <Select
-              value={form.reassignmentRequired}
-              onChange={set('reassignmentRequired')}
-              options={[
-                { value: 'NO', label: 'No' },
-                { value: 'YES', label: 'Yes' },
-              ]}
-            />
-          </Field>
-          {isReassignmentYes && (
-            <Field label="Reassigned To" required={isReassignmentYes}>
-              <Select
-                value={form.reassignedToName}
-                onChange={set('reassignedToName')}
-                required={isReassignmentYes}
-                options={[
-                  { value: '', label: 'None / NA' },
-                  ...dcmList.map((d) => ({
-                    value: d.name,
-                    label: `${d.name} (${humanise(d.role || 'DCM')})`,
-                  })),
-                ]}
-              />
-            </Field>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {isReassignmentYes && (
-            <Field label="Reassignment Reason" required={isReassignmentYes}>
-              <Textarea
-                value={form.reassignmentReason}
-                onChange={set('reassignmentReason')}
-                required={isReassignmentYes}
-                placeholder="Enter detailed reassignment reason..."
-                rows={3}
-              />
-            </Field>
-          )}
           <Field label="Updated User">
             <Input
               value={currentUserName || form.updatedUser}
@@ -540,7 +500,7 @@ export const DcmAssignmentPage = () => {
     <div>
       <PageHeader
         title="CRM — DCM Capacity & Lead Assignment"
-        subtitle="Dedicated portal for managing DCM workloads, lead priorities, assignment due dates, capacity statuses, and reassignments"
+        subtitle="Dedicated portal for managing DCM workloads, lead priorities, assignment dates, capacity statuses, and reassignments"
       />
 
       <Panel className="mb-4">
@@ -592,7 +552,7 @@ export const DcmAssignmentPage = () => {
                   <thead>
                     <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead Code & Client</th>
-                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Due Date</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assignment Date</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">DCM Capacity Status</th>
                       <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Assigned DCM / Manager</th>

@@ -40,7 +40,7 @@ const DecisionBadge = ({ value }) => {
 export const QualificationCard = ({ item, onEdit, onView }) => {
   const clientNameVal = item.clientName || item.companyName || item.name || '—';
   const contactPersonVal = item.contactPerson || item.contactName || '—';
-  const dueDateVal = item.qualificationDueDate || item.dueDate;
+  const dueDateVal = item.qualificationDueDate || item.dueDate || item.createdAt;
 
   return (
     <div
@@ -61,7 +61,11 @@ export const QualificationCard = ({ item, onEdit, onView }) => {
               {clientNameVal}
             </h4>
           </div>
-          <DelayBadge dueDate={dueDateVal} isCompleted={item.qualificationDecision === 'APPROVED' || item.qualificationDecision === 'REJECTED'} />
+          <DelayBadge
+            dueDate={dueDateVal}
+            isCompleted={item.qualificationDecision === 'APPROVED' || item.qualificationDecision === 'REJECTED'}
+            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+          />
         </div>
 
         {/* Contact info & Verification criteria */}
