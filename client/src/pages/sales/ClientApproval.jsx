@@ -1374,6 +1374,8 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );

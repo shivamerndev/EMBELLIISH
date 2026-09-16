@@ -583,6 +583,8 @@ const SalesCommercials = ({ budgetFilter: budgetProp = "", resetFilters: resetPr
                     setSiteVisitLead(l);
                     setDrawerLead(null);
                 }}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );

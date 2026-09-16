@@ -32,14 +32,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'measurement.measuredBy', label: 'Measured By' },
             { key: 'measurement.status', label: 'Measurement Status' },
             { key: 'measurement.siteAccess', label: 'Site Access' },
-            { key: 'measurement.attachments', label: 'Site Photos / Attachments' },
-            { key: 'measurement.roomList', label: 'Room List' },
-            { key: 'measurement.drawings', label: 'Drawings & History' },
-            { key: 'measurement.pelmetDetails', label: 'Pelmet Details' },
-            { key: 'measurement.channelDetails', label: 'Channel Details' },
-            { key: 'measurement.motorDetails', label: 'Motor Details' },
-            { key: 'measurement.wiringDetails', label: 'Wiring Details' },
-            { key: 'measurement.notes', label: 'Measurements Grid' },
+            // { key: 'measurement.attachments', label: 'Site Photos / Attachments' },
+            // { key: 'measurement.roomList', label: 'Room List' },
+            // { key: 'measurement.drawings', label: 'Drawings & History' },
+            // { key: 'measurement.pelmetDetails', label: 'Pelmet Details' },
+            // { key: 'measurement.channelDetails', label: 'Channel Details' },
+            // { key: 'measurement.motorDetails', label: 'Motor Details' },
+            // { key: 'measurement.wiringDetails', label: 'Wiring Details' },
+            // { key: 'measurement.notes', label: 'Measurements Grid' },
         ]
     }
 ];
@@ -1394,6 +1394,8 @@ const MeasurementCapture = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
 
             {/* Row Specifications Inspector Drawer */}
