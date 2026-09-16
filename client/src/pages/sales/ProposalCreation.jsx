@@ -1029,7 +1029,42 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const filteredLeads = rawLeads.filter((lead) => {
+    const eligibleProposalLeads = rawLeads.filter((lead) => {
+        const p = lead.proposal;
+        const hasProposalData = Boolean(
+            p?.noVersion ||
+            p?.date ||
+            p?.dueDate ||
+            (p?.approvalStatus && p?.approvalStatus !== 'PENDING') ||
+            p?.selectedBoqVersion ||
+            (Array.isArray(p?.consumptionSheet) && p.consumptionSheet.length > 0) ||
+            p?.clientBrief ||
+            p?.minPricing ||
+            p?.maxPricing
+        );
+        if (hasProposalData) return true;
+
+        const hasStudioCompleted = Boolean(
+            lead.studioMeeting?.date ||
+            lead.studioMeeting?.feedback ||
+            lead.studioMeeting?.nextAction ||
+            lead.studioMeeting?.attendees ||
+            lead.studioMeeting?.pricingRange
+        );
+
+        const hasBoqOrReadySize = Boolean(
+            lead.consumption?.boqVersion ||
+            lead.consumption?.fabricDesignSelection ||
+            lead.readySize?.confirmationDate ||
+            lead.readySize?.confirmedBy ||
+            lead.readySize?.readyHeight ||
+            lead.readySize?.status === 'Confirmed'
+        );
+
+        return hasStudioCompleted || hasBoqOrReadySize;
+    });
+
+    const filteredLeads = eligibleProposalLeads.filter((lead) => {
         if (search) {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
@@ -1042,10 +1077,10 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
         return true;
     });
 
-    const totalCount = rawLeads.length;
-    const generatedProposals = rawLeads.filter((l) => Boolean(l.proposal?.noVersion || l.proposal?.date)).length;
-    const approvedProposals = rawLeads.filter((l) => l.proposal?.approvalStatus === 'APPROVED').length;
-    const masterTermsSynced = rawLeads.filter((l) => Boolean(l.proposal?.terms && l.proposal?.refundRevisionClause)).length;
+    const totalCount = eligibleProposalLeads.length;
+    const generatedProposals = eligibleProposalLeads.filter((l) => Boolean(l.proposal?.noVersion || l.proposal?.date)).length;
+    const approvedProposals = eligibleProposalLeads.filter((l) => l.proposal?.approvalStatus === 'APPROVED').length;
+    const masterTermsSynced = eligibleProposalLeads.filter((l) => Boolean(l.proposal?.terms && l.proposal?.refundRevisionClause)).length;
 
     return (
         <div>

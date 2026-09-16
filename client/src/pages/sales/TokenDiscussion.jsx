@@ -771,7 +771,18 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const approvedLeads = rawLeads.filter((lead) => lead.proposal?.approvalStatus === 'APPROVED' || lead.proposalApprovalStatus === 'APPROVED' || lead.token);
+    const approvedLeads = rawLeads.filter((lead) => {
+        const isProposalApproved = lead.proposal?.approvalStatus === 'APPROVED' || lead.proposalApprovalStatus === 'APPROVED';
+        const hasTokenActivity = Boolean(
+            lead.token?.discussionDueDate ||
+            lead.token?.amount ||
+            lead.token?.receivedDate ||
+            (lead.token?.status && !['NOT_DISCUSSED', 'Not Discussed'].includes(lead.token.status)) ||
+            lead.token?.clientBudgetResponse ||
+            lead.token?.clientResponse
+        );
+        return isProposalApproved || hasTokenActivity;
+    });
 
     const filteredLeads = approvedLeads.filter((lead) => {
         if (search) {
