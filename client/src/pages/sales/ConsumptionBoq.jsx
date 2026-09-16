@@ -175,35 +175,35 @@ const parseGridInitial = (item) => {
         }));
     }
 
-    const rawNotes = item?.measurement?.notes;
+    const rawNotes = item?.measurement?.rows || item?.measurement?.notes;
     const parsedNotes = parseSubformArray(rawNotes);
     if (parsedNotes.length > 0 && typeof parsedNotes[0] === 'object') {
         return parsedNotes.map((row, idx) => ({
             id: row.id || `win-${Date.now()}-${idx}`,
-            room: row.room || 'Living Room',
-            windowId: row.windowId || row.label || `W-0${idx + 1}`,
-            previousWidth: row.frameToFrameWidth || row.width || '1200',
-            previousHeight: row.frameToFrameHeight || row.height || '2100',
-            confirmedWidth: row.frameToFrameWidth || row.width || '1200',
-            confirmedHeight: row.frameToFrameHeight || row.height || '2100',
+            room: row.area || row.room || 'Living Room',
+            windowId: row.lWindowDetail || row.windowId || row.label || `W-0${idx + 1}`,
+            previousWidth: row.frameToFrameWidth || row.outToOutWidth || row.width || '1200',
+            previousHeight: row.frameToFrameHeight || row.outToOutHeight || row.height || '2100',
+            confirmedWidth: row.frameToFrameWidth || row.outToOutWidth || row.width || '1200',
+            confirmedHeight: row.frameToFrameHeight || row.outToOutHeight || row.height || '2100',
             frameToFrameWidth: row.frameToFrameWidth ?? row.width ?? '',
             frameToFrameHeight: row.frameToFrameHeight ?? row.height ?? '',
             outToOutWidth: row.outToOutWidth ?? '',
             outToOutHeight: row.outToOutHeight ?? '',
             curtainReturnLeft: row.curtainReturnLeft ?? '',
             curtainReturnRight: row.curtainReturnRight ?? '',
-            pelmetO2oWidth: row.pelmetO2oWidth ?? '',
-            pelmetO2oDrop: row.pelmetO2oDrop ?? '',
-            pelmetF2fWidth: row.pelmetF2fWidth ?? '',
-            pelmetF2fDrop: row.pelmetF2fDrop ?? '',
+            pelmetO2oWidth: row.pelmetOutOutWidth ?? row.pelmetO2oWidth ?? '',
+            pelmetO2oDrop: row.pelmetOutOutDrop ?? row.pelmetO2oDrop ?? '',
+            pelmetF2fWidth: row.pelmetFrameFrameWidth ?? row.pelmetF2fWidth ?? '',
+            pelmetF2fDrop: row.pelmetFrameFrameDrop ?? row.pelmetF2fDrop ?? '',
             sidesOfRoman: row.sidesOfRoman ?? '',
             ceilingSupport: row.ceilingSupport ?? '',
-            wireLeft: row.wireLeft ?? false,
-            wireRight: row.wireRight ?? false,
+            wireLeft: Boolean(row.wireLeft),
+            wireRight: Boolean(row.wireRight ?? row.wire),
             particular: row.particular || row.windowType || 'MAIN_CURTAIN',
             unit: row.unit || 'mm',
             status: row.status || 'Confirmed',
-            notes: row.notes || '',
+            notes: row.remarks || row.notes || '',
             version: row.version || 'v2.0',
             pelmetDetails: row.pelmetDetails || [],
             channelDetails: row.channelDetails || [],
@@ -303,6 +303,10 @@ const autoFetchMeasurements = (item) => {
         }
         return String(item.readySize.windowSizes);
     }
+    if (item.measurement?.rows) {
+        const parsed = parseSubformArray(item.measurement.rows);
+        if (parsed.length > 0) return `Site Measurement Sheet (${parsed.length} window(s) recorded)`;
+    }
     if (item.measurement?.roomList) return `Measurement Record (${typeof item.measurement.roomList === 'object' ? JSON.stringify(item.measurement.roomList) : item.measurement.roomList})`;
     if (item.measurement?.status) return `Measurement Record - ${typeof item.measurement.status === 'object' ? JSON.stringify(item.measurement.status) : item.measurement.status}`;
     return 'Final Confirmed Measurements v1.0';
@@ -315,6 +319,11 @@ const autoFetchRooms = (item) => {
             const rooms = item.readySize.windowSizes.map((w) => w.roomName || w.room).filter(Boolean);
             if (rooms.length > 0) return Array.from(new Set(rooms)).join(', ');
         }
+    }
+    if (item.measurement?.rows) {
+        const parsed = parseSubformArray(item.measurement.rows);
+        const rooms = parsed.map((r) => r.area || r.room).filter(Boolean);
+        if (rooms.length > 0) return Array.from(new Set(rooms)).join(', ');
     }
     if (item.measurement?.roomList) return String(item.measurement.roomList);
     if (item.rooms) return Array.isArray(item.rooms) ? item.rooms.join(', ') : String(item.rooms);

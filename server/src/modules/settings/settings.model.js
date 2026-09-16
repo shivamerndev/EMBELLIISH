@@ -21,7 +21,7 @@ const settingsSchema = new mongoose.Schema(
     key: { type: String, default: 'GLOBAL', unique: true, immutable: true },
 
     company: {
-      name: { type: String, default: 'Embellish' },
+      name: { type: String, default: 'Embelliish' },
       legalName: String,
       gstin: String,
       pan: String,
