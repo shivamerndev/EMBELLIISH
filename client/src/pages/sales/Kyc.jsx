@@ -90,6 +90,7 @@ const SPREADSHEET_SECTIONS = [
     title: 'KYC & Customer Conversion',
     color:
       'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
+    // All fields — shown in DetailedDrawer
     cols: [
       { key: 'kyc.customerType', label: 'Customer Type' },
       { key: 'kyc.billingLegalName', label: 'Billing / Legal Name' },
@@ -98,6 +99,13 @@ const SPREADSHEET_SECTIONS = [
       { key: 'kyc.verifiedBy', label: 'Verified By' },
       { key: 'kyc.verificationDate', label: 'Verification Date' },
       { key: 'kyc.verifiedDocuments', label: 'Verified Document List' },
+    ],
+    // Subset shown in table — prevents horizontal scrolling
+    tableCols: [
+      { key: 'kyc.customerType', label: 'Customer Type' },
+      { key: 'kyc.status', label: 'KYC Status' },
+      { key: 'kyc.verifiedBy', label: 'Verified By' },
+      { key: 'kyc.verificationDate', label: 'Verified Date' },
     ],
   },
 ];
@@ -1088,9 +1096,9 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                 Code
               </th>
               {visibleSections.map((sec) =>
-                sec.cols
-                  .filter((c) => c.key !== 'sno' && c.key !== 'code')
-                  .map((col) => (
+                (sec.tableCols || sec.cols)
+                .filter((c) => c.key !== 'sno' && c.key !== 'code')
+                .map((col) => (
                     <th
                       key={col.key}
                       className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90"
@@ -1113,7 +1121,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                   </button>
                 </td>
                 {visibleSections.map((sec) =>
-                  sec.cols
+                  (sec.tableCols || sec.cols)
                     .filter((c) => c.key !== 'sno' && c.key !== 'code')
                     .map((col) => (
                       <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">

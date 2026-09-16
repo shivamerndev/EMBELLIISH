@@ -24,6 +24,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's4',
         title: 'Measurement (Site Details)',
         color: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/90 dark:text-teal-200 dark:border-teal-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'actualSiteVisitDateTime', label: 'Actual Visit Time' },
             { key: 'measurement.dueDate', label: 'Measurement Due Date' },
@@ -32,14 +33,23 @@ const SPREADSHEET_SECTIONS = [
             { key: 'measurement.measuredBy', label: 'Measured By' },
             { key: 'measurement.status', label: 'Measurement Status' },
             { key: 'measurement.siteAccess', label: 'Site Access' },
-            // { key: 'measurement.attachments', label: 'Site Photos / Attachments' },
-            // { key: 'measurement.roomList', label: 'Room List' },
-            // { key: 'measurement.drawings', label: 'Drawings & History' },
-            // { key: 'measurement.pelmetDetails', label: 'Pelmet Details' },
-            // { key: 'measurement.channelDetails', label: 'Channel Details' },
-            // { key: 'measurement.motorDetails', label: 'Motor Details' },
-            // { key: 'measurement.wiringDetails', label: 'Wiring Details' },
-            // { key: 'measurement.notes', label: 'Measurements Grid' },
+            { key: 'measurement.attachments', label: 'Site Photos / Attachments' },
+            { key: 'measurement.roomList', label: 'Room List' },
+            { key: 'measurement.drawings', label: 'Drawings & History' },
+            { key: 'measurement.pelmetDetails', label: 'Pelmet Details' },
+            { key: 'measurement.channelDetails', label: 'Channel Details' },
+            { key: 'measurement.motorDetails', label: 'Motor Details' },
+            { key: 'measurement.wiringDetails', label: 'Wiring Details' },
+            { key: 'measurement.notes', label: 'Measurements Grid' },
+        ],
+        // Subset of cols shown in the table (prevents horizontal scrolling)
+        tableCols: [
+            { key: 'actualSiteVisitDateTime', label: 'Actual Visit Time' },
+            { key: 'measurement.dueDate', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'measurement.measuredBy', label: 'Measured By' },
+            { key: 'measurement.status', label: 'Status' },
+            { key: 'measurement.siteAccess', label: 'Site Access' },
         ]
     }
 ];
@@ -1050,7 +1060,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -1070,7 +1080,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit, users)}
                                         </td>

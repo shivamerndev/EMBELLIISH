@@ -20,6 +20,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's11',
         title: 'Quotation Preparation & Master Fields',
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'quotation.dueDate', label: 'Quotation Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -38,6 +39,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'quotation.boq', label: 'BOQ Record' },
             { key: 'quotation.fabricSelection', label: 'Fabric Selection' },
             { key: 'quotation.marginRules', label: 'Margin Rules' },
+        ],
+        // Subset shown in table — prevents horizontal scrolling
+        tableCols: [
+            { key: 'quotation.dueDate', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'quotation.no', label: 'Quotation No.' },
+            { key: 'quotation.finalQuotedValue', label: 'Final Value' },
+            { key: 'quotation.discountApprovalStatus', label: 'Discount Approval' },
         ]
     }
 ];
@@ -684,7 +693,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -704,7 +713,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
