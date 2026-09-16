@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip, Layers, Pencil,
-    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X
+    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X,
+    Grid, ClipboardList, Loader2
 } from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
@@ -15,6 +16,10 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, fabricsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import MeasurementToolbar from '../../components/measurement/MeasurementToolbar';
+import ExcelMeasurementGrid from '../../components/measurement/ExcelMeasurementGrid';
+import MeasurementDetailsDrawer from '../../components/measurement/MeasurementDetailsDrawer';
+import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -126,25 +131,100 @@ const calculateVariance = (prevW, prevH, confW, confH, unit) => {
 const parseGridInitial = (item) => {
     const existing = item?.consumption?.measurements;
     const parsedExisting = parseSubformArray(existing);
-    if (parsedExisting.length > 0 && typeof parsedExisting[0] === 'object' && (parsedExisting[0].room || parsedExisting[0].confirmedWidth || parsedExisting[0].width)) {
-        return parsedExisting;
+    if (parsedExisting.length > 0 && typeof parsedExisting[0] === 'object' && (parsedExisting[0].room || parsedExisting[0].confirmedWidth || parsedExisting[0].width || parsedExisting[0].frameToFrameWidth)) {
+        return parsedExisting.map((row, idx) => ({
+            id: row.id || `win-${Date.now()}-${idx}`,
+            room: row.room || row.roomName || 'Living Room',
+            windowId: row.windowId || row.label || `W-0${idx + 1}`,
+            previousWidth: row.previousWidth || row.width || row.frameToFrameWidth || '1200',
+            previousHeight: row.previousHeight || row.height || row.frameToFrameHeight || '2100',
+            confirmedWidth: row.confirmedWidth || row.width || row.frameToFrameWidth || '1200',
+            confirmedHeight: row.confirmedHeight || row.height || row.frameToFrameHeight || '2100',
+            frameToFrameWidth: row.frameToFrameWidth ?? row.confirmedWidth ?? row.width ?? '',
+            frameToFrameHeight: row.frameToFrameHeight ?? row.confirmedHeight ?? row.height ?? '',
+            outToOutWidth: row.outToOutWidth ?? '',
+            outToOutHeight: row.outToOutHeight ?? '',
+            curtainReturnLeft: row.curtainReturnLeft ?? '',
+            curtainReturnRight: row.curtainReturnRight ?? '',
+            pelmetO2oWidth: row.pelmetO2oWidth ?? '',
+            pelmetO2oDrop: row.pelmetO2oDrop ?? '',
+            pelmetF2fWidth: row.pelmetF2fWidth ?? '',
+            pelmetF2fDrop: row.pelmetF2fDrop ?? '',
+            sidesOfRoman: row.sidesOfRoman ?? '',
+            ceilingSupport: row.ceilingSupport ?? '',
+            wireLeft: row.wireLeft ?? false,
+            wireRight: row.wireRight ?? false,
+            particular: row.particular || row.windowType || 'MAIN_CURTAIN',
+            unit: row.unit || 'mm',
+            status: row.status || 'Confirmed',
+            notes: row.notes || '',
+            version: row.version || 'v2.0',
+            pelmetDetails: row.pelmetDetails || [],
+            channelDetails: row.channelDetails || [],
+            motorDetails: row.motorDetails || [],
+            wiringDetails: row.wiringDetails || [],
+        }));
+    }
+
+    const rawNotes = item?.measurement?.notes;
+    const parsedNotes = parseSubformArray(rawNotes);
+    if (parsedNotes.length > 0 && typeof parsedNotes[0] === 'object') {
+        return parsedNotes.map((row, idx) => ({
+            id: row.id || `win-${Date.now()}-${idx}`,
+            room: row.room || 'Living Room',
+            windowId: row.windowId || row.label || `W-0${idx + 1}`,
+            previousWidth: row.frameToFrameWidth || row.width || '1200',
+            previousHeight: row.frameToFrameHeight || row.height || '2100',
+            confirmedWidth: row.frameToFrameWidth || row.width || '1200',
+            confirmedHeight: row.frameToFrameHeight || row.height || '2100',
+            frameToFrameWidth: row.frameToFrameWidth ?? row.width ?? '',
+            frameToFrameHeight: row.frameToFrameHeight ?? row.height ?? '',
+            outToOutWidth: row.outToOutWidth ?? '',
+            outToOutHeight: row.outToOutHeight ?? '',
+            curtainReturnLeft: row.curtainReturnLeft ?? '',
+            curtainReturnRight: row.curtainReturnRight ?? '',
+            pelmetO2oWidth: row.pelmetO2oWidth ?? '',
+            pelmetO2oDrop: row.pelmetO2oDrop ?? '',
+            pelmetF2fWidth: row.pelmetF2fWidth ?? '',
+            pelmetF2fDrop: row.pelmetF2fDrop ?? '',
+            sidesOfRoman: row.sidesOfRoman ?? '',
+            ceilingSupport: row.ceilingSupport ?? '',
+            wireLeft: row.wireLeft ?? false,
+            wireRight: row.wireRight ?? false,
+            particular: row.particular || row.windowType || 'MAIN_CURTAIN',
+            unit: row.unit || 'mm',
+            status: row.status || 'Confirmed',
+            notes: row.notes || '',
+            version: row.version || 'v2.0',
+            pelmetDetails: row.pelmetDetails || [],
+            channelDetails: row.channelDetails || [],
+            motorDetails: row.motorDetails || [],
+            wiringDetails: row.wiringDetails || [],
+        }));
     }
 
     const rawFinal = item?.readySize?.finalMeasurements || item?.readySize?.finalMeasurementGrid;
     const parsedFinal = parseSubformArray(rawFinal);
     if (parsedFinal.length > 0 && typeof parsedFinal[0] === 'object') {
         return parsedFinal.map((row, idx) => ({
-            id: row.id || `g-${idx + 1}`,
+            id: row.id || `win-${Date.now()}-${idx}`,
             room: row.room || row.roomName || 'Room',
             windowId: row.windowId || `W-0${idx + 1}`,
             previousWidth: row.previousWidth || row.width || '1200',
             previousHeight: row.previousHeight || row.height || '2100',
             confirmedWidth: row.confirmedWidth || row.width || '1200',
             confirmedHeight: row.confirmedHeight || row.height || '2100',
+            frameToFrameWidth: row.confirmedWidth || row.width || '1200',
+            frameToFrameHeight: row.confirmedHeight || row.height || '2100',
             unit: row.unit || 'mm',
             status: row.status || 'Confirmed',
             notes: row.notes || 'Final size confirmed',
-            version: row.version || 'v2.0'
+            version: row.version || 'v2.0',
+            particular: 'MAIN_CURTAIN',
+            pelmetDetails: [],
+            channelDetails: [],
+            motorDetails: [],
+            wiringDetails: [],
         }));
     }
 
@@ -152,33 +232,47 @@ const parseGridInitial = (item) => {
     const parsedWindows = parseSubformArray(rawWindows);
     if (parsedWindows.length > 0 && typeof parsedWindows[0] === 'object') {
         return parsedWindows.map((w, idx) => ({
-            id: `g-${idx + 1}`,
+            id: `win-${Date.now()}-${idx}`,
             room: w.room || w.roomName || 'Room',
             windowId: w.windowId || `W-0${idx + 1}`,
             previousWidth: w.width || '1200',
             previousHeight: w.height || '2100',
             confirmedWidth: w.width || '1200',
             confirmedHeight: w.height || '2100',
+            frameToFrameWidth: w.width || '1200',
+            frameToFrameHeight: w.height || '2100',
             unit: w.unit || 'mm',
             status: 'Confirmed',
             notes: 'Final size confirmed',
-            version: 'v2.0'
+            version: 'v2.0',
+            particular: 'MAIN_CURTAIN',
+            pelmetDetails: [],
+            channelDetails: [],
+            motorDetails: [],
+            wiringDetails: [],
         }));
     }
 
     return [
         {
-            id: 'g-1',
+            id: 'win-1',
             room: 'Living Room',
             windowId: 'W-01',
             previousWidth: '1200',
             previousHeight: '2100',
             confirmedWidth: '1200',
             confirmedHeight: '2100',
+            frameToFrameWidth: '1200',
+            frameToFrameHeight: '2100',
             unit: 'mm',
             status: 'Confirmed',
             notes: 'Final size confirmed',
-            version: 'v2.0'
+            version: 'v2.0',
+            particular: 'MAIN_CURTAIN',
+            pelmetDetails: [],
+            channelDetails: [],
+            motorDetails: [],
+            wiringDetails: [],
         }
     ];
 };
@@ -557,6 +651,71 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const [autoIncrementVersion, setAutoIncrementVersion] = useState(false);
     const [validationError, setValidationError] = useState('');
 
+    // Tab state: 'grid' (Measurements Grid) | 'spec' (BOQ Specification & Details — current tab)
+    const [activeTab, setActiveTab] = useState('grid');
+
+    // ExcelMeasurementGrid workspace states inside modal
+    const [workspaceSearch, setWorkspaceSearch] = useState('');
+    const [workspaceRoomFilter, setWorkspaceRoomFilter] = useState('ALL');
+    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('ALL');
+    const [columnVisibility, setColumnVisibility] = useState({
+        windowSize: true,
+        pelmetSize: true,
+        wire: true,
+        returnSize: true,
+        fabricRequirement: true,
+    });
+    const [lastAddedRoom, setLastAddedRoom] = useState('');
+    const [inspectorRowIndex, setInspectorRowIndex] = useState(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [saveState, setSaveState] = useState('saved');
+
+    const handleGridRowsUpdate = (newRows) => {
+        setFinalMeasurementsGrid(newRows);
+        setSaveState('unsaved');
+    };
+
+    const handleOpenRowDetails = (row, rowIndex) => {
+        setInspectorRowIndex(rowIndex);
+    };
+
+    const handleSaveRowDetails = (rowIndex, updatedRow) => {
+        if (rowIndex === null || rowIndex === undefined) return;
+        setFinalMeasurementsGrid((prev) => {
+            const updated = [...prev];
+            updated[rowIndex] = updatedRow;
+            return updated;
+        });
+        setSaveState('unsaved');
+    };
+
+    const handleToggleColumnGroup = (groupKey) => {
+        setColumnVisibility((prev) => ({
+            ...prev,
+            [groupKey]: !prev[groupKey],
+        }));
+    };
+
+    const handleConfirmAddMeasurement = (newRow) => {
+        setFinalMeasurementsGrid((prev) => [...prev, newRow]);
+        setLastAddedRoom(newRow.room);
+        setSaveState('unsaved');
+    };
+
+    const modalAvailableRooms = useMemo(() => {
+        const roomsSet = new Set();
+        const parsedRooms = form.roomList ? form.roomList.split(',').map((s) => s.trim()).filter(Boolean) : [];
+        parsedRooms.forEach((r) => roomsSet.add(r));
+        (finalMeasurementsGrid || []).forEach((r) => {
+            if (r.room) roomsSet.add(r.room);
+        });
+        if (roomsSet.size === 0) {
+            roomsSet.add('Living Room');
+            roomsSet.add('Master Bedroom');
+        }
+        return Array.from(roomsSet);
+    }, [finalMeasurementsGrid, form.roomList]);
+
     // Fetch fabric master options
     const { data: fabricMasterData } = useAsync(() => fabricsApi.list().catch(() => ({ data: [] })), []);
     const fabricOptions = useMemo(() => {
@@ -583,6 +742,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         (payload) => leadsApi.update(item.id || item._id, { consumption: payload }),
         {
             onSuccess: () => {
+                setSaveState('saved');
                 onDone();
                 onClose();
             }
@@ -631,7 +791,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     };
 
     const submit = (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         setValidationError('');
 
         // --- Form Validations ---
@@ -640,6 +800,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             qtyNum = Number(form.quantity);
             if (isNaN(qtyNum) || qtyNum < 0) {
                 setValidationError('Consumption Quantity must be a valid positive decimal number.');
+                setActiveTab('spec');
                 return;
             }
         }
@@ -649,6 +810,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             panelInt = Number(form.panelCount);
             if (!Number.isInteger(panelInt) || panelInt < 0) {
                 setValidationError('Panel Count must be a whole positive integer (0, 1, 2...).');
+                setActiveTab('spec');
                 return;
             }
         }
@@ -658,6 +820,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             const numWastage = Number(wastageVal.replace('%', ''));
             if (isNaN(numWastage) || numWastage < 0 || numWastage > 100) {
                 setValidationError('Wastage Allowance percentage must be a valid number between 0% and 100%.');
+                setActiveTab('spec');
                 return;
             }
             wastageVal = `${numWastage}%`;
@@ -689,9 +852,57 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             onClose={onClose}
             title={`Consumption & BOQ Specification — ${item?.code || ''}`}
             subtitle={`Configure fabric consumption, wastage allowance, versioning, and accessory assumptions for ${item?.clientName || ''}`}
-            size="xl"
+            size="full"
+            footer={
+                <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <span>BOQ Version: <strong className="text-purple-600 dark:text-purple-400 font-bold">{form.boqVersion}</strong></span>
+                        <span>Windows: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{finalMeasurementsGrid.length}</strong></span>
+                        {form.quantity && (
+                            <span>Total Consumption: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{form.quantity} {form.unit}</strong></span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending}>
+                            Close
+                        </Button>
+                        <Button type="button" variant="primary" size="sm" onClick={submit} disabled={pending} icon={pending ? Loader2 : CheckCircle2}>
+                            {pending ? 'Saving…' : 'Save Consumption / BOQ'}
+                        </Button>
+                    </div>
+                </div>
+            }
         >
-            <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-4">
+                {/* Navigation Tabs */}
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('grid')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'grid'
+                                ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <Grid className="w-3.5 h-3.5" />
+                            <span>Measurements Grid ({finalMeasurementsGrid.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('spec')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'spec'
+                                ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            <span>BOQ Specification & Details</span>
+                        </button>
+                    </div>
+                </div>
+
                 {(error || validationError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -699,380 +910,436 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* 1. Consumption Sheet Due */}
-                    <Field label="Consumption Sheet Due" hint="Target deadline date for sheet completion">
-                        <Input
-                            type="date"
-                            value={form.sheetDueDate}
-                            onChange={set('sheetDueDate')}
+                {/* TAB 1: Measurements Grid Workspace */}
+                {activeTab === 'grid' && (
+                    <div className="space-y-3">
+                        <MeasurementToolbar
+                            searchQuery={workspaceSearch}
+                            onSearchChange={setWorkspaceSearch}
+                            roomFilter={workspaceRoomFilter}
+                            onRoomFilterChange={setWorkspaceRoomFilter}
+                            typeFilter={workspaceTypeFilter}
+                            onTypeFilterChange={setWorkspaceTypeFilter}
+                            roomOptions={modalAvailableRooms}
+                            columnVisibility={columnVisibility}
+                            onToggleColumnGroup={handleToggleColumnGroup}
+                            saveState={pending ? 'saving' : saveState}
+                            onSaveChanges={submit}
+                            onAddMeasurement={() => setIsAddModalOpen(true)}
+                            isSaving={pending}
                         />
-                    </Field>
 
-                    {/* 6. BOQ / Consumption Sheet Version */}
-                    <Field label="BOQ / Consumption Sheet Version" hint="System-generated versioning">
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={form.boqVersion}
-                                onChange={set('boqVersion')}
-                                placeholder="e.g. v1.0"
-                                className="font-mono"
-                            />
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={handleIncrementVersion}
-                                title="Increment Version (e.g. v1.0 -> v1.1)"
-                                icon={RefreshCw}
-                                className="shrink-0"
-                            >
-                                Revise
-                            </Button>
-                        </div>
-                    </Field>
-
-                    {/* 2. Measurements (Versioned Final Measurement Grid) */}
-                    <div className="md:col-span-2">
-                        <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                            <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-emerald-500" />
-                                    Linked Final Measurements Record
-                                </h4>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleSyncMeasurements}
-                                    icon={Ruler}
-                                    className="shrink-0 text-xs"
-                                >
-                                    Auto-fetch Final
-                                </Button>
-                            </div>
-
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-xs border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
-                                            <th className="p-2">Room & Window</th>
-                                            <th className="p-2">Previous Measurement</th>
-                                            <th className="p-2">Confirmed Width</th>
-                                            <th className="p-2">Confirmed Height</th>
-                                            <th className="p-2">Variance / Deviation</th>
-                                            <th className="p-2">Version</th>
-                                            <th className="p-2">Notes & Adjustments</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                        {finalMeasurementsGrid.map((gridRow) => (
-                                            <tr key={gridRow.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                                                <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                                                    {gridRow.room} ({gridRow.windowId})
-                                                </td>
-                                                <td className="p-1.5 font-mono text-slate-500">
-                                                    {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
-                                                </td>
-                                                <td className="p-1.5 w-[110px]">
-                                                    <Input
-                                                        type="number"
-                                                        value={gridRow.confirmedWidth}
-                                                        onChange={(e) => handleGridChange(gridRow.id, 'confirmedWidth', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-1.5 w-[110px]">
-                                                    <Input
-                                                        type="number"
-                                                        value={gridRow.confirmedHeight}
-                                                        onChange={(e) => handleGridChange(gridRow.id, 'confirmedHeight', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-1.5">
-                                                    {calculateVariance(gridRow.previousWidth, gridRow.previousHeight, gridRow.confirmedWidth, gridRow.confirmedHeight, gridRow.unit || 'mm')}
-                                                </td>
-                                                <td className="p-1.5">
-                                                    <Badge tone="emerald">{gridRow.version || 'v2.0'}</Badge>
-                                                </td>
-                                                <td className="p-1.5 min-w-[160px]">
-                                                    <Input
-                                                        value={gridRow.notes || ''}
-                                                        onChange={(e) => handleGridChange(gridRow.id, 'notes', e.target.value)}
-                                                        placeholder="Confirmation notes..."
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1">
-                                <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
-                                <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
-                            </div>
-                        </Panel>
+                        <ExcelMeasurementGrid
+                            rows={finalMeasurementsGrid}
+                            onUpdateRows={handleGridRowsUpdate}
+                            searchQuery={workspaceSearch}
+                            roomFilter={workspaceRoomFilter}
+                            typeFilter={workspaceTypeFilter}
+                            columnVisibility={columnVisibility}
+                            onOpenDetails={handleOpenRowDetails}
+                            lastAddedRoom={lastAddedRoom}
+                        />
                     </div>
+                )}
 
-                    {/* 7. Room List (Auto-fetched linked room list) */}
-                    <div className="md:col-span-2">
-                        <Field label="Linked Room List" hint="Auto-fetched room list from final measurements">
-                            <div className="space-y-1.5">
+                {/* TAB 2: BOQ Specification & Details (Current Tab) */}
+                {activeTab === 'spec' && (
+                    <form onSubmit={submit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* 1. Consumption Sheet Due */}
+                            <Field label="Consumption Sheet Due" hint="Target deadline date for sheet completion">
+                                <Input
+                                    type="date"
+                                    value={form.sheetDueDate}
+                                    onChange={set('sheetDueDate')}
+                                />
+                            </Field>
+
+                            {/* 6. BOQ / Consumption Sheet Version */}
+                            <Field label="BOQ / Consumption Sheet Version" hint="System-generated versioning">
                                 <div className="flex items-center gap-2">
-                                    <Textarea
-                                        rows={2}
-                                        value={form.roomList}
-                                        onChange={set('roomList')}
-                                        placeholder="Master Bedroom, Living Room, Dining..."
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleSyncRooms}
-                                        icon={RefreshCw}
-                                        className="shrink-0 text-xs self-start"
-                                    >
-                                        Sync Rooms
-                                    </Button>
-                                </div>
-                            </div>
-                        </Field>
-                    </div>
-
-                    {/* 3. Consumption Quantity */}
-                    <Field label="Consumption Quantity" hint="Decimal quantity for BOQ line">
-                        <Input
-                            type="number"
-                            step="any"
-                            min="0"
-                            value={form.quantity}
-                            onChange={set('quantity')}
-                            placeholder="e.g. 150.5"
-                        />
-                    </Field>
-
-                    {/* 4. Unit (Dropdown from approved unit master) */}
-                    <Field label="Unit Master" hint="Select approved measurement unit">
-                        <Select value={form.unit} onChange={set('unit')}>
-                            {APPROVED_UNITS.map((unit) => (
-                                <option key={unit} value={unit}>
-                                    {unit}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-
-                    {/* 5. Wastage Allowance */}
-                    <Field label="Wastage Allowance (%)" hint="Numeric percentage allowance (e.g. 10)">
-                        <div className="relative">
-                            <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                value={form.wastageAllowance}
-                                onChange={set('wastageAllowance')}
-                                placeholder="e.g. 10"
-                                className="pr-8"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
-                        </div>
-                    </Field>
-
-                    {/* 11. Panel Count */}
-                    <Field label="Panel Count" hint="Positive whole integers only">
-                        <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={form.panelCount}
-                            onChange={set('panelCount')}
-                            placeholder="e.g. 12"
-                        />
-                    </Field>
-
-                    {/* 8. BOQ Prepared By (System-generated user field) */}
-                    <Field label="BOQ Prepared By" hint="Captures user preparing the BOQ">
-                        {systemUsers.length > 0 ? (
-                            <Select value={form.boqPreparedBy} onChange={set('boqPreparedBy')}>
-                                <option value={currentUser?.name || currentUser?.email || ''}>
-                                    Current User ({currentUser?.name || currentUser?.email || 'Logged In User'})
-                                </option>
-                                {systemUsers.map((usr) => (
-                                    <option key={usr} value={usr}>
-                                        {usr}
-                                    </option>
-                                ))}
-                            </Select>
-                        ) : (
-                            <Input
-                                value={form.boqPreparedBy}
-                                onChange={set('boqPreparedBy')}
-                                placeholder="User name..."
-                            />
-                        )}
-                    </Field>
-
-                    {/* 9. BOQ Prepared Date (System-generated read-only) */}
-                    <Field label="BOQ Prepared Date & Time" hint="System-generated read-only timestamp">
-                        <Input
-                            type="datetime-local"
-                            value={form.boqPreparedDate}
-                            disabled
-                            className="bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80"
-                        />
-                    </Field>
-
-                    {/* 10. Fabric / Design Selection (Searchable lookup with multi-select) */}
-                    <div className="md:col-span-2 space-y-2">
-                        <Field label="Fabric / Design Selection" hint="Select from approved fabric master or enter multiple items">
-                            <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
-                                {/* Selected fabric chips */}
-                                <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
-                                    {selectedFabrics.length === 0 ? (
-                                        <span className="text-xs text-slate-400 italic">No fabrics selected yet. Click options below or type to add.</span>
-                                    ) : (
-                                        selectedFabrics.map((fab) => (
-                                            <span
-                                                key={fab}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-300"
-                                            >
-                                                <Tag className="w-3 h-3 text-brand-500 shrink-0" />
-                                                {fab}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleFabric(fab)}
-                                                    className="ml-1 text-slate-400 hover:text-rose-500 transition-colors"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </span>
-                                        ))
-                                    )}
-                                </div>
-
-                                {/* Custom fabric adder */}
-                                <div className="flex items-center gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
                                     <Input
-                                        value={customFabricInput}
-                                        onChange={(e) => setCustomFabricInput(e.target.value)}
-                                        placeholder="Add custom fabric or design name..."
-                                        className="text-xs"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                addCustomFabric();
-                                            }
-                                        }}
+                                        value={form.boqVersion}
+                                        onChange={set('boqVersion')}
+                                        placeholder="e.g. v1.0"
+                                        className="font-mono"
                                     />
                                     <Button
                                         type="button"
                                         variant="secondary"
                                         size="sm"
-                                        onClick={addCustomFabric}
-                                        icon={Plus}
-                                        className="shrink-0 text-xs"
+                                        onClick={handleIncrementVersion}
+                                        title="Increment Version (e.g. v1.0 -> v1.1)"
+                                        icon={RefreshCw}
+                                        className="shrink-0"
                                     >
-                                        Add Item
+                                        Revise
                                     </Button>
                                 </div>
+                            </Field>
 
-                                {/* Fabric master quick picker */}
-                                {fabricOptions.length > 0 && (
-                                    <div className="pt-2">
-                                        <span className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">
-                                            Fabric Catalog Master Quick Select:
-                                        </span>
-                                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                                            {fabricOptions.map((option) => {
-                                                const selected = selectedFabrics.includes(option);
-                                                return (
-                                                    <button
-                                                        key={option}
-                                                        type="button"
-                                                        onClick={() => toggleFabric(option)}
-                                                        className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${selected
-                                                            ? 'bg-brand-600 text-white font-semibold shadow-xs'
-                                                            : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-100 dark:hover:bg-slate-700'
-                                                            }`}
-                                                    >
-                                                        {selected && <Check className="w-3 h-3 inline mr-1" />}
-                                                        {option}
-                                                    </button>
-                                                );
-                                            })}
+                            {/* 2. Measurements (Versioned Final Measurement Grid) */}
+                            <div className="md:col-span-2">
+                                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
+                                    <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                            <FileText className="w-4 h-4 text-emerald-500" />
+                                            Linked Final Measurements Record
+                                        </h4>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleSyncMeasurements}
+                                            icon={Ruler}
+                                            className="shrink-0 text-xs"
+                                        >
+                                            Auto-fetch Final
+                                        </Button>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
+                                                    <th className="p-2">Room & Window</th>
+                                                    <th className="p-2">Previous Measurement</th>
+                                                    <th className="p-2">Confirmed Width</th>
+                                                    <th className="p-2">Confirmed Height</th>
+                                                    <th className="p-2">Variance / Deviation</th>
+                                                    <th className="p-2">Version</th>
+                                                    <th className="p-2">Notes & Adjustments</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                                                {finalMeasurementsGrid.map((gridRow) => (
+                                                    <tr key={gridRow.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
+                                                        <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                                                            {gridRow.room} ({gridRow.windowId})
+                                                        </td>
+                                                        <td className="p-1.5 font-mono text-slate-500">
+                                                            {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
+                                                        </td>
+                                                        <td className="p-1.5 w-[110px]">
+                                                            <Input
+                                                                type="number"
+                                                                value={gridRow.confirmedWidth}
+                                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedWidth', e.target.value)}
+                                                            />
+                                                        </td>
+                                                        <td className="p-1.5 w-[110px]">
+                                                            <Input
+                                                                type="number"
+                                                                value={gridRow.confirmedHeight}
+                                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedHeight', e.target.value)}
+                                                            />
+                                                        </td>
+                                                        <td className="p-1.5">
+                                                            {calculateVariance(gridRow.previousWidth, gridRow.previousHeight, gridRow.confirmedWidth, gridRow.confirmedHeight, gridRow.unit || 'mm')}
+                                                        </td>
+                                                        <td className="p-1.5">
+                                                            <Badge tone="emerald">{gridRow.version || 'v2.0'}</Badge>
+                                                        </td>
+                                                        <td className="p-1.5 min-w-[160px]">
+                                                            <Input
+                                                                value={gridRow.notes || ''}
+                                                                onChange={(e) => handleGridChange(gridRow.id, 'notes', e.target.value)}
+                                                                placeholder="Confirmation notes..."
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1">
+                                        <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                                        <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
+                                    </div>
+                                </Panel>
+                            </div>
+
+                            {/* 7. Room List (Auto-fetched linked room list) */}
+                            <div className="md:col-span-2">
+                                <Field label="Linked Room List" hint="Auto-fetched room list from final measurements">
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <Textarea
+                                                rows={2}
+                                                value={form.roomList}
+                                                onChange={set('roomList')}
+                                                placeholder="Master Bedroom, Living Room, Dining..."
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleSyncRooms}
+                                                icon={RefreshCw}
+                                                className="shrink-0 text-xs self-start"
+                                            >
+                                                Sync Rooms
+                                            </Button>
                                         </div>
                                     </div>
+                                </Field>
+                            </div>
+
+                            {/* 3. Consumption Quantity */}
+                            <Field label="Consumption Quantity" hint="Decimal quantity for BOQ line">
+                                <Input
+                                    type="number"
+                                    step="any"
+                                    min="0"
+                                    value={form.quantity}
+                                    onChange={set('quantity')}
+                                    placeholder="e.g. 150.5"
+                                />
+                            </Field>
+
+                            {/* 4. Unit (Dropdown from approved unit master) */}
+                            <Field label="Unit Master" hint="Select approved measurement unit">
+                                <Select value={form.unit} onChange={set('unit')}>
+                                    {APPROVED_UNITS.map((unit) => (
+                                        <option key={unit} value={unit}>
+                                            {unit}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+
+                            {/* 5. Wastage Allowance */}
+                            <Field label="Wastage Allowance (%)" hint="Numeric percentage allowance (e.g. 10)">
+                                <div className="relative">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        value={form.wastageAllowance}
+                                        onChange={set('wastageAllowance')}
+                                        placeholder="e.g. 10"
+                                        className="pr-8"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
+                                </div>
+                            </Field>
+
+                            {/* 11. Panel Count */}
+                            <Field label="Panel Count" hint="Positive whole integers only">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={form.panelCount}
+                                    onChange={set('panelCount')}
+                                    placeholder="e.g. 12"
+                                />
+                            </Field>
+
+                            {/* 8. BOQ Prepared By (System-generated user field) */}
+                            <Field label="BOQ Prepared By" hint="Captures user preparing the BOQ">
+                                {systemUsers.length > 0 ? (
+                                    <Select value={form.boqPreparedBy} onChange={set('boqPreparedBy')}>
+                                        <option value={currentUser?.name || currentUser?.email || ''}>
+                                            Current User ({currentUser?.name || currentUser?.email || 'Logged In User'})
+                                        </option>
+                                        {systemUsers.map((usr) => (
+                                            <option key={usr} value={usr}>
+                                                {usr}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        value={form.boqPreparedBy}
+                                        onChange={set('boqPreparedBy')}
+                                        placeholder="User name..."
+                                    />
                                 )}
-                            </div>
-                        </Field>
-                    </div>
+                            </Field>
 
-                    {/* 12. Lining / Accessory Assumptions (Multi-select plus notes) */}
-                    <div className="md:col-span-2 space-y-2">
-                        <Field label="Lining / Accessory Assumptions" hint="Select approved master items and include explanatory notes">
-                            <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
-                                <div>
-                                    <span className="text-[11px] font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
-                                        Approved Lining & Accessory Master Options:
-                                    </span>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                        {LINING_ACCESSORY_MASTER.map((item) => {
-                                            const checked = selectedLinings.includes(item);
-                                            return (
-                                                <label
-                                                    key={item}
-                                                    className={`flex items-center gap-2 p-2 rounded-md border text-xs font-medium cursor-pointer transition-all ${checked
-                                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                                                        }`}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checked}
-                                                        onChange={() => toggleLining(item)}
-                                                        className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
-                                                    />
-                                                    <span>{item}</span>
-                                                </label>
-                                            );
-                                        })}
+                            {/* 9. BOQ Prepared Date (System-generated read-only) */}
+                            <Field label="BOQ Prepared Date & Time" hint="System-generated read-only timestamp">
+                                <Input
+                                    type="datetime-local"
+                                    value={form.boqPreparedDate}
+                                    disabled
+                                    className="bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80"
+                                />
+                            </Field>
+
+                            {/* 10. Fabric / Design Selection (Searchable lookup with multi-select) */}
+                            <div className="md:col-span-2 space-y-2">
+                                <Field label="Fabric / Design Selection" hint="Select from approved fabric master or enter multiple items">
+                                    <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                                        {/* Selected fabric chips */}
+                                        <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                                            {selectedFabrics.length === 0 ? (
+                                                <span className="text-xs text-slate-400 italic">No fabrics selected yet. Click options below or type to add.</span>
+                                            ) : (
+                                                selectedFabrics.map((fab) => (
+                                                    <span
+                                                        key={fab}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-300"
+                                                    >
+                                                        <Tag className="w-3 h-3 text-brand-500 shrink-0" />
+                                                        {fab}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleFabric(fab)}
+                                                            className="ml-1 text-slate-400 hover:text-rose-500 transition-colors"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            )}
+                                        </div>
+
+                                        {/* Custom fabric adder */}
+                                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
+                                            <Input
+                                                value={customFabricInput}
+                                                onChange={(e) => setCustomFabricInput(e.target.value)}
+                                                placeholder="Add custom fabric or design name..."
+                                                className="text-xs"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addCustomFabric();
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={addCustomFabric}
+                                                icon={Plus}
+                                                className="shrink-0 text-xs"
+                                            >
+                                                Add Item
+                                            </Button>
+                                        </div>
+
+                                        {/* Fabric master quick picker */}
+                                        {fabricOptions.length > 0 && (
+                                            <div className="pt-2">
+                                                <span className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">
+                                                    Fabric Catalog Master Quick Select:
+                                                </span>
+                                                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                                                    {fabricOptions.map((option) => {
+                                                        const selected = selectedFabrics.includes(option);
+                                                        return (
+                                                            <button
+                                                                key={option}
+                                                                type="button"
+                                                                onClick={() => toggleFabric(option)}
+                                                                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${selected
+                                                                    ? 'bg-brand-600 text-white font-semibold shadow-xs'
+                                                                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-100 dark:hover:bg-slate-700'
+                                                                    }`}
+                                                            >
+                                                                {selected && <Check className="w-3 h-3 inline mr-1" />}
+                                                                {option}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                                    <Field label="Explanatory Notes & Special Assumptions">
-                                        <Textarea
-                                            rows={2}
-                                            value={liningNotes}
-                                            onChange={(e) => setLiningNotes(e.target.value)}
-                                            placeholder="Provide explanatory notes on blackout lining, motorized track configurations, custom pelmet details..."
-                                        />
-                                    </Field>
-                                </div>
+                                </Field>
                             </div>
-                        </Field>
-                    </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={autoIncrementVersion}
-                            onChange={(e) => setAutoIncrementVersion(e.target.checked)}
-                            className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
-                        />
-                        <span>Auto-increment revision version on save ({form.boqVersion} → {getNextVersion(form.boqVersion)})</span>
-                    </label>
+                            {/* 12. Lining / Accessory Assumptions (Multi-select plus notes) */}
+                            <div className="md:col-span-2 space-y-2">
+                                <Field label="Lining / Accessory Assumptions" hint="Select approved master items and include explanatory notes">
+                                    <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                                        <div>
+                                            <span className="text-[11px] font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
+                                                Approved Lining & Accessory Master Options:
+                                            </span>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                {LINING_ACCESSORY_MASTER.map((item) => {
+                                                    const checked = selectedLinings.includes(item);
+                                                    return (
+                                                        <label
+                                                            key={item}
+                                                            className={`flex items-center gap-2 p-2 rounded-md border text-xs font-medium cursor-pointer transition-all ${checked
+                                                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                                                : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                                                                }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={checked}
+                                                                onChange={() => toggleLining(item)}
+                                                                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                                                            />
+                                                            <span>{item}</span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
 
-                    <div className="flex justify-end gap-2">
-                        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" loading={pending}>Save Consumption / BOQ</Button>
-                    </div>
-                </div>
-            </form>
+                                        <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                                            <Field label="Explanatory Notes & Special Assumptions">
+                                                <Textarea
+                                                    rows={2}
+                                                    value={liningNotes}
+                                                    onChange={(e) => setLiningNotes(e.target.value)}
+                                                    placeholder="Provide explanatory notes on blackout lining, motorized track configurations, custom pelmet details..."
+                                                />
+                                            </Field>
+                                        </div>
+                                    </div>
+                                </Field>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+                            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={autoIncrementVersion}
+                                    onChange={(e) => setAutoIncrementVersion(e.target.checked)}
+                                    className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
+                                />
+                                <span>Auto-increment revision version on save ({form.boqVersion} → {getNextVersion(form.boqVersion)})</span>
+                            </label>
+
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+                                <Button type="submit" loading={pending}>Save Consumption / BOQ</Button>
+                            </div>
+                        </div>
+                    </form>
+                )}
+            </div>
+
+            {/* Row Details Inspector Drawer */}
+            <MeasurementDetailsDrawer
+                open={inspectorRowIndex !== null}
+                row={inspectorRowIndex !== null ? finalMeasurementsGrid[inspectorRowIndex] : null}
+                rowIndex={inspectorRowIndex}
+                onClose={() => setInspectorRowIndex(null)}
+                onSaveRowDetails={handleSaveRowDetails}
+            />
+
+            {/* Add Window Measurement Modal */}
+            <AddWindowMeasurementModal
+                open={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddMeasurement={handleConfirmAddMeasurement}
+                availableRooms={modalAvailableRooms}
+                existingRows={finalMeasurementsGrid}
+                preselectedRoom={workspaceRoomFilter !== 'ALL' ? workspaceRoomFilter : ''}
+            />
         </Modal>
     );
 };

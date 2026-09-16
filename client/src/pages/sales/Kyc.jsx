@@ -1181,10 +1181,24 @@ const Kyc = ({ items: itemsProp = [] }) => {
 
   const rawLeads = itemsProp && itemsProp.length > 0 ? itemsProp : Array.isArray(salesLeads) ? salesLeads : [];
 
-  // Filter leads with completed Client Approval or having KYC details
-  const approvedLeads = rawLeads.filter(
-    (lead) => lead.approval?.clientApprovalStatus === 'APPROVED' || lead.clientApprovalStatus === 'APPROVED' || lead.kyc?.status
-  );
+  // Filter leads with completed Client Approval or having active KYC details
+  const approvedLeads = rawLeads.filter((lead) => {
+    const isClientApproved = lead.approval?.clientApprovalStatus === 'APPROVED' || lead.clientApprovalStatus === 'APPROVED';
+    const hasKycActivity = Boolean(
+      lead.kyc?.dueDate ||
+      lead.kyc?.actualDate ||
+      lead.kyc?.verificationDate ||
+      lead.kyc?.verifiedBy ||
+      (lead.kyc?.status && !['Pending', 'PENDING'].includes(lead.kyc.status)) ||
+      lead.kyc?.billingLegalName ||
+      lead.kyc?.gstin ||
+      lead.kyc?.pan ||
+      lead.kyc?.clientPoNumber ||
+      (Array.isArray(lead.kyc?.documents) && lead.kyc.documents.length > 0) ||
+      (Array.isArray(lead.kyc?.verifiedDocuments) && lead.kyc.verifiedDocuments.length > 0)
+    );
+    return isClientApproved || hasKycActivity;
+  });
 
   const filteredLeads = approvedLeads.filter((lead) => {
     if (search) {

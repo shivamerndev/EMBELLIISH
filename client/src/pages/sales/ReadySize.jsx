@@ -1030,7 +1030,9 @@ const ReadySize = ({ items: itemsProp = [] }) => {
             lead.studioMeeting?.feedback ||
             lead.studioMeeting?.nextAction ||
             lead.studioMeeting?.attendees ||
-            lead.studioMeeting?.pricingRange
+            lead.studioMeeting?.pricingRange ||
+            lead.readySize?.confirmationDate ||
+            lead.readySize?.dueDate
         )
     );
 

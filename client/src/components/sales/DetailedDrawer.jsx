@@ -130,6 +130,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit }) => {
           >
             Overview & Contact
           </button>
+          
           <button
             type="button"
             onClick={() => setActiveTab('commercial')}

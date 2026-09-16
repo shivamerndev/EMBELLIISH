@@ -10,20 +10,11 @@ import { calculateRowConsumption } from '../../utils/consumptionCalc';
  * Groups rows by room, provides sticky headers & identity columns,
  * supports inline editing, room collapse, search/filtering, and live totals.
  */
-const ExcelMeasurementGrid = ({
-    rows = [],
-    onUpdateRows,
-    searchQuery = '',
-    roomFilter = 'ALL',
-    typeFilter = 'ALL',
-    columnVisibility = {},
-    onOpenDetails,
-    lastAddedRoom = '',
-}) => {
-    // State for expanded room groups (default: all expanded)
+const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', }) => {
+   
+    
     const [collapsedRooms, setCollapsedRooms] = useState({});
 
-    // Auto-expand room group when a new measurement is added to it
     React.useEffect(() => {
         if (lastAddedRoom) {
             setCollapsedRooms((prev) => ({
@@ -137,9 +128,9 @@ const ExcelMeasurementGrid = ({
 
     return (
         <div className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
-            {/* The ONLY container with horizontal & vertical scrolling */}
             <div className="overflow-x-auto overflow-y-auto max-h-[60vh] select-none relative scrollbar-thin">
                 <table className="w-full text-left border-collapse text-xs font-sans min-w-[1200px]">
+                    
                     <MeasurementGridHeader columnVisibility={columnVisibility} />
 
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950">
