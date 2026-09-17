@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Sparkles, Check, ChevronDown, Home } from 'lucide-react';
+import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Sparkles, Check, ChevronDown, Home, FileText } from 'lucide-react';
 import { Button } from '../ui';
+import { printMeasurementSheet } from './measurementPrintService';
 
 // Reference handwritten data directly transcribed from Measurement sheet.pdf
 const PDF_REFERENCE_DATA = {
@@ -133,6 +134,8 @@ const PDF_REFERENCE_DATA = {
         photo: false,
         video: false,
         flooring: false,
+        sidewall: false,
+        others: false,
         ceiling: false,
         height: false,
     },
@@ -338,6 +341,8 @@ const MeasurementCapture = ({
         photo: false,
         video: false,
         flooring: false,
+        sidewall: false,
+        others: false,
         ceiling: false,
         height: false,
     });
@@ -352,6 +357,8 @@ const MeasurementCapture = ({
                 photo: false,
                 video: false,
                 flooring: false,
+                sidewall: false,
+                others: false,
                 ceiling: false,
                 height: false,
             });
@@ -451,8 +458,13 @@ const MeasurementCapture = ({
         }, 400);
     };
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = (isBlank = false) => {
+        printMeasurementSheet({
+            header,
+            rows,
+            remarks,
+            checklist,
+        }, isBlank);
     };
 
     return (
@@ -1051,8 +1063,8 @@ const MeasurementCapture = ({
                                 { key: 'photo', label: 'Photo' },
                                 { key: 'video', label: 'Video' },
                                 { key: 'flooring', label: 'Flooring' },
-                                { key: 'ceiling', label: 'Ceiling' },
-                                { key: 'height', label: 'Height' },
+                                { key: 'sidewall', label: 'Sidewall' },
+                                { key: 'others', label: 'Others' },
                             ].map(({ key, label }) => (
                                 <label
                                     key={key}
@@ -1105,10 +1117,23 @@ const MeasurementCapture = ({
                         variant="outline"
                         size="sm"
                         icon={Printer}
-                        onClick={handlePrint}
+                        onClick={() => handlePrint(false)}
                         className="text-xs"
+                        title="Print measurement sheet layout with recorded measurements"
                     >
                         Print Sheet
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={FileText}
+                        onClick={() => handlePrint(true)}
+                        className="text-xs text-slate-600 hover:text-amber-700 dark:text-slate-400 dark:hover:text-amber-300"
+                        title="Print blank physical sheet for field site visits"
+                    >
+                        Print Blank Sheet
                     </Button>
 
                     {!readOnly && (

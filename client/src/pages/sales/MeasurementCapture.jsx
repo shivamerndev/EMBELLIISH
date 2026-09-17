@@ -74,7 +74,6 @@ const SPREADSHEET_SECTIONS = [
             { key: 'measurement.date', label: 'Measurement Date' },
             { key: 'measurement.measuredBy', label: 'Measured By' },
             { key: 'windowsCount', label: 'Windows' },
-            { key: 'delayStatus', label: 'SLA Status' },
             { key: 'measurement.status', label: 'Status' },
         ]
     }
