@@ -180,7 +180,7 @@ const MeasurementToolbar = ({
                         onClick={onAddMeasurement}
                         className="font-semibold shadow-md"
                     >
-                        + Add Window Measurement
+                        Add Window Measurement
                     </Button>
                 </div>
             </div>

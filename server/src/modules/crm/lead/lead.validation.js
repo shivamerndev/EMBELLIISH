@@ -46,6 +46,10 @@ const attachmentItemSchema = z
 
 const measurementSchema = z
   .object({
+    header: z.any().optional().nullable(),
+    rows: z.array(z.any()).optional().nullable(),
+    checklist: z.any().optional().nullable(),
+    remarks: z.string().optional().nullable(),
     dueDate: coerceOptionalDate,
     date: coerceOptionalDate,
     measuredBy: flexibleObjectId,

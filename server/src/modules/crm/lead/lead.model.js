@@ -74,8 +74,12 @@ const leadSchema = new mongoose.Schema(
       default: 'AVAILABLE',
     },
 
-    // --- Sales & Commercials: Measurement.
+    // --- Sales & Commercials: Measurement (Physical Measurement Sheet).
     measurement: {
+      header: mongoose.Schema.Types.Mixed,
+      rows: [mongoose.Schema.Types.Mixed],
+      checklist: mongoose.Schema.Types.Mixed,
+      remarks: String,
       dueDate: Date,
       date: Date,
       measuredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
