@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, AlertCircle, Inbox, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, Inbox, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import cn from '../../utils/cn';
 import { getLocalDate, getLocalDateTime, getLocalTime } from '../../utils/format';
 
@@ -140,18 +140,137 @@ export const Field = ({ label, error, hint, required, children }) => (
   </div>
 );
 
-export const Input = ({ className, type, value, onChange, onFocus, onClick, ...props }) => {
-  const handleFocus = (e) => {
-    if ((type === 'date' || type === 'datetime-local' || type === 'time') && !value && onChange) {
+export const DateInput = ({
+  className,
+  type = 'date',
+  value,
+  onChange,
+  onFocus,
+  onClick,
+  onPointerDown,
+  disabled,
+  min,
+  max,
+  name,
+  id,
+  ...props
+}) => {
+  const inputRef = React.useRef(null);
+
+  // Auto-populate present date ONLY when user clicks/focuses an empty date field
+  const handleAutoPopulate = (e) => {
+    if (disabled) return;
+    if ((type === 'date' || type === 'datetime-local') && (!value || value === '') && onChange) {
       let defaultVal = '';
       if (type === 'date') defaultVal = getLocalDate();
       else if (type === 'datetime-local') defaultVal = getLocalDateTime();
-      else if (type === 'time') defaultVal = getLocalTime();
 
-      if (props.min && defaultVal && defaultVal < props.min) {
-        defaultVal = props.min;
+      if (min && defaultVal && defaultVal < min) {
+        defaultVal = min;
       }
 
+      if (defaultVal) {
+        const targetName = name || id || (e && e.target && e.target.name);
+        const syntheticEvent = e ? {
+          ...e,
+          target: { ...(e.target || {}), name: targetName, value: defaultVal },
+          currentTarget: { ...(e.currentTarget || {}), name: targetName, value: defaultVal },
+        } : {
+          target: { name: targetName, value: defaultVal },
+          currentTarget: { name: targetName, value: defaultVal },
+        };
+        onChange(syntheticEvent);
+      }
+    }
+  };
+
+  const handleFocus = (e) => {
+    handleAutoPopulate(e);
+    if (onFocus) onFocus(e);
+  };
+
+  const handleClick = (e) => {
+    handleAutoPopulate(e);
+    if (onClick) onClick(e);
+  };
+
+  const handlePointerDown = (e) => {
+    handleAutoPopulate(e);
+    if (onPointerDown) onPointerDown(e);
+  };
+
+  const handleIconClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (disabled) return;
+    handleAutoPopulate(e);
+    if (inputRef.current) {
+      if (typeof inputRef.current.showPicker === 'function') {
+        try {
+          inputRef.current.showPicker();
+        } catch {
+          inputRef.current.focus();
+        }
+      } else {
+        inputRef.current.focus();
+      }
+    }
+  };
+
+  return (
+    <div className="relative inline-flex items-center w-full">
+      <input
+        ref={inputRef}
+        type={type}
+        name={name}
+        id={id}
+        value={value ?? ''}
+        onChange={onChange}
+        onFocus={handleFocus}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        disabled={disabled}
+        min={min}
+        max={max}
+        className={cn('field-input pr-10', className)}
+        {...props}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        disabled={disabled}
+        onClick={handleIconClick}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-amber-700/80 dark:text-amber-400/80 hover:text-amber-900 dark:hover:text-amber-200 focus:outline-none transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Open calendar picker"
+        aria-label="Open calendar picker"
+      >
+        <Calendar className="w-4 h-4 shrink-0" />
+      </button>
+    </div>
+  );
+};
+
+export const DatePicker = DateInput;
+
+export const Input = ({ className, type, value, onChange, onFocus, onClick, onPointerDown, ...props }) => {
+  if (type === 'date' || type === 'datetime-local') {
+    return (
+      <DateInput
+        className={className}
+        type={type}
+        value={value}
+        onChange={onChange}
+        onFocus={onFocus}
+        onClick={onClick}
+        onPointerDown={onPointerDown}
+        {...props}
+      />
+    );
+  }
+
+  const handleFocus = (e) => {
+    if (type === 'time' && !value && onChange) {
+      const defaultVal = getLocalTime();
       if (defaultVal) {
         onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });
       }
@@ -160,16 +279,8 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, ...p
   };
 
   const handleClick = (e) => {
-    if ((type === 'date' || type === 'datetime-local' || type === 'time') && !value && onChange) {
-      let defaultVal = '';
-      if (type === 'date') defaultVal = getLocalDate();
-      else if (type === 'datetime-local') defaultVal = getLocalDateTime();
-      else if (type === 'time') defaultVal = getLocalTime();
-
-      if (props.min && defaultVal && defaultVal < props.min) {
-        defaultVal = props.min;
-      }
-
+    if (type === 'time' && !value && onChange) {
+      const defaultVal = getLocalTime();
       if (defaultVal) {
         onChange({ ...e, target: { ...e.target, name: props.name, value: defaultVal } });
       }
@@ -180,10 +291,11 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, ...p
   return (
     <input
       type={type}
-      value={value}
+      value={value ?? ''}
       onChange={onChange}
       onFocus={handleFocus}
       onClick={handleClick}
+      onPointerDown={onPointerDown}
       className={cn('field-input', className)}
       {...props}
     />

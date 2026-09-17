@@ -7,6 +7,7 @@ import Dashboard from '../pages/dashboard/Dashboard';
 import LeadsPage from '../pages/crm/LeadsPage';
 import DcmAssignmentPage from '../pages/crm/DcmAssignmentPage';
 import QualificationPage from '../pages/crm/QualificationPage';
+import ReassignDcmPage from '../pages/crm/ReassignDcmPage';
 
 // Sales and Commercials Pages
 import SalesCommercialsPage from '../pages/sales/SalesCommercials.jsx';
@@ -42,8 +43,8 @@ export const AppRoutes = () => (
         <Route path="/crm/leads" element={<LeadsPage />} />
         <Route path="/crm/dcm-assignments" element={<DcmAssignmentPage />} />
         <Route path="/crm/qualification" element={<QualificationPage />} />
-        {/* Delayed Leads - filters the leads list by overdue/delayed status */}
-        <Route path="/crm/delayed-leads" element={<LeadsPage initialFilter="delayed" />} />
+        {/* Reassign DCM & Delayed Leads */}
+        <Route path="/crm/delayed-leads" element={<ReassignDcmPage />} />
 
         {/* Sales and Commercials Sub-Routes */}
         <Route path="/crm/sales-commercials" element={<Navigate to="/crm/sales-commercials/leads" replace />} />

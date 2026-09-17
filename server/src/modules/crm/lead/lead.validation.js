@@ -513,6 +513,8 @@ const rawCreateLeadSchema = z.object({
   actualSiteVisitDateTime: z.coerce.date().optional().nullable(),
   siteAddress: z.string().optional(),
   assignedInstaller: objectId.optional().nullable(),
+  installerName: z.string().optional().nullable(),
+  installerPhone: z.string().optional().nullable(),
   clientArchitectAvailability: z.string().optional(),
   scope: z.union([z.array(z.string()), z.string()]).optional().nullable(),
   rooms: z.union([z.array(z.string()), z.string()]).optional().nullable(),

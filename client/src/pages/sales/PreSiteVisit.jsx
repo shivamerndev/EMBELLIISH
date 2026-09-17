@@ -7,7 +7,7 @@ import {
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher, PhoneInput, validatePhoneNumber } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
@@ -232,12 +232,15 @@ const SPREADSHEET_CELL_RENDERERS = {
                 ? [lead.assignedInstaller]
                 : [];
 
-        if (installers.length === 0 && !lead.assignedInstallerName) {
-            return <span className="text-slate-400 dark:text-slate-600 text-xs italic">— Unassigned —</span>;
+        if (installers.length === 0 && !lead.assignedInstallerName && !lead.installerName) {
+            return <span className="text-slate-400 dark:text-slate-600">—</span>;
         }
 
-        const names = installers.map((u) => typeof u === 'object' ? u.name : (lead.assignedInstallerName || 'Installer'));
-        const primary = names[0] || lead.assignedInstallerName || 'Installer';
+        const names = installers.map((u) => (typeof u === 'object' ? u.name : (lead.assignedInstallerName || 'Installer')));
+        if (lead.installerName && !names.includes(lead.installerName)) {
+            names.unshift(lead.installerName + (lead.installerPhone ? ` (${lead.installerPhone})` : ''));
+        }
+        const primary = names[0] || lead.installerName || lead.assignedInstallerName || 'Installer';
         const extraCount = names.length > 1 ? names.length - 1 : 0;
 
         return (
@@ -414,6 +417,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         siteVisitDueDate: item?.siteVisitDueDate ? new Date(item.siteVisitDueDate).toISOString().slice(0, 10) : '',
         isCompleted: Boolean(item?.actualSiteVisitDateTime),
         actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
+        installerName: item?.installerName || '',
+        installerPhone: item?.installerPhone || item?.installerNumber || '',
         addressLine1: initialAddress.addressLine1,
         postalCode: initialAddress.postalCode,
         state: initialAddress.state,
@@ -587,6 +592,14 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             }
         }
 
+        if (form.installerPhone?.trim()) {
+            const phoneCheck = validatePhoneNumber(form.installerPhone, '+91');
+            if (!phoneCheck.isValid) {
+                setValidationError(`Installer Number Error: ${phoneCheck.error || 'Please enter a valid 10-digit mobile number.'}`);
+                return;
+            }
+        }
+
         const scopeParts = [...form.scopeSelected.filter((s) => s !== 'Other')];
         if (form.scopeSelected.includes('Other') && form.scopeCustomOther.trim()) {
             scopeParts.push(form.scopeCustomOther.trim());
@@ -616,6 +629,8 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             siteAddress: formattedSiteAddress || undefined,
             assignedInstaller: primaryInstallerId || null,
             assignedInstallers: form.assignedInstallers,
+            installerName: form.installerName?.trim() || undefined,
+            installerPhone: form.installerPhone?.trim() || undefined,
             clientArchitectAvailability: availabilityString || undefined,
             scope: scopeParts,
             rooms: form.roomsSelected,
@@ -652,51 +667,112 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 )}
 
                 {/* Grid Section 1: Requirement & Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Field label="Site Visit Requirement" required>
+                            <Select
+                                value={form.siteVisitRequired ? 'YES' : 'NO'}
+                                onChange={(e) => setForm((prev) => ({ ...prev, siteVisitRequired: e.target.value === 'YES' }))}
+                                options={[
+                                    { value: 'YES', label: 'Yes - Site Visit Required' },
+                                    { value: 'NO', label: 'No - Not Required' }
+                                ]}
+                            />
+                        </Field>
 
-                    <Field label="Site Visit Requirement" required>
-                        <Select
-                            value={form.siteVisitRequired ? 'YES' : 'NO'}
-                            onChange={(e) => setForm((prev) => ({ ...prev, siteVisitRequired: e.target.value === 'YES' }))}
-                            options={[
-                                { value: 'YES', label: 'Yes - Site Visit Required' },
-                                { value: 'NO', label: 'No - Not Required' }
-                            ]}
-                        />
-                    </Field>
+                        <Field label="Site Visit Due Date" required={form.siteVisitRequired}>
+                            <Input
+                                type="date"
+                                value={form.siteVisitDueDate}
+                                onChange={(e) => setForm((prev) => ({ ...prev, siteVisitDueDate: e.target.value }))}
+                            />
+                        </Field>
 
-                    <Field label="Site Visit Due Date" required={form.siteVisitRequired}>
-                        <Input
-                            type="date"
-                            value={form.siteVisitDueDate}
-                            onChange={(e) => setForm((prev) => ({ ...prev, siteVisitDueDate: e.target.value }))}
-                        />
-                    </Field>
-
-                    <Field
-                        label="Actual Site Visit Date & Time"
-                        required={form.isCompleted}
-                        hint={form.isCompleted ? 'Mandatory when marked completed' : ''}
-                        error={isActualDateBeforeDueDate ? 'Actual date cannot be before Site Visit Due Date' : undefined}
-                    >
-                        <Input
-                            type="datetime-local"
-                            value={form.actualSiteVisitDateTime}
-                            onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
-                            min={siteVisitDueDateOnly ? `${siteVisitDueDateOnly}T00:00` : undefined}
-                            className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
-                        />
-                        {isActualDateBeforeDueDate && (
-                            <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
-                                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
-                                <div>
-                                    <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Site Visit Date & Time cannot be earlier than Site Visit Due Date ({date(siteVisitDueDateOnly)}).
+                        <Field
+                            label="Actual Site Visit Date & Time"
+                            required={form.isCompleted}
+                            hint={form.isCompleted ? 'Mandatory when marked completed' : ''}
+                            error={isActualDateBeforeDueDate ? 'Actual date cannot be before Site Visit Due Date' : undefined}
+                        >
+                            <Input
+                                type="datetime-local"
+                                value={form.actualSiteVisitDateTime}
+                                onChange={(e) => setForm((prev) => ({ ...prev, actualSiteVisitDateTime: e.target.value }))}
+                                min={siteVisitDueDateOnly ? `${siteVisitDueDateOnly}T00:00` : undefined}
+                                className={isActualDateBeforeDueDate ? 'border-rose-500 text-rose-600 focus:ring-rose-500 bg-rose-50/20' : ''}
+                            />
+                            {isActualDateBeforeDueDate && (
+                                <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2 font-medium">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                                    <div>
+                                        <span className="font-bold text-rose-700 dark:text-rose-300">Remark:</span> Actual Site Visit Date & Time cannot be earlier than Site Visit Due Date ({date(siteVisitDueDateOnly)}).
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </Field>
+                            )}
+                        </Field>
+                    </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
+                        <Field label="INSTALLER NAME">
+                            <Input
+                                placeholder="Write name of the installer..."
+                                value={form.installerName}
+                                onChange={(e) => setForm((prev) => ({ ...prev, installerName: e.target.value }))}
+                            />
+                        </Field>
+
+                        <Field label="INSTALLER NUMBER" hint="Country code + 10 digit mobile number required">
+                            <PhoneInput
+                                name="installerPhone"
+                                placeholder="9876543210"
+                                value={form.installerPhone}
+                                onChange={(e) => setForm((prev) => ({ ...prev, installerPhone: e.target.value }))}
+                                defaultCountry="+91"
+                            />
+                        </Field>
+                    </div>
                 </div>
+
+                {/* Responsible Person Availability Slots */}
+                <Field label="RESPONSIBLE PERSON AVAILABILITY">
+                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        {form.availabilitySlots.map((slot, index) => (
+                            <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <div className="flex-1 min-w-[140px]">
+                                    <Input
+                                        type="date"
+                                        size="sm"
+                                        value={slot.date}
+                                        onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
+                                        placeholder="Availability Date"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-[160px]">
+                                    <Input
+                                        size="sm"
+                                        value={slot.timeSlot}
+                                        onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
+                                        placeholder="e.g. 00 AM - 01"
+                                    />
+                                </div>
+                                {form.availabilitySlots.length > 1 && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleRemoveSlot(slot.id)}
+                                        className="text-rose-500 hover:text-rose-700"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
+                            Add Availability Slot
+                        </Button>
+                    </div>
+                </Field>
 
                 {/* Grid Section 2: Site Address Inputs */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
@@ -740,6 +816,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
 
                 {/* Grid Section 3: Installers & System Availability */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+
                     <Field label="Assigned Installer / Measurement Person">
                         <div className="space-y-2">
                             <div className="relative">
@@ -814,47 +891,6 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                         </div>
                     </Field>
                 </div>
-
-                {/* Grid Section 4: Responsible Person Availability Slots */}
-                <Field label="Responsible Person Availability">
-                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        {form.availabilitySlots.map((slot, index) => (
-                            <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
-                                <div className="flex-1 min-w-[140px]">
-                                    <Input
-                                        type="date"
-                                        size="sm"
-                                        value={slot.date}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
-                                        placeholder="Availability Date"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-[160px]">
-                                    <Input
-                                        size="sm"
-                                        value={slot.timeSlot}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
-                                        placeholder="e.g. 10:00 AM - 01:00 PM"
-                                    />
-                                </div>
-                                {form.availabilitySlots.length > 1 && (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleRemoveSlot(slot.id)}
-                                        className="text-rose-500 hover:text-rose-700"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                )}
-                            </div>
-                        ))}
-                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
-                            Add Availability Slot
-                        </Button>
-                    </div>
-                </Field>
 
                 {/* Grid Section 5: Scope & Rooms Multi-select */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
