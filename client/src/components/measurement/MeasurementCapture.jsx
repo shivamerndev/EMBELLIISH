@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Sparkles, Check, ChevronDown, Home } from 'lucide-react';
+import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Sparkles, Check, ChevronDown, Home, FileText } from 'lucide-react';
 import { Button } from '../ui';
+import { printMeasurementSheet } from './measurementPrintService';
 
 // Reference handwritten data directly transcribed from Measurement sheet.pdf
 const PDF_REFERENCE_DATA = {
     header: {
-        company: 'Embellish',
+        company: 'Embelliish',
         client: '',
         siteAddress: '5401 | 5404 | ICC Tower 1\nDadar East',
         date: new Date().toISOString().slice(0, 10),
@@ -133,6 +134,8 @@ const PDF_REFERENCE_DATA = {
         photo: false,
         video: false,
         flooring: false,
+        sidewall: false,
+        others: false,
         ceiling: false,
         height: false,
     },
@@ -264,55 +267,32 @@ const MeasurementCapture = ({
         return () => document.removeEventListener('mousedown', handleGlobalClick);
     }, [activeRoomDropdown]);
 
-    // Initialize header details
-    const [header, setHeader] = useState(() => {
-        if (initialData?.header) return { ...initialData.header };
-        if (lead) {
-            return {
-                company: 'Embellish',
-                client: lead.clientName || lead.client || lead.name || '',
-                siteAddress: lead.siteAddress || lead.address || lead.location || '',
-                date: lead.actualSiteVisitDateTime?.slice(0, 10) || lead.measurement?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10),
-                siteVisitedBy: lead.measurement?.measuredBy?.name || lead.technician || '',
-                srNo: lead.code || lead.srNo || '1800',
-            };
+    // Helper to extract rows
+    const extractRows = (sourceData, sourceLead) => {
+        if (sourceData?.rows && sourceData.rows.length > 0) {
+            return sourceData.rows.map((r, i) => ({ ...r, srNo: i + 1 }));
         }
-        // Default blank header (or ready for entry)
-        return {
-            company: 'Embellish',
-            client: '',
-            siteAddress: '',
-            date: new Date().toISOString().slice(0, 10),
-            siteVisitedBy: '',
-            srNo: '',
-        };
-    });
-
-    // Initialize rows
-    const [rows, setRows] = useState(() => {
-        if (initialData?.rows && initialData.rows.length > 0) {
-            return initialData.rows.map((r, i) => ({ ...r, srNo: i + 1 }));
-        }
-        if (lead?.measurement?.notes) {
+        const candidateRows = sourceLead?.measurement?.rows || sourceLead?.measurement?.notes;
+        if (candidateRows) {
             try {
-                const notes = typeof lead.measurement.notes === 'string' ? JSON.parse(lead.measurement.notes) : lead.measurement.notes;
+                const notes = typeof candidateRows === 'string' ? JSON.parse(candidateRows) : candidateRows;
                 if (Array.isArray(notes) && notes.length > 0) {
                     return notes.map((item, idx) => ({
                         id: item.id || `row-${idx}`,
                         srNo: idx + 1,
-                        area: item.room || item.area || '',
-                        lWindowDetail: item.windowId || item.particular || '',
-                        outToOutWidth: item.outToOutWidth ?? item.o2oWidth ?? '',
-                        outToOutHeight: item.outToOutHeight ?? item.o2oHeight ?? '',
+                        area: item.area || item.room || '',
+                        lWindowDetail: item.lWindowDetail || item.windowId || item.particular || '',
+                        outToOutWidth: item.outToOutWidth ?? item.o2oWidth ?? item.width ?? '',
+                        outToOutHeight: item.outToOutHeight ?? item.o2oHeight ?? item.height ?? '',
                         frameToFrameWidth: item.frameToFrameWidth ?? item.f2fWidth ?? '',
                         frameToFrameHeight: item.frameToFrameHeight ?? item.f2fHeight ?? '',
-                        pelmetOutOutWidth: item.pelmetO2oWidth ?? '',
-                        pelmetOutOutDrop: item.pelmetO2oDrop ?? '',
-                        pelmetFrameFrameWidth: item.pelmetF2fWidth ?? '',
-                        pelmetFrameFrameDrop: item.pelmetF2fDrop ?? '',
+                        pelmetOutOutWidth: item.pelmetOutOutWidth ?? item.pelmetO2oWidth ?? '',
+                        pelmetOutOutDrop: item.pelmetOutOutDrop ?? item.pelmetO2oDrop ?? '',
+                        pelmetFrameFrameWidth: item.pelmetFrameFrameWidth ?? item.pelmetF2fWidth ?? '',
+                        pelmetFrameFrameDrop: item.pelmetFrameFrameDrop ?? item.pelmetF2fDrop ?? '',
                         sidesOfRoman: item.sidesOfRoman ?? '',
                         ceilingSupport: item.ceilingSupport ?? '',
-                        wire: Boolean(item.wireLeft || item.wireRight || item.wire),
+                        wire: Boolean(item.wire || item.wireLeft || item.wireRight),
                         wireLeft: Boolean(item.wireLeft),
                         wireRight: Boolean(item.wireRight ?? item.wire),
                         sideWall: item.sideWall || (item.curtainReturnLeft ? 'L' : item.curtainReturnRight ? 'R' : ''),
@@ -320,22 +300,70 @@ const MeasurementCapture = ({
                     }));
                 }
             } catch {
-                // fall through to default rows
+                // fall through
             }
         }
-        // By default, start with 6 clean rows matching the sheet template
         return Array.from({ length: 6 }, (_, i) => createEmptyRow(i + 1));
-    });
+    };
+
+    const extractHeader = (sourceData, sourceLead) => {
+        if (sourceData?.header) return { ...sourceData.header };
+        if (sourceLead?.measurement?.header) return { ...sourceLead.measurement.header };
+        if (sourceLead) {
+            return {
+                company: 'Embelliish',
+                client: sourceLead.clientName || sourceLead.client || sourceLead.name || '',
+                siteAddress: sourceLead.siteAddress || sourceLead.address || sourceLead.location || '',
+                date: sourceLead.actualSiteVisitDateTime?.slice(0, 10) || sourceLead.measurement?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+                siteVisitedBy: sourceLead.measurement?.measuredBy?.name || (typeof sourceLead.measurement?.measuredBy === 'string' ? sourceLead.measurement.measuredBy : '') || sourceLead.technician || '',
+                srNo: sourceLead.code || sourceLead.srNo || '1800',
+            };
+        }
+        return {
+            company: 'Embelliish',
+            client: '',
+            siteAddress: '',
+            date: new Date().toISOString().slice(0, 10),
+            siteVisitedBy: '',
+            srNo: '',
+        };
+    };
+
+    // Initialize header details
+    const [header, setHeader] = useState(() => extractHeader(initialData, lead));
+
+    // Initialize rows
+    const [rows, setRows] = useState(() => extractRows(initialData, lead));
 
     // Remarks & Checklist states
     const [remarks, setRemarks] = useState(() => initialData?.remarks ?? lead?.measurement?.remarks ?? '');
-    const [checklist, setChecklist] = useState(() => initialData?.checklist ?? {
+    const [checklist, setChecklist] = useState(() => initialData?.checklist ?? lead?.measurement?.checklist ?? {
         photo: false,
         video: false,
         flooring: false,
+        sidewall: false,
+        others: false,
         ceiling: false,
         height: false,
     });
+
+    // Sync when lead or initialData changes
+    useEffect(() => {
+        if (lead || initialData) {
+            setHeader(extractHeader(initialData, lead));
+            setRows(extractRows(initialData, lead));
+            setRemarks(initialData?.remarks ?? lead?.measurement?.remarks ?? '');
+            setChecklist(initialData?.checklist ?? lead?.measurement?.checklist ?? {
+                photo: false,
+                video: false,
+                flooring: false,
+                sidewall: false,
+                others: false,
+                ceiling: false,
+                height: false,
+            });
+        }
+    }, [lead?.id, lead?._id, initialData]);
 
     const [saveStatus, setSaveStatus] = useState(null); // 'saved' | 'saving' | null
 
@@ -397,7 +425,7 @@ const MeasurementCapture = ({
     const handleClearAll = () => {
         if (window.confirm('Clear all entries and start with a blank measurement sheet?')) {
             setHeader({
-                company: 'Embellish',
+                company: 'Embelliish',
                 client: '',
                 siteAddress: '',
                 date: new Date().toISOString().slice(0, 10),
@@ -430,8 +458,13 @@ const MeasurementCapture = ({
         }, 400);
     };
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = (isBlank = false) => {
+        printMeasurementSheet({
+            header,
+            rows,
+            remarks,
+            checklist,
+        }, isBlank);
     };
 
     return (
@@ -448,7 +481,7 @@ const MeasurementCapture = ({
                     <div className="md:col-span-4 p-3.5 flex flex-col justify-between space-y-2 bg-[#fbf9f6] dark:bg-slate-900/80">
                         <div className="pb-1 border-b border-amber-900/15 dark:border-slate-800">
                             <h1 className="font-serif text-3xl font-extrabold italic tracking-wider text-[#574233] dark:text-amber-200">
-                                {header.company || 'Embellish'}
+                                {header.company || 'Embelliish'}
                             </h1>
                             <p className="text-[10px] uppercase font-bold tracking-widest text-[#785c48] dark:text-amber-400">
                                 Luxury Curtains & Blinds Specification
@@ -788,7 +821,6 @@ const MeasurementCapture = ({
                                                 value={row.outToOutWidth}
                                                 onChange={(e) => handleRowChange(index, 'outToOutWidth', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -800,7 +832,6 @@ const MeasurementCapture = ({
                                                 value={row.outToOutHeight}
                                                 onChange={(e) => handleRowChange(index, 'outToOutHeight', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -812,7 +843,6 @@ const MeasurementCapture = ({
                                                 value={row.frameToFrameWidth}
                                                 onChange={(e) => handleRowChange(index, 'frameToFrameWidth', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -824,7 +854,6 @@ const MeasurementCapture = ({
                                                 value={row.frameToFrameHeight}
                                                 onChange={(e) => handleRowChange(index, 'frameToFrameHeight', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -836,7 +865,6 @@ const MeasurementCapture = ({
                                                 value={row.pelmetOutOutWidth}
                                                 onChange={(e) => handleRowChange(index, 'pelmetOutOutWidth', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -848,7 +876,6 @@ const MeasurementCapture = ({
                                                 value={row.pelmetOutOutDrop}
                                                 onChange={(e) => handleRowChange(index, 'pelmetOutOutDrop', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -860,7 +887,6 @@ const MeasurementCapture = ({
                                                 value={row.pelmetFrameFrameWidth}
                                                 onChange={(e) => handleRowChange(index, 'pelmetFrameFrameWidth', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -872,7 +898,6 @@ const MeasurementCapture = ({
                                                 value={row.pelmetFrameFrameDrop}
                                                 onChange={(e) => handleRowChange(index, 'pelmetFrameFrameDrop', e.target.value)}
                                                 disabled={readOnly}
-                                                placeholder="—"
                                                 className="w-full text-sm  text-right  px-1 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                             />
                                         </td>
@@ -1038,8 +1063,8 @@ const MeasurementCapture = ({
                                 { key: 'photo', label: 'Photo' },
                                 { key: 'video', label: 'Video' },
                                 { key: 'flooring', label: 'Flooring' },
-                                { key: 'ceiling', label: 'Ceiling' },
-                                { key: 'height', label: 'Height' },
+                                { key: 'sidewall', label: 'Sidewall' },
+                                { key: 'others', label: 'Others' },
                             ].map(({ key, label }) => (
                                 <label
                                     key={key}
@@ -1075,17 +1100,6 @@ const MeasurementCapture = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        icon={Sparkles}
-                        onClick={handleLoadPdfSample}
-                        title="Load handwritten sample values from reference Measurement sheet.pdf"
-                        className="text-xs"
-                    >
-                        Load PDF Reference Sample
-                    </Button>
 
                     <Button
                         type="button"
@@ -1103,10 +1117,23 @@ const MeasurementCapture = ({
                         variant="outline"
                         size="sm"
                         icon={Printer}
-                        onClick={handlePrint}
+                        onClick={() => handlePrint(false)}
                         className="text-xs"
+                        title="Print measurement sheet layout with recorded measurements"
                     >
                         Print Sheet
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={FileText}
+                        onClick={() => handlePrint(true)}
+                        className="text-xs text-slate-600 hover:text-amber-700 dark:text-slate-400 dark:hover:text-amber-300"
+                        title="Print blank physical sheet for field site visits"
+                    >
+                        Print Blank Sheet
                     </Button>
 
                     {!readOnly && (

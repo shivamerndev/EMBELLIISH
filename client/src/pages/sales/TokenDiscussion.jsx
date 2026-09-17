@@ -21,6 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's9',
         title: 'Token Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -33,6 +34,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'token.clientResponse', label: 'Client Response' },
             { key: 'token.projectTimeline', label: 'Project Timeline' },
             { key: 'token.commercialTerms', label: 'Commercial Terms' },
+        ],
+        // Subset shown in table — prevents horizontal scrolling
+        tableCols: [
+            { key: 'token.discussionDueDate', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'token.amount', label: 'Token Amount' },
+            { key: 'token.status', label: 'Status' },
+            { key: 'token.clientResponse', label: 'Client Response' },
         ]
     },
     {
@@ -46,6 +55,11 @@ const SPREADSHEET_SECTIONS = [
             { key: 'architectName', label: 'Architect/Designer Name' },
             { key: 'location', label: 'Location' },
             { key: 'siteVisitRequired', label: 'Site Visit Required' }
+        ],
+        tableCols: [
+            { key: 'clientName', label: 'Client Name' },
+            { key: 'location', label: 'Location' },
+            { key: 'siteVisitRequired', label: 'Site Visit' },
         ]
     }
 ];
@@ -671,7 +685,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -691,7 +705,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
@@ -894,6 +908,8 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );

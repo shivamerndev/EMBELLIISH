@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight, Pencil, FileCheck } from 'lucide-react';
+import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight, Pencil, FileCheck, CheckCircle2, Zap } from 'lucide-react';
 import { Badge, StatusBadge, Loading, Button } from '../../components/ui';
 import { currency, date, dateTime, humanise, getMediaUrl } from '../../utils/format';
 import { useSelector } from "react-redux";
@@ -520,35 +520,137 @@ const LeadDetails = () => {
         )}
 
         {/* STAGE 3: MEASUREMENT CAPTURE */}
-        {activeDetailTab === 'measurement' && (
-            <div className="space-y-4">
-                <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Ruler className="w-3.5 h-3.5" />Measurement Capture
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Measurement Due Date" value={lead.measurement?.dueDate ? date(lead.measurement.dueDate) : null} />
-                        <InfoTile label="Measurement Date" value={lead.measurement?.date ? date(lead.measurement.date) : null} />
-                        <InfoTile label="Measured By" value={lead.measurement?.measuredBy?.name} />
-                        <InfoTile label="Measurement Status" value={lead.measurement?.status ? humanise(lead.measurement.status) : null} />
-                        <InfoTile label="Site Access" value={lead.measurement?.siteAccess} />
-                        <InfoTile label="Room List" value={lead.measurement?.roomList} />
-                        <InfoTile label="Pelmet Details" value={lead.measurement?.pelmetDetails} />
-                        <InfoTile label="Channel Details" value={lead.measurement?.channelDetails} />
-                        <InfoTile label="Motor Details" value={lead.measurement?.motorDetails} />
-                        <InfoTile label="Wiring Details" value={lead.measurement?.wiringDetails} />
-                    </div>
-                    {lead.measurement?.notes && (
-                        <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
-                            <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Measurements</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.measurement.notes)}</p>
+        {activeDetailTab === 'measurement' && (() => {
+            const sheetRows = parseJsonOrArray(lead.measurement?.rows || lead.measurement?.notes);
+            const checklist = lead.measurement?.checklist || {};
+            const rowsList = Array.isArray(sheetRows) ? sheetRows : [];
+            const headerInfo = lead.measurement?.header || {};
+
+            return (
+                <div className="space-y-4">
+                    <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                                <Ruler className="w-3.5 h-3.5" />Physical Measurement Sheet
+                            </p>
+                            <span className="text-xs font-medium text-slate-500">
+                                {rowsList.length} Window{rowsList.length !== 1 ? 's' : ''} Recorded
+                            </span>
                         </div>
-                    )}
-                    <AttachmentLinks label="Site Photos / Measurement Attachments" files={lead.measurement?.attachments} />
-                    <AttachmentLinks label="Measurement Drawings" files={lead.measurement?.drawings} />
+
+                        {/* Sheet Header Information */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                            <InfoTile label="Measurement Date" value={lead.measurement?.date || headerInfo.date ? date(lead.measurement?.date || headerInfo.date) : null} />
+                            <InfoTile label="Due Date" value={lead.measurement?.dueDate ? date(lead.measurement.dueDate) : null} />
+                            <InfoTile label="Measured By" value={lead.measurement?.measuredBy?.name || headerInfo.siteVisitedBy} />
+                            <InfoTile label="Status" value={lead.measurement?.status ? humanise(lead.measurement.status) : 'Provisional'} />
+                            <InfoTile label="Sr. No." value={headerInfo.srNo || lead.code} />
+                            <InfoTile label="Site Address" value={headerInfo.siteAddress || lead.siteAddress} />
+                        </div>
+
+                        {/* Checklist */}
+                        <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg">
+                            <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold mb-2">
+                                Site Checklist
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { key: 'photo', label: 'Photo' },
+                                    { key: 'video', label: 'Video' },
+                                    { key: 'flooring', label: 'Flooring' },
+                                    { key: 'ceiling', label: 'Ceiling' },
+                                    { key: 'height', label: 'Height' },
+                                ].map(({ key, label }) => {
+                                    const checked = Boolean(checklist[key]);
+                                    return (
+                                        <span
+                                            key={key}
+                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${
+                                                checked
+                                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                                                    : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800'
+                                            }`}
+                                        >
+                                            <CheckCircle2 className={`w-3.5 h-3.5 ${checked ? 'text-emerald-600' : 'text-slate-300'}`} />
+                                            {label}: {checked ? 'Done' : 'Pending'}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Recreated Physical Sheet Rows Table */}
+                        {rowsList.length > 0 && (
+                            <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+                                <div className="overflow-x-auto max-h-[45vh]">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                        <thead className="sticky top-0 bg-[#6b5240] text-amber-50 dark:bg-slate-950 dark:text-slate-200 text-[10px] uppercase font-semibold">
+                                            <tr>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Sr.</th>
+                                                <th className="p-2 border-r border-amber-700/40">Area</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Detail</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Out-to-Out (W × H)</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Frame-to-Frame (W × H)</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Pelmet O2O (W × D)</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Pelmet F2F (W × D)</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Ceiling Support</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Wire</th>
+                                                <th className="p-2 text-center border-r border-amber-700/40">Side Wall</th>
+                                                <th className="p-2">Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/60">
+                                            {rowsList.map((row, idx) => (
+                                                <tr key={row.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                                                    <td className="p-2 text-center text-slate-500 font-mono border-r border-slate-200 dark:border-slate-800">{row.srNo || idx + 1}</td>
+                                                    <td className="p-2 font-medium text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">{row.area || row.room || '—'}</td>
+                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">{row.lWindowDetail || row.windowId || '—'}</td>
+                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                        {row.outToOutWidth || row.o2oWidth || row.width || '—'} × {row.outToOutHeight || row.o2oHeight || row.height || '—'}
+                                                    </td>
+                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                        {row.frameToFrameWidth || row.f2fWidth || '—'} × {row.frameToFrameHeight || row.f2fHeight || '—'}
+                                                    </td>
+                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                        {row.pelmetOutOutWidth || row.pelmetO2oWidth || '—'} × {row.pelmetOutOutDrop || row.pelmetO2oDrop || '—'}
+                                                    </td>
+                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                        {row.pelmetFrameFrameWidth || row.pelmetF2fWidth || '—'} × {row.pelmetFrameFrameDrop || row.pelmetF2fDrop || '—'}
+                                                    </td>
+                                                    <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800">{row.ceilingSupport || '—'}</td>
+                                                    <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800">
+                                                        {Boolean(row.wire || row.wireLeft || row.wireRight) ? (
+                                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                                                                {row.wireRight ? 'R' : ''}{row.wireLeft ? 'L' : ''} Wire
+                                                            </span>
+                                                        ) : '—'}
+                                                    </td>
+                                                    <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800">{row.sideWall || '—'}</td>
+                                                    <td className="p-2 text-slate-600 dark:text-slate-400 italic">{row.remarks || '—'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Remarks */}
+                        {lead.measurement?.remarks && (
+                            <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs space-y-1">
+                                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">
+                                    Sheet Remarks
+                                </span>
+                                <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.measurement.remarks}</p>
+                            </div>
+                        )}
+
+                        <AttachmentLinks label="Site Photos / Measurement Attachments" files={lead.measurement?.attachments} />
+                        <AttachmentLinks label="Measurement Drawings & Blueprints" files={lead.measurement?.drawings} />
+                    </div>
                 </div>
-            </div>
-        )}
+            );
+        })()}
 
         {/* STAGE 4: STUDIO MEETING */}
         {activeDetailTab === 'studio-meeting' && (

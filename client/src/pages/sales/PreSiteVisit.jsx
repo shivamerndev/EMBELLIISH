@@ -20,6 +20,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's3',
         title: 'Site Visit (Req. Details)',
         color: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -31,6 +32,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'rooms', label: 'Rooms' },
             { key: 'drawingsRenders', label: 'Drawings / Renders' },
             { key: 'installerAvailability', label: 'Installer Availability' },
+        ],
+        // Subset shown in table — prevents horizontal scrolling
+        tableCols: [
+            { key: 'siteVisitDueDate', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'actualSiteVisitDateTime', label: 'Actual Visit' },
+            { key: 'assignedInstaller', label: 'Installer' },
+            { key: 'scope', label: 'Scope' },
         ]
     }
 ];
@@ -1075,7 +1084,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -1095,7 +1104,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
@@ -1315,6 +1324,8 @@ const PreSiteVisit = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );

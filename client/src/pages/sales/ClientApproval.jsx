@@ -38,6 +38,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's12',
         title: 'Client Approval',
         color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/90 dark:text-orange-200 dark:border-orange-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'approval.planned', label: 'Approval Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -52,6 +53,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'presentation.designDirection', label: 'Design Direction' },
             { key: 'presentation.revisionNotes', label: 'Revision Notes' },
             { key: 'approval.revisions', label: 'Revision History Log' },
+        ],
+        // Subset shown in table — prevents horizontal scrolling
+        tableCols: [
+            { key: 'approval.planned', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'approval.clientApprovalStatus', label: 'Approval Status' },
+            { key: 'approval.clientApprovalDate', label: 'Approval Date' },
+            { key: 'approval.finalApprovedVersion', label: 'Version' },
         ]
     }
 ];
@@ -1160,7 +1169,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-3 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[140px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -1180,7 +1189,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-3 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
@@ -1374,6 +1383,8 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );
