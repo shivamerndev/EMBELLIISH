@@ -108,7 +108,7 @@ const leadSchema = new mongoose.Schema(
       feedback: String,
       nextAction: String,
       architectBrief: String,
-      samples: [attachmentSchema],
+      samples: mongoose.Schema.Types.Mixed,
       projectPictures: [attachmentSchema],
       pricingRange: String,
     },

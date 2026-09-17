@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, Users, Calendar, Sparkles, Paperclip, CheckCircle2, Pen, Upload, Loader2,
-    Trash2, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, Plus, X, AlertTriangle, Check, DollarSign, Tag, Clock
+    Trash2, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, Plus, X, AlertTriangle, Check, Tag,
+    Layers, Home, Copy
 } from 'lucide-react';
 import { date, getMediaUrl } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
-import { leadsApi, uploadApi, usersApi, architectsApi, fabricsApi } from '../../api';
+import { leadsApi, uploadApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
@@ -27,42 +28,23 @@ const SPREADSHEET_SECTIONS = [
             { key: 'studioMeeting.date', label: 'Actual Meeting Date & Time' },
             { key: 'studioMeeting.attendees', label: 'Meeting Attendees' },
             { key: 'studioMeeting.clientDrawings', label: 'Client Drawings' },
-            { key: 'studioMeeting.feedback', label: 'Client Feedback / Outcome' },
-            { key: 'studioMeeting.nextAction', label: 'Next Action from Meeting' },
+            { key: 'studioMeeting.feedback', label: 'Internal Notes' },
             { key: 'studioMeeting.architectBrief', label: 'Architect Brief' },
             { key: 'studioMeeting.samples', label: 'Samples' },
             { key: 'studioMeeting.projectPictures', label: 'Project Pictures' },
-            { key: 'studioMeeting.pricingRange', label: 'Pricing Range' },
-            { key: 'readySize.roomReadiness', label: 'Meeting Room Readiness' },
         ],
         // Subset shown in table — prevents horizontal scrolling
         tableCols: [
             { key: 'studioMeeting.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
-            { key: 'studioMeeting.date', label: 'Meeting Date' },
-            { key: 'studioMeeting.feedback', label: 'Feedback / Outcome' },
-            { key: 'studioMeeting.nextAction', label: 'Next Action' },
+            // { key: 'studioMeeting.date', label: 'Meeting Date' },
+            { key: 'studioMeeting.attendees', label: 'Meeting Attendees' },
+            { key: 'studioMeeting.feedback', label: 'Internal Notes' },
+            { key: 'studioMeeting.architectBrief', label: 'External Notes' },
         ]
     }
 ];
 
-const NEXT_ACTION_MASTER = [
-    'Send Revised Proposal & BOQ',
-    'Sample Approval & Fabric Sign-off',
-    'Schedule Site Re-visit / Final Measurement',
-    'Token Amount Collection',
-    'Client Review & Decision Pending',
-    'Architect Technical Discussion',
-    'Final Commercial Negotiation',
-    'No Further Action / Lead On Hold',
-    'Other'
-];
-
-const ROOM_READINESS_OPTIONS = [
-    { value: 'Ready', label: 'Ready', tone: 'emerald' },
-    { value: 'Partially Ready', label: 'Partially Ready', tone: 'amber' },
-    { value: 'Not Ready', label: 'Not Ready', tone: 'rose' }
-];
 
 const getNestedVal = (obj, path) => {
     if (!obj || !path) return undefined;
@@ -75,15 +57,96 @@ const getNestedVal = (obj, path) => {
     return curr;
 };
 
+const safeParseArray = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (typeof raw === 'object' && raw !== null) return Object.values(raw).filter(Boolean);
+    if (typeof raw === 'string') {
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current.filter(Boolean);
+        if (typeof current === 'object' && current !== null) return Object.values(current).filter(Boolean);
+        if (typeof current === 'string' && current.length > 0) {
+            return current.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+    }
+    return [];
+};
+
+/** Extracts rooms configured during Pre-Site Visit (`lead.rooms`, `lead.preSiteVisit?.rooms`, etc.) */
+const getPreSiteVisitRooms = (lead) => {
+    if (!lead) return [];
+    // 1. From lead.rooms (primary pre-site visit rooms field saved in PreSiteVisit.jsx)
+    const fromRooms = safeParseArray(lead.rooms);
+    if (fromRooms.length > 0) {
+        return Array.from(new Set(fromRooms.map((r) => (typeof r === 'string' ? r.trim() : String(r?.name || r))).filter(Boolean)));
+    }
+
+    // 2. From lead.preSiteVisit?.rooms or lead.preSiteVisit?.roomsSelected or lead.roomsSelected
+    const fromPreSite = safeParseArray(lead.preSiteVisit?.rooms || lead.preSiteVisit?.roomsSelected || lead.roomsSelected);
+    if (fromPreSite.length > 0) {
+        return Array.from(new Set(fromPreSite.map((r) => (typeof r === 'string' ? r.trim() : String(r?.name || r))).filter(Boolean)));
+    }
+
+    // 3. Fallback from lead.measurement?.roomList
+    const fromMeasurement = safeParseArray(lead.measurement?.roomList);
+    if (fromMeasurement.length > 0) {
+        return Array.from(new Set(fromMeasurement.map((r) => (typeof r === 'string' ? r.trim() : String(r?.name || r))).filter(Boolean)));
+    }
+
+    return [];
+};
+
 const parseAttachmentsOrLinks = (raw) => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) return parsed;
-    } catch (e) { }
+        if (typeof parsed === 'object' && parsed !== null) {
+            const list = [];
+            Object.entries(parsed).forEach(([rm, items]) => {
+                const subList = Array.isArray(items) ? items : [items];
+                subList.forEach((it) => {
+                    if (typeof it === 'string') {
+                        list.push({ room: rm, filename: it, url: it, mimetype: 'sample/text' });
+                    } else if (it && typeof it === 'object') {
+                        list.push({ ...it, room: it.room || rm });
+                    }
+                });
+            });
+            return list;
+        }
+    } catch { }
+    if (typeof raw === 'object' && raw !== null) {
+        const list = [];
+        Object.entries(raw).forEach(([rm, items]) => {
+            const subList = Array.isArray(items) ? items : [items];
+            subList.forEach((it) => {
+                if (typeof it === 'string') {
+                    list.push({ room: rm, filename: it, url: it, mimetype: 'sample/text' });
+                } else if (it && typeof it === 'object') {
+                    list.push({ ...it, room: it.room || rm });
+                }
+            });
+        });
+        return list;
+    }
     if (typeof raw === 'string' && raw.trim()) {
-        return raw.split(',').map((s, idx) => ({
+        return raw.split(',').map((s) => ({
             url: s.trim(),
             filename: s.trim(),
             mimetype: s.includes('http') || s.includes('www.') ? 'link' : 'file'
@@ -99,7 +162,7 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.studioMeeting?.date || lead.studioMeeting?.status === 'Completed')}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (_, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
@@ -161,10 +224,26 @@ const SPREADSHEET_CELL_RENDERERS = {
     'studioMeeting.clientDrawings': (lead) => {
         const list = parseAttachmentsOrLinks(lead.studioMeeting?.clientDrawings);
         if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+
+        const roomCounts = {};
+        list.forEach((s) => {
+            const rm = s.room || 'General';
+            roomCounts[rm] = (roomCounts[rm] || 0) + 1;
+        });
+        const roomKeys = Object.keys(roomCounts);
+        const tooltip = roomKeys.map((rm) => `${rm}: ${roomCounts[rm]}`).join(' | ');
+
         return (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-400 font-medium">
-                <Paperclip className="w-3 h-3 shrink-0" /> {list.length} file/link(s)
-            </span>
+            <div className="flex flex-col items-center gap-0.5 justify-center" title={tooltip}>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-400 font-medium whitespace-nowrap">
+                    <Paperclip className="w-3 h-3 shrink-0" /> {list.length} file/link(s)
+                </span>
+                {roomKeys.length > 0 && roomKeys[0] !== 'General' && (
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
+                        {roomKeys.slice(0, 2).join(', ')}{roomKeys.length > 2 ? ` +${roomKeys.length - 2}` : ''}
+                    </span>
+                )}
+            </div>
         );
     },
     'studioMeeting.feedback': (lead) => {
@@ -198,19 +277,51 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.studioMeeting?.samples;
         const list = parseAttachmentsOrLinks(val);
         if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+
+        const roomCounts = {};
+        list.forEach((s) => {
+            const rm = s.room || 'General';
+            roomCounts[rm] = (roomCounts[rm] || 0) + 1;
+        });
+        const roomKeys = Object.keys(roomCounts);
+        const tooltip = roomKeys.map((rm) => `${rm}: ${roomCounts[rm]}`).join(' | ');
+
         return (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium">
-                <Sparkles className="w-3 h-3 shrink-0" /> {list.length} item(s)
-            </span>
+            <div className="flex flex-col items-center gap-0.5 justify-center" title={tooltip}>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">
+                    <Sparkles className="w-3 h-3 shrink-0" /> {list.length} item(s)
+                </span>
+                {roomKeys.length > 0 && roomKeys[0] !== 'General' && (
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
+                        {roomKeys.slice(0, 2).join(', ')}{roomKeys.length > 2 ? ` +${roomKeys.length - 2}` : ''}
+                    </span>
+                )}
+            </div>
         );
     },
     'studioMeeting.projectPictures': (lead) => {
         const list = parseAttachmentsOrLinks(lead.studioMeeting?.projectPictures);
         if (list.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+
+        const roomCounts = {};
+        list.forEach((s) => {
+            const rm = s.room || 'General';
+            roomCounts[rm] = (roomCounts[rm] || 0) + 1;
+        });
+        const roomKeys = Object.keys(roomCounts);
+        const tooltip = roomKeys.map((rm) => `${rm}: ${roomCounts[rm]}`).join(' | ');
+
         return (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium">
-                <ImageIcon className="w-3 h-3 shrink-0" /> {list.length} image(s)
-            </span>
+            <div className="flex flex-col items-center gap-0.5 justify-center" title={tooltip}>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-medium whitespace-nowrap">
+                    <ImageIcon className="w-3 h-3 shrink-0" /> {list.length} image(s)
+                </span>
+                {roomKeys.length > 0 && roomKeys[0] !== 'General' && (
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
+                        {roomKeys.slice(0, 2).join(', ')}{roomKeys.length > 2 ? ` +${roomKeys.length - 2}` : ''}
+                    </span>
+                )}
+            </div>
         );
     },
     'studioMeeting.pricingRange': (lead) => {
@@ -221,15 +332,6 @@ const SPREADSHEET_CELL_RENDERERS = {
                 {val}
             </span>
         );
-    },
-    'readySize.roomReadiness': (lead) => {
-        const val = lead.readySize?.roomReadiness || lead.studioMeeting?.roomReadiness;
-        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        let tone = 'slate';
-        if (val === 'Ready') tone = 'emerald';
-        else if (val === 'Partially Ready') tone = 'amber';
-        else if (val === 'Not Ready') tone = 'rose';
-        return <Badge tone={tone}>{val}</Badge>;
     }
 };
 
@@ -324,15 +426,18 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
     };
 
     return (
-        <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div className="space-y-2.5 p-3.5 bg-stone-50/50 dark:bg-stone-900/40 border border-brand-200/60 dark:border-brand-900/40 rounded-xl">
             <div className="flex items-center justify-between flex-wrap gap-2">
-                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-slate-800 dark:text-stone-200 flex items-center gap-1.5">
                     {allowImagesOnly ? (
                         <ImageIcon className="w-4 h-4 text-emerald-500" />
                     ) : (
                         <Paperclip className="w-4 h-4 text-brand-500" />
                     )}
-                    {label} ({attachments.length})
+                    <span>{label}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-brand-100/80 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-bold border border-brand-200/60 dark:border-brand-800/60">
+                        {attachments.length}
+                    </span>
                 </label>
                 <div className="flex items-center gap-1.5">
                     {allowLinks && (
@@ -344,12 +449,12 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
                             onClick={() => setShowLinkInput(!showLinkInput)}
                             className="text-xs"
                         >
-                            Add Link
+                            {showLinkInput ? 'Close Link' : 'Add Link'}
                         </Button>
                     )}
                     <label
                         htmlFor={`file-upload-${idPrefix}`}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-brand-600 hover:bg-brand-700 text-white cursor-pointer transition shadow-sm ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white cursor-pointer transition-all shadow-xs ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
                     >
                         {uploading ? (
                             <>
@@ -359,7 +464,7 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
                         ) : (
                             <>
                                 <Upload className="w-3.5 h-3.5" />
-                                <span>{allowImagesOnly ? 'Upload Images' : 'Upload Files'}</span>
+                                <span>{allowImagesOnly ? 'Upload Photos' : 'Upload Files'}</span>
                             </>
                         )}
                     </label>
@@ -376,7 +481,7 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
             </div>
 
             {showLinkInput && allowLinks && (
-                <div className="p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
+                <div className="p-3 bg-white dark:bg-stone-900 border border-brand-200/80 dark:border-brand-800/80 rounded-xl space-y-2 shadow-xs">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Input
                             size="sm"
@@ -405,9 +510,9 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
             )}
 
             {attachments.length === 0 ? (
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">No {label.toLowerCase()} added yet.</p>
+                <p className="text-[11px] text-slate-400 dark:text-stone-500 italic py-1">No {label.toLowerCase()} added yet.</p>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-0.5 scrollbar-thin">
                     {attachments.map((att, i) => {
                         const isLink = att.isLink || att.mimetype === 'link/url' || (att.url && (att.url.startsWith('http') || att.url.startsWith('www')));
                         const mediaUrl = isLink ? att.url : getMediaUrl(att.url);
@@ -416,21 +521,27 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
                         return (
                             <div
                                 key={i}
-                                className="flex items-center justify-between p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg group hover:border-brand-500/50 transition text-xs"
+                                className="flex items-center justify-between p-2.5 bg-white dark:bg-stone-900 border border-slate-200/80 dark:border-stone-800 rounded-lg group hover:border-brand-400 dark:hover:border-brand-600 transition-all text-xs shadow-2xs"
                             >
-                                <div className="flex items-center gap-2 overflow-hidden mr-1">
+                                <div className="flex items-center gap-2 overflow-hidden mr-1 min-w-0">
                                     {isLink ? (
-                                        <LinkIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                        <div className="w-6 h-6 rounded-md bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center shrink-0">
+                                            <LinkIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                        </div>
                                     ) : isImage ? (
-                                        <ImageIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                        <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0">
+                                            <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        </div>
                                     ) : (
-                                        <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                        <div className="w-6 h-6 rounded-md bg-brand-50 dark:bg-brand-950/60 flex items-center justify-center shrink-0">
+                                            <FileText className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                                        </div>
                                     )}
                                     <a
                                         href={mediaUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-400 truncate"
+                                        className="text-[11px] font-medium text-slate-800 dark:text-stone-200 hover:text-brand-600 dark:hover:text-brand-400 truncate"
                                         title={att.filename || `Item ${i + 1}`}
                                     >
                                         {att.filename || `Item ${i + 1}`}
@@ -441,18 +552,18 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
                                         href={mediaUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="p-1 text-slate-400 hover:text-brand-600 transition"
+                                        className="p-1 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition"
                                         title="View/Open"
                                     >
-                                        <ExternalLink className="w-3 h-3" />
+                                        <ExternalLink className="w-3.5 h-3.5" />
                                     </a>
                                     <button
                                         type="button"
                                         onClick={() => handleRemove(i)}
-                                        className="p-1 text-slate-400 hover:text-rose-600 transition"
+                                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
                                         title="Remove"
                                     >
-                                        <Trash2 className="w-3 h-3" />
+                                        <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
@@ -465,7 +576,7 @@ const AttachmentAndLinkUploader = ({ label, allowLinks = true, allowImagesOnly =
 };
 
 /* ------------------------------------------------------------- Edit Studio Meeting Modal */
-const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], architectsList = [], fabricsList = [] }) => {
+const EditStudioMeetingModal = ({ item, onClose, onDone, fabricsList = [] }) => {
     const isMeetingInitiallyPlanned = Boolean(item?.studioMeeting?.dueDate);
 
     // Initial Attendees parse
@@ -476,47 +587,85 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
         return String(raw).split(',').map((s) => s.trim()).filter(Boolean);
     })();
 
-    // Initial Next Action parse
-    const initialNextAction = item?.studioMeeting?.nextAction || '';
-    const isCustomNextAction = Boolean(initialNextAction && !NEXT_ACTION_MASTER.includes(initialNextAction));
-
-    // Initial Pricing Range parse (e.g. "₹2,00,000 - ₹3,50,000" or "200000 - 350000")
-    const initialPricing = (() => {
-        const raw = item?.studioMeeting?.pricingRange || '';
-        if (!raw) return { min: '', max: '' };
-        const cleaned = raw.replace(/₹/g, '').replace(/,/g, '');
-        const parts = cleaned.split('-').map((s) => s.trim());
-        return {
-            min: parts[0] || '',
-            max: parts[1] || ''
-        };
-    })();
-
     const [isPlanned, setIsPlanned] = useState(isMeetingInitiallyPlanned || true);
     const [dueDate, setDueDate] = useState(item?.studioMeeting?.dueDate ? new Date(item.studioMeeting.dueDate).toISOString().slice(0, 10) : '');
     const [actualDate, setActualDate] = useState(item?.studioMeeting?.date ? new Date(item.studioMeeting.date).toISOString().slice(0, 16) : '');
     const [attendees, setAttendees] = useState(initialAttendees);
     const [customAttendeeInput, setCustomAttendeeInput] = useState('');
-    const [attendeeSearch, setAttendeeSearch] = useState('');
 
-    const [clientDrawings, setClientDrawings] = useState(parseAttachmentsOrLinks(item?.studioMeeting?.clientDrawings));
     const [feedback, setFeedback] = useState(item?.studioMeeting?.feedback || '');
-
-    const [nextActionSelected, setNextActionSelected] = useState(isCustomNextAction ? 'Other' : (initialNextAction || 'Send Revised Proposal & BOQ'));
-    const [nextActionCustom, setNextActionCustom] = useState(isCustomNextAction ? initialNextAction : '');
-
     const [architectBrief, setArchitectBrief] = useState(item?.studioMeeting?.architectBrief || '');
 
-    // Samples Lookup & Attachments
-    const [samples, setSamples] = useState(parseAttachmentsOrLinks(item?.studioMeeting?.samples));
+    // Extract Rooms selected at Pre-Site Visit
+    const preSiteRooms = useMemo(() => getPreSiteVisitRooms(item), [item]);
+
+    // Initial Rooms list: Pre-Site Visit rooms + any rooms already in existing samples, drawings, or pictures
+    const initialRoomsList = useMemo(() => {
+        const existingSampleRooms = (parseAttachmentsOrLinks(item?.studioMeeting?.samples) || [])
+            .map((s) => s?.room)
+            .filter(Boolean);
+        const existingDrawingRooms = (parseAttachmentsOrLinks(item?.studioMeeting?.clientDrawings) || [])
+            .map((d) => d?.room)
+            .filter(Boolean);
+        const existingPicRooms = (parseAttachmentsOrLinks(item?.studioMeeting?.projectPictures) || [])
+            .map((p) => p?.room)
+            .filter(Boolean);
+        const combined = Array.from(new Set([
+            ...preSiteRooms,
+            ...existingSampleRooms,
+            ...existingDrawingRooms,
+            ...existingPicRooms
+        ]));
+        if (combined.length > 0) return combined;
+        return ['Living Room', 'Master Bedroom'];
+    }, [preSiteRooms, item]);
+
+    const [roomsList, setRoomsList] = useState(initialRoomsList);
+    const [activeRoom, setActiveRoom] = useState(initialRoomsList[0] || 'Living Room');
+    const [customRoomInput, setCustomRoomInput] = useState('');
+    const [showAddRoomInput, setShowAddRoomInput] = useState(false);
+    const [copySourceRoom, setCopySourceRoom] = useState('');
+    const [copyTargetRoom, setCopyTargetRoom] = useState('');
+    const [showCopySection, setShowCopySection] = useState(false);
+    const [activeAssetTab, setActiveAssetTab] = useState('samples');
+
+    // Initial Samples parse ensuring room tagging
+    const initialSamples = useMemo(() => {
+        const parsed = parseAttachmentsOrLinks(item?.studioMeeting?.samples);
+        const defaultRoom = initialRoomsList[0] || 'Living Room';
+        return parsed.map((s) => ({
+            ...s,
+            room: s.room || defaultRoom
+        }));
+    }, [item, initialRoomsList]);
+
+    // Initial Client Drawings parse ensuring room tagging
+    const initialClientDrawings = useMemo(() => {
+        const parsed = parseAttachmentsOrLinks(item?.studioMeeting?.clientDrawings);
+        const defaultRoom = initialRoomsList[0] || 'Living Room';
+        return parsed.map((d) => ({
+            ...d,
+            room: d.room || defaultRoom
+        }));
+    }, [item, initialRoomsList]);
+
+    // Initial Project Pictures parse ensuring room tagging
+    const initialProjectPictures = useMemo(() => {
+        const parsed = parseAttachmentsOrLinks(item?.studioMeeting?.projectPictures);
+        const defaultRoom = initialRoomsList[0] || 'Living Room';
+        return parsed.map((p) => ({
+            ...p,
+            room: p.room || defaultRoom
+        }));
+    }, [item, initialRoomsList]);
+
+    // Samples, Drawings & Pictures states
+    const [samples, setSamples] = useState(initialSamples);
     const [sampleSearch, setSampleSearch] = useState('');
     const [customSampleInput, setCustomSampleInput] = useState('');
 
-    const [projectPictures, setProjectPictures] = useState(parseAttachmentsOrLinks(item?.studioMeeting?.projectPictures));
-    const [pricingMin, setPricingMin] = useState(initialPricing.min);
-    const [pricingMax, setPricingMax] = useState(initialPricing.max);
-
-    const [roomReadiness, setRoomReadiness] = useState(item?.readySize?.roomReadiness || item?.studioMeeting?.roomReadiness || 'Ready');
+    const [clientDrawings, setClientDrawings] = useState(initialClientDrawings);
+    const [projectPictures, setProjectPictures] = useState(initialProjectPictures);
 
     const [validationError, setValidationError] = useState('');
 
@@ -547,14 +696,111 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
         setCustomAttendeeInput('');
     };
 
-    const handleAddSampleTag = (sampleName) => {
+    const handleAddRoom = (rName) => {
+        const name = (rName || customRoomInput).trim();
+        if (!name) return;
+        if (!roomsList.includes(name)) {
+            setRoomsList((prev) => [...prev, name]);
+        }
+        setActiveRoom(name);
+        setCustomRoomInput('');
+        setShowAddRoomInput(false);
+    };
+
+    const handleAddSampleTag = (sampleName, targetRoom = activeRoom) => {
         const title = sampleName.trim();
         if (!title) return;
-        const exists = samples.some((s) => (s.filename || s.url) === title);
+        const exists = samples.some(
+            (s) => (s.room || roomsList[0]) === targetRoom && (s.filename || s.url) === title
+        );
         if (!exists) {
-            setSamples((prev) => [...prev, { filename: title, url: title, mimetype: 'sample/text' }]);
+            setSamples((prev) => [
+                ...prev,
+                { room: targetRoom, filename: title, url: title, mimetype: 'sample/text' }
+            ]);
         }
         setCustomSampleInput('');
+    };
+
+    const handleToggleSampleTag = (sampleName, targetRoom = activeRoom) => {
+        const isSelected = samples.some(
+            (s) => (s.room || roomsList[0]) === targetRoom && (s.filename || s.url) === sampleName
+        );
+        if (isSelected) {
+            setSamples((prev) =>
+                prev.filter(
+                    (s) => !((s.room || roomsList[0]) === targetRoom && (s.filename || s.url) === sampleName)
+                )
+            );
+        } else {
+            handleAddSampleTag(sampleName, targetRoom);
+        }
+    };
+
+    const handleRemoveSample = (sampleToRemove) => {
+        setSamples((prev) => prev.filter((s) => s !== sampleToRemove));
+    };
+
+    const handleUpdateActiveRoomAttachments = (updatedAttachments) => {
+        const tagged = updatedAttachments.map((att) => ({
+            ...att,
+            room: activeRoom
+        }));
+        setSamples((prev) => {
+            const otherRoomsSamples = prev.filter((s) => (s.room || roomsList[0]) !== activeRoom);
+            const currentRoomTags = prev.filter(
+                (s) => (s.room || roomsList[0]) === activeRoom && s.mimetype === 'sample/text'
+            );
+            return [...otherRoomsSamples, ...currentRoomTags, ...tagged];
+        });
+    };
+
+    const handleCopySamples = (fromRoom, toRoom) => {
+        if (!fromRoom || !toRoom || fromRoom === toRoom) return;
+
+        // 1. Copy Samples
+        const sourceSamples = samples.filter((s) => (s.room || roomsList[0]) === fromRoom);
+        if (sourceSamples.length > 0) {
+            setSamples((prev) => {
+                const targetExistingNames = new Set(
+                    prev.filter((s) => (s.room || roomsList[0]) === toRoom).map((s) => s.filename || s.url)
+                );
+                const toAdd = sourceSamples
+                    .filter((s) => !targetExistingNames.has(s.filename || s.url))
+                    .map((s) => ({ ...s, room: toRoom }));
+                return [...prev, ...toAdd];
+            });
+        }
+
+        // 2. Copy Client Drawings
+        const sourceDrawings = clientDrawings.filter((d) => (d.room || roomsList[0]) === fromRoom);
+        if (sourceDrawings.length > 0) {
+            setClientDrawings((prev) => {
+                const targetExistingUrls = new Set(
+                    prev.filter((d) => (d.room || roomsList[0]) === toRoom).map((d) => d.url)
+                );
+                const toAdd = sourceDrawings
+                    .filter((d) => !targetExistingUrls.has(d.url))
+                    .map((d) => ({ ...d, room: toRoom }));
+                return [...prev, ...toAdd];
+            });
+        }
+
+        // 3. Copy Project Pictures
+        const sourcePictures = projectPictures.filter((p) => (p.room || roomsList[0]) === fromRoom);
+        if (sourcePictures.length > 0) {
+            setProjectPictures((prev) => {
+                const targetExistingUrls = new Set(
+                    prev.filter((p) => (p.room || roomsList[0]) === toRoom).map((p) => p.url)
+                );
+                const toAdd = sourcePictures
+                    .filter((p) => !targetExistingUrls.has(p.url))
+                    .map((p) => ({ ...p, room: toRoom }));
+                return [...prev, ...toAdd];
+            });
+        }
+
+        setShowCopySection(false);
     };
 
     const submit = (e) => {
@@ -577,18 +823,6 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
             }
         }
 
-        // Pricing range formatting
-        let formattedPricingRange = undefined;
-        if (pricingMin || pricingMax) {
-            const minStr = pricingMin ? `₹${Number(pricingMin).toLocaleString('en-IN')}` : '';
-            const maxStr = pricingMax ? `₹${Number(pricingMax).toLocaleString('en-IN')}` : '';
-            if (minStr && maxStr) formattedPricingRange = `${minStr} - ${maxStr}`;
-            else formattedPricingRange = minStr || maxStr;
-        }
-
-        // Next Action calculation
-        const finalNextAction = nextActionSelected === 'Other' ? nextActionCustom.trim() : nextActionSelected;
-
         // Attendees string
         const attendeesString = attendees.join(', ');
 
@@ -599,36 +833,13 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 date: actualDate || undefined,
                 attendees: attendeesString || undefined,
                 feedback: feedback || undefined,
-                nextAction: finalNextAction || undefined,
                 architectBrief: architectBrief || undefined,
-                pricingRange: formattedPricingRange || undefined,
-                roomReadiness: roomReadiness || undefined,
                 clientDrawings,
                 samples,
                 projectPictures,
-            },
-            readySize: {
-                ...(item?.readySize || {}),
-                roomReadiness: roomReadiness || undefined,
             }
         });
     };
-
-    // Candidate attendees list
-    const defaultAttendees = [
-        item?.clientName ? `${item.clientName} (Client)` : null,
-        item?.contactPerson ? `${item.contactPerson} (Contact)` : null,
-        item?.architectName ? `${item.architectName} (Architect)` : null,
-    ].filter(Boolean);
-
-    const userAttendees = usersList.map((u) => `${u.name || u.email} (${u.role || 'Internal'})`);
-    const architectAttendees = architectsList.map((a) => `${a.name} (Architect)`);
-    const allCandidateAttendees = Array.from(new Set([...defaultAttendees, ...userAttendees, ...architectAttendees]));
-
-    const filteredAttendees = allCandidateAttendees.filter((name) => {
-        if (!attendeeSearch) return true;
-        return name.toLowerCase().includes(attendeeSearch.toLowerCase());
-    });
 
     // Sample lookup candidate options
     const fabricOptions = (fabricsList || []).map((f) => f.name || f.code || f.title).filter(Boolean);
@@ -638,6 +849,40 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
         if (!sampleSearch) return true;
         return s.toLowerCase().includes(sampleSearch.toLowerCase());
     });
+
+    const activeRoomSamples = useMemo(() => {
+        return samples.filter((s) => (s.room || roomsList[0]) === activeRoom);
+    }, [samples, activeRoom, roomsList]);
+
+    const activeRoomDrawings = useMemo(() => {
+        return clientDrawings.filter((d) => (d.room || roomsList[0]) === activeRoom);
+    }, [clientDrawings, activeRoom, roomsList]);
+
+    const activeRoomPictures = useMemo(() => {
+        return projectPictures.filter((p) => (p.room || roomsList[0]) === activeRoom);
+    }, [projectPictures, activeRoom, roomsList]);
+
+    const handleUpdateActiveRoomDrawings = (updatedDrawings) => {
+        const tagged = updatedDrawings.map((att) => ({
+            ...att,
+            room: activeRoom
+        }));
+        setClientDrawings((prev) => {
+            const otherRooms = prev.filter((d) => (d.room || roomsList[0]) !== activeRoom);
+            return [...otherRooms, ...tagged];
+        });
+    };
+
+    const handleUpdateActiveRoomPictures = (updatedPictures) => {
+        const tagged = updatedPictures.map((att) => ({
+            ...att,
+            room: activeRoom
+        }));
+        setProjectPictures((prev) => {
+            const otherRooms = prev.filter((p) => (p.room || roomsList[0]) !== activeRoom);
+            return [...otherRooms, ...tagged];
+        });
+    };
 
     const dueDateOnly = dueDate ? dueDate.split('T')[0] : '';
     const actualDateOnly = actualDate ? actualDate.split('T')[0] : '';
@@ -649,8 +894,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Studio Meeting Details — ${item?.code || ''}`}
-            subtitle={`Configure studio meeting details & specifications for ${item?.clientName || ''}`}
+            title={`Studio Meeting Details — ${item?.clientName || ''}`}
             size="xl"
         >
             <form onSubmit={submit} className="space-y-6">
@@ -662,7 +906,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                 )}
 
                 {/* Section 1: Dates & Readiness */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
                     <div className="md:col-span-3 flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
                         <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
                             <input
@@ -705,13 +949,6 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         )}
                     </Field>
 
-                    <Field label="Meeting Room Readiness">
-                        <Select
-                            value={roomReadiness}
-                            onChange={(e) => setRoomReadiness(e.target.value)}
-                            options={ROOM_READINESS_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-                        />
-                    </Field>
                 </div>
 
                 {/* Section 2: Meeting Attendees (Multi-select) */}
@@ -732,189 +969,350 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div className="relative">
-                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    size="sm"
-                                    value={attendeeSearch}
-                                    onChange={(e) => setAttendeeSearch(e.target.value)}
-                                    placeholder="Search attendees (client, architect, team)..."
-                                    className="pl-8 text-xs"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                                <Input
-                                    size="sm"
-                                    value={customAttendeeInput}
-                                    onChange={(e) => setCustomAttendeeInput(e.target.value)}
-                                    placeholder="Add custom attendee..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddCustomAttendee();
-                                        }
-                                    }}
-                                />
-                                <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={handleAddCustomAttendee}>Add</Button>
-                            </div>
+                        <div className="flex items-center gap-1.5 max-w-md">
+                            <Input
+                                size="sm"
+                                value={customAttendeeInput}
+                                onChange={(e) => setCustomAttendeeInput(e.target.value)}
+                                placeholder="Add attendee name (e.g. Client, Architect, Designer)..."
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleAddCustomAttendee();
+                                    }
+                                }}
+                            />
+                            {customAttendeeInput && <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={handleAddCustomAttendee}>Add</Button>}
                         </div>
 
-                        {/* Searchable Options Checklist */}
-                        <div className="max-h-36 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
-                            {filteredAttendees.length === 0 ? (
-                                <div className="text-xs text-slate-400 py-2 text-center">No matching attendees found</div>
-                            ) : (
-                                filteredAttendees.map((name) => {
-                                    const isSelected = attendees.includes(name);
-                                    return (
-                                        <label key={name} className="flex items-center justify-between p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer text-xs">
-                                            <span className="text-slate-700 dark:text-slate-200 font-medium">{name}</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                onChange={() => toggleAttendee(name)}
-                                                className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                                            />
-                                        </label>
-                                    );
-                                })
-                            )}
-                        </div>
                     </div>
                 </Field>
 
-                {/* Section 3: Next Action & Pricing Range */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Next Action */}
-                    <Field label="Next Action from the Meeting">
-                        <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                            <Select
-                                value={nextActionSelected}
-                                onChange={(e) => setNextActionSelected(e.target.value)}
-                                options={NEXT_ACTION_MASTER.map((act) => ({ value: act, label: act }))}
-                            />
-                            {nextActionSelected === 'Other' && (
-                                <Input
-                                    size="sm"
-                                    placeholder="Specify custom next action details..."
-                                    value={nextActionCustom}
-                                    onChange={(e) => setNextActionCustom(e.target.value)}
-                                />
-                            )}
-                        </div>
-                    </Field>
-
-                    {/* Pricing Range */}
-                    <Field label="Pricing Range (₹)">
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">Min Price (₹)</label>
-                                    <Input
-                                        type="number"
-                                        size="sm"
-                                        placeholder="e.g. 200000"
-                                        value={pricingMin}
-                                        onChange={(e) => setPricingMin(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">Max Price (₹)</label>
-                                    <Input
-                                        type="number"
-                                        size="sm"
-                                        placeholder="e.g. 350000"
-                                        value={pricingMax}
-                                        onChange={(e) => setPricingMax(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            {(pricingMin || pricingMax) && (
-                                <div className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 pt-1">
-                                    Range: {pricingMin ? `₹${Number(pricingMin).toLocaleString('en-IN')}` : '₹0'} – {pricingMax ? `₹${Number(pricingMax).toLocaleString('en-IN')}` : 'Open'}
-                                </div>
-                            )}
-                        </div>
-                    </Field>
-                </div>
-
-                {/* Section 4: Samples Searchable Multi-Select Lookup */}
+                {/* Section 4: Samples Presented (Room-Wise) */}
                 <Field label="Samples Presented">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div className="relative">
-                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    size="sm"
-                                    value={sampleSearch}
-                                    onChange={(e) => setSampleSearch(e.target.value)}
-                                    placeholder="Search sample / fabric catalogue..."
-                                    className="pl-8 text-xs"
-                                />
+                    <div className="px-2 py-4 rounded-2xl bg-stone-50 dark:bg-stone-900/40 border border-brand-200/80 dark:border-brand-900/60 space-y-4 shadow-2xs">
+                        {/* Room Selection Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-brand-200/60 dark:border-brand-900/40">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <div className="w-7 h-7 rounded-lg bg-brand-100 dark:bg-brand-950/80 flex items-center justify-center text-brand-600 dark:text-brand-400 shrink-0">
+                                    <Layers className="w-4 h-4" />
+                                </div>
+                                <div>
+
+                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-stone-200">
+                                        Room-Wise Presentation
+                                    </span>
+
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
-                                <Input
+                            <div className="flex items-center gap-2 text-xs">
+                                {roomsList.length > 1 && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={showCopySection ? 'primary' : 'secondary'}
+                                        icon={Copy}
+                                        onClick={() => {
+                                            setCopySourceRoom(activeRoom);
+                                            setCopyTargetRoom(roomsList.find((r) => r !== activeRoom) || '');
+                                            setShowCopySection(!showCopySection);
+                                            if (showAddRoomInput) setShowAddRoomInput(false);
+                                        }}
+                                        className="text-xs"
+                                        title="Copy samples from this room to another room"
+                                    >
+                                        Copy to Room
+                                    </Button>
+                                )}
+
+                                <Button
+                                    type="button"
                                     size="sm"
-                                    value={customSampleInput}
-                                    onChange={(e) => setCustomSampleInput(e.target.value)}
-                                    placeholder="Add custom sample tag..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddSampleTag(customSampleInput);
-                                        }
+                                    variant={showAddRoomInput ? 'primary' : 'secondary'}
+                                    icon={Plus}
+                                    onClick={() => {
+                                        setShowAddRoomInput(!showAddRoomInput);
+                                        if (showCopySection) setShowCopySection(false);
                                     }}
-                                />
-                                <Button type="button" size="sm" variant="secondary" icon={Plus} onClick={() => handleAddSampleTag(customSampleInput)}>Add</Button>
+                                    className="text-xs"
+                                >
+                                    Add Room
+                                </Button>
                             </div>
                         </div>
 
-                        {/* Samples	Searchable => multi-select lookup => Select from sample/catalogue master */}
-
-                        {/* Catalogue Master Lookup Badges */}
-                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                            {filteredCandidateSamples.map((samp) => {
-                                const isSelected = samples.some((s) => (s.filename || s.url) === samp);
-                                return (
-                                    <button
-                                        key={samp}
-                                        type="button"
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                setSamples((prev) => prev.filter((s) => (s.filename || s.url) !== samp));
-                                            } else {
-                                                handleAddSampleTag(samp);
+                        {/* Inline Add Room Box */}
+                        {showAddRoomInput && (
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-white dark:bg-stone-900 border border-brand-300 dark:border-brand-800 rounded-xl shadow-xs animate-in fade-in duration-150">
+                                <div className="flex-1">
+                                    <Input
+                                        size="sm"
+                                        value={customRoomInput}
+                                        onChange={(e) => setCustomRoomInput(e.target.value)}
+                                        placeholder="Enter room name (e.g. Foyer, Balcony, Study, Powder Room)..."
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleAddRoom();
                                             }
                                         }}
-                                        className={`px-2 py-1 rounded text-xs font-medium transition ${isSelected
-                                            ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                                            }`}
+                                        className="text-xs"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 justify-end">
+                                    <Button size="sm" variant="primary" type="button" onClick={() => handleAddRoom()}>
+                                        Add Room
+                                    </Button>
+                                    <Button size="sm" variant="ghost" type="button" onClick={() => setShowAddRoomInput(false)}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Inline Copy Samples Box */}
+                        {showCopySection && (
+                            <div className="flex flex-wrap items-center gap-2.5 p-3 bg-white dark:bg-stone-900 border border-brand-300 dark:border-brand-800 rounded-xl text-xs shadow-xs animate-in fade-in duration-150">
+                                <span className="font-semibold text-slate-800 dark:text-stone-200">
+                                    Copy samples & files from <span className="text-brand-600 dark:text-brand-400 font-bold">{copySourceRoom}</span> to:
+                                </span>
+                                <select
+                                    value={copyTargetRoom}
+                                    onChange={(e) => setCopyTargetRoom(e.target.value)}
+                                    className="field-input py-1 px-2.5 max-w-xs text-xs"
+                                >
+                                    <option value="">Select target room...</option>
+                                    {roomsList.filter((r) => r !== copySourceRoom).map((r) => (
+                                        <option key={r} value={r}>{r}</option>
+                                    ))}
+                                </select>
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                    <Button
+                                        size="sm"
+                                        variant="primary"
+                                        type="button"
+                                        disabled={!copyTargetRoom}
+                                        onClick={() => handleCopySamples(copySourceRoom, copyTargetRoom)}
                                     >
-                                        {isSelected && <Check className="w-3 h-3 inline mr-1" />}
-                                        {samp}
+                                        Copy Now
+                                    </Button>
+                                    <Button size="sm" variant="ghost" type="button" onClick={() => setShowCopySection(false)}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Room Selector Tabs Bar */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                            {roomsList.map((roomName) => {
+                                const isActive = activeRoom === roomName;
+                                const roomSampleCount = samples.filter((s) => (s.room || roomsList[0]) === roomName).length;
+                                const roomDrawingCount = clientDrawings.filter((d) => (d.room || roomsList[0]) === roomName).length;
+                                const roomPictureCount = projectPictures.filter((p) => (p.room || roomsList[0]) === roomName).length;
+                                const roomTotalCount = roomSampleCount + roomDrawingCount + roomPictureCount;
+
+                                return (
+                                    <button
+                                        key={roomName}
+                                        type="button"
+                                        onClick={() => setActiveRoom(roomName)}
+                                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer ${isActive
+                                            ? 'bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-sm ring-2 ring-brand-400/50 shadow-brand-900/20'
+                                            : 'bg-white dark:bg-stone-900/90 text-slate-700 dark:text-stone-300 border border-slate-200/90 dark:border-stone-800 hover:border-brand-300 dark:hover:border-brand-700 hover:bg-brand-50/50 dark:hover:bg-brand-950/30'
+                                            }`}                                    >
+                                        <div className="relative">
+                                            <Home className={`w-3.5 h-3.5 ${isActive ? 'text-brand-200' : 'text-slate-400 dark:text-stone-500'}`} />
+                                        </div>
+                                        <span>{roomName}</span>
+                                        <span
+                                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold transition-colors ${isActive
+                                                ? 'bg-brand-800 text-brand-100'
+                                                : roomTotalCount > 0
+                                                    ? 'bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200/70 dark:border-brand-800/60'
+                                                    : 'bg-slate-100 dark:bg-stone-800 text-slate-400 dark:text-stone-500'
+                                                }`}                                        >
+                                            {roomTotalCount}
+                                        </span>
                                     </button>
                                 );
                             })}
                         </div>
 
-                        {/* Samples Attachments */}
-                        <AttachmentAndLinkUploader
-                            label="Sample Swatches & Photos"
-                            attachments={samples}
-                            onUpdate={setSamples}
-                            idPrefix="samples-upload"
-                            allowLinks={true}
-                        />
+                        {/* Active Room Workspace */}
+                        <div className=" rounded-2xl border border-brand-200/90 dark:border-brand-900/70 shadow-xs space-y-4">
+
+
+                            {/* Section A: Catalogue Sample Master & Custom Tags */}
+                            <div className="space-y-3 p-3.5 bg-stone-50/70 dark:bg-stone-900/40 ">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 flex items-center gap-1.5">
+                                        <Tag className="w-3.5 h-3.5 text-brand-500" />
+                                        Samples & Catalogue Tags ({activeRoomSamples.filter((s) => s.mimetype === 'sample/text').length})
+                                    </span>
+
+                                </div>
+
+                                {/* Search & Custom Input row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div className="relative">
+                                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        <Input
+                                            size="sm"
+                                            value={sampleSearch}
+                                            onChange={(e) => setSampleSearch(e.target.value)}
+                                            placeholder={`Search catalogue master for ${activeRoom}...`}
+                                            className="pl-8 text-xs"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5">
+                                        <Input
+                                            size="sm"
+                                            value={customSampleInput}
+                                            onChange={(e) => setCustomSampleInput(e.target.value)}
+                                            placeholder={`Add custom sample tag to ${activeRoom}...`}
+                                            className="text-xs"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddSampleTag(customSampleInput);
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="secondary"
+                                            icon={Plus}
+                                            onClick={() => handleAddSampleTag(customSampleInput)}
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Catalogue Master Badges Cloud */}
+                                <div>
+                                    <div className="text-[10px] font-semibold text-slate-500 dark:text-stone-400 uppercase tracking-wider mb-1.5">
+                                        Quick Select from Master Catalogue:
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 rounded-lg bg-white dark:bg-stone-900 border border-slate-200/90 dark:border-stone-800 scrollbar-thin">
+                                        {filteredCandidateSamples.map((samp) => {
+                                            const isSelected = activeRoomSamples.some((s) => (s.filename || s.url) === samp);
+                                            return (
+                                                <button
+                                                    key={samp}
+                                                    type="button"
+                                                    onClick={() => handleToggleSampleTag(samp)}
+                                                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 cursor-pointer flex items-center gap-1 ${isSelected
+                                                        ? 'bg-brand-600 text-white shadow-xs ring-1 ring-brand-400'
+                                                        : 'bg-stone-50 dark:bg-stone-800 text-slate-700 dark:text-stone-300 border border-slate-200 dark:border-stone-700 hover:border-brand-300 dark:hover:border-brand-700 hover:bg-brand-50/50 dark:hover:bg-brand-950/40'
+                                                        }`}
+                                                >
+                                                    {isSelected ? <Check className="w-3 h-3 text-white" /> : <Plus className="w-3 h-3 text-slate-400" />}
+                                                    <span>{samp}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                            
+                            </div>
+
+                            {/* Section B: Room Files & Media (Tabbed / Organized) */}
+                            <div className="space-y-3 px-3.5 pb-4   rounded-xl bg-stone-50/70 dark:bg-stone-900/40  border-slate-200/80 dark:border-stone-800 ">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 flex items-center gap-1.5">
+                                        <Paperclip className="w-3.5 h-3.5 text-brand-500" />
+                                        Room Media, Drawings & Pictures ({activeRoomSamples.filter((s) => s.mimetype !== 'sample/text').length + activeRoomDrawings.length + activeRoomPictures.length})
+                                    </span>
+
+                                    {/* Asset category filter tabs */}
+                                    <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-900 p-0.5 rounded-lg border border-slate-200 dark:border-stone-800 text-xs">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveAssetTab('samples')}
+                                            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${activeAssetTab === 'samples'
+                                                ? 'bg-white dark:bg-stone-800 text-brand-700 dark:text-brand-300 shadow-xs font-semibold'
+                                                : 'text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200'
+                                                }`}
+                                        >
+                                            <span>Swatches & Links</span>
+                                            <span className="text-[10px] opacity-75">({activeRoomSamples.filter((s) => s.mimetype !== 'sample/text').length})</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveAssetTab('drawings')}
+                                            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${activeAssetTab === 'drawings'
+                                                ? 'bg-white dark:bg-stone-800 text-brand-700 dark:text-brand-300 shadow-xs font-semibold'
+                                                : 'text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200'
+                                                }`}
+                                        >
+                                            <span>Drawings</span>
+                                            <span className="text-[10px] opacity-75">({activeRoomDrawings.length})</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveAssetTab('pictures')}
+                                            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${activeAssetTab === 'pictures'
+                                                ? 'bg-white dark:bg-stone-800 text-brand-700 dark:text-brand-300 shadow-xs font-semibold'
+                                                : 'text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200'
+                                                }`}
+                                        >
+                                            <span>Pictures</span>
+                                            <span className="text-[10px] opacity-75">({activeRoomPictures.length})</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Render the uploaders based on activeAssetTab */}
+                                <div className="space-y-3">
+                                    {(activeAssetTab === 'all' || activeAssetTab === 'samples') && (
+                                        <AttachmentAndLinkUploader
+                                            label={`Swatches, Photos & Links (${activeRoom})`}
+                                            attachments={activeRoomSamples.filter((s) => s.mimetype !== 'sample/text')}
+                                            onUpdate={handleUpdateActiveRoomAttachments}
+                                            idPrefix={`samples-upload-${activeRoom.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                                            allowLinks={true}
+                                        />
+                                    )}
+
+                                    {(activeAssetTab === 'all' || activeAssetTab === 'drawings') && (
+                                        <AttachmentAndLinkUploader
+                                            label={`Client Drawings (${activeRoom})`}
+                                            attachments={activeRoomDrawings}
+                                            onUpdate={handleUpdateActiveRoomDrawings}
+                                            idPrefix={`drawings-${activeRoom.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                                            allowLinks={true}
+                                        />
+                                    )}
+
+                                    {(activeAssetTab === 'all' || activeAssetTab === 'pictures') && (
+                                        <AttachmentAndLinkUploader
+                                            label={`Project Pictures (${activeRoom})`}
+                                            allowImagesOnly={true}
+                                            attachments={activeRoomPictures}
+                                            onUpdate={handleUpdateActiveRoomPictures}
+                                            idPrefix={`pictures-${activeRoom.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                                            allowLinks={true}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+
                 </Field>
+
 
                 {/* Section 5: Long Free Text Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Client Feedback / Meeting Outcome">
+                    <Field label="Internal Notes">
                         <Textarea
                             rows={4}
                             value={feedback}
@@ -923,7 +1321,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                         />
                     </Field>
 
-                    <Field label="Architect Brief">
+                    <Field label="External Notes">
                         <Textarea
                             rows={4}
                             value={architectBrief}
@@ -931,26 +1329,6 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, usersList = [], archite
                             placeholder="Enter detailed architect specifications, drawing notes, design guidance, structural constraints..."
                         />
                     </Field>
-                </div>
-
-                {/* Section 6: File & Image Uploaders */}
-                <div className="space-y-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <AttachmentAndLinkUploader
-                        label="Client Drawings"
-                        attachments={clientDrawings}
-                        onUpdate={setClientDrawings}
-                        idPrefix="drawings"
-                        allowLinks={true}
-                    />
-
-                    <AttachmentAndLinkUploader
-                        label="Project Pictures"
-                        allowImagesOnly={true}
-                        attachments={projectPictures}
-                        onUpdate={setProjectPictures}
-                        idPrefix="pictures"
-                        allowLinks={true}
-                    />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -1047,8 +1425,6 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
     const [editingLead, setEditingLead] = useState(null);
     const [drawerLead, setDrawerLead] = useState(null);
 
-    const [usersList, setUsersList] = useState([]);
-    const [architectsList, setArchitectsList] = useState([]);
     const [fabricsList, setFabricsList] = useState([]);
 
     const reload = () => {
@@ -1057,13 +1433,9 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
 
         Promise.all([
             handleFetchLeads(),
-            usersApi.list({ limit: 100 }).then((res) => res.data?.items || res.data || []).catch(() => []),
-            architectsApi.list({ limit: 100 }).then((res) => res.data?.items || res.data || []).catch(() => []),
             fabricsApi.list({ limit: 100 }).then((res) => res.data?.items || res.data || []).catch(() => [])
         ])
-            .then(([_, users, architects, fabrics]) => {
-                setUsersList(users);
-                setArchitectsList(architects);
+            .then(([_, fabrics]) => {
                 setFabricsList(fabrics);
             })
             .catch((err) => setError(err?.message || 'Failed to fetch studio meeting data'))
@@ -1217,11 +1589,10 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
 
             {editingLead && (
                 <EditStudioMeetingModal
+                    key={editingLead.id || editingLead._id}
                     item={editingLead}
                     onClose={() => setEditingLead(null)}
                     onDone={reload}
-                    usersList={usersList}
-                    architectsList={architectsList}
                     fabricsList={fabricsList}
                 />
             )}
