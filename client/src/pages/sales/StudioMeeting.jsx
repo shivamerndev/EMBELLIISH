@@ -20,6 +20,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's5',
         title: 'Studio Meeting',
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
+        // All fields — shown in DetailedDrawer
         cols: [
             { key: 'studioMeeting.dueDate', label: 'Studio Meeting Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -33,6 +34,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'studioMeeting.projectPictures', label: 'Project Pictures' },
             { key: 'studioMeeting.pricingRange', label: 'Pricing Range' },
             { key: 'readySize.roomReadiness', label: 'Meeting Room Readiness' },
+        ],
+        // Subset shown in table — prevents horizontal scrolling
+        tableCols: [
+            { key: 'studioMeeting.dueDate', label: 'Due Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'studioMeeting.date', label: 'Meeting Date' },
+            { key: 'studioMeeting.feedback', label: 'Feedback / Outcome' },
+            { key: 'studioMeeting.nextAction', label: 'Next Action' },
         ]
     }
 ];
@@ -984,7 +993,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
-                                sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                     <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[140px] bg-[#836444] dark:bg-slate-900/90">
                                         {col.label}
                                     </th>
@@ -1004,7 +1013,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     </button>
                                 </td>
                                 {visibleSections.map((sec) =>
-                                    sec.cols.filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
+                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
                                         <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
                                             {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
                                         </td>
@@ -1222,6 +1231,8 @@ const StudioMeeting = ({ items: itemsProp = [] }) => {
                 lead={drawerLead}
                 onClose={() => setDrawerLead(null)}
                 onViewFull={handleViewLead}
+                pageName={SPREADSHEET_SECTIONS[0].title}
+                pageFields={SPREADSHEET_SECTIONS[0].cols}
             />
         </div>
     );

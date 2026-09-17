@@ -26,6 +26,9 @@ server/logs/*
 Thumbs.db
 .vscode/
 .idea/
+**/*.pdf
+**/*.xlsx
+**/*.xls
 
 # Testing & Coverage
 coverage/
