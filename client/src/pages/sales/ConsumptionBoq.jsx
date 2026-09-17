@@ -20,6 +20,7 @@ import MeasurementToolbar from '../../components/measurement/MeasurementToolbar'
 import ExcelMeasurementGrid from '../../components/measurement/ExcelMeasurementGrid';
 import MeasurementDetailsDrawer from '../../components/measurement/MeasurementDetailsDrawer';
 import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
+import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -625,8 +626,6 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
-import { getLocalDate } from '../../utils/format';
-
 const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const currentUser = useSelector(selectUser);
     const existingConsumption = item?.consumption || {};
@@ -808,6 +807,21 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         );
     };
 
+    const handleSyncFromGrid = () => {
+        let totalOrderMetres = 0;
+        let totalWidths = 0;
+        (finalMeasurementsGrid || []).forEach((row) => {
+            const c = calculateRowConsumption(row);
+            totalOrderMetres += c.orderMetres || c.fabricMeters || 0;
+            totalWidths += (c.numWidths ?? c.roundedParts) || 0;
+        });
+        setForm((prev) => ({
+            ...prev,
+            quantity: totalOrderMetres > 0 ? String(Math.round(totalOrderMetres * 100) / 100) : prev.quantity,
+            panelCount: totalWidths > 0 ? String(Math.round(totalWidths)) : prev.panelCount,
+        }));
+    };
+
     const submit = (e) => {
         if (e && e.preventDefault) e.preventDefault();
         setValidationError('');
@@ -821,6 +835,15 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 setActiveTab('spec');
                 return;
             }
+        } else if (finalMeasurementsGrid.length > 0) {
+            let totalOrderMetres = 0;
+            finalMeasurementsGrid.forEach((row) => {
+                const c = calculateRowConsumption(row);
+                totalOrderMetres += c.orderMetres || c.fabricMeters || 0;
+            });
+            if (totalOrderMetres > 0) {
+                qtyNum = Math.round(totalOrderMetres * 100) / 100;
+            }
         }
 
         let panelInt = undefined;
@@ -830,6 +853,15 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 setValidationError('Panel Count must be a whole positive integer (0, 1, 2...).');
                 setActiveTab('spec');
                 return;
+            }
+        } else if (finalMeasurementsGrid.length > 0) {
+            let totalWidths = 0;
+            finalMeasurementsGrid.forEach((row) => {
+                const c = calculateRowConsumption(row);
+                totalWidths += (c.numWidths ?? c.roundedParts) || 0;
+            });
+            if (totalWidths > 0) {
+                panelInt = Math.round(totalWidths);
             }
         }
 
@@ -868,8 +900,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Consumption & BOQ Specification — ${item?.code || ''}`}
-            subtitle={`Configure fabric consumption, wastage allowance, versioning, and accessory assumptions for ${item?.clientName || ''}`}
+            title={`Consumption & BOQ Specification — ${item?.clientName || ''}`}
             size="full"
             footer={
                 <div className="flex items-center justify-between w-full">
@@ -1106,14 +1137,27 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
                             {/* 3. Consumption Quantity */}
                             <Field label="Consumption Quantity" hint="Decimal quantity for BOQ line">
-                                <Input
-                                    type="number"
-                                    step="any"
-                                    min="0"
-                                    value={form.quantity}
-                                    onChange={set('quantity')}
-                                    placeholder="e.g. 150.5"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        value={form.quantity}
+                                        onChange={set('quantity')}
+                                        placeholder="e.g. 150.5"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleSyncFromGrid}
+                                        icon={Sparkles}
+                                        title="Auto-fill total Order Metres and Panel Count from Measurements Grid"
+                                        className="shrink-0 text-xs"
+                                    >
+                                        Auto-fill from Grid
+                                    </Button>
+                                </div>
                             </Field>
 
                             {/* 4. Unit (Dropdown from approved unit master) */}

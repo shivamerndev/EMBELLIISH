@@ -37,6 +37,7 @@ const attachmentItemSchema = z
     mimetype: z.string().optional().nullable(),
     size: z.coerce.number().optional().nullable(),
     caption: z.string().optional().nullable(),
+    room: z.string().optional().nullable(),
     uploadedBy: flexibleObjectId,
     uploadedAt: z.union([z.string(), z.date()]).optional().nullable(),
     storage: z.string().optional().nullable(),
@@ -119,7 +120,7 @@ const studioMeetingSchema = z
     feedback: z.string().optional().nullable(),
     nextAction: z.string().optional().nullable(),
     architectBrief: z.string().optional().nullable(),
-    samples: z.array(attachmentItemSchema).optional(),
+    samples: z.union([z.array(attachmentItemSchema), z.any()]).optional(),
     projectPictures: z.array(attachmentItemSchema).optional(),
     pricingRange: z.string().optional().nullable(),
   })

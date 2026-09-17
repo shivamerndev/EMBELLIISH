@@ -8,10 +8,11 @@ const attachmentSchema = new mongoose.Schema(
     mimetype: String,
     size: Number,
     caption: String,
+    room: String,
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     uploadedAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false, strict: false }
 );
 
 /** Reusable sub-schema for "who did what, when" trails on workflow documents. */

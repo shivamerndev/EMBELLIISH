@@ -68,28 +68,25 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
 
     // Compute Grand Totals across all filtered rows live
     const grandTotals = useMemo(() => {
-        let totalParts = 0;
-        let rnft = 0;
-        let fabricMeters = 0;
-        let blackoutMeters = 0;
-        let romanSqft = 0;
+        let totalWidths   = 0;
+        let netMetres     = 0;
+        let orderMetres   = 0;
 
         filteredRowsWithIndex.forEach(({ row }) => {
             const calc = calculateRowConsumption(row);
-            totalParts += calc.roundedParts || 0;
-            rnft += calc.rnft || 0;
-            fabricMeters += calc.fabricMeters || 0;
-            blackoutMeters += calc.blackoutMeters || 0;
-            romanSqft += calc.romanSqft || 0;
+            totalWidths += (calc.numWidths ?? calc.roundedParts) || 0;
+            netMetres   += calc.netMetres  || 0;
+            orderMetres += calc.orderMetres || calc.fabricMeters || 0;
         });
 
         return {
             totalWindows: filteredRowsWithIndex.length,
-            totalParts,
-            rnft,
-            fabricMeters,
-            blackoutMeters,
-            romanSqft,
+            totalWidths:  Math.round(totalWidths),
+            netMetres:    Math.round(netMetres   * 100) / 100,
+            orderMetres:  Math.round(orderMetres * 100) / 100,
+            // backward-compat aliases kept so nothing else breaks
+            totalParts:   Math.round(totalWidths),
+            fabricMeters: Math.round(orderMetres * 100) / 100,
         };
     }, [filteredRowsWithIndex]);
 
@@ -148,13 +145,12 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
                                 const roomSubtotals = items.reduce(
                                     (acc, { row }) => {
                                         const c = calculateRowConsumption(row);
-                                        acc.fabricMeters += c.fabricMeters || 0;
-                                        acc.blackoutMeters += c.blackoutMeters || 0;
-                                        acc.rnft += c.rnft || 0;
-                                        acc.romanSqft += c.romanSqft || 0;
+                                        acc.orderMetres  += c.orderMetres  || c.fabricMeters || 0;
+                                        acc.netMetres    += c.netMetres    || 0;
+                                        acc.totalWidths  += (c.numWidths ?? c.roundedParts) || 0;
                                         return acc;
                                     },
-                                    { fabricMeters: 0, blackoutMeters: 0, rnft: 0, romanSqft: 0 }
+                                    { orderMetres: 0, netMetres: 0, totalWidths: 0 }
                                 );
 
                                 return (

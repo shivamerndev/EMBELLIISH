@@ -9,6 +9,7 @@ const PARTICULAR_OPTIONS = [
     { value: 'ROMAN_BLIND', label: 'Roman Blind' },
     { value: 'WOODEN_BLIND', label: 'Wooden Blind' },
     { value: 'ROLLER_BLIND', label: 'Roller Blind' },
+    { value: 'WALLPAPER', label: 'Wallpaper' },
 ];
 
 const UNIT_OPTIONS = [

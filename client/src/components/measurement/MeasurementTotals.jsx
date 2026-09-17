@@ -48,26 +48,23 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {} }) => {
                     </td>
                 )}
 
-                {/* Fabric & Calculated Grand Totals */}
+                {/* Fabric & Calculated Grand Totals (Documented Output Columns) */}
                 {isColVisible('fabricRequirement') && (
                     <>
                         <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-400 font-normal text-[11px]">
                             —
                         </td>
                         <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-brand-700 dark:text-brand-300 font-bold">
-                            {totals.totalParts || 0}
+                            {totals.totalWidths || 0}
                         </td>
-                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-900 dark:text-slate-100 font-bold">
-                            {(totals.rnft || 0).toFixed(0)} ft
+                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">
+                            {(totals.netMetres || 0).toFixed(2)} m
                         </td>
                         <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-500/10">
-                            {(totals.fabricMeters || 0).toFixed(2)} m
+                            {(totals.orderMetres || 0).toFixed(2)} m
                         </td>
-                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10">
-                            {(totals.blackoutMeters || 0).toFixed(2)} m
-                        </td>
-                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-sky-700 dark:text-sky-400 font-bold">
-                            {totals.romanSqft || 0} sqft
+                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-400 font-normal italic text-[11px]">
+                            —
                         </td>
                     </>
                 )}

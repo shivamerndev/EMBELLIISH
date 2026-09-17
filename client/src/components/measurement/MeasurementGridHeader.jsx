@@ -57,8 +57,8 @@ const MeasurementGridHeader = ({ columnVisibility = {} }) => {
                 )}
 
                 {isColVisible('fabricRequirement') && (
-                    <th colSpan={6} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#785c48] dark:bg-slate-900/90">
-                        FABRIC REQUIREMENT & CALCULATED VALUES
+                    <th colSpan={5} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#785c48] dark:bg-slate-900/90">
+                        FABRIC / MATERIAL CONSUMPTION (DOCUMENTED)
                     </th>
                 )}
 
@@ -106,13 +106,13 @@ const MeasurementGridHeader = ({ columnVisibility = {} }) => {
                 {isColVisible('fabricRequirement') && (
                     <>
                         <th colSpan={2} className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center">
-                            Panels & Drops
+                            Cut Drop & Widths
                         </th>
                         <th colSpan={2} className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center">
-                            Curtain Fabric
+                            Order Quantity
                         </th>
-                        <th colSpan={2} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center">
-                            Lining & Blinds
+                        <th colSpan={1} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center">
+                            Validation
                         </th>
                     </>
                 )}
@@ -156,15 +156,14 @@ const MeasurementGridHeader = ({ columnVisibility = {} }) => {
                     </>
                 )}
 
-                {/* Fabric & Calculated */}
+                {/* Fabric Calculated Outputs */}
                 {isColVisible('fabricRequirement') && (
                     <>
-                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]" title="Height per Part in Metres">Ht/Part (m)</th>
-                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]" title="Rounded Parts / Panels Count">Parts</th>
-                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]" title="Running Feet">Rnft</th>
-                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]" title="Required Fabric Meters">Fabric (m)</th>
-                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]" title="Required Blackout Meters">Blackout (m)</th>
-                        <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]" title="Roman Blind Sqft">Blind (Sqft)</th>
+                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]" title="Repeat-Adjusted Cut Drop (inches)">Cut Drop (in)</th>
+                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]" title="Number of Fabric Widths / Panels">Widths</th>
+                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]" title="Net Metres after wastage">Net Metres</th>
+                        <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]" title="Final Order Metres (rounded to increment)">Order Metres</th>
+                        <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[150px] min-w-[150px]" title="Railroad / Order Check">Check</th>
                     </>
                 )}
             </tr>

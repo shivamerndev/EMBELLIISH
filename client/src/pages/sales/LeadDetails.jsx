@@ -250,6 +250,7 @@ const AttachmentLinks = ({ label, files }) => {
                         const isLink = att?.type === 'link' || (typeof rawHref === 'string' && (rawHref.startsWith('http://') || rawHref.startsWith('https://')));
                         const rawName = typeof att === 'object' ? (att?.name || att?.filename || att?.originalName) : (typeof att === 'string' ? att.split('/').pop() : null);
                         const filename = rawName || `File ${i + 1}`;
+                        const roomName = typeof att === 'object' ? att?.room : null;
 
                         return (
                             <a
@@ -265,7 +266,14 @@ const AttachmentLinks = ({ label, files }) => {
                                     ) : (
                                         <Paperclip className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
                                     )}
-                                    <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{filename}</span>
+                                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                        {roomName && (
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+                                                {roomName}
+                                            </span>
+                                        )}
+                                        <span className="truncate text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-300 font-medium">{filename}</span>
+                                    </div>
                                 </div>
                                 <Download className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0 ml-2" />
                             </a>

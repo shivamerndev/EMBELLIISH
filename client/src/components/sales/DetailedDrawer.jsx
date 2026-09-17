@@ -17,6 +17,10 @@ const renderFieldValue = (val) => {
   if (typeof val === 'boolean') return val ? 'Yes' : 'No';
   if (Array.isArray(val)) {
     if (val.length === 0) return '—';
+    const rooms = Array.from(new Set(val.map((item) => (typeof item === 'object' ? item?.room : null)).filter(Boolean)));
+    if (rooms.length > 0) {
+      return `${val.length} item(s) (${rooms.join(', ')})`;
+    }
     return `${val.length} item(s)`;
   }
   if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {

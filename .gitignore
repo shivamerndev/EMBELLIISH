@@ -29,6 +29,7 @@ Thumbs.db
 **/*.pdf
 **/*.xlsx
 **/*.xls
+**/*.png
 
 # Testing & Coverage
 coverage/
