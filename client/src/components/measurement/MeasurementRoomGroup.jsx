@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, DoorOpen, Layers } from 'lucide-react';
+import { ChevronDown, ChevronRight, DoorOpen } from 'lucide-react';
 
 /**
  * Compact Room Group Row Header with Expand/Collapse toggle and room summary stats.
@@ -31,12 +31,15 @@ const MeasurementRoomGroup = ({
             {/* Sticky Room Name */}
             <td className="sticky left-[52px] z-20 bg-slate-100 dark:bg-slate-900 px-3 border-r border-slate-300 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-             
+                    {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400 shrink-0 transition-transform" />
+                    ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform" />
+                    )}
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                         <DoorOpen className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
                         {roomName}
                     </span>
-
                 </div>
             </td>
 
@@ -50,24 +53,19 @@ const MeasurementRoomGroup = ({
             {/* Remaining Spanned Summary Cells */}
             <td colSpan={colSpan} className="px-4 text-xs text-slate-600 dark:text-slate-400 font-mono">
                 <div className="flex items-center gap-6 text-[11px]">
-                    {summary.fabricMeters > 0 && (
+                    {summary.totalWidths > 0 && (
                         <span>
-                            <strong className="text-slate-700 dark:text-slate-300">Fabric:</strong> {summary.fabricMeters.toFixed(2)}m
+                            <strong className="text-slate-700 dark:text-slate-300">Widths:</strong> {summary.totalWidths}
                         </span>
                     )}
-                    {summary.blackoutMeters > 0 && (
+                    {summary.netMetres > 0 && (
                         <span>
-                            <strong className="text-slate-700 dark:text-slate-300">Blackout:</strong> {summary.blackoutMeters.toFixed(2)}m
+                            <strong className="text-slate-700 dark:text-slate-300">Net:</strong> {summary.netMetres.toFixed(2)}m
                         </span>
                     )}
-                    {summary.rnft > 0 && (
-                        <span>
-                            <strong className="text-slate-700 dark:text-slate-300">Rnft:</strong> {summary.rnft} ft
-                        </span>
-                    )}
-                    {summary.romanSqft > 0 && (
-                        <span>
-                            <strong className="text-slate-700 dark:text-slate-300">Blind:</strong> {summary.romanSqft} sqft
+                    {summary.orderMetres > 0 && (
+                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                            <strong>Order:</strong> {summary.orderMetres.toFixed(2)}m
                         </span>
                     )}
                     <span className="text-slate-400 font-sans italic text-[10px] ml-auto">

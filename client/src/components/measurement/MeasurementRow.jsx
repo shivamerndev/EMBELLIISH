@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Trash2, Sliders, Eye, Paperclip, Layers, Zap } from 'lucide-react';
+import { Copy, Trash2, Sliders } from 'lucide-react';
 import MeasurementCell from './MeasurementCell';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
@@ -10,6 +10,7 @@ const PARTICULAR_OPTIONS = [
     { value: 'ROMAN_BLIND', label: 'Roman Blind' },
     { value: 'WOODEN_BLIND', label: 'Wooden Blind' },
     { value: 'ROLLER_BLIND', label: 'Roller Blind' },
+    { value: 'WALLPAPER', label: 'Wallpaper' },
 ];
 
 /**
@@ -181,22 +182,24 @@ const MeasurementRow = ({
                 </>
             )}
 
-            {/* --- FABRIC REQUIREMENT & LIVE CALCULATED FIELDS --- */}
+            {/* --- FABRIC REQUIREMENT & LIVE CALCULATED OUTPUTS (Documented) --- */}
             {isColVisible('fabricRequirement') && (
                 <>
-                    <MeasurementCell type="readonly" isCalculated value={calc.heightPerPartM} unit="m" />
+                    {/* Repeat Cut Drop (inches) */}
+                    <MeasurementCell type="readonly" isCalculated value={calc.repeatCutDrop ?? 0} unit='"' />
+                    {/* No. of Widths */}
+                    <MeasurementCell type="readonly" isCalculated value={calc.numWidths ?? calc.roundedParts ?? 0} unit="" />
+                    {/* Net Metres (after wastage, before order rounding) */}
+                    <MeasurementCell type="readonly" isCalculated value={calc.netMetres != null ? calc.netMetres : (calc.fabricMeters ?? 0)} unit="m" />
+                    {/* Order Metres (final, rounded to increment) */}
+                    <MeasurementCell type="readonly" isCalculated value={calc.orderMetres ?? calc.fabricMeters ?? 0} unit="m" />
+                    {/* Railroad Check */}
                     <MeasurementCell
-                        type="number"
-                        value={row.partsOverride ?? calc.roundedParts}
-                        onChange={(val) => handleFieldChange('partsOverride', val)}
-                        placeholder={String(calc.roundedParts)}
-                        align="right"
-                        className={row.partsOverride ? 'font-bold text-brand-600 dark:text-brand-400' : ''}
+                        type="readonly"
+                        isCalculated
+                        value={calc.railroadCheck && calc.railroadCheck !== '—' ? calc.railroadCheck : '—'}
+                        unit=""
                     />
-                    <MeasurementCell type="readonly" isCalculated value={calc.rnft} unit="ft" />
-                    <MeasurementCell type="readonly" isCalculated value={calc.fabricMeters} unit="m" />
-                    <MeasurementCell type="readonly" isCalculated value={calc.blackoutMeters} unit="m" />
-                    <MeasurementCell type="readonly" isCalculated value={calc.romanSqft} unit="sqft" />
                 </>
             )}
 

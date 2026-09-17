@@ -21,6 +21,7 @@ const MeasurementCell = ({
     allowNegative = true,
     isCalculated = false,
     unit = '',
+    colSpan,
     onNavigateNext,
     onNavigatePrev,
     onNavigateDown,
@@ -112,15 +113,20 @@ const MeasurementCell = ({
         else if (typeof value === 'number') {
             displayVal = Number.isInteger(value) ? value : value.toFixed(2);
         }
+        // String values (e.g. 'OK to railroad') are displayed as-is
+
+        const isTextResult = typeof value === 'string' && value !== '—';
+        const textAlign = isTextResult ? 'text-center' : (align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left');
 
         return (
             <td
-                className={`px-2 py-1 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/40 border-r border-slate-200 dark:border-slate-800/80 align-middle ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'} ${className}`}
+                colSpan={colSpan}
+                className={`px-2 py-1 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/40 border-r border-slate-200 dark:border-slate-800/80 align-middle ${textAlign} ${className}`}
                 title={isCalculated ? 'System Calculated Field' : undefined}
             >
-                <div className="flex items-center justify-end gap-1">
-                    <span>{displayVal}</span>
-                    {unit && <span className="text-[10px] text-slate-400 font-sans">{unit}</span>}
+                <div className={`flex items-center ${isTextResult ? 'justify-center' : 'justify-end'} gap-1`}>
+                    <span className={isTextResult ? 'text-[10px] leading-tight' : ''}>{displayVal}</span>
+                    {unit && !isTextResult && <span className="text-[10px] text-slate-400 font-sans">{unit}</span>}
                 </div>
             </td>
         );
@@ -137,6 +143,7 @@ const MeasurementCell = ({
 
     return (
         <td
+            colSpan={colSpan}
             onClick={() => setIsEditing(true)}
             className={`px-2 py-1 text-xs font-mono text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800/80 align-middle transition-colors cursor-cell group ${isEditing ? 'bg-amber-500/10 dark:bg-amber-950/30' : 'hover:bg-slate-100/80 dark:hover:bg-slate-900/80'} ${alignClass} ${className}`}
         >

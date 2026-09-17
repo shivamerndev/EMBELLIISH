@@ -65,6 +65,8 @@ const MeasurementToolbar = ({
                         <option value="MOTORISED_CURTAIN">Motorised Curtain</option>
                         <option value="ROMAN_BLIND">Roman Blind</option>
                         <option value="WOODEN_BLIND">Wooden Blind</option>
+                        <option value="ROLLER_BLIND">Roller Blind</option>
+                        <option value="WALLPAPER">Wallpaper</option>
                     </select>
 
                     {/* Columns Popover Toggle */}
