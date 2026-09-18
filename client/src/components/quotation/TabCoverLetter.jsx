@@ -27,6 +27,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
             <Field label="Quotation No.">
               <Input
                 value={data.quotationNo || ''}
+              className={`p-2 rounded-md text-xs`} 
                 onChange={set('quotationNo')}
                 placeholder="e.g. EMBRAG 520-A / 2025 -26"
               />
@@ -34,6 +35,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
 
             <Field label="Estimate Date">
               <Input
+              className={`p-2 rounded-md text-xs`} 
                 value={data.date || ''}
                 onChange={set('date')}
                 placeholder="DD/MM/YYYY"
@@ -46,6 +48,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
               <Field label="Salutation">
                 <Input
                   value={data.clientSalutation || 'To,'}
+              className={`p-2 rounded-md text-xs`} 
                   onChange={set('clientSalutation')}
                   placeholder="To,"
                 />
@@ -54,6 +57,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
             <div className="col-span-1">
               <Field label="Client Name">
                 <Input
+              className={`p-2 rounded-md text-xs`} 
                   value={data.clientName || ''}
                   onChange={set('clientName')}
                   placeholder="Mr. Client Name"
@@ -65,6 +69,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
           <Field label="Document Subject">
             <Input
               value={data.subject || 'PROFORMA INVOICE'}
+              className={`p-2 rounded-md text-xs`} 
               onChange={set('subject')}
               placeholder="e.g. PROFORMA INVOICE"
             />
@@ -72,6 +77,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
 
           <Field label="Salutation Greeting">
             <Input
+              className={`p-2 rounded-md text-xs`} 
               value={data.greeting || 'Respected Sir,'}
               onChange={set('greeting')}
               placeholder="Respected Sir,"
@@ -87,7 +93,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
           </span>
 
           <Textarea
-            rows={14}
+            rows={13}
             value={data.bodyText || ''}
             onChange={set('bodyText')}
             placeholder="Please find enclosed estimate for Curtain.&#10;&#10;Should you have any queries, please feel free to contact us.&#10;&#10;We look forward to working with you."
@@ -107,7 +113,7 @@ export const TabCoverLetter = ({ data, onChange }) => {
 
           <Field label="Company Address Block (Printed on Right Header)">
             <Textarea
-              rows={9}
+              rows={8}
               value={data.companyAddress || ''}
               onChange={set('companyAddress')}
               className="text-xs tracking-wider"

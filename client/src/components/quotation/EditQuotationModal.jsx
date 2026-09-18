@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Modal, Button } from '../ui';
 import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
@@ -25,10 +25,13 @@ import TabCoverLetter from './TabCoverLetter';
 import TabQuotationItems from './TabQuotationItems';
 import TabTermsBanking from './TabTermsBanking';
 import QuotationPrintView from './QuotationPrintView';
+import { printQuotationElement } from './quotationPrintService';
 
 export const EditQuotationModal = ({ item, onClose, onDone }) => {
   const [activeTab, setActiveTab] = useState('tab2'); // default to Tab 2 (Quotation Items)
   const [previewPages, setPreviewPages] = useState([1, 2, 3]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const printContainerRef = useRef(null);
 
   // Extract existing data from lead if available
   const existingSheet = item?.quotation?.quotationSheet || {};
@@ -44,7 +47,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
       try {
         const d = new Date(item.quotation.date);
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      } catch (e) {}
+      } catch (e) { }
     }
     return DEFAULT_COVER_LETTER.date;
   })();
@@ -146,8 +149,22 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
     execute({ quotation: quotationPayload });
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const el = printContainerRef.current;
+    if (!el) {
+      window.print();
+      return;
+    }
+    setIsPrinting(true);
+    try {
+      await printQuotationElement(el, {
+        title: `Quotation_${coverLetter.quotationNo || item?.code || 'EMBELLISH'}`,
+      });
+    } catch (err) {
+      console.error('Print quotation failed:', err);
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const tabs = [
@@ -165,13 +182,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
       id: 'tab3',
       label: 'Terms & Banking',
       icon: Landmark,
-    },
-    {
-      id: 'preview',
-      label: 'Live PDF / Print Preview',
-      icon: Eye,
-      isSpecial: true,
-    },
+    }
   ];
 
   return (
@@ -189,13 +200,12 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
+      
             <Button
               type="button"
               variant="outline"
               icon={Printer}
+              loading={isPrinting}
               onClick={handlePrint}
               title="Print or Save as PDF"
             >
@@ -232,13 +242,12 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                  isActive
-                    ? tab.isSpecial
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs border border-slate-200/80 dark:border-slate-700'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
-                }`}
+                className={`flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-150 ${isActive
+                  ? tab.isSpecial
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs border border-slate-200/80 dark:border-slate-700'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
+                  }`}
               >
                 <Icon className={`w-4 h-4 ${isActive && !tab.isSpecial ? 'text-brand-600 dark:text-brand-400' : ''}`} />
                 <div className="text-left">
@@ -288,93 +297,37 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
             />
           )}
 
-          {activeTab === 'preview' && (
-            <div className="space-y-4">
-              {/* Preview Controls Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 no-print">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-purple-900 dark:text-purple-300">Displaying:</span>
-                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-purple-200 dark:border-purple-800 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewPages([1, 2, 3])}
-                      className={`px-2.5 py-1 rounded font-medium transition ${
-                        previewPages.length === 3
-                          ? 'bg-purple-600 text-white'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      All 3 Pages
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewPages([1])}
-                      className={`px-2.5 py-1 rounded font-medium transition ${
-                        previewPages.length === 1 && previewPages[0] === 1
-                          ? 'bg-purple-600 text-white'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      Page 1 Only
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewPages([2])}
-                      className={`px-2.5 py-1 rounded font-medium transition ${
-                        previewPages.length === 1 && previewPages[0] === 2
-                          ? 'bg-purple-600 text-white'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      Page 2 Only
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewPages([3])}
-                      className={`px-2.5 py-1 rounded font-medium transition ${
-                        previewPages.length === 1 && previewPages[0] === 3
-                          ? 'bg-purple-600 text-white'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      Page 3 Only
-                    </button>
-                  </div>
-                </div>
+        </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    icon={Printer}
-                    onClick={handlePrint}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
-                    Print / Export to PDF
-                  </Button>
-                </div>
-              </div>
-
-              {/* High-Fidelity Print & PDF Sheet View */}
-              <div className="p-4 sm:p-6 bg-slate-200 dark:bg-slate-950/80 rounded-2xl overflow-x-auto max-h-[65vh] border border-slate-300 dark:border-slate-800">
-                <QuotationPrintView
-                  coverLetter={coverLetter}
-                  clientName={coverLetter.clientName || item.clientName}
-                  refArchitect={meta.refArchitect}
-                  scopeTitle={meta.scopeTitle}
-                  quotationNo={coverLetter.quotationNo}
-                  dateStr={coverLetter.date}
-                  rooms={rooms}
-                  serviceItems={serviceItems}
-                  totals={totals}
-                  specialNotes={meta.specialNotes}
-                  closedAtText={meta.closedAtText}
-                  termsBanking={termsBanking}
-                  printablePages={previewPages}
-                />
-              </div>
-            </div>
-          )}
+        {/* Dedicated Offscreen Printable Target — Always rendered in DOM to allow instant printing from any tab */}
+        <div
+          ref={printContainerRef}
+          style={{
+            position: 'fixed',
+            left: '-99999px',
+            top: 0,
+            width: '210mm',
+            opacity: 0,
+            pointerEvents: 'none',
+            zIndex: -9999,
+          }}
+          aria-hidden="true"
+        >
+          <QuotationPrintView
+            coverLetter={coverLetter}
+            clientName={coverLetter.clientName || item?.clientName}
+            refArchitect={meta.refArchitect}
+            scopeTitle={meta.scopeTitle}
+            quotationNo={coverLetter.quotationNo}
+            dateStr={coverLetter.date}
+            rooms={rooms}
+            serviceItems={serviceItems}
+            totals={totals}
+            specialNotes={meta.specialNotes}
+            closedAtText={meta.closedAtText}
+            termsBanking={termsBanking}
+            printablePages={previewPages}
+          />
         </div>
       </div>
     </Modal>

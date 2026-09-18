@@ -1,24 +1,8 @@
-import React, { useState } from 'react';
-import { Field, Input, Select, Textarea, Button } from '../ui';
-import {
-  Plus,
-  Trash2,
-  Layers,
-  Sparkles,
-  Calculator,
-  AlertCircle,
-  FileSpreadsheet,
-  ChevronDown,
-  ChevronRight,
-  RefreshCw,
-} from 'lucide-react';
-import {
-  UNIT_OPTIONS,
-  GST_OPTIONS,
-  SAMPLE_RAKESH_JAIN_ROOMS,
-  SAMPLE_SERVICE_ITEMS,
-  formatINR,
-} from './quotationDefaults';
+import { useState } from 'react';
+import { Field, Input, Select, Button } from '../ui';
+import { Plus, Trash2, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { UNIT_OPTIONS, GST_OPTIONS, SAMPLE_RAKESH_JAIN_ROOMS, SAMPLE_SERVICE_ITEMS, formatINR, } from './quotationDefaults';
+
 
 export const TabQuotationItems = ({
   rooms = [],
@@ -143,16 +127,6 @@ export const TabQuotationItems = ({
 
   return (
     <div className="space-y-6">
-
-      <Button
-        type="button"
-        size="sm"
-        icon={Plus}
-        onClick={handleAddRoom}
-      >
-        Add New Room
-      </Button>
-
 
       {/* Meta Bar: Scope & Reference Architect */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-xs">
@@ -391,14 +365,25 @@ export const TabQuotationItems = ({
         )}
       </div>
 
+      <div className="py-2 px-4 flex justify-between items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-500/30 dark:bg-slate-900/60">
+
+        <Button type="button" size="sm" icon={Plus} onClick={handleAddRoom} >
+          Add New Room
+        </Button>
+<h1 className='font-semibold text-sm'>
+        Total Rooms : {rooms.length}
+</h1>
+      </div>
+
+
       {/* Standalone Service, Stitching, Hardware & Installation Items */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 overflow-hidden shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-purple-500/10 border-b border-purple-500/20">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-stone-500/10 border-b border-stone-500/20">
           <div>
-            <h5 className="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-stone-900 dark:text-stone-300">
               Services, Stitching, Hardware & Miscellaneous Charges
             </h5>
-            <p className="text-[11px] text-purple-700 dark:text-purple-400">
+            <p className="text-[11px] text-stone-700 dark:text-stone-400">
               Curtain stitching, lead bands, channels, tie backs, transportation, and installation.
             </p>
           </div>
