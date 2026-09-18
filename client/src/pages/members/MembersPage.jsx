@@ -11,7 +11,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { membersApi } from '../../api';
+import { membersApi } from '@/api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import { date, currency } from '../../utils/format';
 import {

@@ -1379,7 +1379,7 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                         </div>
                     </div>
                 </div>
-            </div>
+          
         </Modal>
     );
 };
