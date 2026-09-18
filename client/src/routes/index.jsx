@@ -56,7 +56,7 @@ export const AppRoutes = () => (
         <Route path="/crm/sales-commercials/ready-size" element={<ReadySize />} />
         <Route path="/crm/sales-commercials/consumption-boq" element={<ConsumptionBoq />} />
         <Route path="/crm/sales-commercials/proposal" element={<ProposalCreation />} />
-        <Route path="/crm/sales-commercials/token-discussion" element={<TokenDiscussion />} />
+        <Route path="/crm/sales-commercials/advance" element={<TokenDiscussion />} />
         <Route path="/crm/sales-commercials/pricing-costing" element={<PricingCosting />} />
         <Route path="/crm/sales-commercials/quotation" element={<QuotationPreparation />} />
         <Route path="/crm/sales-commercials/client-approval" element={<ClientApproval />} />

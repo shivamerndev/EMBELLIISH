@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil,
-    AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert, ArrowRight
+    AlertTriangle, FileText, ArrowRight
 } from 'lucide-react';
-import { currency, date, getLocalDate, formatBudgetValue } from '../../utils/format';
+import { currency, date, formatBudgetValue } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import { getNextStageUrl } from '../../utils/salesPipeline';
 import useViewMode from '../../hooks/useViewMode';
@@ -15,6 +15,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -43,49 +44,9 @@ const SPREADSHEET_SECTIONS = [
             { key: 'token.status', label: 'Status' },
             { key: 'token.clientResponse', label: 'Client Response' },
         ]
-    },
-    {
-        id: 's1',
-        title: 'Lead & Contact Details',
-        color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
-        cols: [
-            { key: 'sno', label: 'S.No.' },
-            { key: 'code', label: 'Lead Code' },
-            { key: 'clientName', label: 'Client Name' },
-            { key: 'architectName', label: 'Architect/Designer Name' },
-            { key: 'location', label: 'Location' },
-            { key: 'siteVisitRequired', label: 'Site Visit Required' }
-        ],
-        tableCols: [
-            { key: 'clientName', label: 'Client Name' },
-            { key: 'location', label: 'Location' },
-            { key: 'siteVisitRequired', label: 'Site Visit' },
-        ]
     }
 ];
 
-const COMMERCIAL_MASTER_TEMPLATES = [
-    {
-        id: 'standard',
-        name: 'Standard Terms (50-40-10)',
-        terms: '50% Token upon sign-off, 40% prior to dispatch, 10% post-installation sign-off.'
-    },
-    {
-        id: 'corporate',
-        name: 'Corporate Terms (30-60-10)',
-        terms: '30% Token, 60% upon site delivery, 10% net 30 days post completion.'
-    },
-    {
-        id: 'premium_res',
-        name: 'High-Value Residential (40-50-10)',
-        terms: '40% Token on design approval, 50% upon site readiness confirmation, 10% upon final hand-over.'
-    },
-    {
-        id: 'custom',
-        name: 'Custom / Negotiated Terms',
-        terms: 'Custom commercial terms negotiated with client.'
-    }
-];
 
 const TOKEN_STATUS_OPTIONS = [
     { value: 'Not Discussed', label: 'Not Discussed', tone: 'slate' },
@@ -393,33 +354,14 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Advance Received Details — ${item?.clientName || item?.code}`}
-            subtitle="Configure project value, advance collected amount, status, and received date & time."
+            title={`Advance Received Details : ${item?.clientName || item?.code}`}
             size="lg"
             footer={
                 <div className="flex items-center justify-between w-full gap-2 flex-wrap">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        icon={ArrowRight}
-                        onClick={handleDirectRedirect}
-                        className="text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-50 dark:bg-amber-950/40"
-                        title="Redirect directly to Pricing & Costing"
-                    >
-                        Redirect to Next Step
-                    </Button>
+                   
                     <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                        <Button onClick={(e) => handleSubmit(e, false)} loading={pending && !redirectOnSave}>Save Token Details</Button>
-                        <Button
-                            onClick={handleSaveAndRedirect}
-                            loading={pending && redirectOnSave}
-                            icon={ArrowRight}
-                            className="bg-brand-600 hover:bg-brand-700 text-white"
-                            title="Save changes and redirect to Pricing & Costing"
-                        >
-                            Save & Move to Next Step
-                        </Button>
+                        <Button onClick={(e) => handleSubmit(e, false)} loading={pending && !redirectOnSave}>Save Advance Detail</Button>
                     </div>
                 </div>
             }
@@ -434,7 +376,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
 
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="1. VALUE OF PROJECT (MONEY)" hint="Numeric value in ₹">
+                        <Field label="1. VALUE OF PROJECT (MONEY)">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
                                 <Input
@@ -448,7 +390,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                             </div>
                         </Field>
 
-                        <Field label="2. ADVANCE COLLECTED AMOUNT" hint="Numeric value in ₹">
+                        <Field label="2. ADVANCE COLLECTED AMOUNT">
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
                                 <Input
@@ -462,7 +404,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                             </div>
                         </Field>
 
-                        <Field label="3. ADVANCE COLLECTED STATUS" required hint="Current status of advance collection">
+                        <Field label="3. ADVANCE COLLECTED STATUS" required>
                             <Select value={form.status} onChange={set('status')}>
                                 {TOKEN_STATUS_OPTIONS.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -475,7 +417,6 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                         <Field
                             label="4. ADVANCE RECIEVED DATE&TIME"
                             required={form.status === 'Received'}
-                            hint={form.status === 'Received' ? 'Mandatory when ADVANCE COLLECTED STATUS is Received' : 'Date & time when advance was received'}
                         >
                             <Input
                                 type="datetime-local"
@@ -668,8 +609,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     return (
         <div>
             <PageHeader
-                title="Budgeting / Token Discussion"
-                subtitle="Track token discussions, token amounts received, mandatory receive validation, proposal versions, client budget responses, project timeline date ranges, and commercial master terms"
+                title="Advance Receiving"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
