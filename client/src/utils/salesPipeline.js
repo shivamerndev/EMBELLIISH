@@ -9,13 +9,13 @@ export const SALES_STAGES = [
   { key: 'measurement', label: 'Measurement Capture', path: '/crm/sales-commercials/measurement' },
   { key: 'studio-meeting', label: 'Studio Meeting', path: '/crm/sales-commercials/studio-meeting' },
   { key: 'consumption-boq', label: 'Consumption Sheet / BOQ', path: '/crm/sales-commercials/consumption-boq' },
-  { key: 'ready-size', label: 'Ready Size Confirmation', path: '/crm/sales-commercials/ready-size' },
   { key: 'proposal', label: 'Proposal Creation', path: '/crm/sales-commercials/proposal' },
-  { key: 'token', label: 'Budgeting / Token Discussion', path: '/crm/sales-commercials/token-discussion' },
+  { key: 'token', label: 'Advance Receiving', path: '/crm/sales-commercials/advance' },
   { key: 'pricing-costing', label: 'Pricing / Material Costing', path: '/crm/sales-commercials/pricing-costing' },
   { key: 'quotation', label: 'Quotation Preparation', path: '/crm/sales-commercials/quotation' },
   { key: 'client-approval', label: 'Client Approval', path: '/crm/sales-commercials/client-approval' },
   { key: 'kyc', label: 'KYC / Customer Conversion', path: '/crm/sales-commercials/kyc' },
+  { key: 'ready-size', label: 'Site Detail Sheet', path: '/crm/sales-commercials/ready-size' },
 ];
 
 export const getNextStage = (currentStageKey) => {
@@ -29,13 +29,13 @@ export const getNextStage = (currentStageKey) => {
   else if (key.includes('measurement') || key.includes('measure')) index = 2;
   else if (key.includes('studio')) index = 3;
   else if (key.includes('consumption') || key.includes('boq')) index = 4;
-  else if (key.includes('ready')) index = 5;
-  else if (key.includes('proposal')) index = 6;
-  else if (key.includes('token') || key.includes('budget')) index = 7;
-  else if (key.includes('pricing') || key.includes('costing')) index = 8;
-  else if (key.includes('quotation')) index = 9;
-  else if (key.includes('approval')) index = 10;
-  else if (key.includes('kyc')) index = 11;
+  else if (key.includes('proposal')) index = 5;
+  else if (key.includes('token') || key.includes('budget') || key.includes('advance')) index = 6;
+  else if (key.includes('pricing') || key.includes('costing')) index = 7;
+  else if (key.includes('quotation')) index = 8;
+  else if (key.includes('approval')) index = 9;
+  else if (key.includes('kyc')) index = 10;
+  else if (key.includes('ready') || key.includes('site-detail') || key.includes('detail-sheet')) index = 11;
 
   if (index >= 0 && index < SALES_STAGES.length - 1) {
     return SALES_STAGES[index + 1];

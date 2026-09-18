@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight, Pencil, FileCheck, CheckCircle2, Zap } from 'lucide-react';
+import { Paperclip, BadgeDollarSign, MapPin, User, FileText, Download, Ruler, ClipboardList, Wallet, ReceiptText, ShieldCheck, Presentation as PresentationIcon, CalendarCheck2, ExternalLink, ArrowRight, Pencil, FileCheck, CheckCircle2, Zap, FileSpreadsheet } from 'lucide-react';
 import { Badge, StatusBadge, Loading, Button } from '../../components/ui';
 import { currency, date, dateTime, humanise, getMediaUrl } from '../../utils/format';
 import { useSelector } from "react-redux";
@@ -291,13 +291,13 @@ const DETAIL_TABS = [
     { id: 'measurement', label: 'Measurement Capture', icon: Ruler },
     { id: 'studio-meeting', label: 'Studio Meeting', icon: CalendarCheck2 },
     { id: 'consumption-boq', label: 'Consumption / BOQ', icon: FileText },
-    { id: 'ready-size', label: 'Ready Size Confirmation', icon: ClipboardList },
     { id: 'proposal', label: 'Proposal Creation', icon: ReceiptText },
     { id: 'token-discussion', label: 'Token Discussion', icon: Wallet },
     { id: 'pricing-costing', label: 'Pricing & Costing', icon: BadgeDollarSign },
     { id: 'quotation', label: 'Quotation Prep', icon: ReceiptText },
     { id: 'client-approval', label: 'Client Approval', icon: ShieldCheck },
     { id: 'kyc', label: 'KYC & Conversion', icon: PresentationIcon },
+    { id: 'ready-size', label: 'Site Detail Sheet', icon: FileSpreadsheet },
 ];
 
 const LeadDetails = () => {
@@ -700,40 +700,6 @@ const LeadDetails = () => {
             </div>
         )}
 
-        {/* STAGE 5: READY SIZE CONFIRMATION */}
-        {activeDetailTab === 'ready-size' && (
-            <div className="space-y-4">
-                <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <ClipboardList className="w-3.5 h-3.5" /> Ready Size Confirmation
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Meeting Room Readiness" value={lead.readySize?.roomReadiness} />
-                        <InfoTile label="Ready Size Due Date" value={lead.readySize?.dueDate ? date(lead.readySize.dueDate) : null} />
-                        <InfoTile
-                            label="Ready Size Confirmed By"
-                            value={
-                                Array.isArray(lead.readySize?.confirmedBy)
-                                    ? lead.readySize.confirmedBy.map((u) => (typeof u === 'object' ? u?.name || u?.email : String(u))).filter(Boolean).join(', ') || null
-                                    : (lead.readySize?.confirmedBy?.name || (typeof lead.readySize?.confirmedBy === 'string' ? lead.readySize.confirmedBy : null))
-                            }
-                        />
-                        <InfoTile label="Confirmation Date" value={lead.readySize?.confirmationDate ? date(lead.readySize.confirmationDate) : null} />
-                        <InfoTile label="Window Size" value={lead.readySize?.windowSize} />
-                        <InfoTile label="Site Condition" value={lead.readySize?.siteCondition} />
-                        <InfoTile label="Pelmet Details" value={lead.readySize?.pelmetDetails} />
-                        <InfoTile label="Channel Details" value={lead.readySize?.channelDetails} />
-                        <InfoTile label="Ready Height" value={lead.readySize?.readyHeight} />
-                    </div>
-                    {lead.readySize?.finalMeasurements && (
-                        <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
-                            <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Final Measurements</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.readySize.finalMeasurements)}</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        )}
 
         {/* STAGE 6: CONSUMPTION SHEET / BOQ DASHBOARD */}
         {activeDetailTab === 'consumption-boq' && (
@@ -978,6 +944,184 @@ const LeadDetails = () => {
                 </div>
             </div>
         )}
+
+        {/* STAGE 12: SITE DETAIL SHEET */}
+        {activeDetailTab === 'ready-size' && (() => {
+            const googleLink = lead.readySize?.siteDetailSheetGoogleLink;
+            const sheetAttachments = Array.isArray(lead.readySize?.siteDetailSheetAttachments) ? lead.readySize.siteDetailSheetAttachments : [];
+            const designPpt = lead.readySize?.designPpt || {};
+            const designLink = designPpt.link || (typeof designPpt === 'string' && (designPpt.startsWith('http') || designPpt.startsWith('/')) ? designPpt : null);
+            const designFiles = Array.isArray(designPpt.files) ? designPpt.files : (Array.isArray(designPpt.attachments) ? designPpt.attachments : []);
+
+            const selectionPpt = lead.readySize?.selectionPpt || {};
+            const selectionLink = selectionPpt.link || (typeof selectionPpt === 'string' && (selectionPpt.startsWith('http') || selectionPpt.startsWith('/')) ? selectionPpt : null);
+            const selectionFiles = Array.isArray(selectionPpt.files) ? selectionPpt.files : (Array.isArray(selectionPpt.attachments) ? selectionPpt.attachments : []);
+
+            return (
+                <div className="space-y-4">
+                    <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Site Detail Sheet & Production Inputs
+                            </p>
+                            <Badge tone="emerald">Input for Production</Badge>
+                        </div>
+
+                        {/* Production Master Package Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {/* Site Detail Sheet Card */}
+                            <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded-xl space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                                        <FileSpreadsheet className="w-3.5 h-3.5" /> Site Detail Sheet
+                                    </span>
+                                    {googleLink ? <Badge tone="emerald">Linked</Badge> : <Badge tone="slate">Pending</Badge>}
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                    {googleLink ? (
+                                        <a
+                                            href={googleLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-semibold hover:underline break-all"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Open Live Google Sheet
+                                        </a>
+                                    ) : (
+                                        <p className="text-slate-400 dark:text-slate-500 italic text-[11px]">No Google Sheet link attached.</p>
+                                    )}
+                                </div>
+                                <div className="pt-1 border-t border-emerald-200 dark:border-emerald-800/60">
+                                    <a
+                                        href="/Site Detail Sheet. R5.xls"
+                                        download="Site Detail Sheet. R5.xls"
+                                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:underline"
+                                    >
+                                        <Download className="w-3 h-3" /> Master Template (Site Detail Sheet. R5.xls)
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Design PPT Card */}
+                            <div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                                        <PresentationIcon className="w-3.5 h-3.5 text-amber-600" /> Design PPT
+                                    </span>
+                                    {(designLink || designFiles.length > 0) ? <Badge tone="amber">Attached</Badge> : <Badge tone="slate">Pending</Badge>}
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                    {designLink && (
+                                        <a
+                                            href={designLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-semibold hover:underline"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Open Google Slides
+                                        </a>
+                                    )}
+                                    {designFiles.length > 0 && (
+                                        <div className="space-y-1">
+                                            {designFiles.map((df, i) => (
+                                                <a key={i} href={df.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-amber-800 dark:text-amber-200 hover:underline truncate">
+                                                    <Download className="w-3 h-3 shrink-0" /> {df.filename || `Design PPT ${i + 1}`}
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {!designLink && designFiles.length === 0 && (
+                                        <p className="text-slate-400 dark:text-slate-500 italic text-[11px]">No Design PPT attached.</p>
+                                    )}
+                                </div>
+                                {designPpt.notes && (
+                                    <p className="text-[11px] text-amber-900 dark:text-amber-200 border-t border-amber-200 dark:border-amber-800/60 pt-1">
+                                        <strong>Notes:</strong> {designPpt.notes}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Selection PPT Card */}
+                            <div className="p-3.5 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-800 rounded-xl space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                                        <PresentationIcon className="w-3.5 h-3.5 text-indigo-600" /> Selection PPT
+                                    </span>
+                                    {(selectionLink || selectionFiles.length > 0) ? <Badge tone="indigo">Attached</Badge> : <Badge tone="slate">Pending</Badge>}
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                    {selectionLink && (
+                                        <a
+                                            href={selectionLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-300 font-semibold hover:underline"
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Open Google Slides
+                                        </a>
+                                    )}
+                                    {selectionFiles.length > 0 && (
+                                        <div className="space-y-1">
+                                            {selectionFiles.map((sf, i) => (
+                                                <a key={i} href={sf.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-indigo-800 dark:text-indigo-200 hover:underline truncate">
+                                                    <Download className="w-3 h-3 shrink-0" /> {sf.filename || `Selection PPT ${i + 1}`}
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {!selectionLink && selectionFiles.length === 0 && (
+                                        <p className="text-slate-400 dark:text-slate-500 italic text-[11px]">No Selection PPT attached.</p>
+                                    )}
+                                </div>
+                                {selectionPpt.notes && (
+                                    <p className="text-[11px] text-indigo-900 dark:text-indigo-200 border-t border-indigo-200 dark:border-indigo-800/60 pt-1">
+                                        <strong>Notes:</strong> {selectionPpt.notes}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* General Site Detail Info */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <InfoTile label="Site Detail Due Date" value={lead.readySize?.dueDate ? date(lead.readySize.dueDate) : null} />
+                            <InfoTile
+                                label="Site Details Confirmed By"
+                                value={
+                                    Array.isArray(lead.readySize?.confirmedBy)
+                                        ? lead.readySize.confirmedBy.map((u) => (typeof u === 'object' ? u?.name || u?.email : String(u))).filter(Boolean).join(', ') || null
+                                        : (lead.readySize?.confirmedBy?.name || (typeof lead.readySize?.confirmedBy === 'string' ? lead.readySize.confirmedBy : null))
+                                }
+                            />
+                            <InfoTile label="Confirmation Date" value={lead.readySize?.confirmationDate ? date(lead.readySize.confirmationDate) : null} />
+                            <InfoTile label="Site Condition" value={lead.readySize?.siteCondition} />
+                            <InfoTile label="Ready Height" value={lead.readySize?.readyHeight} />
+                            <InfoTile label="Window Size Overview" value={lead.readySize?.windowSize} />
+                        </div>
+
+                        {/* Pelmet & Channel specifications */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg">
+                                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold mb-1">Pelmet Details</span>
+                                <p className="text-slate-800 dark:text-slate-200">{renderFormattedText(lead.readySize?.pelmetDetails)}</p>
+                            </div>
+                            <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg">
+                                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold mb-1">Channel & Track Details</span>
+                                <p className="text-slate-800 dark:text-slate-200">{renderFormattedText(lead.readySize?.channelDetails)}</p>
+                            </div>
+                        </div>
+
+                        {lead.readySize?.finalMeasurements && (
+                            <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
+                                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Final Measurements</span>
+                                <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.readySize.finalMeasurements)}</p>
+                            </div>
+                        )}
+
+                        <AttachmentLinks label="Uploaded Site Detail Sheet Files" files={sheetAttachments} />
+                    </div>
+                </div>
+            );
+        })()}
 
         {isKycModalOpen && (
             <KycEditModal

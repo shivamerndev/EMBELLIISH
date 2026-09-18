@@ -155,6 +155,14 @@ const readySizeSchema = z
     channelDetails: z.any().optional(),
     readyHeight: z.any().optional(),
     finalMeasurements: z.any().optional(),
+    siteDetailSheetGoogleLink: z.string().optional(),
+    siteDetailSheetAttachments: z.any().optional(),
+    designPpt: z.any().optional(),
+    selectionPpt: z.any().optional(),
+    siteDetailRooms: z.any().optional(),
+    siteDetailSheet: z.any().optional(),
+    productionNotes: z.string().optional(),
+    productionHandoffStatus: z.string().optional(),
   })
   .optional();
 

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, CheckSquare, Calendar, CheckCircle2, Paperclip, Home, Pencil,
-    Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText
+    Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText,
+    FileSpreadsheet, Download, ExternalLink, UploadCloud, Presentation, FileUp, Printer, Save
 } from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
@@ -11,20 +12,26 @@ import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
-import { leadsApi, usersApi } from '../../api';
+import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
+import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
+import { SAMPLE_SITE_DETAIL_ROOMS } from '../../components/sales/siteSheetDefaults';
 
 const SPREADSHEET_SECTIONS = [
     {
         id: 's6',
-        title: 'Ready Size (Window/Site Details)',
+        title: 'Site Detail Sheet',
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
-            { key: 'readySize.dueDate', label: 'Ready Size Due' },
+            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet (Google / XLS)' },
+            { key: 'readySize.designPpt', label: 'Design PPT' },
+            { key: 'readySize.selectionPpt', label: 'Selection PPT' },
+            { key: 'readySize.dueDate', label: 'Site Detail Sheet Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'readySize.confirmedBy', label: 'Ready Size Confirmed By' },
+            { key: 'readySize.confirmedBy', label: 'Site Confirmed By' },
             { key: 'readySize.confirmationDate', label: 'Confirmation Date' },
             { key: 'readySize.windowSizes', label: 'Window Size' },
             { key: 'readySize.siteCondition', label: 'Site Condition' },
@@ -35,6 +42,9 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet' },
+            { key: 'readySize.designPpt', label: 'Design PPT' },
+            { key: 'readySize.selectionPpt', label: 'Selection PPT' },
             { key: 'readySize.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'readySize.confirmedBy', label: 'Confirmed By' },
@@ -261,6 +271,136 @@ const SPREADSHEET_CELL_RENDERERS = {
             return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px] block italic" title={textVal}>{textVal}</span>;
         }
         return <span className="text-slate-400 dark:text-slate-600">—</span>;
+    },
+    'readySize.siteDetailSheetGoogleLink': (lead, { onEdit } = {}) => {
+        const link = lead.readySize?.siteDetailSheetGoogleLink;
+        const atts = Array.isArray(lead.readySize?.siteDetailSheetAttachments) ? lead.readySize.siteDetailSheetAttachments : [];
+        const customRooms = lead.readySize?.siteDetailRooms;
+        const roomCount = Array.isArray(customRooms) ? customRooms.length : 10;
+
+        return (
+            <div className="flex items-center gap-1.5 justify-center flex-wrap max-w-[220px]" onClick={(e) => e.stopPropagation()}>
+                <button
+                    type="button"
+                    onClick={() => onEdit && onEdit(lead)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition shadow-2xs"
+                    title="Open Room-wise Site Detail Sheet Preview & Editor"
+                >
+                    <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                    <span>Site Sheet ({roomCount})</span>
+                </button>
+                {link && (
+                    <a
+                        href={link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition"
+                        title={link}
+                    >
+                        <span>Google</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                    </a>
+                )}
+                {atts.length > 0 && (
+                    <a
+                        href={atts[0].url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 transition"
+                        title={atts[0].filename || 'Attached XLS'}
+                    >
+                        <Paperclip className="w-3 h-3 text-blue-600" />
+                        <span>XLS ({atts.length})</span>
+                    </a>
+                )}
+                {!link && atts.length === 0 && (
+                    <a
+                        href="/Site Detail Sheet. R5.xls"
+                        download="Site Detail Sheet. R5.xls"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        title="Download Blank Master Template (.xls)"
+                    >
+                        <Download className="w-3 h-3" /> Template
+                    </a>
+                )}
+            </div>
+        );
+    },
+    'readySize.designPpt': (lead) => {
+        const ppt = lead.readySize?.designPpt;
+        const link = ppt?.link || (typeof ppt === 'string' && (ppt.startsWith('http') || ppt.startsWith('/')) ? ppt : null);
+        const files = Array.isArray(ppt?.files) ? ppt.files : (Array.isArray(ppt?.attachments) ? ppt.attachments : []);
+        const count = files.length;
+        if (!link && count === 0) {
+            return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        }
+        return (
+            <div className="flex items-center gap-1 justify-center" onClick={(e) => e.stopPropagation()}>
+                {link ? (
+                    <a
+                        href={link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition shadow-2xs"
+                        title={link}
+                    >
+                        <Presentation className="w-3 h-3 text-amber-600" />
+                        <span>Design PPT</span>
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                    </a>
+                ) : (
+                    <a
+                        href={files[0].url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition shadow-2xs"
+                        title={files[0].filename || 'Design PPT'}
+                    >
+                        <Presentation className="w-3 h-3 text-amber-600" />
+                        <span>Design PPT ({count})</span>
+                        <Download className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                    </a>
+                )}
+            </div>
+        );
+    },
+    'readySize.selectionPpt': (lead) => {
+        const ppt = lead.readySize?.selectionPpt;
+        const link = ppt?.link || (typeof ppt === 'string' && (ppt.startsWith('http') || ppt.startsWith('/')) ? ppt : null);
+        const files = Array.isArray(ppt?.files) ? ppt.files : (Array.isArray(ppt?.attachments) ? ppt.attachments : []);
+        const count = files.length;
+        if (!link && count === 0) {
+            return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        }
+        return (
+            <div className="flex items-center gap-1 justify-center" onClick={(e) => e.stopPropagation()}>
+                {link ? (
+                    <a
+                        href={link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 transition shadow-2xs"
+                        title={link}
+                    >
+                        <Presentation className="w-3 h-3 text-indigo-600" />
+                        <span>Selection PPT</span>
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                    </a>
+                ) : (
+                    <a
+                        href={files[0].url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 transition shadow-2xs"
+                        title={files[0].filename || 'Selection PPT'}
+                    >
+                        <Presentation className="w-3 h-3 text-indigo-600" />
+                        <span>Selection PPT ({count})</span>
+                        <Download className="w-2.5 h-2.5 ml-0.5 opacity-70" />
+                    </a>
+                )}
+            </div>
+        );
     }
 };
 
@@ -368,548 +508,489 @@ const MultiSelectUsersControl = ({ selectedUsers = [], users = [], onChange }) =
 };
 
 const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
-    const initialMeasurement = item?.measurement || {};
-    const existingReadySize = item?.readySize || {};
-
-    const parseConfirmedByInitial = (cb) => {
-        if (!cb) return [];
-        if (Array.isArray(cb)) return cb.map((u) => typeof u === 'object' ? (u._id || u.id) : u);
-        if (typeof cb === 'object') return [cb._id || cb.id];
-        if (typeof cb === 'string') return cb.split(',').map((s) => s.trim()).filter(Boolean);
-        return [];
-    };
-
-    const parseWindowSizesInitial = () => {
-        const raw = existingReadySize.windowSizes || existingReadySize.windowSize;
-        const parsed = parseSubformArray(raw);
-        if (parsed.length > 0) return parsed;
-        return [
-            { id: 'w-1', room: 'Living Room', windowId: 'W-01', width: '1200', height: '2100', unit: 'mm' },
-            { id: 'w-2', room: 'Master Bedroom', windowId: 'W-02', width: '1500', height: '2400', unit: 'mm' }
-        ];
-    };
-
-    const parsePelmetsInitial = () => {
-        const raw = existingReadySize.pelmetDetails || initialMeasurement.pelmetDetails;
-        const parsed = parseSubformArray(raw);
-        if (parsed.length > 0) return parsed;
-        if (typeof raw === 'string' && raw) {
-            return [{ id: 'p-1', room: 'Living Room', pelmetType: 'Wooden Pelmet', width: '150', depth: '150', status: 'Confirmed', notes: raw, revision: 1 }];
+    // Initialise rooms from lead data or Master Excel defaults
+    const initialRooms = useMemo(() => {
+        const existing = item?.readySize?.siteDetailRooms;
+        if (Array.isArray(existing) && existing.length > 0) {
+            return existing;
         }
-        return [
-            { id: 'p-1', room: 'Living Room', pelmetType: 'Ply Wooden Box', width: '150', depth: '150', status: 'Ready', notes: 'Pulled from site measurement', revision: 1 }
-        ];
-    };
-
-    const parseChannelsInitial = () => {
-        const raw = existingReadySize.channelDetails || initialMeasurement.channelDetails;
-        const parsed = parseSubformArray(raw);
-        if (parsed.length > 0) return parsed;
-        if (typeof raw === 'string' && raw) {
-            return [{ id: 'c-1', room: 'Living Room', channelType: 'Recessed Track', trackLength: '2400', mounting: 'Ceiling', status: 'Confirmed', notes: raw, revision: 1 }];
-        }
-        return [
-            { id: 'c-1', room: 'Living Room', channelType: 'Ceiling Track 2-Track', trackLength: '2400', mounting: 'Ceiling Recessed', status: 'Ready', notes: 'Pulled from site measurement', revision: 1 }
-        ];
-    };
-
-    const parseGridInitial = (windowList) => {
-        const raw = existingReadySize.finalMeasurements || existingReadySize.finalMeasurementGrid;
-        const parsed = parseSubformArray(raw);
-        if (parsed.length > 0 && typeof parsed[0] === 'object') return parsed;
-
-        return windowList.map((w, idx) => ({
-            id: `g-${idx + 1}`,
-            room: w.room || 'Room',
-            windowId: w.windowId || `W-0${idx + 1}`,
-            previousWidth: w.width || '1200',
-            previousHeight: w.height || '2100',
-            confirmedWidth: w.width || '1200',
-            confirmedHeight: w.height || '2100',
-            unit: w.unit || 'mm',
-            status: 'Confirmed',
-            notes: 'Final size confirmed',
-            version: 'v2.0'
+        return SAMPLE_SITE_DETAIL_ROOMS.map((r) => ({
+            ...r,
+            clientName: item?.clientName || r.clientName,
+            architect: item?.architectName || item?.architect || r.architect,
         }));
-    };
+    }, [item]);
 
-    const [dueDate, setDueDate] = useState(
-        existingReadySize.dueDate ? new Date(existingReadySize.dueDate).toISOString().slice(0, 10) : ''
-    );
-    const [confirmedBy, setConfirmedBy] = useState(parseConfirmedByInitial(existingReadySize.confirmedBy));
-    const [confirmationDate, setConfirmationDate] = useState(
-        existingReadySize.confirmationDate ? new Date(existingReadySize.confirmationDate).toISOString().slice(0, 16) : ''
-    );
-    const [siteCondition, setSiteCondition] = useState(existingReadySize.siteCondition || 'Ready');
-    const [windowSizes, setWindowSizes] = useState(parseWindowSizesInitial());
-    const [readyHeightVal, setReadyHeightVal] = useState(
-        typeof existingReadySize.readyHeight === 'string' ? existingReadySize.readyHeight : '2100 mm'
-    );
-    const [pelmetDetails, setPelmetDetails] = useState(parsePelmetsInitial());
-    const [channelDetails, setChannelDetails] = useState(parseChannelsInitial());
-    const [finalMeasurementsGrid, setFinalMeasurementsGrid] = useState(parseGridInitial(parseWindowSizesInitial()));
+    const [rooms, setRooms] = useState(initialRooms);
 
-    const { execute, pending, error } = useAction(
-        (payload) => leadsApi.update(item.id || item._id, { readySize: payload }),
+    // Default to Guest Room if present, or first room
+    const [activeRoomId, setActiveRoomId] = useState(() => {
+        const guestRoom = initialRooms.find((r) =>
+            (r.roomTitle || r.sheetName || '').toLowerCase().includes('guest')
+        );
+        return guestRoom ? guestRoom.id : (initialRooms[0]?.id || 'room-1');
+    });
+
+    const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'edit' | 'all-rooms'
+    const [savedSuccess, setSavedSuccess] = useState(false);
+
+    const activeRoom = useMemo(() => {
+        return rooms.find((r) => r.id === activeRoomId) || rooms[0];
+    }, [rooms, activeRoomId]);
+
+    const activeRoomIndex = useMemo(() => {
+        return rooms.findIndex((r) => r.id === activeRoomId);
+    }, [rooms, activeRoomId]);
+
+    // Save action hook
+    const { execute: saveSheet, pending: saving, error: saveError } = useAction(
+        async (roomsToSave) => {
+            const dataToSave = roomsToSave || rooms;
+            const payload = {
+                readySize: {
+                    ...(item?.readySize || {}),
+                    siteDetailRooms: dataToSave,
+                    siteDetailSheet: {
+                        updatedAt: new Date().toISOString(),
+                        roomsCount: dataToSave.length,
+                        lastActiveRoom: activeRoom?.roomTitle || activeRoom?.sheetName,
+                    },
+                },
+            };
+            return leadsApi.update(item._id || item.id, payload);
+        },
         {
             onSuccess: () => {
-                onDone();
-                onClose();
-            }
+                setSavedSuccess(true);
+                setTimeout(() => setSavedSuccess(false), 3000);
+                if (onDone) onDone();
+            },
         }
     );
 
-    const handleSetCurrentTime = () => {
-        const nowStr = new Date().toISOString().slice(0, 16);
-        setConfirmationDate(nowStr);
+    const handleUpdateActiveRoom = (updatedRoom) => {
+        setRooms((prev) => prev.map((r) => (r.id === updatedRoom.id ? updatedRoom : r)));
     };
 
-    const handleAddWindow = () => {
-        const newId = `w-${Date.now()}`;
-        const newWin = { id: newId, room: 'Living Room', windowId: `W-0${windowSizes.length + 1}`, width: '1200', height: '2100', unit: 'mm' };
-        const updatedWin = [...windowSizes, newWin];
-        setWindowSizes(updatedWin);
-
-        setFinalMeasurementsGrid([
-            ...finalMeasurementsGrid,
-            {
-                id: `g-${Date.now()}`,
-                room: newWin.room,
-                windowId: newWin.windowId,
-                previousWidth: newWin.width,
-                previousHeight: newWin.height,
-                confirmedWidth: newWin.width,
-                confirmedHeight: newWin.height,
-                unit: newWin.unit,
-                status: 'Confirmed',
-                notes: 'Newly added window size',
-                version: 'v2.0'
-            }
-        ]);
-    };
-
-    const handleRemoveWindow = (id) => {
-        setWindowSizes(windowSizes.filter((w) => w.id !== id));
-    };
-
-    const handleWindowChange = (id, field, value) => {
-        setWindowSizes(windowSizes.map((w) => (w.id === id ? { ...w, [field]: value } : w)));
-    };
-
-    const handleAddPelmet = () => {
-        setPelmetDetails([
-            ...pelmetDetails,
-            { id: `p-${Date.now()}`, room: 'Living Room', pelmetType: 'Wooden Pelmet', width: '150', depth: '150', status: 'Ready', notes: 'Added pelmet detail', revision: 1 }
-        ]);
-    };
-
-    const handleRemovePelmet = (id) => {
-        setPelmetDetails(pelmetDetails.filter((p) => p.id !== id));
-    };
-
-    const handlePelmetChange = (id, field, value) => {
-        setPelmetDetails(pelmetDetails.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
-    };
-
-    const handleAddChannel = () => {
-        setChannelDetails([
-            ...channelDetails,
-            { id: `c-${Date.now()}`, room: 'Living Room', channelType: 'Ceiling Track', trackLength: '2400', mounting: 'Ceiling', status: 'Ready', notes: 'Added channel detail', revision: 1 }
-        ]);
-    };
-
-    const handleRemoveChannel = (id) => {
-        setChannelDetails(channelDetails.filter((c) => c.id !== id));
-    };
-
-    const handleChannelChange = (id, field, value) => {
-        setChannelDetails(channelDetails.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
-    };
-
-    const handleGridChange = (id, field, value) => {
-        setFinalMeasurementsGrid(finalMeasurementsGrid.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
-    };
-
-    const calculateVariance = (prevW, prevH, confW, confH, unit) => {
-        const pw = parseFloat(prevW) || 0;
-        const ph = parseFloat(prevH) || 0;
-        const cw = parseFloat(confW) || 0;
-        const ch = parseFloat(confH) || 0;
-
-        const diffW = cw - pw;
-        const diffH = ch - ph;
-
-        if (diffW === 0 && diffH === 0) return <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Exact Match (0)</span>;
-
-        const signW = diffW > 0 ? `+${diffW}` : `${diffW}`;
-        const signH = diffH > 0 ? `+${diffH}` : `${diffH}`;
-
-        return (
-            <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold text-[11px]">
-                W: {signW}{unit} / H: {signH}{unit}
-            </span>
-        );
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        const payload = {
-            ...(item?.readySize || {}),
-            dueDate: dueDate || undefined,
-            confirmedBy: confirmedBy.length > 0 ? confirmedBy : undefined,
-            confirmationDate: confirmationDate ? new Date(confirmationDate).toISOString() : new Date().toISOString(),
-            siteCondition: siteCondition || 'Ready',
-            windowSizes: windowSizes,
-            windowSize: windowSizes.map((w) => `${w.room} (${w.windowId}): ${w.width}x${w.height} ${w.unit}`).join('; '),
-            readyHeight: readyHeightVal,
-            pelmetDetails: pelmetDetails,
-            channelDetails: channelDetails,
-            finalMeasurements: finalMeasurementsGrid,
+    const handleAddRoom = () => {
+        const newSheetNo = rooms.length + 1;
+        const newRoom = {
+            id: `room-${Date.now()}`,
+            sheetName: `Room ${newSheetNo}`,
+            roomTitle: `Room ${newSheetNo}`,
+            sheetNo: newSheetNo,
+            clientName: item?.clientName || 'Mr. Rakesh Jain',
+            architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
+            siteIncharge: 'Amit / Ashish / Sachin / Hemant',
+            notes: ['Width of the Fabric as height of the Window (Vertical Lines Want) adjust in stitching'],
+            items: [
+                {
+                    id: `item-${Date.now()}-1`,
+                    srNo: 1,
+                    look: '',
+                    type: 'Main Curtain',
+                    windowWidth: '124',
+                    windowHeight: '113',
+                    pelmetWidth: '12',
+                    pelmetDrop: '6',
+                    pelmetReturn: '',
+                    catalogueImages: [],
+                    design: 'Ready',
+                    brand: 'Deco Dome / Linia /',
+                    fabricName: 'Linia One / Alora - 1',
+                    fabricWidth: '54"',
+                    repeatV: '',
+                    repeatH: '',
+                    fullness: 2.5,
+                    qtyMtrs: 15,
+                    stitchingStyle: 'Ripple',
+                    parts: 1,
+                    opening: 'Center Open',
+                    readyWidth: '',
+                    readyHeight: '',
+                    liningType: 'in house 301 blackout',
+                    liningQty: '',
+                    tieback: 'Custom',
+                    position: '',
+                    electricalPoint: '',
+                    installationType: '',
+                },
+            ],
         };
+        const updated = [...rooms, newRoom];
+        setRooms(updated);
+        setActiveRoomId(newRoom.id);
+        setActiveTab('edit');
+    };
 
-        execute(payload);
+    const handleDeleteRoom = (roomId) => {
+        if (rooms.length <= 1) return;
+        const filtered = rooms.filter((r) => r.id !== roomId);
+        setRooms(filtered);
+        if (activeRoomId === roomId) {
+            setActiveRoomId(filtered[0]?.id);
+        }
+    };
+
+    const handleNextRoom = () => {
+        if (activeRoomIndex < rooms.length - 1) {
+            setActiveRoomId(rooms[activeRoomIndex + 1].id);
+        }
+    };
+
+    const handlePrevRoom = () => {
+        if (activeRoomIndex > 0) {
+            setActiveRoomId(rooms[activeRoomIndex - 1].id);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleSaveAndClose = async () => {
+        await saveSheet(rooms);
+        onClose();
     };
 
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Ready Size Confirmation : ${item?.code || ''}`}
-            subtitle={`Capture & confirm final ready sizes, pelmets, tracks, and versioned site measurements for ${item?.clientName || ''}`}
-            size="xl"
+            title={
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                        Site Detail Sheet (Production Room Sheets)
+                    </span>
+                    <Badge tone="blue" className="font-mono text-xs">
+                        {item?.code || ''}
+                    </Badge>
+                    <Badge tone="slate" className="text-xs">
+                        {item?.clientName || ''}
+                    </Badge>
+                </div>
+            }
+            size="full"
+            footer={
+                <div className="flex items-center justify-between w-full gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>
+                            Active: <strong className="text-slate-800 dark:text-slate-200">{activeRoom?.roomTitle || activeRoom?.sheetName}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>Sheet <strong>{activeRoom?.sheetNo}</strong> of <strong>{rooms.length}</strong></span>
+                        <span>•</span>
+                        <span>Treatments: <strong>{activeRoom?.items?.length || 0}</strong></span>
+                        {savedSuccess && (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold ml-2 animate-in fade-in">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Saved to Lead
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            icon={Printer}
+                            onClick={handlePrint}
+                            title="Print current room sheet"
+                        >
+                            Print Sheet
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            icon={Save}
+                            loading={saving}
+                            onClick={() => saveSheet(rooms)}
+                        >
+                            Save Changes
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSaveAndClose}
+                            loading={saving}
+                        >
+                            Save & Close
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={onClose}
+                        >
+                            Close
+                        </Button>
+                    </div>
+                </div>
+            }
         >
-            <form onSubmit={submit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
-                {error && (
-                    <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg">
-                        {error?.message || String(error)}
+            <div className="space-y-4">
+                {/* Print specific style tag to cleanly isolate room sheet on paper */}
+                <style>{`
+                    @media print {
+                        body * { visibility: hidden !important; }
+                        #site-detail-single-room-sheet, #site-detail-single-room-sheet * { visibility: visible !important; }
+                        #site-detail-single-room-sheet {
+                            position: absolute !important;
+                            left: 0 !important;
+                            top: 0 !important;
+                            width: 100% !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            border: none !important;
+                            box-shadow: none !important;
+                            transform: scale(0.9) !important;
+                            transform-origin: top left !important;
+                        }
+                    }
+                `}</style>
+
+                {/* Error Alert */}
+                {saveError && (
+                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>Failed to save site detail sheet: {saveError.message || 'Please try again.'}</span>
                     </div>
                 )}
 
-                {/* Section 1: Ready Size Due, Confirmed By, Confirmation Date, Site Condition */}
-                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                        <CheckSquare className="w-4 h-4 text-blue-500" />
-                        1. Confirmation Header & Site Condition
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Field label="Ready Size Due (Date Picker)">
-                            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                        </Field>
-
-                        <Field label="Site Condition (Dropdown)">
-                            <Select
-                                value={siteCondition}
-                                onChange={(e) => setSiteCondition(e.target.value)}
-                                options={SITE_CONDITION_OPTIONS}
-                            />
-                        </Field>
-
-                        <Field label="Confirmation Date & Time">
-                            <div className="flex gap-1.5">
-                                <Input
-                                    type="datetime-local"
-                                    value={confirmationDate}
-                                    onChange={(e) => setConfirmationDate(e.target.value)}
-                                />
-                            </div>
-                        </Field>
+                {/* Top Control Header: Room Switcher & Main Tab Switcher */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                    {/* View Modes Tabs */}
+                    <div className="flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-lg">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('preview')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                                activeTab === 'preview'
+                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            <span>Site Sheet Preview</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('edit')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                                activeTab === 'edit'
+                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit Room Sheet</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('all-rooms')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                                activeTab === 'all-rooms'
+                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>All Rooms ({rooms.length})</span>
+                        </button>
                     </div>
-                    <Field label="Ready Size Confirmed By">
-                        <MultiSelectUsersControl
-                            selectedUsers={confirmedBy}
-                            users={users}
-                            onChange={setConfirmedBy}
-                        />
-                    </Field>
-                </Panel>
 
-                {/* Section 2: Repeatable Window Size Subform */}
-                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                    <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                            <Ruler className="w-4 h-4 text-blue-500" />
-                            2. Window Size
-                        </h4>
-                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddWindow}>
-                            Add Window Size
+                    {/* Room Quick Nav (Prev / Next) */}
+                    <div className="flex items-center gap-1 text-xs">
+                        <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={handlePrevRoom}
+                            disabled={activeRoomIndex <= 0}
+                            title="Previous Room"
+                        >
+                            ← Prev Room
+                        </Button>
+                        <span className="font-mono text-[11px] px-2 text-slate-500 font-semibold">
+                            {activeRoomIndex + 1} / {rooms.length}
+                        </span>
+                        <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={handleNextRoom}
+                            disabled={activeRoomIndex >= rooms.length - 1}
+                            title="Next Room"
+                        >
+                            Next Room →
                         </Button>
                     </div>
+                </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
-                                    <th className="p-2">Room Name</th>
-                                    <th className="p-2">Window ID</th>
-                                    <th className="p-2">Width (Numeric)</th>
-                                    <th className="p-2">Height (Numeric)</th>
-                                    <th className="p-2">Unit</th>
-                                    <th className="p-2 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                {windowSizes.map((win) => (
-                                    <tr key={win.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                                        <td className="p-1.5 min-w-[140px]">
-                                            <Input
-                                                value={win.room}
-                                                onChange={(e) => handleWindowChange(win.id, 'room', e.target.value)}
-                                                placeholder="e.g. Living Room"
-                                            />
-                                        </td>
-                                        <td className="p-1.5 min-w-[100px]">
-                                            <Input
-                                                value={win.windowId}
-                                                onChange={(e) => handleWindowChange(win.id, 'windowId', e.target.value)}
-                                                placeholder="e.g. W-01"
-                                            />
-                                        </td>
-                                        <td className="p-1.5 min-w-[110px]">
-                                            <Input
-                                                type="number"
-                                                step="any"
-                                                value={win.width}
-                                                onChange={(e) => handleWindowChange(win.id, 'width', e.target.value)}
-                                                placeholder="e.g. 1200"
-                                            />
-                                        </td>
-                                        <td className="p-1.5 min-w-[110px]">
-                                            <Input
-                                                type="number"
-                                                step="any"
-                                                value={win.height}
-                                                onChange={(e) => handleWindowChange(win.id, 'height', e.target.value)}
-                                                placeholder="e.g. 2100"
-                                            />
-                                        </td>
-                                        <td className="p-1.5 w-[90px]">
-                                            <Select
-                                                value={win.unit || 'mm'}
-                                                onChange={(e) => handleWindowChange(win.id, 'unit', e.target.value)}
-                                                options={UNIT_OPTIONS}
-                                            />
-                                        </td>
-                                        <td className="p-1.5 text-right">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="ghost"
-                                                icon={Trash2}
-                                                onClick={() => handleRemoveWindow(win.id)}
-                                                className="text-rose-600 hover:text-rose-700"
-                                            />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Panel>
+                {/* Dedicated Room Selector Pill Navigation Bar */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+                    {rooms.map((r, idx) => {
+                        const isSelected = r.id === activeRoomId;
+                        const itemsCount = Array.isArray(r.items) ? r.items.length : 0;
+                        const isGuestRoom = (r.roomTitle || r.sheetName || '').toLowerCase().includes('guest');
 
-                {/* Section 3: Ready Height Field */}
-                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                        <Ruler className="w-4 h-4 text-emerald-500" />
-                        3. Ready Height
-                    </h4>
+                        return (
+                            <button
+                                key={r.id || idx}
+                                type="button"
+                                onClick={() => setActiveRoomId(r.id)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs whitespace-nowrap transition-all border ${
+                                    isSelected
+                                        ? 'bg-brand-600 text-white border-brand-700 shadow-sm font-semibold'
+                                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/70 font-medium'
+                                }`}
+                            >
+                                <Home className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                                <span>{r.roomTitle || r.sheetName}</span>
+                                <span
+                                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                                        isSelected
+                                            ? 'bg-white/20 text-white font-bold'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                    }`}
+                                >
+                                    Sheet {r.sheetNo || idx + 1}
+                                </span>
+                                {itemsCount > 0 && (
+                                    <span
+                                        className={`px-1 py-0.2 rounded text-[9px] font-bold ${
+                                            isSelected
+                                                ? 'bg-white/30 text-white'
+                                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                        }`}
+                                    >
+                                        {itemsCount} {itemsCount === 1 ? 'item' : 'items'}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Field label="Overall / Default Ready Height (Decimal Value + Unit)">
-                            <Input
-                                value={readyHeightVal}
-                                onChange={(e) => setReadyHeightVal(e.target.value)}
-                                placeholder="e.g. 2100.5 mm / Floor to Ceiling"
-                            />
-                        </Field>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-emerald-500 shrink-0" />
-                            <span>Recorded per window for manufacture allowances and track mounting clearance.</span>
-                        </div>
-                    </div>
-                </Panel>
+                    <Button
+                        size="sm"
+                        variant="dashed"
+                        icon={Plus}
+                        onClick={handleAddRoom}
+                        className="whitespace-nowrap text-xs shrink-0"
+                    >
+                        Add Room Sheet
+                    </Button>
+                </div>
 
-                {/* Section 4: Auto-fetched Pelmet Details & Channel Details Subforms */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Pelmet Details */}
-                    <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-amber-500" />
-                                4. Pelmet Details
-                            </h4>
-                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddPelmet}>
-                                Add Pelmet
+                {/* Main Content Pane */}
+                {activeTab === 'preview' ? (
+                    <SiteDetailSheetView
+                        room={activeRoom}
+                        clientName={item?.clientName}
+                        address={item?.address ? `${item.address.street || ''} ${item.address.city || ''}` : 'A/3-D Amitesh LLP'}
+                        architect={item?.architectName || item?.architect || 'ADID Atelier LLP.'}
+                        siteIncharge={activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant'}
+                        sheetNo={activeRoom?.sheetNo || activeRoomIndex + 1}
+                        totalSheets={rooms.length}
+                        onPrint={handlePrint}
+                        onEditRoom={() => setActiveTab('edit')}
+                    />
+                ) : activeTab === 'edit' ? (
+                    <SiteDetailSheetEditor
+                        room={activeRoom}
+                        onUpdateRoom={handleUpdateActiveRoom}
+                        onSave={() => saveSheet(rooms)}
+                    />
+                ) : (
+                    /* All Rooms Overview Tab */
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                    All Configured Room Sheets ({rooms.length})
+                                </h3>
+                                <p className="text-xs text-slate-500">
+                                    Each room has its own dedicated single sheet invoice for production handoff.
+                                </p>
+                            </div>
+                            <Button size="sm" icon={Plus} onClick={handleAddRoom}>
+                                Add New Room
                             </Button>
                         </div>
 
-                        <div className="space-y-2">
-                            {pelmetDetails.map((pel) => (
-                                <div key={pel.id} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2 text-xs">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                            value={pel.room || ''}
-                                            onChange={(e) => handlePelmetChange(pel.id, 'room', e.target.value)}
-                                            placeholder="Room Name"
-                                        />
-                                        <Input
-                                            value={pel.pelmetType || ''}
-                                            onChange={(e) => handlePelmetChange(pel.id, 'pelmetType', e.target.value)}
-                                            placeholder="Pelmet Type / Material"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <Input
-                                            type="number"
-                                            value={pel.width || ''}
-                                            onChange={(e) => handlePelmetChange(pel.id, 'width', e.target.value)}
-                                            placeholder="Width (mm)"
-                                        />
-                                        <Input
-                                            type="number"
-                                            value={pel.depth || ''}
-                                            onChange={(e) => handlePelmetChange(pel.id, 'depth', e.target.value)}
-                                            placeholder="Depth (mm)"
-                                        />
-                                        <div className="flex items-center justify-between">
-                                            <Badge tone="amber">Rev #{pel.revision || 1}</Badge>
-                                            <Button type="button" size="sm" variant="ghost" icon={Trash2} onClick={() => handleRemovePelmet(pel.id)} />
-                                        </div>
-                                    </div>
-                                    <Input
-                                        value={pel.notes || ''}
-                                        onChange={(e) => handlePelmetChange(pel.id, 'notes', e.target.value)}
-                                        placeholder="Revision notes / site changes..."
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </Panel>
-
-                    {/* Channel Details */}
-                    <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-indigo-500" />
-                                5. Channel Details
-                            </h4>
-                            <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddChannel}>
-                                Add Channel
-                            </Button>
-                        </div>
-
-                        <div className="space-y-2">
-                            {channelDetails.map((chn) => (
-                                <div key={chn.id} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2 text-xs">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                            value={chn.room || ''}
-                                            onChange={(e) => handleChannelChange(chn.id, 'room', e.target.value)}
-                                            placeholder="Room Name"
-                                        />
-                                        <Input
-                                            value={chn.channelType || ''}
-                                            onChange={(e) => handleChannelChange(chn.id, 'channelType', e.target.value)}
-                                            placeholder="Channel Type / Track Spec"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <Input
-                                            type="number"
-                                            value={chn.trackLength || ''}
-                                            onChange={(e) => handleChannelChange(chn.id, 'trackLength', e.target.value)}
-                                            placeholder="Track Length (mm)"
-                                        />
-                                        <Input
-                                            value={chn.mounting || ''}
-                                            onChange={(e) => handleChannelChange(chn.id, 'mounting', e.target.value)}
-                                            placeholder="Mounting (Ceiling/Wall)"
-                                        />
-                                        <div className="flex items-center justify-between">
-                                            <Badge tone="indigo">Rev #{chn.revision || 1}</Badge>
-                                            <Button type="button" size="sm" variant="ghost" icon={Trash2} onClick={() => handleRemoveChannel(chn.id)} />
-                                        </div>
-                                    </div>
-                                    <Input
-                                        value={chn.notes || ''}
-                                        onChange={(e) => handleChannelChange(chn.id, 'notes', e.target.value)}
-                                        placeholder="Revision notes / track adjustments..."
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </Panel>
-                </div>
-
-                {/* Section 5: Versioned Measurement Grid */}
-                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b pb-2 border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-emerald-500" />
-                        6. Final Measurements
-                    </h4>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
-                                    <th className="p-2">Room & Window</th>
-                                    <th className="p-2">Previous Measurement</th>
-                                    <th className="p-2">Confirmed Width</th>
-                                    <th className="p-2">Confirmed Height</th>
-                                    <th className="p-2">Variance / Deviation</th>
-                                    <th className="p-2">Version</th>
-                                    <th className="p-2">Notes & Adjustments</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                {finalMeasurementsGrid.map((gridRow) => (
-                                    <tr key={gridRow.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                                        <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                                            {gridRow.room} ({gridRow.windowId})
-                                        </td>
-                                        <td className="p-1.5 font-mono text-slate-500">
-                                            {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
-                                        </td>
-                                        <td className="p-1.5 w-[110px]">
-                                            <Input
-                                                type="number"
-                                                value={gridRow.confirmedWidth}
-                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedWidth', e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="p-1.5 w-[110px]">
-                                            <Input
-                                                type="number"
-                                                value={gridRow.confirmedHeight}
-                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedHeight', e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="p-1.5">
-                                            {calculateVariance(gridRow.previousWidth, gridRow.previousHeight, gridRow.confirmedWidth, gridRow.confirmedHeight, gridRow.unit || 'mm')}
-                                        </td>
-                                        <td className="p-1.5">
-                                            <Badge tone="emerald">{gridRow.version || 'v2.0'}</Badge>
-                                        </td>
-                                        <td className="p-1.5 min-w-[160px]">
-                                            <Input
-                                                value={gridRow.notes || ''}
-                                                onChange={(e) => handleGridChange(gridRow.id, 'notes', e.target.value)}
-                                                placeholder="Confirmation notes..."
-                                            />
-                                        </td>
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 uppercase font-semibold text-[10px]">
+                                    <tr>
+                                        <th className="p-3 w-16 text-center">Sheet #</th>
+                                        <th className="p-3">Room Name</th>
+                                        <th className="p-3">Site Incharge</th>
+                                        <th className="p-3 text-center">Treatments</th>
+                                        <th className="p-3">Primary Treatments</th>
+                                        <th className="p-3 text-right">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Panel>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {rooms.map((r, idx) => {
+                                        const count = Array.isArray(r.items) ? r.items.length : 0;
+                                        const treatmentNames = (r.items || []).map((it) => it.type).filter(Boolean).slice(0, 3).join(', ');
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-950 p-2 z-10">
-                    <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
-                    <Button variant="primary" type="submit" loading={pending} icon={CheckCircle2}>Save Ready Size Details</Button>
-                </div>
-            </form>
+                                        return (
+                                            <tr key={r.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                                                <td className="p-3 font-mono font-bold text-center text-slate-600">
+                                                    {r.sheetNo || idx + 1}
+                                                </td>
+                                                <td className="p-3 font-bold text-slate-900 dark:text-slate-100">
+                                                    {r.roomTitle || r.sheetName}
+                                                </td>
+                                                <td className="p-3 text-slate-600 dark:text-slate-400">
+                                                    {r.siteIncharge || 'Amit / Ashish / Sachin / Hemant'}
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <Badge tone={count > 0 ? 'emerald' : 'slate'}>
+                                                        {count} {count === 1 ? 'treatment' : 'treatments'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="p-3 text-slate-500 truncate max-w-xs">
+                                                    {treatmentNames || '—'}
+                                                </td>
+                                                <td className="p-3 text-right space-x-1.5">
+                                                    <Button
+                                                        size="xs"
+                                                        variant="secondary"
+                                                        icon={FileSpreadsheet}
+                                                        onClick={() => {
+                                                            setActiveRoomId(r.id);
+                                                            setActiveTab('preview');
+                                                        }}
+                                                    >
+                                                        Preview Sheet
+                                                    </Button>
+                                                    <Button
+                                                        size="xs"
+                                                        variant="outline"
+                                                        icon={Pencil}
+                                                        onClick={() => {
+                                                            setActiveRoomId(r.id);
+                                                            setActiveTab('edit');
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    {rooms.length > 1 && (
+                                                        <Button
+                                                            size="xs"
+                                                            variant="ghost"
+                                                            icon={Trash2}
+                                                            onClick={() => handleDeleteRoom(r.id)}
+                                                            className="text-rose-500 hover:text-rose-600"
+                                                        />
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
         </Modal>
     );
 };
@@ -972,7 +1053,15 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Ready Size" />
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            icon={FileSpreadsheet}
+                                            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+                                            title="Open Room-wise Site Detail Sheet Preview"
+                                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                        />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Site Detail Sheet" />
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Lead Details" />
                                     </div>
                                 </td>
@@ -1033,19 +1122,30 @@ const ReadySize = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const studioCompletedLeads = rawLeads.filter((lead) =>
-        Boolean(
-            lead.studioMeeting?.date ||
-            lead.studioMeeting?.feedback ||
-            lead.studioMeeting?.nextAction ||
-            lead.studioMeeting?.attendees ||
-            lead.studioMeeting?.pricingRange ||
+    const productionLeads = rawLeads.filter((lead) => {
+        const hasKycProgress = Boolean(
+            lead.kyc?.status === 'Verified' ||
+            lead.kyc?.status === 'VERIFIED' ||
+            lead.kyc?.verificationDate ||
+            lead.kyc?.actualDate ||
+            lead.kyc?.billingLegalName ||
+            lead.kyc?.gstin ||
+            lead.approval?.clientApprovalStatus === 'APPROVED' ||
+            lead.clientApprovalStatus === 'APPROVED'
+        );
+        const hasSiteDetailActivity = Boolean(
+            lead.readySize?.siteDetailSheetGoogleLink ||
+            (Array.isArray(lead.readySize?.siteDetailSheetAttachments) && lead.readySize.siteDetailSheetAttachments.length > 0) ||
+            lead.readySize?.designPpt ||
+            lead.readySize?.selectionPpt ||
             lead.readySize?.confirmationDate ||
-            lead.readySize?.dueDate
-        )
-    );
+            lead.readySize?.dueDate ||
+            lead.studioMeeting?.date
+        );
+        return hasKycProgress || hasSiteDetailActivity;
+    });
 
-    const filteredLeads = studioCompletedLeads.filter((lead) => {
+    const filteredLeads = productionLeads.filter((lead) => {
         if (search) {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
@@ -1058,23 +1158,31 @@ const ReadySize = ({ items: itemsProp = [] }) => {
         return true;
     });
 
-    const totalCount = studioCompletedLeads.length;
-    const confirmedCount = studioCompletedLeads.filter((l) => l.readySize?.confirmationDate).length;
-    const pendingConfirmation = studioCompletedLeads.filter((l) => l.readySize?.dueDate && !l.readySize?.confirmationDate).length;
-    const roomsReadyCount = studioCompletedLeads.filter((l) => Boolean(l.readySize?.readyHeight || l.readySize?.siteCondition)).length;
+    const totalCount = productionLeads.length;
+    const sheetLinkedCount = productionLeads.filter((l) =>
+        Boolean(l.readySize?.siteDetailSheetGoogleLink || (Array.isArray(l.readySize?.siteDetailSheetAttachments) && l.readySize.siteDetailSheetAttachments.length > 0))
+    ).length;
+    const pptsAttachedCount = productionLeads.filter((l) => {
+        const dp = l.readySize?.designPpt;
+        const sp = l.readySize?.selectionPpt;
+        const hasD = dp && (dp.link || dp.url || (Array.isArray(dp.files) && dp.files.length > 0) || (Array.isArray(dp.attachments) && dp.attachments.length > 0));
+        const hasS = sp && (sp.link || sp.url || (Array.isArray(sp.files) && sp.files.length > 0) || (Array.isArray(sp.attachments) && sp.attachments.length > 0));
+        return hasD || hasS;
+    }).length;
+    const confirmedCount = productionLeads.filter((l) => Boolean(l.readySize?.confirmationDate)).length;
 
     return (
         <div>
             <PageHeader
-                title="Ready Size Confirmation (Window & Site Details)"
-                subtitle="Track site & window details, ready heights, final measurement confirmations, pelmets, and channel specifications"
+                title="Site Detail Sheet"
+                subtitle="Final site detail sheet, production inputs, window dimensions, pelmet & track specifications, Design PPT, and Selection PPT for production handoff"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Total Window Leads" value={totalCount} sub="Active site windows" icon={CheckSquare} tone="blue" />
-                <StatTile label="Confirmed Sizes" value={confirmedCount} sub="Ready for production" icon={CheckCircle2} tone="green" />
-                <StatTile label="Pending Confirmations" value={pendingConfirmation} sub="Awaiting site verification" icon={Calendar} tone="amber" />
-                <StatTile label="Rooms / Heights Ready" value={roomsReadyCount} sub="Site conditions met" icon={Home} tone="violet" />
+                <StatTile label="Production Handoff Pipeline" value={totalCount} sub="Clients ready for production" icon={CheckSquare} tone="blue" />
+                <StatTile label="Site Sheets Linked" value={sheetLinkedCount} sub="Google / XLS sheets ready" icon={FileSpreadsheet} tone="green" />
+                <StatTile label="Design & Selection PPTs" value={pptsAttachedCount} sub="PowerPoints attached" icon={Presentation} tone="amber" />
+                <StatTile label="Production Confirmed" value={confirmedCount} sub="Final measurements signed" icon={CheckCircle2} tone="violet" />
             </div>
 
             <Panel className="mb-4">
@@ -1106,13 +1214,13 @@ const ReadySize = ({ items: itemsProp = [] }) => {
 
             {loading ? (
                 <Panel className="p-12 text-center">
-                    <Loading text="Loading Ready Size Details..." />
+                    <Loading text="Loading Site Detail Sheet..." />
                 </Panel>
             ) : error ? (
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={CheckSquare} title="No Ready Size Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState icon={FileSpreadsheet} title="No Site Detail Records Found" hint="Complete Customer KYC to begin production handoff." />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -1128,7 +1236,7 @@ const ReadySize = ({ items: itemsProp = [] }) => {
                     )}
                     empty={
                         <Panel className="p-8 text-center">
-                            <EmptyState icon={CheckSquare} title="No Ready Size Records Found" hint="Try adjusting search parameters." />
+                            <EmptyState icon={FileSpreadsheet} title="No Site Detail Records Found" hint="Complete Customer KYC to begin production handoff." />
                         </Panel>
                     }
                 />

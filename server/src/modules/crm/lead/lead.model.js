@@ -113,7 +113,7 @@ const leadSchema = new mongoose.Schema(
       pricingRange: String,
     },
 
-    // --- Sales & Commercials: Room readiness / ready size.
+    // --- Sales & Commercials: Room readiness / ready size / site detail sheet.
     readySize: {
       roomReadiness: String,
       dueDate: Date,
@@ -126,6 +126,18 @@ const leadSchema = new mongoose.Schema(
       channelDetails: mongoose.Schema.Types.Mixed,
       readyHeight: mongoose.Schema.Types.Mixed,
       finalMeasurements: mongoose.Schema.Types.Mixed,
+      siteDetailSheetGoogleLink: String,
+      siteDetailSheetAttachments: [attachmentSchema],
+      designPpt: mongoose.Schema.Types.Mixed,
+      selectionPpt: mongoose.Schema.Types.Mixed,
+      siteDetailRooms: mongoose.Schema.Types.Mixed,
+      siteDetailSheet: mongoose.Schema.Types.Mixed,
+      productionNotes: String,
+      productionHandoffStatus: {
+        type: String,
+        enum: ['PENDING', 'READY_FOR_PRODUCTION', 'HANDED_OVER'],
+        default: 'PENDING',
+      },
     },
 
     // --- Sales & Commercials: Consumption / BOQ.
