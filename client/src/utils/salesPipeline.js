@@ -51,3 +51,32 @@ export const getNextStageUrl = (currentStageKey, leadCode = '') => {
     url: `${next.path}${search}`
   };
 };
+
+/**
+ * Calculate pricing totals from quotation fields (subtotal, discount, taxes, finalQuotedValue).
+ */
+export const calculateQuotationTotals = (q = {}) => {
+  const cataloguePrice = Number(q.cataloguePrice || 0);
+  const labourPrice = Number(q.labourPrice || 0);
+  const samplePrice = Number(q.samplePrice || 0);
+  const subtotal = cataloguePrice + labourPrice + samplePrice;
+
+  const discountPercent = Number(q.discount || 0);
+  const discountAmount = (subtotal * discountPercent) / 100;
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+
+  const taxRate = Number(q.taxes ?? 18);
+  const taxAmount = (taxableAmount * taxRate) / 100;
+  const finalQuotedValue = taxableAmount + taxAmount;
+
+  return {
+    subtotal,
+    discountPercent,
+    discountAmount,
+    taxableAmount,
+    taxRate,
+    taxAmount,
+    finalQuotedValue,
+  };
+};
+
