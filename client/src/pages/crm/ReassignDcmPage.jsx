@@ -640,7 +640,7 @@ export const ReassignDcmPage = () => {
                               onClick={() => setReassigningItem(row)}
                               className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
                             >
-                              Assign DCM
+                              Reassign DCM
                             </Button>
                           </td>
                         </tr>

@@ -1043,7 +1043,6 @@ export const LeadsPage = () => {
                       onView={(l) => setViewingLead(l)}
                       onEdit={(l) => setEditing(l)}
                       onDelete={(l) => setDeleting(l)}
-                      onReassign={(l) => setReassigningLead(l)}
                     />
                   )}
                   empty={
@@ -1186,16 +1185,6 @@ export const LeadsPage = () => {
                           </td>
                           <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                icon={UserCheck}
-                                onClick={() => setReassigningLead(row)}
-                                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-                                title="Assign DCM"
-                              >
-                                Assign DCM
-                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"

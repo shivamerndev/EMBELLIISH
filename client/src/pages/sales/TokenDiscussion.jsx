@@ -393,7 +393,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Edit Token Discussion & Commercial Details — ${item?.clientName || item?.code}`}
+            title={`Advance Received Details — ${item?.clientName || item?.code}`}
             subtitle="Configure project value, advance collected amount, status, and received date & time."
             size="lg"
             footer={

@@ -103,18 +103,6 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
         <span className="text-[10px] text-slate-400 font-mono">{formattedDate}</span>
 
         <div className="flex items-center gap-1.5">
-          {onReassign && (
-            <Button
-              size="sm"
-              variant="secondary"
-              icon={UserCheck}
-              onClick={() => onReassign(lead)}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-              title="Assign DCM"
-            >
-              Assign DCM
-            </Button>
-          )}
           <Button
             size="sm"
             variant="ghost"
