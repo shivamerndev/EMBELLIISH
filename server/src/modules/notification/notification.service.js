@@ -9,7 +9,7 @@ import { ROLE_PERMISSIONS } from '../../constants/roles.constants.js';
 
 
 /**
- * Module 19 — Notifications.
+ * Module 19 : Notifications.
  *
  * Two halves. `notify.*` is the write side other modules call when something
  * happened; the query methods below are what the bell icon reads.
@@ -77,7 +77,7 @@ class NotificationService {
     }
   }
 
-  /** Tell whoever can act on this — "accounts", "the factory", "the founder". */
+  /** Tell whoever can act on this : "accounts", "the factory", "the founder". */
   async toPermission(permission, payload, triggeredBy) {
     return this.send(await usersWithPermission(permission), payload, triggeredBy);
   }

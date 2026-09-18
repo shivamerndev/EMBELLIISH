@@ -256,7 +256,7 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
     <Modal
       open={Boolean(item)}
       onClose={onClose}
-      title={`Update DCM Assignment — ${item?.clientName || ''}`}
+      title={`Update DCM Assignment : ${item?.clientName || ''}`}
       size="xl"
       footer={
         <>
@@ -279,7 +279,7 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
                 { value: '', label: '-- Select DCM / Manager --' },
                 ...dcmList.map((d) => ({
                   value: d.name,
-                  label: `${d.name} — ${humanise(d.role || 'DCM')}`,
+                  label: `${d.name} : ${humanise(d.role || 'DCM')}`,
                 })),
               ]}
               required
@@ -495,7 +495,7 @@ export const DcmAssignmentPage = () => {
   return (
     <div>
       <PageHeader
-        title="CRM — DCM Capacity & Lead Assignment"
+        title="CRM : DCM Capacity & Lead Assignment"
         subtitle="Dedicated portal for managing DCM workloads, lead priorities, assignment dates, capacity statuses, and reassignments"
       />
 

@@ -12,7 +12,7 @@ const startServer = async () => {
 
   // Finish in-flight requests before closing the database.
   const shutdown = async (signal) => {
-    logger.info(`${signal} received — shutting down`);
+    logger.info(`${signal} received : shutting down`);
     server.close(async () => {
       await disconnectDB();
       process.exit(0);

@@ -21,7 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's11',
         title: 'Quotation Preparation & Master Fields',
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'quotation.dueDate', label: 'Quotation Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -41,7 +41,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'quotation.fabricSelection', label: 'Fabric Selection' },
             { key: 'quotation.marginRules', label: 'Margin Rules' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'quotation.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },

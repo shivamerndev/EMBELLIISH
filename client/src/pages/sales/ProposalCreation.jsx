@@ -21,7 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's8',
         title: 'Proposal Creation',
         color: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/90 dark:text-sky-200 dark:border-sky-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'proposal.dueDate', label: 'Proposal Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -35,7 +35,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'proposal.terms', label: 'Terms' },
             { key: 'proposal.refundRevisionClause', label: 'Refund / Revision Clause' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'proposal.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -980,6 +980,17 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                     </button>
                                 </div>
                             ))}
+
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                                Source: Studio Meeting / Pre-Site Visit
+                            </p>
+                            <Textarea
+                                rows={4}
+                                value={form.clientBrief}
+                                onChange={set('clientBrief')}
+                                placeholder="Client requirements, preferences, drape styles, motorization details..."
+                            />
                         </div>
                     </div>
 

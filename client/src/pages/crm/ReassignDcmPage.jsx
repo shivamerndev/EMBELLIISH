@@ -120,8 +120,8 @@ const DcmCapacityBadge = ({ value }) => {
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-2xs transition-colors ${isAvailable
-          ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
-          : 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
+        ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
+        : 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
         }`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`} />
@@ -288,7 +288,7 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
                 { value: '', label: '-- Select New DCM / Manager --' },
                 ...dcmList.map((d) => ({
                   value: d.name,
-                  label: `${d.name} — ${humanise(d.role || 'DCM')}`,
+                  label: `${d.name} : ${humanise(d.role || 'DCM')}`,
                 })),
               ]}
               required
@@ -344,15 +344,15 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
                   type="button"
                   onClick={() => handleSelectDcm(dcm.name)}
                   className={`text-left p-2.5 rounded-lg border text-xs transition-all duration-150 flex items-center justify-between gap-2 ${isSelected
-                      ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-xs'
-                      : 'border-stone-200 dark:border-[#2e251e] bg-white dark:bg-[#1a1512] hover:border-amber-500/40 hover:bg-stone-50 dark:hover:bg-[#251e18]'
+                    ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-xs'
+                    : 'border-stone-200 dark:border-[#2e251e] bg-white dark:bg-[#1a1512] hover:border-amber-500/40 hover:bg-stone-50 dark:hover:bg-[#251e18]'
                     }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${isSelected
-                          ? 'bg-amber-600 text-white'
-                          : 'bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300'
                         }`}
                     >
                       {initials}

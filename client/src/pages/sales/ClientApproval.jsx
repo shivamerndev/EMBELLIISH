@@ -20,7 +20,13 @@ import {
     Layers,
     X,
     FileText,
-    Check
+    Check,
+    UploadCloud,
+    Filter,
+    FolderOpen,
+    AlertCircle,
+    ChevronDown,
+    Download
 } from 'lucide-react';
 import { date, getErrorMessage, getLocalDate } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
@@ -36,10 +42,12 @@ import { useAction } from '../../hooks/useAsync';
 const SPREADSHEET_SECTIONS = [
     {
         id: 's12',
-        title: 'Client Approval',
-        color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/90 dark:text-orange-200 dark:border-orange-700/80',
-        // All fields — shown in DetailedDrawer
+        title: 'Client Approval & Sign-Off',
+        color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
+        // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead Code' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'approval.planned', label: 'Approval Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'approval.clientApprovalDate', label: 'Client Approval Date' },
@@ -54,13 +62,14 @@ const SPREADSHEET_SECTIONS = [
             { key: 'presentation.revisionNotes', label: 'Revision Notes' },
             { key: 'approval.revisions', label: 'Revision History Log' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling while showing essential context
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'approval.planned', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'approval.clientApprovalStatus', label: 'Approval Status' },
             { key: 'approval.clientApprovalDate', label: 'Approval Date' },
-            { key: 'approval.finalApprovedVersion', label: 'Version' },
+            { key: 'approval.finalApprovedVersion', label: 'Approved Version' },
         ]
     }
 ];
@@ -76,6 +85,15 @@ const ROOM_OPTIONS = [
     'Home Theater',
     'Guest Room',
     'General / Whole Site'
+];
+
+const STATUS_FILTER_OPTIONS = [
+    { value: 'ALL', label: 'All Statuses' },
+    { value: 'PENDING', label: 'Pending Approval' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
+    { value: 'ON_HOLD', label: 'On Hold' },
+    { value: 'DECLINED', label: 'Declined' },
 ];
 
 const getNestedVal = (obj, path) => {
@@ -99,7 +117,7 @@ const parseClientSelections = (raw) => {
     } catch (e) {
         // string fallback
     }
-    return [{ item: String(raw), quantity: 1, room: 'General', remarks: '' }];
+    return [{ item: String(raw), quantity: 1, room: 'General / Whole Site', remarks: '' }];
 };
 
 const parseFabricSelections = (raw) => {
@@ -153,16 +171,16 @@ const SPREADSHEET_CELL_RENDERERS = {
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-300 text-left truncate block max-w-[160px]"
+            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-300 text-left truncate block max-w-[180px] transition-colors"
             title={lead.clientName}
         >
-            {lead.clientName}
+            {lead.clientName || '—'}
         </button>
     ),
     'approval.planned': (lead) => {
         const planned = lead.approval?.planned;
-        if (!planned) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="text-slate-700 dark:text-slate-300 text-xs font-medium whitespace-nowrap">{date(planned)}</span>;
+        if (!planned) return <span className="text-slate-400 dark:text-slate-600 italic">Not set</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-xs font-medium whitespace-nowrap">{date(planned, { time: false })}</span>;
     },
     'approval.clientApprovalDate': (lead) => {
         const appDate = lead.approval?.clientApprovalDate;
@@ -177,7 +195,7 @@ const SPREADSHEET_CELL_RENDERERS = {
 
         switch (st) {
             case 'APPROVED':
-                tone = 'emerald';
+                tone = 'green';
                 label = 'APPROVED';
                 break;
             case 'REVISION_REQUESTED':
@@ -199,7 +217,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         }
 
         return (
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-1.5">
                 <Badge tone={tone}>{label}</Badge>
                 {revCount > 0 && (
                     <Badge tone="amber">
@@ -223,11 +241,10 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isApproved = lead.approval?.clientApprovalStatus === 'APPROVED';
         if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold ${
-                isApproved
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${isApproved
                     ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
                     : 'bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-            }`}>
+                }`}>
                 {isApproved && <Lock className="w-2.5 h-2.5 shrink-0 text-emerald-600 dark:text-emerald-400" />}
                 {ver}
             </span>
@@ -368,13 +385,13 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
                         setOpen(true);
                     }}
                     onFocus={() => setOpen(true)}
-                    placeholder="Search fabric catalogue or type name..."
+                    placeholder="Search catalogue or type custom fabric..."
                     className="pr-8 text-xs"
                 />
                 <button
                     type="button"
                     onClick={() => setOpen(!open)}
-                    className="absolute right-2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 >
                     <Layers className="w-3.5 h-3.5" />
                 </button>
@@ -382,18 +399,18 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
 
             {open && (
                 <>
-                    <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-                    <div className="absolute z-30 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+                    <div className="absolute z-40 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                         {filtered.length > 0 ? (
                             filtered.map((fab, idx) => (
                                 <button
                                     key={idx}
                                     type="button"
                                     onClick={() => handleSelect(fab)}
-                                    className="w-full text-left px-3 py-2 hover:bg-brand-50 dark:hover:bg-slate-800/80 transition flex items-center justify-between"
+                                    className="w-full text-left px-3 py-2 hover:bg-brand-50 dark:hover:bg-slate-800/80 transition flex items-center justify-between group"
                                 >
                                     <div>
-                                        <div className="font-semibold text-slate-800 dark:text-slate-200">
+                                        <div className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400">
                                             {fab.name || fab.title || fab.fabricName || fab}
                                         </div>
                                         {fab.composition && (
@@ -411,7 +428,7 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
                             ))
                         ) : (
                             <div className="p-3 text-slate-500 text-center italic text-xs">
-                                No matching catalog fabric. Press enter or leave text as custom entry.
+                                No matching catalog fabric. Press enter to save as custom entry.
                             </div>
                         )}
                     </div>
@@ -420,8 +437,6 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
         </div>
     );
 };
-
-
 
 const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const wasApproved = item?.approval?.clientApprovalStatus === 'APPROVED';
@@ -438,6 +453,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             return '';
         }
     };
+
+    const [activeTab, setActiveTab] = useState('approval');
 
     const [form, setForm] = useState({
         planned: item?.approval?.planned || '',
@@ -464,7 +481,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     // Revision / Change-Control state
     const [revisionReason, setRevisionReason] = useState('');
     const [validationError, setValidationError] = useState('');
-    const [showRevisionsHistory, setShowRevisionsHistory] = useState(false);
+    const [showRevisionsHistory, setShowRevisionsHistory] = useState(true);
 
     useEffect(() => {
         fabricsApi
@@ -478,7 +495,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                 setFabricCatalog([
                     { name: 'Linen Sheer White', code: 'FAB-LIN-01', composition: '100% Linen Sheer', color: 'White' },
                     { name: 'Silk Velvet Navy', code: 'FAB-VEL-02', composition: 'Premium Velvet', color: 'Navy Blue' },
-                    { name: 'Motorized Blackout Sheer', code: 'FAB-[#836444]-03', composition: 'Poly-Blackout', color: 'Charcoal' },
+                    { name: 'Motorized Blackout Sheer', code: 'FAB-BLK-03', composition: 'Poly-Blackout', color: 'Charcoal' },
                     { name: 'Cotton Satin Beige', code: 'FAB-SAT-04', composition: 'Cotton Satin Blend', color: 'Beige' },
                     { name: 'Jacquard Floral Weave', code: 'FAB-JAC-05', composition: 'Jacquard Brocade', color: 'Gold/Champagne' }
                 ]);
@@ -626,6 +643,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
         if (wasApproved && changesInEffect) {
             if (!revisionReason.trim()) {
                 setValidationError('Mandatory: A Revision Reason / Change-Control Description is required when modifying an approved client selection.');
+                setActiveTab('approval');
                 return;
             }
         }
@@ -638,7 +656,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
         if (isNegativeOrHold) {
             const hasNotes = (finalNotes && finalNotes.trim()) || (revisionReason && revisionReason.trim());
             if (!hasNotes) {
-                setValidationError('A reason is required for declined, rejected, or on-hold approval.');
+                setValidationError('A reason or revision note is required for declined, rejected, or on-hold approval.');
                 return;
             }
         }
@@ -719,159 +737,254 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             },
         };
 
-        const leadId = item?._id || item?.id;
-        console.log("Client Approval lead ID:", leadId);
-        console.log("Client Approval payload:", payload);
-
         execute(payload);
     };
 
     const revisionsList = item?.approval?.revisions || [];
+    const activeSelectionsCount = clientSelections.filter((s) => s.item && s.item.trim()).length;
+    const activeFabricsCount = fabricSelections.filter((f) => f.fabric && f.fabric.trim()).length;
+    const totalFilesCount = proofAttachments.length + presentationAttachments.length;
 
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Client Approval & Presentation — ${item?.clientName || item?.code}`}
-            subtitle="Configure approval dates, status, attachments, approved versions, presentations, dynamic selections, fabrics & revision controls."
+            title={`Client Approval & Sign-Off : ${item?.clientName || item?.code}`}
             size="xl"
             footer={
-                <>
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button
-                        loading={pending}
-                        onClick={handleSubmit}
-                    >
-                        {wasApproved && changesInEffect ? 'Trigger Revision & Save' : 'Save Approval Details'}
-                    </Button>
-                </>
+                <div className="flex items-center justify-between w-full">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                        Lead: <strong className="text-slate-700 dark:text-slate-200">{item?.code}</strong>
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button
+                            loading={pending}
+                            onClick={handleSubmit}
+                        >
+                            {wasApproved && changesInEffect ? 'Log Revision & Update' : 'Save Approval Details'}
+                        </Button>
+                    </div>
+                </div>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Modal Navigation Tabs */}
+            <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2 mb-4 overflow-x-auto scrollbar-none">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('approval')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'approval'
+                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        }`}
+                >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Approval & Status</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('attachments')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'attachments'
+                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        }`}
+                >
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>Attachments & Proof</span>
+                    {totalFilesCount > 0 && (
+                        <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-brand-500/20 text-brand-600 dark:text-brand-400 font-bold">
+                            {totalFilesCount}
+                        </span>
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('selections')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'selections'
+                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        }`}
+                >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Selections & Fabrics</span>
+                    {(activeSelectionsCount + activeFabricsCount) > 0 && (
+                        <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-brand-500/20 text-brand-600 dark:text-brand-400 font-bold">
+                            {activeSelectionsCount + activeFabricsCount}
+                        </span>
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('notes')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'notes'
+                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        }`}
+                >
+                    <History className="w-3.5 h-3.5" />
+                    <span>Design & Change Log</span>
+                    {revisionsList.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">
+                            Rev {revisionsList.length}
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
                 {(error || validationError) && (
-                    <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                    <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2.5">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        {validationError || getErrorMessage(error, 'Unable to update client approval')}
+                        <span>{validationError || getErrorMessage(error, 'Unable to update client approval')}</span>
                     </div>
                 )}
 
-                {/* Change Control Warning Banner */}
-                {wasApproved && (
-                    <div className={`p-4 rounded-xl border transition-all space-y-3 ${changesInEffect
-                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-200'
-                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
-                        }`}>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 font-semibold text-xs">
-                                {changesInEffect ? (
-                                    <>
-                                        <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
-                                        <span className="text-amber-800 dark:text-amber-300 font-bold uppercase tracking-wider text-[11px]">
-                                            Approved Record Under Change-Control Review
-                                        </span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                        <span className="text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider text-[11px]">
-                                            Client Approval Secured & Selection Locked
-                                        </span>
-                                    </>
+                {/* TAB 1: APPROVAL & STATUS */}
+                {activeTab === 'approval' && (
+                    <div className="space-y-4">
+                        {/* Change Control Warning Banner */}
+                        {wasApproved && (
+                            <div className={`p-4 rounded-xl border transition-all space-y-3 ${changesInEffect
+                                ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-200'
+                                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
+                                }`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 font-semibold text-xs">
+                                        {changesInEffect ? (
+                                            <>
+                                                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
+                                                <span className="text-amber-800 dark:text-amber-300 font-bold uppercase tracking-wider text-[11px]">
+                                                    Approved Record Under Change-Control Review
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider text-[11px]">
+                                                    Client Approval Secured & Selection Locked
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <Badge tone={changesInEffect ? 'amber' : 'green'}>
+                                        {changesInEffect ? 'REVISION PENDING' : 'LOCKED'}
+                                    </Badge>
+                                </div>
+
+                                <p className="text-xs opacity-90 leading-relaxed">
+                                    {changesInEffect
+                                        ? 'Modifications to an approved selection will automatically log a formal revision snapshot into the audit trail and update the approval state.'
+                                        : 'This quotation was previously approved. Any changes made across parameters or selections require a formal revision reason.'}
+                                </p>
+
+                                {changesInEffect && (
+                                    <Field label="Revision Reason / Change-Control Description *" hint="Mandatory audit trail requirement for post-approval modifications">
+                                        <Input
+                                            value={revisionReason}
+                                            onChange={(e) => {
+                                                setRevisionReason(e.target.value);
+                                                if (validationError) setValidationError('');
+                                            }}
+                                            placeholder="e.g. Client requested alteration of master bedroom drapery fabric from Linen Sheer to Velvet..."
+                                            className="border-amber-400 dark:border-amber-600 focus:border-amber-500 bg-white/90 dark:bg-slate-900 text-xs"
+                                        />
+                                    </Field>
                                 )}
                             </div>
-                            <Badge tone={changesInEffect ? 'amber' : 'emerald'}>
-                                {changesInEffect ? 'REVISION PENDING' : 'LOCKED'}
-                            </Badge>
-                        </div>
-
-                        <p className="text-xs opacity-90 leading-relaxed">
-                            {changesInEffect
-                                ? 'Modifications to an approved selection will log a formal revision entry into the audit trail and update the approval state.'
-                                : 'This proposal was previously approved. Any changes made below require a mandatory revision note.'}
-                        </p>
-
-                        {changesInEffect && (
-                            <Field label="Revision Reason / Change-Control Note *" hint="Mandatory requirement for auditing post-approval modifications">
-                                <Input
-                                    value={revisionReason}
-                                    onChange={(e) => {
-                                        setRevisionReason(e.target.value);
-                                        if (validationError) setValidationError('');
-                                    }}
-                                    placeholder="e.g. Client requested modification of sheer fabric from Linen White to Satin Velvet after initial signoff..."
-                                    className="border-amber-400 dark:border-amber-600 focus:border-amber-500 bg-white/80 dark:bg-slate-900/90 text-xs"
-                                />
-                            </Field>
                         )}
+
+                        {/* Core Approval Schedule & Version Form */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-4">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <Calendar className="w-4 h-4 text-brand-500" />
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                    Schedule & Decision Milestone
+                                </h4>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Approval Due Date" hint="Target SLA date for client decision">
+                                    <Input
+                                        type="date"
+                                        value={form.planned}
+                                        onChange={set('planned')}
+                                        className="text-xs"
+                                    />
+                                </Field>
+                                <Field label="Actual Approval Date & Time" hint="Exact timestamp when sign-off was received">
+                                    <Input
+                                        type="datetime-local"
+                                        value={form.clientApprovalDate}
+                                        onChange={set('clientApprovalDate')}
+                                        className="text-xs"
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                                <Field label="Client Approval Status" hint="Current commercial stage approval status">
+                                    <Select
+                                        value={form.clientApprovalStatus}
+                                        onChange={set('clientApprovalStatus')}
+                                        options={[
+                                            { value: 'PENDING', label: 'Pending Approval' },
+                                            { value: 'APPROVED', label: 'Approved' },
+                                            { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
+                                            { value: 'ON_HOLD', label: 'On Hold' },
+                                            { value: 'DECLINED', label: 'Declined' },
+                                        ]}
+                                    />
+                                </Field>
+
+                                <Field label="Final Approved Proposal / Quotation Version" hint="Linked quotation version reference">
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Select
+                                                value={form.finalApprovedVersion}
+                                                onChange={set('finalApprovedVersion')}
+                                                options={[
+                                                    ...availableVersions.map((v) => ({ value: v, label: v })),
+                                                    { value: form.finalApprovedVersion, label: `Selected: ${form.finalApprovedVersion}` }
+                                                ].filter((v, idx, self) => self.findIndex((t) => t.value === v.value) === idx)}
+                                            />
+                                        </div>
+                                        <Input
+                                            value={form.finalApprovedVersion}
+                                            onChange={set('finalApprovedVersion')}
+                                            placeholder="Or type version tag..."
+                                            className="w-1/2 text-xs font-mono"
+                                        />
+                                    </div>
+                                </Field>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* 1. Approval Schedule & Status Section */}
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4" /> 1. Client Approval & Version Status
-                    </h4>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Approval Due Date" hint="Date picker for obtaining approval">
-                        <Input type="date" value={form.planned} onChange={set('planned')} />
-                    </Field>
-                    <Field label="Client Approval Date & Time" hint="Actual approval date & time picker">
-                        <Input type="datetime-local" value={form.clientApprovalDate} onChange={set('clientApprovalDate')} />
-                    </Field>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Client Approval Status" hint="Dropdown status configuration">
-                        <Select
-                            value={form.clientApprovalStatus}
-                            onChange={set('clientApprovalStatus')}
-                            options={[
-                                { value: 'PENDING', label: 'Pending Approval' },
-                                { value: 'APPROVED', label: 'Approved' },
-                                { value: 'REVISION_REQUESTED', label: 'Revision Requested' },
-                                { value: 'ON_HOLD', label: 'On Hold' },
-                                { value: 'DECLINED', label: 'Declined' },
-                            ]}
-                        />
-                    </Field>
-
-                    <Field label="Final Quotation / Proposal Version Approved" hint="Linked record / version lock selector">
-                        <div className="flex gap-2">
-                            <div className="relative flex-1">
-                                <Select
-                                    value={form.finalApprovedVersion}
-                                    onChange={set('finalApprovedVersion')}
-                                    options={[
-                                        ...availableVersions.map((v) => ({ value: v, label: v })),
-                                        { value: form.finalApprovedVersion, label: `Custom: ${form.finalApprovedVersion}` }
-                                    ].filter((v, idx, self) => self.findIndex((t) => t.value === v.value) === idx)}
-                                />
+                {/* TAB 2: ATTACHMENTS & LINKS */}
+                {activeTab === 'attachments' && (
+                    <div className="space-y-4">
+                        {/* 1. Approval Proof Attachments */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Approval Proof Documents ({proofAttachments.length})
+                                    </h4>
+                                </div>
+                                <span className="text-[11px] text-slate-500">Signed quotation, WhatsApp confirmation, PO, or email</span>
                             </div>
-                            <Input
-                                value={form.finalApprovedVersion}
-                                onChange={set('finalApprovedVersion')}
-                                placeholder="Or enter version..."
-                                className="w-1/2 text-xs font-mono"
-                            />
-                        </div>
-                    </Field>
-                </div>
 
-                {/* 2. Attachments & Presentations Section */}
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-                        <Paperclip className="w-4 h-4" /> 2. Approval Proof & Presentation Attachments
-                    </h4>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Approval Proof / Attachment" hint="Signed quotation, email, message screenshot or approval document">
-                        <div className="space-y-2">
-                            <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors w-full justify-center">
-                                <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                {uploading === 'proof' ? 'Uploading Proof File...' : 'Upload Approval Proof Document'}
+                            <label className="cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 bg-white/60 dark:bg-slate-950/60 transition-colors group">
+                                <UploadCloud className="w-7 h-7 text-slate-400 group-hover:text-brand-500 transition-colors mb-1.5" />
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400">
+                                    {uploading === 'proof' ? 'Uploading Proof File...' : 'Click to Upload Approval Proof Documents'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 mt-0.5">Supports PDF, PNG, JPG, JPEG, DOCX</span>
                                 <input
                                     type="file"
                                     multiple
@@ -880,46 +993,81 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                     onChange={(e) => handleFileUpload(e, 'proof')}
                                 />
                             </label>
+
                             {proofAttachments.length > 0 && (
-                                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 pt-1">
                                     {proofAttachments.map((file, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md bg-emerald-500/5 dark:bg-emerald-950/30 border border-emerald-500/20 text-emerald-900 dark:text-emerald-300">
-                                            <div className="flex items-center gap-1.5 truncate">
-                                                <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                                <a href={file.url} target="_blank" rel="noreferrer" className="truncate hover:underline font-medium">
-                                                    {file.filename || file.name || `Proof File ${i + 1}`}
+                                        <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs shadow-xs hover:border-emerald-500/40 transition-colors">
+                                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                                                <FileText className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                <a
+                                                    href={file.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="truncate hover:underline font-medium text-slate-800 dark:text-slate-200 text-xs"
+                                                    title={file.filename || file.name}
+                                                >
+                                                    {file.filename || file.name || `Proof Document ${i + 1}`}
                                                 </a>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveAttachment('proof', i)}
-                                                className="text-slate-400 hover:text-rose-500 font-bold ml-2 p-0.5"
-                                                title="Remove File"
+                                                className="text-slate-400 hover:text-rose-500 p-1 rounded transition-colors shrink-0"
+                                                title="Remove Proof File"
                                             >
-                                                <X className="w-3.5 h-3.5" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                    </Field>
 
-                    <Field label="Presentation Link & Attachments" hint="Link (Canva/Figma URL) or upload final presentation deck">
-                        <div className="space-y-2">
-                            <div className="relative">
-                                <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    value={form.presentationLink}
-                                    onChange={set('presentationLink')}
-                                    placeholder="https://canva.com/design/... or https://figma.com/..."
-                                    className="pl-9 text-xs"
-                                />
+                        {/* 2. Presentation Deck & Links */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-indigo-500" />
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Client Presentation Deck & Links
+                                    </h4>
+                                </div>
+                                <span className="text-[11px] text-slate-500">Canva, Figma, Pitch Decks & PDFs</span>
                             </div>
 
-                            <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors w-full justify-center">
-                                <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                                {uploading === 'presentation' ? 'Uploading Presentation...' : 'Upload Presentation Deck (PDF/PPT)'}
+                            <Field label="Presentation URL" hint="Direct link to Canva presentation, Figma prototype, or cloud deck">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                        <Input
+                                            value={form.presentationLink}
+                                            onChange={set('presentationLink')}
+                                            placeholder="https://canva.com/design/... or https://figma.com/..."
+                                            className="pl-9 text-xs"
+                                        />
+                                    </div>
+                                    {form.presentationLink && (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="sm"
+                                            icon={ExternalLink}
+                                            onClick={() => window.open(form.presentationLink, '_blank')}
+                                            className="shrink-0 text-xs"
+                                        >
+                                            Open
+                                        </Button>
+                                    )}
+                                </div>
+                            </Field>
+
+                            <label className="cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 bg-white/60 dark:bg-slate-950/60 transition-colors group">
+                                <FileText className="w-7 h-7 text-slate-400 group-hover:text-indigo-500 transition-colors mb-1.5" />
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                    {uploading === 'presentation' ? 'Uploading Presentation Deck...' : 'Upload Presentation Files (PDF, PPT, Keynote)'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 mt-0.5">Attach the exact version presented during sign-off</span>
                                 <input
                                     type="file"
                                     multiple
@@ -930,206 +1078,254 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                             </label>
 
                             {presentationAttachments.length > 0 && (
-                                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 pt-1">
                                     {presentationAttachments.map((file, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md bg-indigo-500/5 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-900 dark:text-indigo-300">
-                                            <div className="flex items-center gap-1.5 truncate">
-                                                <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
-                                                <a href={file.url} target="_blank" rel="noreferrer" className="truncate hover:underline font-medium">
+                                        <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs shadow-xs hover:border-indigo-500/40 transition-colors">
+                                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                                                <FileText className="w-4 h-4 shrink-0 text-indigo-500" />
+                                                <a
+                                                    href={file.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="truncate hover:underline font-medium text-slate-800 dark:text-slate-200 text-xs"
+                                                    title={file.filename || file.name}
+                                                >
                                                     {file.filename || file.name || `Presentation Deck ${i + 1}`}
                                                 </a>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveAttachment('presentation', i)}
-                                                className="text-slate-400 hover:text-rose-500 font-bold ml-2 p-0.5"
-                                                title="Remove File"
+                                                className="text-slate-400 hover:text-rose-500 p-1 rounded transition-colors shrink-0"
+                                                title="Remove Presentation File"
                                             >
-                                                <X className="w-3.5 h-3.5" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                    </Field>
-                </div>
-
-                {/* 3. Client Selection Repeatable Subform */}
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-4 h-4" /> 3. Client Selection Subform (Approved items, quantities, rooms & remarks)
-                        </h4>
-                        <Button type="button" size="sm" variant="ghost" icon={Plus} onClick={addClientSelectionRow} className="text-xs">
-                            Add Selection Item
-                        </Button>
                     </div>
-                </div>
+                )}
 
-                <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    {clientSelections.map((row, idx) => (
-                        <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div className="w-full sm:w-1/3">
-                                <Input
-                                    value={row.item || ''}
-                                    onChange={(e) => updateClientSelectionRow(idx, 'item', e.target.value)}
-                                    placeholder="Approved Item (e.g. Motorized Drapes)"
+                {/* TAB 3: SELECTIONS & FABRIC LOOKUP */}
+                {activeTab === 'selections' && (
+                    <div className="space-y-4">
+                        {/* 1. Client Selection Subform */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Approved Product Items & Scopes ({clientSelections.length})
+                                        </h4>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">Approved items, quantities, and location specs</p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    icon={Plus}
+                                    onClick={addClientSelectionRow}
                                     className="text-xs"
-                                />
+                                >
+                                    Add Item Row
+                                </Button>
                             </div>
-                            <div className="w-24">
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    value={row.quantity || 1}
-                                    onChange={(e) => updateClientSelectionRow(idx, 'quantity', Number(e.target.value))}
-                                    placeholder="Qty"
-                                    className="text-xs"
-                                />
-                            </div>
-                            <div className="w-full sm:w-1/4">
-                                <Select
-                                    value={row.room || 'Living Room'}
-                                    onChange={(e) => updateClientSelectionRow(idx, 'room', e.target.value)}
-                                    options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[140px]">
-                                <Input
-                                    value={row.remarks || ''}
-                                    onChange={(e) => updateClientSelectionRow(idx, 'remarks', e.target.value)}
-                                    placeholder="Remarks / specs..."
-                                    className="text-xs"
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                icon={Trash2}
-                                onClick={() => removeClientSelectionRow(idx)}
-                                className="text-slate-400 hover:text-rose-500 shrink-0"
-                            />
-                        </div>
-                    ))}
-                </div>
 
-                {/* 4. Searchable Fabric Selection Subform */}
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                            <Layers className="w-4 h-4" /> 4. Fabric Selection (Searchable fabric lookup per room/item)
-                        </h4>
-                        <Button type="button" size="sm" variant="ghost" icon={Plus} onClick={addFabricSelectionRow} className="text-xs">
-                            Add Fabric Selection
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    {fabricSelections.map((row, idx) => (
-                        <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div className="w-full sm:w-1/3">
-                                <Select
-                                    value={row.room || 'Living Room'}
-                                    onChange={(e) => updateFabricRoom(idx, e.target.value)}
-                                    options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
-                                />
-                            </div>
-                            <div className="flex-1 min-w-[200px]">
-                                <SearchableFabricSelector
-                                    value={row.fabric || ''}
-                                    onChange={(fabName, code) => updateFabricSelectionRow(idx, fabName, code)}
-                                    fabricCatalog={fabricCatalog}
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                icon={Trash2}
-                                onClick={() => removeFabricSelectionRow(idx)}
-                                className="text-slate-400 hover:text-rose-500 shrink-0"
-                            />
-                        </div>
-                    ))}
-                </div>
-
-                {/* 5. Design Direction & Revision Notes (Long Free Text) */}
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 pt-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                        <FileText className="w-4 h-4" /> 5. Design Direction & Revision Notes (Long Free Text)
-                    </h4>
-                </div>
-
-                <Field label="Design Direction" hint="Final approved design direction & aesthetic instructions">
-                    <Textarea
-                        rows={3}
-                        value={form.designDirection}
-                        onChange={set('designDirection')}
-                        placeholder="e.g. Modern minimalist floor-to-ceiling motorized sheer drapes with concealed ceiling recess tracks..."
-                        className="text-xs"
-                    />
-                </Field>
-
-                <Field label="Revision Notes" hint="Mandatory for changes after approval; retained in revision history">
-                    <Textarea
-                        rows={3}
-                        value={form.revisionNotes}
-                        onChange={set('revisionNotes')}
-                        placeholder="Enter revision notes, change logs, or client feedback details..."
-                        className="text-xs"
-                    />
-                </Field>
-
-                {/* Revision & Change Control Audit Log */}
-                {revisionsList.length > 0 && (
-                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={() => setShowRevisionsHistory(!showRevisionsHistory)}
-                            className="flex items-center justify-between w-full text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 py-1"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <History className="w-4 h-4 text-amber-500" />
-                                Revision & Change-Control Audit Trail ({revisionsList.length} revision(s))
-                            </span>
-                            <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium hover:underline">
-                                {showRevisionsHistory ? 'Hide Audit Log' : 'Show Audit Log'}
-                            </span>
-                        </button>
-
-                        {showRevisionsHistory && (
-                            <div className="mt-2 space-y-2 max-h-56 overflow-y-auto pr-1">
-                                {revisionsList.slice().reverse().map((rev, idx) => (
-                                    <div key={idx} className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
-                                        <div className="flex items-center justify-between font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <Badge tone="amber">
-                                                    Rev #{rev.revisionNumber || (revisionsList.length - idx)}
-                                                </Badge>
-                                                <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" /> {formatDateTime(rev.revisedAt)}
-                                                </span>
-                                            </div>
-                                            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                                                {rev.finalApprovedVersion ? `Version: ${rev.finalApprovedVersion}` : 'No version tag'}
-                                            </span>
+                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                {clientSelections.map((row, idx) => (
+                                    <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xs">
+                                        <div className="w-full sm:w-1/3">
+                                            <Input
+                                                value={row.item || ''}
+                                                onChange={(e) => updateClientSelectionRow(idx, 'item', e.target.value)}
+                                                placeholder="Approved Item (e.g. Motorized Drapes)"
+                                                className="text-xs"
+                                            />
                                         </div>
-
-                                        {rev.changeReason && (
-                                            <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
-                                                <strong className="font-semibold">Reason for Revision:</strong> {rev.changeReason}
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 pt-0.5">
-                                            <div><strong className="text-slate-700 dark:text-slate-300">Design Direction:</strong> {rev.designDirection || '—'}</div>
-                                            <div><strong className="text-slate-700 dark:text-slate-300">Prior Status:</strong> {rev.clientApprovalStatus || 'APPROVED'}</div>
+                                        <div className="w-20">
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                value={row.quantity || 1}
+                                                onChange={(e) => updateClientSelectionRow(idx, 'quantity', Number(e.target.value))}
+                                                placeholder="Qty"
+                                                className="text-xs"
+                                            />
                                         </div>
+                                        <div className="w-full sm:w-1/4">
+                                            <Select
+                                                value={row.room || 'Living Room'}
+                                                onChange={(e) => updateClientSelectionRow(idx, 'room', e.target.value)}
+                                                options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-[140px]">
+                                            <Input
+                                                value={row.remarks || ''}
+                                                onChange={(e) => updateClientSelectionRow(idx, 'remarks', e.target.value)}
+                                                placeholder="Remarks / specs..."
+                                                className="text-xs"
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            icon={Trash2}
+                                            onClick={() => removeClientSelectionRow(idx)}
+                                            className="text-slate-400 hover:text-rose-500 shrink-0"
+                                            title="Delete Row"
+                                        />
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* 2. Fabric Selection Subform */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Searchable Fabric Selections ({fabricSelections.length})
+                                        </h4>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">Search master fabric catalogue or specify custom textiles</p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    icon={Plus}
+                                    onClick={addFabricSelectionRow}
+                                    className="text-xs"
+                                >
+                                    Add Fabric Row
+                                </Button>
+                            </div>
+
+                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                {fabricSelections.map((row, idx) => (
+                                    <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xs">
+                                        <div className="w-full sm:w-1/3">
+                                            <Select
+                                                value={row.room || 'Living Room'}
+                                                onChange={(e) => updateFabricRoom(idx, e.target.value)}
+                                                options={ROOM_OPTIONS.map((r) => ({ value: r, label: r }))}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-[220px]">
+                                            <SearchableFabricSelector
+                                                value={row.fabric || ''}
+                                                onChange={(fabName, code) => updateFabricSelectionRow(idx, fabName, code)}
+                                                fabricCatalog={fabricCatalog}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            icon={Trash2}
+                                            onClick={() => removeFabricSelectionRow(idx)}
+                                            className="text-slate-400 hover:text-rose-500 shrink-0"
+                                            title="Delete Row"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* TAB 4: DESIGN & REVISION LOG */}
+                {activeTab === 'notes' && (
+                    <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-4">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                <FileText className="w-4 h-4 text-brand-500" />
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                    Design Direction & Free-Text Instructions
+                                </h4>
+                            </div>
+
+                            <Field label="Approved Design Direction" hint="Aesthetic principles, pleat styles, pelmet recessing, automation protocols">
+                                <Textarea
+                                    rows={3}
+                                    value={form.designDirection}
+                                    onChange={set('designDirection')}
+                                    placeholder="e.g. Modern minimalist floor-to-ceiling motorized sheer drapes with concealed ceiling recess tracks and ripplefold headings..."
+                                    className="text-xs"
+                                />
+                            </Field>
+
+                            <Field label="Revision & Client Feedback Notes" hint="Mandatory for modifications following initial client approval">
+                                <Textarea
+                                    rows={3}
+                                    value={form.revisionNotes}
+                                    onChange={set('revisionNotes')}
+                                    placeholder="Enter details on client revisions, scope adjustments, or meeting minutes..."
+                                    className="text-xs"
+                                />
+                            </Field>
+                        </div>
+
+                        {/* Audit Trail Log */}
+                        {revisionsList.length > 0 && (
+                            <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                                    <div className="flex items-center gap-2">
+                                        <History className="w-4 h-4 text-amber-500" />
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Change-Control Audit Trail ({revisionsList.length} Revisions)
+                                        </h4>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRevisionsHistory(!showRevisionsHistory)}
+                                        className="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline"
+                                    >
+                                        {showRevisionsHistory ? 'Collapse History' : 'Expand History'}
+                                    </button>
+                                </div>
+
+                                {showRevisionsHistory && (
+                                    <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                                        {revisionsList.slice().reverse().map((rev, idx) => (
+                                            <div key={idx} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs space-y-2 shadow-2xs">
+                                                <div className="flex items-center justify-between font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge tone="amber">
+                                                            Rev #{rev.revisionNumber || (revisionsList.length - idx)}
+                                                        </Badge>
+                                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" /> {formatDateTime(rev.revisedAt)}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                                        {rev.finalApprovedVersion ? `Version: ${rev.finalApprovedVersion}` : 'No version tag'}
+                                                    </span>
+                                                </div>
+
+                                                {rev.changeReason && (
+                                                    <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+                                                        <strong className="font-semibold">Reason for Revision:</strong> {rev.changeReason}
+                                                    </div>
+                                                )}
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 pt-0.5">
+                                                    <div><strong className="text-slate-700 dark:text-slate-300">Design Direction:</strong> {rev.designDirection || '—'}</div>
+                                                    <div><strong className="text-slate-700 dark:text-slate-300">Prior Status:</strong> {rev.clientApprovalStatus || 'APPROVED'}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1145,14 +1341,14 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
 
     return (
         <Panel className="overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-1.5 overflow-x-auto p-2 bg-slate-100/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto p-2 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
                 {SPREADSHEET_SECTIONS.map((sec) => (
                     <button
                         key={sec.id}
                         type="button"
                         onClick={() => onSectionChange && onSectionChange(sec.id)}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                            ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+                        className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${currentSection === sec.id
+                            ? `${sec.color} shadow-xs ring-1 ring-black/5 dark:ring-white/10`
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
@@ -1164,26 +1360,26 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
             <div className="overflow-x-auto max-h-[60vh] overflow-y-auto select-none relative">
                 <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr className="sticky top-0 z-20 text-center shadow-sm bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30">
-                            <th className="bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 p-4 text-[10px] uppercase text-center font-semibold text-amber-100 dark:text-slate-400 z-30">
+                        <tr className="sticky top-0 z-20 text-center shadow-xs bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-slate-800">
+                            <th className="bg-slate-200/80 dark:bg-slate-950 border-b border-r border-slate-200 dark:border-slate-800 p-3.5 text-[10px] uppercase text-center font-bold text-slate-700 dark:text-slate-300 z-30 min-w-[100px]">
                                 Code
                             </th>
                             {visibleSections.map((sec) =>
                                 (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                    <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-3 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[140px] bg-[#836444] dark:bg-slate-900/90">
+                                    <th key={col.key} className="border-b border-r border-slate-200 dark:border-slate-800/80 p-3 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[140px]">
                                         {col.label}
                                     </th>
                                 ))
                             )}
-                            <th className="bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30">
+                            <th className="bg-slate-200/80 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-2 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 text-center sticky right-0 z-30 min-w-[80px]">
                                 Manage
                             </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
-                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-bold p-2.5">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
@@ -1196,7 +1392,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                     ))
                                 )}
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
                                         <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Approval & Presentation" />
                                     </div>
@@ -1235,6 +1431,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
     }, []);
 
     const search = searchParams.get('search') || '';
+    const statusFilter = searchParams.get('status') || 'ALL';
     const selectedSection = searchParams.get('section') || 's12';
 
     const updateParam = (key, value, defaultValue) => {
@@ -1272,6 +1469,15 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
     });
 
     const filteredLeads = quotationReadyLeads.filter((lead) => {
+        // Status filter
+        if (statusFilter !== 'ALL') {
+            const currentStatus = lead.approval?.clientApprovalStatus || 'PENDING';
+            if (currentStatus !== statusFilter) {
+                return false;
+            }
+        }
+
+        // Search filter
         if (search) {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
@@ -1287,47 +1493,61 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
 
     const totalCount = quotationReadyLeads.length;
     const approvedCount = quotationReadyLeads.filter((l) => l.approval?.clientApprovalStatus === 'APPROVED').length;
-    const pendingCount = quotationReadyLeads.filter((l) => l.approval?.clientApprovalStatus === 'PENDING' || (l.approval?.planned && l.approval?.clientApprovalStatus !== 'APPROVED')).length;
+    const pendingCount = quotationReadyLeads.filter((l) => l.approval?.clientApprovalStatus === 'PENDING' || (!l.approval?.clientApprovalStatus && l.approval?.planned)).length;
     const revisionsLoggedCount = quotationReadyLeads.filter((l) => (l.approval?.revisions?.length || 0) > 0).length;
 
     return (
-        <div>
+        <div className="space-y-4">
             <PageHeader
                 title="Client Approval Workspace"
-                subtitle="Manage approval due dates, client approval statuses, proof of signoff documents, linked approved versions, presentations, dynamic client selections & searchable fabric lookups"
+                subtitle="Track sign-off schedules, approval status milestones, proof documents, presentations, approved specifications, and fabric selections"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads awaiting signoff" icon={ShieldCheck} tone="orange" />
-                <StatTile label="Approved Quotes" value={approvedCount} sub="Client signoffs secured" icon={CheckCircle2} tone="green" />
-                <StatTile label="Pending Approvals" value={pendingCount} sub="Due for client decision" icon={Calendar} tone="amber" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads awaiting sign-off" icon={ShieldCheck} tone="amber" />
+                <StatTile label="Approved Quotes" value={approvedCount} sub="Client sign-offs secured" icon={CheckCircle2} tone="green" />
+                <StatTile label="Pending Approvals" value={pendingCount} sub="Due for client decision" icon={Calendar} tone="brand" />
                 <StatTile label="Revisions Logged" value={revisionsLoggedCount} sub="Under change control" icon={RotateCcw} tone="blue" />
             </div>
 
-            <Panel className="mb-4">
+            <Panel>
                 <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/40">
-                    <div className="relative flex-1 min-w-[220px] max-w-md">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <Input
-                            value={search}
-                            onChange={(e) => updateParam('search', e.target.value, '')}
-                            placeholder="Search code, client, version, or status..."
-                            className="pl-9 text-xs"
-                        />
+                    <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[240px]">
+                        <div className="relative flex-1 min-w-[200px] max-w-sm">
+                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Input
+                                value={search}
+                                onChange={(e) => updateParam('search', e.target.value, '')}
+                                placeholder="Search code, client, version, or status..."
+                                className="pl-9 text-xs"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                            <Filter className="w-3.5 h-3.5 text-slate-400" />
+                            <Select
+                                value={statusFilter}
+                                onChange={(e) => updateParam('status', e.target.value, 'ALL')}
+                                options={STATUS_FILTER_OPTIONS}
+                                className="w-44 text-xs"
+                            />
+                        </div>
                     </div>
 
-                    <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
+                    <div className="flex items-center gap-2">
+                        <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
 
-                    {(search || selectedSection !== 's12') && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSearchParams({})}
-                            className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                        >
-                            Reset Filters
-                        </Button>
-                    )}
+                        {(search || statusFilter !== 'ALL' || selectedSection !== 's12') && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSearchParams({})}
+                                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                            >
+                                Reset Filters
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </Panel>
 
@@ -1339,14 +1559,18 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={ShieldCheck} title="No Client Approval Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState icon={ShieldCheck} title="No Client Approval Records Found" hint="Try adjusting search or status filter parameters." />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
                     items={filteredLeads}
                     renderCard={(lead) => (
                         <SalesStageCard
-                            lead={lead}
+                            lead={{
+                                ...lead,
+                                approvalDueDate: lead.approval?.planned || lead.clientApproval?.dueDate || lead.dueDate,
+                                clientApprovalStatus: lead.approval?.clientApprovalStatus || lead.clientApproval?.status,
+                            }}
                             stageKey="client-approval"
                             onView={handleViewLead}
                             onEdit={(l) => setEditingLead(l)}

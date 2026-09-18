@@ -6,7 +6,7 @@ import { sendError } from '../utils/responseHandler.js';
  * Turns anything thrown anywhere into one response shape.
  *
  * Database-level failures are translated into the message the user needed in the
- * first place — a duplicate key becomes "a project with this code already
+ * first place : a duplicate key becomes "a project with this code already
  * exists", not a raw E11000 dump.
  */
 // eslint-disable-next-line no-unused-vars
@@ -49,9 +49,9 @@ const errorMiddleware = (err, req, res, next) => {
 
   // Genuine faults get a stack trace; expected refusals are just noted.
   if (statusCode >= 500) {
-    logger.error(`${req.method} ${req.originalUrl} — ${err.stack || err.message}`);
+    logger.error(`${req.method} ${req.originalUrl} : ${err.stack || err.message}`);
   } else {
-    logger.warn(`${req.method} ${req.originalUrl} — ${statusCode} ${message}`);
+    logger.warn(`${req.method} ${req.originalUrl} : ${statusCode} ${message}`);
   }
 
   return sendError(res, message, errors, statusCode, {

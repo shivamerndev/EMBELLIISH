@@ -2,7 +2,7 @@
 
 > **End-to-End Enterprise Resource Planning for Luxury Curtains & Interior Soft Furnishings.**
 
-Embelliish Home ERP is a specialized, production-ready enterprise management platform designed to digitize and automate the entire operational lifecycle of luxury curtain and soft furnishing projects — from initial lead capture, architect coordination, site measurements, BOQ estimation, and design approval to procurement, factory stitching, quality control (QC), multi-stage payments, site installation, and rework management.
+Embelliish Home ERP is a specialized, production-ready enterprise management platform designed to digitize and automate the entire operational lifecycle of luxury curtain and soft furnishing projects : from initial lead capture, architect coordination, site measurements, BOQ estimation, and design approval to procurement, factory stitching, quality control (QC), multi-stage payments, site installation, and rework management.
 
 ---
 
@@ -284,4 +284,4 @@ All API endpoints are prefixed with `/api/v1`.
 
 ---
 
-*Embelliish Home ERP — Precision, Quality, and Automation for Interior Furnishings.*
+*Embelliish Home ERP : Precision, Quality, and Automation for Interior Furnishings.*

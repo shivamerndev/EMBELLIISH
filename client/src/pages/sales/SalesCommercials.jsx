@@ -42,7 +42,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's1',
         title: 'Lead & Contact Details (Mandatory Details)',
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'sno', label: 'S.No.' },
             { key: 'code', label: 'Lead ID' },
@@ -54,7 +54,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'clientName', label: 'Client Name' },
             { key: 'location', label: 'Location' },
@@ -234,7 +234,7 @@ const SiteVisitModal = ({ lead, onClose, onSave }) => {
         <Modal
             open={Boolean(lead)}
             onClose={onClose}
-            title={`Schedule Site Visit — ${lead.code || ''}`}
+            title={`Schedule Site Visit : ${lead.code || ''}`}
             subtitle={lead.clientName ? `Client: ${lead.clientName}` : ''}
             size="sm"
             footer={(

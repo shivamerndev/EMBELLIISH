@@ -11,7 +11,7 @@ import { UOM } from '../../constants/product.constants.js';
 import { PERMISSIONS } from '../../constants/roles.constants.js';
 
 /**
- * Module 7 — Pricing Master.
+ * Module 7 : Pricing Master.
  *
  * Reading the price list is a BOQ concern (the DCM has to see what a line costs);
  * publishing a rate is the founder's.
@@ -42,7 +42,7 @@ const canManage = requirePermission(PERMISSIONS.PRICING_MANAGE);
 
 router.get('/', canView, controller.list);
 
-/** The rates in force today (or on `?on=YYYY-MM-DD`) — one row per key. */
+/** The rates in force today (or on `?on=YYYY-MM-DD`) : one row per key. */
 router.get(
   '/current',
   canView,

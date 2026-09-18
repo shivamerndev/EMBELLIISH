@@ -2,7 +2,7 @@ import ApiError from '../../core/ApiError.js';
 import SettingsModel from './settings.model.js';
 
 /**
- * Module 20 — Settings / Masters.
+ * Module 20 : Settings / Masters.
  *
  * Every other module asks this service rather than reading a constant, so a
  * change to the discount threshold or the payment split takes effect everywhere
@@ -43,7 +43,7 @@ class SettingsService {
       const total = merged.tokenPercent + merged.advancePercent + merged.balancePercent;
       if (Math.round(total) !== 100) {
         throw ApiError.badRequest(
-          `Token, advance and balance must add up to 100% — this adds up to ${Math.round(total)}%`
+          `Token, advance and balance must add up to 100% : this adds up to ${Math.round(total)}%`
         );
       }
     }
@@ -71,7 +71,7 @@ class SettingsService {
     return this.get({ fresh: true });
   }
 
-  /** Step 7 — the percentage a DCM may discount without asking the founder. */
+  /** Step 7 : the percentage a DCM may discount without asking the founder. */
   async discountThreshold() {
     const settings = await this.get();
     return settings.discount?.approvalThresholdPercent ?? 10;

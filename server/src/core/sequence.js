@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 /**
  * Atomic document numbering. Every business document the client ever sees —
- * lead, project, quotation, PO, invoice — needs a stable human-readable code,
+ * lead, project, quotation, PO, invoice : needs a stable human-readable code,
  * and two coordinators saving at once must not collide.
  */
 const counterSchema = new mongoose.Schema({

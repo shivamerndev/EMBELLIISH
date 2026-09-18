@@ -1,4 +1,4 @@
-# EMBELLIISH HOME ERP — COMPLETE CLIENT USER GUIDE
+# EMBELLIISH HOME ERP : COMPLETE CLIENT USER GUIDE
 
 > **End-to-End Non-Technical Operational Manual & SOP for Luxury Curtains & Interior Soft Furnishings**
 
@@ -63,7 +63,7 @@ The Login screen ensures secure portal access for authorized team members. Based
 | :--- | :--- | :--- | :--- | :--- |
 | **Sign in** | Validates your login email and password. | Click after typing your credentials to log in. | The system verifies your details and opens your personal Executive Dashboard. | Ensure email address is formatted correctly (e.g., `name@embellish.com`). |
 | **Eye Icon (Password Toggle)** | Toggles password visibility between hidden dots (`••••••••`) and readable text. | Use if you want to verify your password before clicking Sign in. | Password text becomes visible or hidden. | Ensure nobody around you is looking at your screen when password is displayed. |
-| **Seeded Demo Account Buttons** | One-click button that pre-fills demo account credentials (e.g., `Hitesh — Admin`, `Rahul — DCM`, `Ankit — Coordinator`). | Use during training or role testing. | Email and password fields auto-populate instantly. | Click **Sign in** after selecting a demo account. |
+| **Seeded Demo Account Buttons** | One-click button that pre-fills demo account credentials (e.g., `Hitesh : Admin`, `Rahul : DCM`, `Ankit : Coordinator`). | Use during training or role testing. | Email and password fields auto-populate instantly. | Click **Sign in** after selecting a demo account. |
 
 ### Form Fields & Inputs
 
@@ -151,7 +151,7 @@ The CRM module manages customer relationships from initial contact until lead qu
 Used by front desk staff, Senior DCMs, or Admins to enter a new client enquiry into the system.
 
 #### What You See
-A modal form titled **"Capture New Lead — Step 1 Lead Capture sheet entry form"** with fields organized in 2-column rows, an architect selector, budget classification options, requirement notes, and a file/image attachment area.
+A modal form titled **"Capture New Lead : Step 1 Lead Capture sheet entry form"** with fields organized in 2-column rows, an architect selector, budget classification options, requirement notes, and a file/image attachment area.
 
 #### Form Fields & Table
 
@@ -343,13 +343,13 @@ Once a lead is **QUALIFIED**, it enters the 12-stage Sales & Commercials pipelin
 
 ---
 
-### 7.1 Stage 1 — Qualified Leads Decision Hub (`/crm/sales-commercials/leads`)
+### 7.1 Stage 1 : Qualified Leads Decision Hub (`/crm/sales-commercials/leads`)
 - **Purpose**: Workspace displaying all qualified leads ready for commercial progression.
 - **Actions**: Click **`Proceed to Pre-Site Visit`** to move lead to Stage 2.
 
 ---
 
-### 7.2 Stage 2 — Pre-Site Visit Planning (`/crm/sales-commercials/pre-site-visit`)
+### 7.2 Stage 2 : Pre-Site Visit Planning (`/crm/sales-commercials/pre-site-visit`)
 - **Purpose**: Prepare site measurement appointment before technical engineer visits client location.
 - **Form Fields**:
   - `Assign Execution Engineer`: Select technical engineer from dropdown.
@@ -359,7 +359,7 @@ Once a lead is **QUALIFIED**, it enters the 12-stage Sales & Commercials pipelin
 
 ---
 
-### 7.3 Stage 3 — Site Measurement Capture (`/crm/sales-commercials/measurement`)
+### 7.3 Stage 3 : Site Measurement Capture (`/crm/sales-commercials/measurement`)
 
 [SCREENSHOT: Site Measurement Capture]
 
@@ -394,13 +394,13 @@ Physical window openings vary due to flooring levels, pelmet heights, and ceilin
 
 ---
 
-### 7.4 Stage 4 — Studio Meeting & Fabric Selection (`/crm/sales-commercials/studio-meeting`)
+### 7.4 Stage 4 : Studio Meeting & Fabric Selection (`/crm/sales-commercials/studio-meeting`)
 - **Purpose**: Client visits studio to select fabrics, linings, curtain styles (Ripplefold, Pleated, Eyelet, Roman Blinds), and motorization.
 - **Button**: Click **`Log Studio Meeting Notes`** to save selections.
 
 ---
 
-### 7.5 Stage 5 — Ready Size Confirmation (`/crm/sales-commercials/ready-size`)
+### 7.5 Stage 5 : Ready Size Confirmation (`/crm/sales-commercials/ready-size`)
 
 [SCREENSHOT: Ready Size Confirmation]
 
@@ -410,7 +410,7 @@ Physical window openings vary due to flooring levels, pelmet heights, and ceilin
 
 ---
 
-### 7.6 Stage 6 — Consumption Sheet / BOQ Dashboard (`/crm/sales-commercials/consumption-boq`)
+### 7.6 Stage 6 : Consumption Sheet / BOQ Dashboard (`/crm/sales-commercials/consumption-boq`)
 - **Purpose**: Automatic system calculation of material quantities (Bill of Quantities).
 - **System Calculations**:
   - Fabric meters required = `(Ready Width × Fullness Ratio 2.5x / Fabric Cut Width) × Ready Height`.
@@ -420,20 +420,20 @@ Physical window openings vary due to flooring levels, pelmet heights, and ceilin
 
 ---
 
-### 7.7 Stage 7 — Proposal Creation (`/crm/sales-commercials/proposal`)
+### 7.7 Stage 7 : Proposal Creation (`/crm/sales-commercials/proposal`)
 - **Purpose**: Prepare room-wise visual proposal PDF with fabric pictures, track specifications, and estimated prices.
 - **Buttons**: **`Generate Proposal PDF`**, **`Send Proposal to Client`**.
 
 ---
 
-### 7.8 Stage 8 — Budgeting & Token Discussion (`/crm/sales-commercials/token-discussion`)
+### 7.8 Stage 8 : Budgeting & Token Discussion (`/crm/sales-commercials/token-discussion`)
 - **Purpose**: Discuss 10% token payment requirement with client to lock design commitment.
 - **Form Fields**: `Token Amount Received` (₹), `Payment Method` (UPI / Bank Transfer / Cheque / Cash), `Transaction Reference Number`.
 - **Button**: Click **`Record Token Payment (10%)`**.
 
 ---
 
-### 7.9 Stage 9 — Pricing & Material Costing (`/crm/sales-commercials/pricing-costing`)
+### 7.9 Stage 9 : Pricing & Material Costing (`/crm/sales-commercials/pricing-costing`)
 
 [SCREENSHOT: Pricing & Founder Approval Screen]
 
@@ -451,13 +451,13 @@ Finalize project quotation pricing, apply discounts, and enforce house discount 
 
 ---
 
-### 7.10 Stage 10 — Quotation Preparation (`/crm/sales-commercials/quotation`)
+### 7.10 Stage 10 : Quotation Preparation (`/crm/sales-commercials/quotation`)
 - **Purpose**: Generate formal itemized contract quotation including fabric, tailoring, hardware, installation, and GST (18%).
 - **Buttons**: **`Generate Final Quotation PDF`**, **`Send Quotation`**.
 
 ---
 
-### 7.11 Stage 11 — Client Approval & Order Activation (`/crm/sales-commercials/client-approval`)
+### 7.11 Stage 11 : Client Approval & Order Activation (`/crm/sales-commercials/client-approval`)
 
 [SCREENSHOT: Client Approval & Green Gate Screen]
 
@@ -477,7 +477,7 @@ Before an order can be activated, all 4 gates must show **GREEN ✅**:
 
 ---
 
-### 7.12 Stage 12 — KYC & Customer Conversion (`/crm/sales-commercials/kyc`)
+### 7.12 Stage 12 : KYC & Customer Conversion (`/crm/sales-commercials/kyc`)
 - **Purpose**: Record client GSTIN, billing address, site delivery address, and convert Lead record into a live **Project** (`/projects/:id`).
 
 ---
@@ -765,7 +765,7 @@ Located on top header. Displays a red badge with unread count whenever system al
 
 ---
 
-### Scenario 1 — A New Client Enquiry Arrives via Architect Referral
+### Scenario 1 : A New Client Enquiry Arrives via Architect Referral
 1. Open ERP and navigate to **CRM → Leads** (`/crm/leads`).
 2. Click **`+ Add Lead`** button.
 3. Enter Client Name (`Rahul Sharma`), Contact Person (`Sakshi`), Mobile Number (`9876543210`).
@@ -778,7 +778,7 @@ Located on top header. Displays a red badge with unread count whenever system al
 
 ---
 
-### Scenario 2 — DCM Needs to Be Reassigned Due to Overload
+### Scenario 2 : DCM Needs to Be Reassigned Due to Overload
 1. Open **CRM → DCM Assignment** (`/crm/dcm-assignments`).
 2. Locate lead `LD/045`. Notice current DCM `Rahul Verma` has 7 active projects (Red pulsing `Overloaded` badge).
 3. Click the **Edit Action Button (✏️)** on the row.
@@ -790,7 +790,7 @@ Located on top header. Displays a red badge with unread count whenever system al
 
 ---
 
-### Scenario 3 — DCM Requests 15% Discount (Founder Approval Workflow)
+### Scenario 3 : DCM Requests 15% Discount (Founder Approval Workflow)
 1. In Stage 9 Pricing & Costing (`/crm/sales-commercials/pricing-costing`), DCM enters 15% discount.
 2. Because 15% > 10% house threshold, system sets quotation status to **`PENDING_APPROVAL`**.
 3. Founder logs into ERP. Executive Dashboard displays alert banner: *"1 Pending Discount Approval"*.
@@ -799,7 +799,7 @@ Located on top header. Displays a red badge with unread count whenever system al
 
 ---
 
-### Scenario 4 — Order Activation Blocked by Missing Advance Payment
+### Scenario 4 : Order Activation Blocked by Missing Advance Payment
 1. DCM attempts to activate order in Stage 11 (`/crm/sales-commercials/client-approval`).
 2. The **`Activate Order & Start Production`** button is disabled (Red State).
 3. Hovering displays: *"Gate 3 Failed: 60% Advance Payment Pending (₹1,80,000)"*.
@@ -859,4 +859,4 @@ The ERP automatically flags the DCM's capacity badge as red `Overloaded`. Manage
 - **Team Members & Capacity**: `/members`
 
 ---
-*Embelliish Home ERP — Powered by D-table Analytics*
+*Embelliish Home ERP : Powered by D-table Analytics*

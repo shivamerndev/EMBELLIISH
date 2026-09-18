@@ -5,7 +5,7 @@ import UserModel from '../user/user.model.js';
 import { permissionsForRole } from '../../constants/roles.constants.js';
 
 /**
- * Session tokens carry the role but not the permission list — permissions are
+ * Session tokens carry the role but not the permission list : permissions are
  * resolved from the role on every request, so revoking a capability takes effect
  * immediately rather than whenever the last token happens to expire.
  */
@@ -42,7 +42,7 @@ class AuthService {
     // `password` is select:false on the schema, so it has to be asked for.
     const user = await UserModel.findOne({ email: email.toLowerCase() }).select('+password');
 
-    // Same message either way — a different one would confirm which emails exist.
+    // Same message either way : a different one would confirm which emails exist.
     if (!user || !(await user.comparePassword(password))) {
       throw ApiError.unauthorized('Incorrect email or password');
     }

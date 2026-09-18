@@ -3,7 +3,7 @@ import { UOM } from '../../constants/product.constants.js';
 import { auditEntrySchema, applyJsonTransform } from '../../core/schemaPlugins.js';
 
 /**
- * Module 7 — the Pricing Master.
+ * Module 7 : the Pricing Master.
  *
  * One published rate per chargeable line, so a quotation is priced from a list
  * the founder controls rather than from whatever the DCM remembers. The rate-card
@@ -28,7 +28,7 @@ const priceItemSchema = new mongoose.Schema(
     unit: { type: String, enum: Object.values(UOM), default: UOM.METER },
 
     rate: { type: Number, required: true, min: 0 },
-    /** What it costs us — the margin report needs both sides. */
+    /** What it costs us : the margin report needs both sides. */
     costRate: { type: Number, min: 0 },
     gstPercent: { type: Number, default: 18, min: 0, max: 100 },
 

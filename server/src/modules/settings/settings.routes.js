@@ -9,7 +9,7 @@ import { sendSuccess } from '../../utils/responseHandler.js';
 import { PERMISSIONS } from '../../constants/roles.constants.js';
 
 /**
- * Module 20 — Settings / Masters.
+ * Module 20 : Settings / Masters.
  *
  * Anyone signed in may read the settings: the quotation screen needs the GST
  * default, the measurement screen needs the ready-size allowances, and the PDF

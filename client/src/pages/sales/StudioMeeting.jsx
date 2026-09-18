@@ -21,7 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's5',
         title: 'Studio Meeting',
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'studioMeeting.dueDate', label: 'Studio Meeting Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -33,7 +33,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'studioMeeting.samples', label: 'Samples' },
             { key: 'studioMeeting.projectPictures', label: 'Project Pictures' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'studioMeeting.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -894,7 +894,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, fabricsList = [] }) => 
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Studio Meeting Details — ${item?.clientName || ''}`}
+            title={`Studio Meeting Details : ${item?.clientName || ''}`}
             size="xl"
         >
             <form onSubmit={submit} className="space-y-6">
@@ -1220,7 +1220,7 @@ const EditStudioMeetingModal = ({ item, onClose, onDone, fabricsList = [] }) => 
                                     </div>
                                 </div>
 
-                            
+
                             </div>
 
                             {/* Section B: Room Files & Media (Tabbed / Organized) */}

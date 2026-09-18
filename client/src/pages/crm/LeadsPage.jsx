@@ -235,9 +235,8 @@ const SearchableArchitectSelect = ({ value, onChange, architects = [], onArchite
                   key={arch._id || arch.id || idx}
                   type="button"
                   onClick={() => handleSelect(archName)}
-                  className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
-                    isSelected ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 font-semibold' : 'text-slate-700 dark:text-slate-200'
-                  }`}
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSelected ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 font-semibold' : 'text-slate-700 dark:text-slate-200'
+                    }`}
                 >
                   <div>
                     <div className="font-medium text-slate-900 dark:text-slate-100">{archName}</div>
@@ -409,7 +408,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
             />
           </Field>
 
-           <Field label="Architect / Designer Involved">
+          <Field label="Architect / Designer Involved">
             <Select
               value={form.architectInvolved}
               onChange={set('architectInvolved')}
@@ -420,7 +419,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
               ]}
             />
           </Field>
-          
+
           <Field label="Architect / Designer Name">
             <SearchableArchitectSelect
               value={form.architectName}
@@ -684,7 +683,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
     <Modal
       open={Boolean(lead)}
       onClose={onClose}
-      title={`Edit Lead — ${lead?.code || ''}`}
+      title={`Edit Lead : ${lead?.code || ''}`}
       subtitle={`Update capture details for ${lead?.clientName || ''}`}
       size="xl"
       footer={
@@ -729,7 +728,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
             />
           </Field>
 
-           <Field label="Architect / Designer Involved">
+          <Field label="Architect / Designer Involved">
             <Select
               value={form.architectInvolved}
               onChange={set('architectInvolved')}
@@ -810,7 +809,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           {/* <Field label="Existing Relationship Owner">
             <Input value={form.existingRelationshipOwner} onChange={set('existingRelationshipOwner')} placeholder="e.g. Sakshi or NA" />
           </Field> */}
-        
+
         </div>
 
         <Field label="Requirement Summary">
@@ -996,7 +995,7 @@ export const LeadsPage = () => {
   return (
     <div>
       <PageHeader
-        title="CRM — Lead Capture"
+        title="CRM : Lead Capture"
         subtitle="Manage, track, and qualify leads recorded through Architects, Interior Designers, or Direct Channels"
       />
 
@@ -1055,43 +1054,43 @@ export const LeadsPage = () => {
             ) : (
               <div className="w-full overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <table className="min-w-[2400px] w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead ID</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">PIN Code</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
-                    <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
-                    <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                  {filteredLeads.length === 0 ? (
-                    <tr>
-                      <td colSpan={19} className="p-8 text-center text-slate-500">
-                        No leads match your filter or search query.
-                      </td>
+                  <thead>
+                    <tr className="bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30 uppercase tracking-wider whitespace-nowrap sticky top-0 z-30">
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 sticky left-0 z-40 bg-[#836444]">Lead ID</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Capture Date & Time</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Contact Person</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Mobile Number</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Email</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Lead Source</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Client Name</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Delay / SLA Status</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Architect / Designer Name</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Indicative Budget</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Budget Classification</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Project Location</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">PIN Code</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Previous Client Relationship</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Existing Relationship Owner</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Requirement Summary</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20 text-center">Architect / Designer Involved</th>
+                      <th className="p-2.5 px-3 border-r border-amber-300/40 dark:border-amber-500/20">Attachment</th>
+                      <th className="p-2.5 px-3 text-right sticky right-0 z-40 bg-[#836444] border-l border-amber-300/40 dark:border-amber-500/20">Actions</th>
                     </tr>
-                  ) : (
-                    paginatedLeads.map((row) => {
-                      const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
-                      const archName = row.architectName || (typeof row.architect === 'object' ? (row.architect?.name || row.architect?.firm || row.architect?.architectName) : row.architect) || '—';
-                      const clientNameVal = row.clientName || row.companyName || row.name || '—';
-                      const contactPersonVal = row.contactPerson || row.contactName || '—';
-                      const sourceVal = row.source || row.leadSource || '—';
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                    {filteredLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={19} className="p-8 text-center text-slate-500">
+                          No leads match your filter or search query.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedLeads.map((row) => {
+                        const formattedDate = row.captureDateTime || (row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
+                        const archName = row.architectName || (typeof row.architect === 'object' ? (row.architect?.name || row.architect?.firm || row.architect?.architectName) : row.architect) || '—';
+                        const clientNameVal = row.clientName || row.companyName || row.name || '—';
+                        const contactPersonVal = row.contactPerson || row.contactName || '—';
+                        const sourceVal = row.source || row.leadSource || '—';
 
                       return (
                         <tr
@@ -1192,23 +1191,99 @@ export const LeadsPage = () => {
                                 onClick={() => setEditing(row)}
                                 title="Edit Lead Record"
                               />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                icon={Trash2}
-                                onClick={() => setDeleting(row)}
-                                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
-                                title="Delete Lead Record"
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                              </div>
+                            </td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
+                            <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
+                            <td className="p-3 text-center">
+                              <BudgetClassBadge value={row.budgetClassification || 'A'} />
+                            </td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
+                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
+                            <td className="p-3 text-center">
+                              <RelationshipBadge value={row.previousClientRelationship} />
+                            </td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300">{row.existingRelationshipOwner || 'NA'}</td>
+                            <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.requirementSummary || row.requirement || '—'}>
+                              {row.requirementSummary || row.requirement || '—'}
+                            </td>
+                            <td className="p-3 text-center">
+                              <ArchitectInvolvedBadge value={row.architectInvolved} />
+                            </td>
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex flex-col gap-1 max-w-[200px]">
+                                {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 items-center">
+                                    {row.attachments.map((att, i) => (
+                                      <a
+                                        key={i}
+                                        href={att.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium truncate max-w-[170px]"
+                                        title={att.filename || att.url}
+                                      >
+                                        <Paperclip className="w-3 h-3 shrink-0 text-slate-500 dark:text-slate-400" />
+                                        <span className="truncate">{att.filename || `File ${i + 1}`}</span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                ) : null}
+
+                                {row.attachmentUrl ? (
+                                  <a
+                                    href={row.attachmentUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline max-w-[180px] truncate"
+                                    title={row.attachmentUrl}
+                                  >
+                                    <Paperclip className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">View Link</span>
+                                  </a>
+                                ) : null}
+
+                                {!row.attachmentUrl && (!row.attachments || row.attachments.length === 0) && (
+                                  <span className="text-slate-600 dark:text-slate-500 italic text-[11px]">No docs</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  icon={UserCheck}
+                                  onClick={() => setReassigningLead(row)}
+                                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
+                                  title="Reassign DCM"
+                                >
+                                  Reassign DCM
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  icon={Pencil}
+                                  onClick={() => setEditing(row)}
+                                  title="Edit Lead Record"
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  icon={Trash2}
+                                  onClick={() => setDeleting(row)}
+                                  className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
+                                  title="Delete Lead Record"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             <Pagination

@@ -21,7 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's9',
         title: 'Token Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -35,7 +35,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'token.projectTimeline', label: 'Project Timeline' },
             { key: 'token.commercialTerms', label: 'Commercial Terms' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'token.discussionDueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },

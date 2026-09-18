@@ -46,7 +46,7 @@ export const dateTime = (value) => {
   });
 };
 
-/** "2 days ago" / "in 3 days" — used on follow-up and delivery dates. */
+/** "2 days ago" / "in 3 days" : used on follow-up and delivery dates. */
 export const relative = (value) => {
   if (!value) return '—';
   const diff = new Date(value).getTime() - Date.now();
@@ -59,7 +59,7 @@ export const relative = (value) => {
 };
 
 /**
- * "just now" / "12 min ago" / "3 h ago" — finer than `relative`, for a feed where
+ * "just now" / "12 min ago" / "3 h ago" : finer than `relative`, for a feed where
  * everything worth reading happened in the last hour.
  */
 export const relativeTime = (value) => {

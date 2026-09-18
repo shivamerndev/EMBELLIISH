@@ -3,7 +3,7 @@ import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
 import { addressSchema, auditEntrySchema, attachmentSchema, applyJsonTransform } from '../../../core/schemaPlugins.js';
 
 /**
- * Step 1 & 2 — the call Hitesh takes, and what the Senior DCM learns when they
+ * Step 1 & 2 : the call Hitesh takes, and what the Senior DCM learns when they
  * ring the client back. Everything here used to live in WhatsApp or someone's head.
  */
 const leadSchema = new mongoose.Schema(

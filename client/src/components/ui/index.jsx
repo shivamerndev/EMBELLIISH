@@ -65,7 +65,7 @@ const BUTTON_SIZES = {
 };
 
 /**
- * Button component — primary/danger/success variants use fixed colors.
+ * Button component : primary/danger/success variants use fixed colors.
  * secondary/ghost/outline variants use CSS variables to adapt to theme.
  */
 export const Button = ({
@@ -96,7 +96,7 @@ export const Button = ({
     themedVariantClass = 'transition-colors';
     themedVariantStyle.backgroundColor = 'transparent';
     themedVariantStyle.color = 'var(--text-primary)';
-    themedVariantStyle.borderColor = 'rgba(131, 100, 68, 0.4)'; // brand-500/40 — stays consistent
+    themedVariantStyle.borderColor = 'rgba(131, 100, 68, 0.4)'; // brand-500/40 : stays consistent
   }
 
   const isThemed = ['secondary', 'ghost', 'outline'].includes(variant);

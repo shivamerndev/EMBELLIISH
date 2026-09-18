@@ -20,7 +20,7 @@ const UNIT_OPTIONS = [
 ];
 
 /**
- * AddWindowMeasurementModal — Production-grade SaaS modal for creating
+ * AddWindowMeasurementModal : Production-grade SaaS modal for creating
  * a new window measurement assigned to a dynamically selected room.
  */
 const AddWindowMeasurementModal = ({
@@ -109,7 +109,7 @@ const AddWindowMeasurementModal = ({
         // 3. Duplicate Window ID Protection within same room/project
         const isDuplicate = existingRows.some(
             (r) => String(r.windowId || '').toLowerCase() === trimmedWinId.toLowerCase() &&
-                   String(r.room || '').toLowerCase() === selectedRoom.toLowerCase()
+                String(r.room || '').toLowerCase() === selectedRoom.toLowerCase()
         );
 
         if (isDuplicate) {
@@ -169,7 +169,7 @@ const AddWindowMeasurementModal = ({
                             { value: '', label: 'Select Room...' },
                             ...normalizedRooms.map((r, i) => ({
                                 value: r,
-                                label: `${String(i + 1).padStart(2, '0')} — ${r}`
+                                label: `${String(i + 1).padStart(2, '0')} : ${r}`
                             }))
                         ]}
                         className={!selectedRoom && validationError ? 'border-rose-500 focus:ring-rose-500' : ''}
