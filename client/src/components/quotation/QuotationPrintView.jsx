@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatINR } from './quotationDefaults';
 
-export const QuotationPrintView = ({
+export const QuotationPrintView = React.forwardRef(({
   coverLetter = {},
   clientName = '',
   refArchitect = '',
@@ -15,11 +15,16 @@ export const QuotationPrintView = ({
   closedAtText = '',
   termsBanking = {},
   printablePages = [1, 2, 3], // which pages to render (or all 3)
-}) => {
+}, ref) => {
   return (
-    <div className="quotation-print-container font-serif text-slate-900 bg-white dark:bg-white dark:text-slate-900">
+    <div ref={ref} className="quotation-print-container font-serif text-slate-900 bg-white dark:bg-white dark:text-slate-900">
       <style>{`
         @media print {
+          *, *::before, *::after {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body {
             background: white !important;
             color: black !important;
@@ -35,18 +40,26 @@ export const QuotationPrintView = ({
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            min-height: 100vh !important;
+            min-height: 265mm !important;
+            height: auto !important;
             page-break-after: always !important;
             break-after: page !important;
-            padding: 1.5cm 1.5cm !important;
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
           }
           .quotation-page:last-child {
             page-break-after: auto !important;
             break-after: auto !important;
           }
+          tr, td, th {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
           @page {
             size: A4 portrait;
-            margin: 0.8cm;
+            margin: 10mm 12mm;
           }
         }
         .quotation-page {
@@ -406,6 +419,8 @@ Email: hiteshembellish@gmail.com`}
       )}
     </div>
   );
-};
+});
+
+QuotationPrintView.displayName = 'QuotationPrintView';
 
 export default QuotationPrintView;

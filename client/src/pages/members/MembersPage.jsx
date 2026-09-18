@@ -95,11 +95,11 @@ const ViewMemberModal = ({ item, onClose }) => {
   const member = data || item;
   const initials = member?.name
     ? member.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
     : 'M';
 
   return (
@@ -268,7 +268,7 @@ const EditMemberModal = ({ item, onClose, onSuccess }) => {
     <Modal
       open={Boolean(item)}
       onClose={onClose}
-      title={`Edit Member — ${item?.name || ''}`}
+      title={`Edit Member : ${item?.name || ''}`}
       subtitle="Update contact details, email, or role assignment for this member"
       size="md"
       footer={
@@ -597,11 +597,11 @@ export const MembersPage = () => {
       render: (m) => {
         const initials = m.name
           ? m.name
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase()
           : 'M';
 
         return (

@@ -8,11 +8,11 @@ import { Button, Field, Input } from '../../components/ui';
 
 /** Seeded accounts, offered as one-click fill so each role is easy to try. */
 const DEMO_ACCOUNTS = [
-  ['admin@embellish.com', 'Hitesh — Admin'],
-  ['rahul@embellish.com', 'Rahul — DCM'],
-  ['coordinator@embellish.com', 'Ankit — Coordinator'],
-  ['factory@embellish.com', 'Suresh — Factory'],
-  ['accounts@embellish.com', 'Neha — Accounts'],
+  ['admin@embellish.com', 'Hitesh : Admin'],
+  ['rahul@embellish.com', 'Rahul : DCM'],
+  ['coordinator@embellish.com', 'Ankit : Coordinator'],
+  ['factory@embellish.com', 'Suresh : Factory'],
+  ['accounts@embellish.com', 'Neha : Accounts'],
 ];
 
 export const Login = () => {

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { addressSchema, applyJsonTransform } from '../../../core/schemaPlugins.js';
 
 /**
- * "Sir, curtains ke liye Embellish best company hai." — the architect is the
+ * "Sir, curtains ke liye Embellish best company hai." : the architect is the
  * referral channel, so the firm tracks them as a first-class relationship and
  * measures how much business each one introduces.
  */

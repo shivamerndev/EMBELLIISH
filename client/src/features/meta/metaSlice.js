@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { metaApi } from '../../api';
 
 /**
- * Workflow vocabulary owned by the server — stage names and labels, particulars,
+ * Workflow vocabulary owned by the server : stage names and labels, particulars,
  * calculation defaults. Fetched once so the UI never hard-codes an enum.
  */
 export const loadMeta = createAsyncThunk('meta/load', async () => {

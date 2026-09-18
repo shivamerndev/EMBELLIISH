@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ============================================================
-   DESIGN TOKENS — CSS Custom Properties
+   DESIGN TOKENS : CSS Custom Properties
    Light mode values live on :root.
    Dark mode values live on html.dark (override everything).
    ============================================================ */
@@ -20,7 +20,7 @@
     --bg-surface: #FFFFFF;
     /* white card */
     --bg-surface-alt: #FAF7F4;
-    /* bronze brown — sidebar & header */
+    /* bronze brown : sidebar & header */
     --bg-hover: #F0E8DF;
     /* hover state */
     --bg-input: #FFFFFF;
@@ -36,11 +36,11 @@
 
     /* Text */
     --text-primary: #2C1F12;
-    /* dark espresso brown — headings & body */
+    /* dark espresso brown : headings & body */
     --text-secondary: #5A4332;
-    /* rich dark brown — secondary text */
+    /* rich dark brown : secondary text */
     --text-muted: #6E5948;
-    /* dark warm taupe — muted text */
+    /* dark warm taupe : muted text */
     --text-faint: #8C7866;
     /* visible faint text */
 
@@ -171,7 +171,7 @@
     @apply bg-brand-500/15 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded text-xs font-medium;
   }
 
-  /* Theme transition — all color-bearing elements animate smoothly */
+  /* Theme transition : all color-bearing elements animate smoothly */
   .theme-transition,
   .theme-transition * {
     transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease !important;

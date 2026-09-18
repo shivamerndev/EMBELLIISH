@@ -7,14 +7,14 @@ import {
 } from '../constants/product.constants.js';
 
 /**
- * Step 6 — the Consumption Sheet.
+ * Step 6 : the Consumption Sheet.
  *
  * This module is the calculation brain of the ERP: window measurements in, material
  * quantities out. It is deliberately pure (no database, no I/O) so the numbers can be
  * unit-tested and re-derived at any time from the stored measurements.
  *
  * Formulas were reverse-engineered from the signed Embellish consumption sheet in
- * `docs/Cunsumption_Sheet.jpeg` (Mr. Hiral — Bunglow 1, 09.04.2026) and verified
+ * `docs/Cunsumption_Sheet.jpeg` (Mr. Hiral : Bunglow 1, 09.04.2026) and verified
  * against its printed row values and column totals:
  *
  *   Running feet   Rnft            = ceil(width_inch / 12)
@@ -50,7 +50,7 @@ const SQ_INCHES_PER_SQ_FOOT = 144;
 
 const DEFAULT_CONSUMPTION_CONFIG = {
   /**
-   * Step 4 — Ready Size allowances, in inches.
+   * Step 4 : Ready Size allowances, in inches.
    *
    * The window is 10 feet; the curtain has to touch the floor, so the finished
    * piece is 10.5. The measured opening and the size the factory stitches to are
@@ -173,11 +173,11 @@ const resolveConfig = (window = {}, config = {}) => {
 };
 
 /**
- * Step 4 — Ready Size.
+ * Step 4 : Ready Size.
  *
  * The finished size of the piece, which is what the factory stitches to and what
  * QC measures against. Derived from the window size plus the ready allowances,
- * unless the coordinator typed an explicit finished size — a bay window, a
+ * unless the coordinator typed an explicit finished size : a bay window, a
  * pelmet return or a client who wants the drape stopping at the sill are all
  * cases the arithmetic cannot know about.
  *
@@ -294,7 +294,7 @@ const calculateWindow = (window = {}, config = {}) => {
     readySizeNote: ready.note,
     readyWidthAllowanceInch: ready.widthAllowanceInch,
     readyDropAllowanceInch: ready.dropAllowanceInch,
-    /** `width`/`height` are the ready size — every quantity below is derived from them. */
+    /** `width`/`height` are the ready size : every quantity below is derived from them. */
     width: round(width, 2),
     height: round(height, 2),
 
@@ -365,7 +365,7 @@ const roundTotals = (totals) =>
 
 /**
  * Builds the whole consumption sheet: every window, grouped into rooms, with
- * room subtotals and a project grand total — exactly the shape of the paper sheet.
+ * room subtotals and a project grand total : exactly the shape of the paper sheet.
  *
  * @param {Array} windows measurement lines, each carrying `room` and `roomName`
  * @param {object} config project consumption configuration
@@ -436,7 +436,7 @@ const buildConsumptionSheet = (windows = [], config = {}) => {
 /* ------------------------------------------------------------------ costing */
 
 /**
- * Turns consumption totals into priced BOQ lines — the bridge from Step 6 to the
+ * Turns consumption totals into priced BOQ lines : the bridge from Step 6 to the
  * Step 8 quotation. Zero-quantity lines are dropped so the document stays readable.
  */
 const priceConsumption = (totals, rateCard = {}) => {

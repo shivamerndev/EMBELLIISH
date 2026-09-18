@@ -6,7 +6,7 @@ import { relativeTime } from '../../utils/format';
 import cn from '../../utils/cn';
 
 /**
- * Module 19 — "WhatsApp nahi. ERP me."
+ * Module 19 : "WhatsApp nahi. ERP me."
  *
  * The unread count is polled rather than pushed: this is an internal tool with a
  * handful of concurrent users, and a minute of latency on "the token cleared" is
@@ -70,7 +70,7 @@ export const NotificationBell = () => {
 
   const openItem = async (item) => {
     if (!item.isRead) {
-      await notificationsApi.markRead(item.id).catch(() => {});
+      await notificationsApi.markRead(item.id).catch(() => { });
       setUnread((n) => Math.max(0, n - 1));
       setItems((list) => list.map((row) => (row.id === item.id ? { ...row, isRead: true } : row)));
     }
@@ -81,7 +81,7 @@ export const NotificationBell = () => {
   };
 
   const markAll = async () => {
-    await notificationsApi.markAllRead().catch(() => {});
+    await notificationsApi.markAllRead().catch(() => { });
     setUnread(0);
     setItems((list) => list.map((row) => ({ ...row, isRead: true })));
   };

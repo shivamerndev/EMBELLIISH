@@ -5,14 +5,14 @@ import authRoutes from '../modules/auth/auth.routes.js';
 import userRoutes from '../modules/user/user.routes.js';
 import membersRoutes from '../modules/members/members.routes.js';
 
-// CRM — Leads, DCM Assignment, Qualification, Delayed Leads
+// CRM : Leads, DCM Assignment, Qualification, Delayed Leads
 import leadRoutes from '../modules/crm/lead/lead.routes.js';
 import architectRoutes from '../modules/crm/architect/architect.routes.js';
 
-// Sales — approved leads pipeline serving all 12 Sales & Commercials stages
+// Sales : approved leads pipeline serving all 12 Sales & Commercials stages
 import salesRoutes from '../modules/sales/sales.routes.js';
 
-// Inventory — fabrics only (consumed by Studio Meeting & Consumption BOQ)
+// Inventory : fabrics only (consumed by Studio Meeting & Consumption BOQ)
 import fabricRoutes from '../modules/inventory/fabric/fabric.routes.js';
 
 // Notifications, Settings, Pricing
@@ -20,10 +20,10 @@ import notificationRoutes from '../modules/notification/notification.routes.js';
 import settingsRoutes from '../modules/settings/settings.routes.js';
 import pricingRoutes from '../modules/pricing/pricing.routes.js';
 
-// Reports — dashboard roll-up
+// Reports : dashboard roll-up
 import reportsRoutes from '../modules/reports/reports.routes.js';
 
-// Upload — photo/file attachments for sales stages
+// Upload : photo/file attachments for sales stages
 import uploadRoutes from './upload.routes.js';
 
 import settingsService from '../modules/settings/settings.service.js';

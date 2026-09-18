@@ -307,7 +307,7 @@ export const LeadDetailsModal = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
-                  {isEditing ? `Edit Lead — ${codeVal}` : 'Lead Details'}
+                  {isEditing ? `Edit Lead : ${codeVal}` : 'Lead Details'}
                 </h3>
                 <span className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-[#836444] text-white dark:bg-amber-600 dark:text-white shadow-2xs shrink-0">
                   {codeVal}
@@ -658,7 +658,7 @@ export const LeadDetailsModal = ({
                     </div>
                   </Field>
 
-                       <Field label="Architect / Designer Involved">
+                  <Field label="Architect / Designer Involved">
                     <Select
                       value={form.architectInvolved}
                       onChange={setFormKey('architectInvolved')}
@@ -724,7 +724,7 @@ export const LeadDetailsModal = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-             
+
                   {/* <Field label="Previous Client Relationship">
                     <Select
                       value={form.previousClientRelationship}

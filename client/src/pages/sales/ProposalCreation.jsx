@@ -21,7 +21,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's8',
         title: 'Proposal Creation',
         color: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/90 dark:text-sky-200 dark:border-sky-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'proposal.dueDate', label: 'Proposal Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -35,7 +35,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'proposal.terms', label: 'Terms' },
             { key: 'proposal.refundRevisionClause', label: 'Refund / Revision Clause' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'proposal.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -453,8 +453,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                         type="button"
                         onClick={() => onSectionChange && onSectionChange(sec.id)}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                                ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
+                            ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
                         {sec.title}
@@ -660,7 +660,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Proposal Creation & Commercial Terms — ${item?.clientName || item?.code}`}
+            title={`Proposal Creation & Commercial Terms : ${item?.clientName || item?.code}`}
             subtitle="Configure proposal dates, versions, client brief, linked BOQ, design direction, pricing range, and master template terms."
             size="xl"
             footer={
@@ -787,7 +787,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                                         Client Brief
                                     </h4>
                                 </div>
-                        
+
                             </div>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
                                 Source: Studio Meeting / Pre-Site Visit
@@ -920,7 +920,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                         <div className="flex items-center gap-2">
                             <ShieldCheck className="w-4 h-4 text-indigo-500" />
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                 Terms
+                                Terms
                             </h4>
                         </div>
                         <button
@@ -987,7 +987,7 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
                     />
                     <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Auto-fetched approved clause; restricted manual override</p>
                 </div>
-                
+
             </div>
         </Modal>
     );

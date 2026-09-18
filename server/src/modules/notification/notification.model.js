@@ -2,11 +2,11 @@ import mongoose from 'mongoose';
 import { applyJsonTransform } from '../../core/schemaPlugins.js';
 
 /**
- * Module 19 — Notifications.
+ * Module 19 : Notifications.
  *
  * "WhatsApp nahi. ERP me." The point of this module is that the things people
- * currently learn from a group message — the token cleared, QC failed, a discount
- * needs the founder, the fabric never arrived — land on the right person's screen
+ * currently learn from a group message : the token cleared, QC failed, a discount
+ * needs the founder, the fabric never arrived : land on the right person's screen
  * inside the system that already knows about them.
  *
  * One document per recipient rather than one broadcast with a read-list: read

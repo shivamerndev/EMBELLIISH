@@ -50,7 +50,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's4',
         title: 'Measurement (Physical Sheet & Site Details)',
         color: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/90 dark:text-teal-200 dark:border-teal-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'code', label: 'Lead ID' },
             { key: 'clientName', label: 'Client Name' },
@@ -222,13 +222,12 @@ const SPREADSHEET_CELL_RENDERERS = {
         const keys = ['photo', 'video', 'flooring', 'ceiling', 'height'];
         const completed = keys.filter((k) => Boolean(cl[k])).length;
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${
-                completed === 5
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${completed === 5
                     ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
                     : completed > 0
-                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-            }`}>
+                        ? 'bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}>
                 <CheckCircle2 className="w-3 h-3 shrink-0" /> {completed}/5 Checked
             </span>
         );
@@ -450,7 +449,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Physical Measurement Sheet — ${item?.clientName || ''}`}
+            title={`Physical Measurement Sheet : ${item?.clientName || ''}`}
             size="full"
             footer={
                 <div className="flex items-center justify-between w-full">
