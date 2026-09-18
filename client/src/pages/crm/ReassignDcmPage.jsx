@@ -195,12 +195,16 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
     );
   }, [dcmList, managerSearch]);
 
+  const navigate = useNavigate();
+
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.update(item.id || item._id, payload),
     {
       onSuccess: () => {
         if (onDone) onDone();
         if (onClose) onClose();
+        const code = item?.code || '';
+        navigate(`/crm/qualification${code ? `?search=${encodeURIComponent(code)}` : ''}`);
       },
     }
   );
@@ -237,11 +241,6 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
       return;
     }
 
-    if (!form.reassignmentReason?.trim()) {
-      setFormError('Please enter a note or reason for reassignment.');
-      return;
-    }
-
     execute({
       ...form,
       reassignmentRequired: true,
@@ -254,12 +253,12 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
       open={Boolean(item)}
       onClose={onClose}
       title={`Reassign DCM — ${item?.clientName || item?.companyName || item?.code || ''}`}
-      subtitle="Select a new Dedicated Customer Manager and add the reassignment reason / note"
+      subtitle="Select a new Dedicated Customer Manager (optional note / reason)"
       size="xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending} icon={UserCheck}>Reassign DCM</Button>
+          <Button onClick={submit} loading={pending} icon={UserCheck}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -377,14 +376,13 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
           </div>
         </div>
 
-        {/* Note / Reason of Reassignment */}
-        <Field label="Note / Reason of Reassignment" required hint="Provide context, workload reasons, or client requests for reassigning DCM">
+        {/* Note */}
+        <Field label="Note" hint="Provide context, workload reasons, or client requests for reassigning DCM">
           <Textarea
             value={form.reassignmentReason}
             onChange={setField('reassignmentReason')}
             placeholder="e.g. Workload rebalance required / Client requested senior DCM / Technical specification match..."
             rows={3}
-            required
           />
         </Field>
 
@@ -469,7 +467,7 @@ const ReassignDcmCard = ({ item, onReassign }) => {
           onClick={() => onReassign(item)}
           className="bg-amber-600 hover:bg-amber-700 text-white font-semibold"
         >
-          Reassign DCM
+          Assign DCM
         </Button>
       </div>
     </div>
@@ -527,7 +525,7 @@ export const ReassignDcmPage = () => {
     <div>
       <PageHeader
         title="CRM — Reassign DCM (Qualified Leads)"
-        subtitle="View qualified leads and reassign Dedicated Customer Managers (DCMs) with mandatory reassignment notes and reasons"
+        subtitle="View qualified leads and reassign Dedicated Customer Managers (DCMs)"
       />
 
       <Panel className="mb-4">
@@ -599,7 +597,7 @@ export const ReassignDcmPage = () => {
                     ) : (
                       paginated.map((row) => (
                         <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
-                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
                             <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                           </td>
@@ -634,7 +632,7 @@ export const ReassignDcmPage = () => {
                             {row.assignmentDateTime ? new Date(row.assignmentDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-400">{row.updatedUser || 'Admin'}</td>
-                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
                             <Button
                               size="sm"
                               variant="primary"
@@ -642,7 +640,7 @@ export const ReassignDcmPage = () => {
                               onClick={() => setReassigningItem(row)}
                               className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
                             >
-                              Reassign DCM
+                              Assign DCM
                             </Button>
                           </td>
                         </tr>

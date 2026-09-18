@@ -105,6 +105,7 @@ export const getMediaUrl = (url) => {
   return url;
 };
 
+/** Returns local ISO date string (YYYY-MM-DD) */
 export const getLocalDate = () => {
   const d = new Date();
   const year = d.getFullYear();

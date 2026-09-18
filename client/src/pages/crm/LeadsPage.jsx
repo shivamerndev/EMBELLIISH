@@ -294,10 +294,19 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const navigate = useNavigate();
 
   const { execute, pending, error } = useAction(
     (payload) => leadsApi.create(payload),
-    { onSuccess: () => { onCreated(); onClose(); } }
+    {
+      onSuccess: (res) => {
+        onCreated();
+        onClose();
+        const createdItem = res?.data?.item || res?.data;
+        const code = createdItem?.code || form.code || '';
+        navigate(`/crm/dcm-assignments${code ? `?search=${encodeURIComponent(code)}&assign=true` : ''}`);
+      }
+    }
   );
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -360,7 +369,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} loading={pending}>Save Lead Record</Button>
+          <Button onClick={submit} loading={pending}>Save and Move to Next Step</Button>
         </>
       }
     >
@@ -1091,7 +1100,7 @@ export const LeadsPage = () => {
                           onClick={() => setViewingLead(row)}
                           className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer group"
                         >
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1175,7 +1184,7 @@ export const LeadsPage = () => {
                               )}
                             </div>
                           </td>
-                          <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100/80 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                          <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
                               <Button
                                 size="sm"
@@ -1183,9 +1192,9 @@ export const LeadsPage = () => {
                                 icon={UserCheck}
                                 onClick={() => setReassigningLead(row)}
                                 className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-                                title="Reassign DCM"
+                                title="Assign DCM"
                               >
-                                Reassign DCM
+                                Assign DCM
                               </Button>
                               <Button
                                 size="sm"

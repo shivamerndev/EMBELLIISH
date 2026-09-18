@@ -22,7 +22,7 @@ import {
     FileText,
     Check
 } from 'lucide-react';
-import { date, getErrorMessage } from '../../utils/format';
+import { date, getErrorMessage, getLocalDate } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
@@ -421,7 +421,7 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
     );
 };
 
-import { getLocalDate } from '../../utils/format';
+
 
 const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
     const wasApproved = item?.approval?.clientApprovalStatus === 'APPROVED';

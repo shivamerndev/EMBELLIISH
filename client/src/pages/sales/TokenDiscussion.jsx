@@ -4,7 +4,7 @@ import {
     Search, Eye, BadgeDollarSign, Calendar, CheckCircle2, Paperclip, Wallet, Pencil,
     AlertTriangle, FileText, Layers, Clock, Sparkles, Check, X, ShieldAlert, ArrowRight
 } from 'lucide-react';
-import { currency, date } from '../../utils/format';
+import { currency, date, getLocalDate, formatBudgetValue } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import { getNextStageUrl } from '../../utils/salesPipeline';
 import useViewMode from '../../hooks/useViewMode';
@@ -301,8 +301,20 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto text-xs" title={String(raw)}>{String(raw)}</span>;
 };
 
+const formatDatetimeLocal = (val) => {
+    if (!val) return '';
+    try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return String(val).slice(0, 16);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch {
+        return '';
+    }
+};
+
 /* ------------------------------------------------------------- Edit Token Discussion Modal */
-import { getLocalDate } from '../../utils/format';
+
 
 const EditTokenModal = ({ item, onClose, onDone }) => {
     const navigate = useNavigate();
@@ -313,48 +325,17 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
     const initialStatus = normalizeTokenStatus(tok.status);
 
     const [form, setForm] = useState({
-        discussionDueDate: tok.discussionDueDate ? String(tok.discussionDueDate).slice(0, 10) : getLocalDate(),
-        amount: tok.amount ?? '',
+        budgetEstimate: tok.budgetEstimate !== undefined && tok.budgetEstimate !== null && tok.budgetEstimate !== '' ? formatBudgetValue(tok.budgetEstimate) : (item?.budget ? formatBudgetValue(item.budget) : ''),
+        amount: tok.amount !== undefined && tok.amount !== null && tok.amount !== '' ? formatBudgetValue(tok.amount) : '',
         status: initialStatus,
-        receivedDate: tok.receivedDate ? String(tok.receivedDate).slice(0, 10) : '',
-        clientBudgetResponse: tok.clientBudgetResponse || '',
-        proposal: tok.proposal || item?.proposal?.noVersion || item?.proposal?.selectedBoqVersion || '',
-        budgetEstimate: tok.budgetEstimate ?? item?.budget ?? '',
-        clientResponse: tok.clientResponse || '',
-        projectTimelineStart: tok.projectTimelineStart ? String(tok.projectTimelineStart).slice(0, 10) : '',
-        projectTimelineEnd: tok.projectTimelineEnd ? String(tok.projectTimelineEnd).slice(0, 10) : '',
-        projectTimeline: tok.projectTimeline || '',
-        masterTemplate: tok.masterTemplate || '',
-        commercialTerms: tok.commercialTerms || '',
-        commercialTermsNotes: tok.commercialTermsNotes || '',
+        receivedDate: tok.receivedDate ? formatDatetimeLocal(tok.receivedDate) : '',
     });
 
     const [validationError, setValidationError] = useState('');
 
     const set = (key) => (e) => {
         const val = e.target.value;
-        setForm((p) => {
-            const next = { ...p, [key]: val };
-
-            // Dynamic master template selection
-            if (key === 'masterTemplate') {
-                const tmpl = COMMERCIAL_MASTER_TEMPLATES.find((t) => t.name === val);
-                if (tmpl && tmpl.id !== 'custom') {
-                    next.commercialTerms = tmpl.terms;
-                }
-            }
-
-            // Dynamic project timeline update
-            if (key === 'projectTimelineStart' || key === 'projectTimelineEnd') {
-                const start = key === 'projectTimelineStart' ? val : p.projectTimelineStart;
-                const end = key === 'projectTimelineEnd' ? val : p.projectTimelineEnd;
-                if (start && end) {
-                    next.projectTimeline = `${start} to ${end}`;
-                }
-            }
-
-            return next;
-        });
+        setForm((p) => ({ ...p, [key]: val }));
     };
 
     const { execute, pending, error: apiError } = useAction(
@@ -379,20 +360,18 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         if (e) e.preventDefault();
         setValidationError('');
 
-        // Configuration / Validation rule: Token Received Date is Mandatory when Token Status is Received
+        // Configuration / Validation rule: ADVANCE RECIEVED DATE&TIME is Mandatory when ADVANCE COLLECTED STATUS is Received
         if (form.status === 'Received' && !form.receivedDate) {
-            setValidationError('Token Received Date is mandatory when Token Status is Received.');
+            setValidationError('ADVANCE RECIEVED DATE&TIME is mandatory when ADVANCE COLLECTED STATUS is Received.');
             return;
         }
 
         const payload = {
-            ...form,
-            amount: form.amount === '' ? undefined : Number(form.amount),
-            budgetEstimate: form.budgetEstimate === '' ? undefined : Number(form.budgetEstimate),
-            discussionDueDate: form.discussionDueDate || undefined,
+            ...tok,
+            budgetEstimate: form.budgetEstimate === '' || form.budgetEstimate === undefined || form.budgetEstimate === null ? undefined : Number(String(form.budgetEstimate).replace(/[^0-9.]/g, '')) || undefined,
+            amount: form.amount === '' || form.amount === undefined || form.amount === null ? undefined : Number(String(form.amount).replace(/[^0-9.]/g, '')) || undefined,
+            status: form.status,
             receivedDate: form.receivedDate || undefined,
-            projectTimelineStart: form.projectTimelineStart || undefined,
-            projectTimelineEnd: form.projectTimelineEnd || undefined,
         };
 
         redirectRef.current = shouldRedirect;
@@ -410,21 +389,13 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
         navigate(url);
     };
 
-    // Proposal version choices candidate list
-    const availableProposals = Array.from(new Set([
-        item?.proposal?.noVersion,
-        item?.proposal?.selectedBoqVersion,
-        ...(item?.proposal?.revisionHistory || []).map((r) => r.version),
-        'v1.0', 'v1.1', 'v2.0'
-    ].filter(Boolean)));
-
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
             title={`Edit Token Discussion & Commercial Details — ${item?.clientName || item?.code}`}
-            subtitle="Configure token discussion due dates, amounts, status, proposal version, budget response, date ranges, and commercial terms."
-            size="xl"
+            subtitle="Configure project value, advance collected amount, status, and received date & time."
+            size="lg"
             footer={
                 <div className="flex items-center justify-between w-full gap-2 flex-wrap">
                     <Button
@@ -461,17 +432,37 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-                {/* Section 1: Token Status */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                        <Wallet className="w-4 h-4 text-amber-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Token Setup
-                        </h4>
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="1. VALUE OF PROJECT (MONEY)" hint="Numeric value in ₹">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                                <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="e.g. 5,00,000"
+                                    value={form.budgetEstimate}
+                                    onChange={(e) => setForm((p) => ({ ...p, budgetEstimate: formatBudgetValue(e.target.value) }))}
+                                    className="pl-7 font-mono"
+                                />
+                            </div>
+                        </Field>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Field label="Token Status" required hint="Current status of the token discussion">
+                        <Field label="2. ADVANCE COLLECTED AMOUNT" hint="Numeric value in ₹">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                                <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="e.g. 50,000"
+                                    value={form.amount}
+                                    onChange={(e) => setForm((p) => ({ ...p, amount: formatBudgetValue(e.target.value) }))}
+                                    className="pl-7 font-mono"
+                                />
+                            </div>
+                        </Field>
+
+                        <Field label="3. ADVANCE COLLECTED STATUS" required hint="Current status of advance collection">
                             <Select value={form.status} onChange={set('status')}>
                                 {TOKEN_STATUS_OPTIONS.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -481,173 +472,19 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                             </Select>
                         </Field>
 
-                        <Field label="Token Discussion Due" hint="Due date for completing the discussion">
-                            <Input type="date" value={form.discussionDueDate} onChange={set('discussionDueDate')} />
-                        </Field>
-
-                        <Field label="Token Amount (₹)" hint="Numeric value in ₹">
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
-                                <Input
-                                    type="number"
-                                    placeholder="e.g. 50000"
-                                    value={form.amount}
-                                    onChange={set('amount')}
-                                    className="pl-7 font-mono"
-                                />
-                            </div>
-                        </Field>
-
                         <Field
-                            label="Token Received Date"
+                            label="4. ADVANCE RECIEVED DATE&TIME"
                             required={form.status === 'Received'}
-                            hint={form.status === 'Received' ? 'Mandatory when Token Status is Received' : 'Date when token was received'}
+                            hint={form.status === 'Received' ? 'Mandatory when ADVANCE COLLECTED STATUS is Received' : 'Date & time when advance was received'}
                         >
                             <Input
-                                type="date"
+                                type="datetime-local"
                                 value={form.receivedDate}
                                 onChange={set('receivedDate')}
                                 className={form.status === 'Received' && !form.receivedDate ? 'border-rose-400 focus:ring-rose-500' : ''}
                             />
                         </Field>
                     </div>
-                </div>
-
-                {/* Section 2: Budget & Proposal Integration */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                        <FileText className="w-4 h-4 text-purple-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Proposal & Budget Response
-                        </h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Field label="Proposal Version" hint="Select the proposal version discussed">
-                            <div className="space-y-1.5">
-                                <Select value={form.proposal} onChange={set('proposal')}>
-                                    <option value="">-- Select Proposal Version --</option>
-                                    {availableProposals.map((ver) => (
-                                        <option key={ver} value={ver}>{ver}</option>
-                                    ))}
-                                </Select>
-                                <Input
-                                    size="sm"
-                                    placeholder="Or specify proposal version code..."
-                                    value={form.proposal}
-                                    onChange={set('proposal')}
-                                    className="text-xs font-mono"
-                                />
-                            </div>
-                        </Field>
-
-                        <Field label="Client Budget Response" hint="Select client's budget feedback status">
-                            <Select value={form.clientBudgetResponse} onChange={set('clientBudgetResponse')}>
-                                <option value="">-- Select Response --</option>
-                                {CLIENT_BUDGET_RESPONSE_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </Select>
-                        </Field>
-
-                        <Field label="Budget Estimate (₹)" hint="Numeric value in ₹">
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
-                                <Input
-                                    type="number"
-                                    placeholder="e.g. 500000"
-                                    value={form.budgetEstimate}
-                                    onChange={set('budgetEstimate')}
-                                    className="pl-7 font-mono"
-                                />
-                            </div>
-                        </Field>
-                    </div>
-                </div>
-
-                {/* Section 3: Project Timeline (Date-range field) */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                        <Calendar className="w-4 h-4 text-emerald-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Project Timeline (Proposed Start & Completion Dates)
-                        </h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Proposed Start Date" hint="Proposed start date for project execution">
-                            <Input type="date" value={form.projectTimelineStart} onChange={set('projectTimelineStart')} />
-                        </Field>
-
-                        <Field label="Proposed Completion Date" hint="Proposed target completion date">
-                            <Input type="date" value={form.projectTimelineEnd} onChange={set('projectTimelineEnd')} />
-                        </Field>
-                    </div>
-
-                    {form.projectTimelineStart && form.projectTimelineEnd && (
-                        <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between text-xs">
-                            <span className="text-emerald-800 dark:text-emerald-300 font-medium">Proposed Date Range:</span>
-                            <span className="font-mono font-bold text-emerald-900 dark:text-emerald-200">
-                                {date(form.projectTimelineStart)} → {date(form.projectTimelineEnd)}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Section 4: Commercial Terms (Master-template lookup plus notes) */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                        <Layers className="w-4 h-4 text-blue-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Commercial Terms (Master Template & Authorised Overrides)
-                        </h4>
-                    </div>
-
-                    <Field label="Commercial Master Template" hint="Pull approved standard terms template">
-                        <Select value={form.masterTemplate} onChange={set('masterTemplate')}>
-                            <option value="">-- Select Master Terms Template --</option>
-                            {COMMERCIAL_MASTER_TEMPLATES.map((tmpl) => (
-                                <option key={tmpl.id} value={tmpl.name}>{tmpl.name}</option>
-                            ))}
-                        </Select>
-                    </Field>
-
-                    <Field label="Approved Commercial Terms" hint="Pulled from template or specified terms">
-                        <Textarea
-                            rows={2}
-                            placeholder="Approved payment milestones and terms..."
-                            value={form.commercialTerms}
-                            onChange={set('commercialTerms')}
-                        />
-                    </Field>
-
-                    <Field label="Authorised Overrides & Notes" hint="Document special management overrides or customized terms">
-                        <Textarea
-                            rows={2}
-                            placeholder="Authorised overrides, special exceptions, or discount clauses..."
-                            value={form.commercialTermsNotes}
-                            onChange={set('commercialTermsNotes')}
-                        />
-                    </Field>
-                </div>
-
-                {/* Section 5: Client Response (Long Free Text) */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                        <Sparkles className="w-4 h-4 text-indigo-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Client Response & Discussion Comments (Long Free Text)
-                        </h4>
-                    </div>
-
-                    <Field label="Client Response / Feedback" hint="Capture comments, discussion points, and special conditions">
-                        <Textarea
-                            rows={3}
-                            placeholder="Capture detailed client feedback, verbal commitments, or conditions requested during token discussion..."
-                            value={form.clientResponse}
-                            onChange={set('clientResponse')}
-                        />
-                    </Field>
                 </div>
             </form>
         </Modal>
@@ -786,16 +623,29 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
     const approvedLeads = rawLeads.filter((lead) => {
-        const isProposalApproved = lead.proposal?.approvalStatus === 'APPROVED' || lead.proposalApprovalStatus === 'APPROVED';
+        const propApproval = String(lead.proposal?.approvalStatus || lead.proposalApprovalStatus || lead.proposal?.status || '').toUpperCase();
+        const isProposalApproved = propApproval === 'APPROVED' || propApproval === 'COMPLETED' || propApproval === 'SUBMITTED' || propApproval === 'SENT';
+
+        const isTokenStage = Boolean(
+            lead.stage && ['token', 'token discussion', 'budgeting', 'budgeting / token discussion'].includes(String(lead.stage).toLowerCase())
+        );
+
+        const hasProposalData = Boolean(
+            lead.proposal?.noVersion ||
+            lead.proposal?.date ||
+            lead.proposal?.selectedBoqVersion
+        );
+
         const hasTokenActivity = Boolean(
             lead.token?.discussionDueDate ||
             lead.token?.amount ||
             lead.token?.receivedDate ||
-            (lead.token?.status && !['NOT_DISCUSSED', 'Not Discussed'].includes(lead.token.status)) ||
+            (lead.token?.status && !['NOT_DISCUSSED', 'Not Discussed', 'not_discussed'].includes(lead.token.status)) ||
             lead.token?.clientBudgetResponse ||
             lead.token?.clientResponse
         );
-        return isProposalApproved || hasTokenActivity;
+
+        return isProposalApproved || isTokenStage || hasTokenActivity || hasProposalData;
     });
 
     const filteredLeads = approvedLeads.filter((lead) => {
@@ -864,7 +714,11 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={BadgeDollarSign} title="No Token Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState
+                        icon={BadgeDollarSign}
+                        title="No Token Records Found"
+                        hint={search ? "Try adjusting your search query." : "Leads appear here once a Proposal is created/approved or token activity is updated."}
+                    />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView

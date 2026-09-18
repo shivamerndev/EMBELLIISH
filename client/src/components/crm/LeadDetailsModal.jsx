@@ -334,7 +334,7 @@ export const LeadDetailsModal = ({
                   onClick={() => setShowReassignModal(true)}
                   className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
                 >
-                  Reassign DCM
+                  Assign DCM
                 </Button>
                 <Button
                   variant="secondary"

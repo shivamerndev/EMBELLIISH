@@ -110,9 +110,9 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
               icon={UserCheck}
               onClick={() => onReassign(lead)}
               className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-              title="Reassign DCM"
+              title="Assign DCM"
             >
-              Reassign DCM
+              Assign DCM
             </Button>
           )}
           <Button

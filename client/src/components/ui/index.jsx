@@ -722,7 +722,7 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
         )}
         style={{ borderColor: 'var(--border-strong)' }}
       >
-        <div className="flex items-start justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b shrink-0 no-print" style={{ borderColor: 'var(--border)' }}>
           <div className="min-w-0 pr-2">
             <h3 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {title}
@@ -754,7 +754,7 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, size =
         <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 overflow-y-auto flex-1">{children}</div>
         {footer && (
           <div
-            className="flex flex-wrap items-center justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t shrink-0"
+            className="flex flex-wrap items-center justify-end gap-2 px-4 sm:px-5 py-3 sm:py-4 border-t shrink-0 no-print"
             style={{ borderColor: 'var(--border)' }}
           >
             {footer}
