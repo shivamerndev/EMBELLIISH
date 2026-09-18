@@ -307,7 +307,7 @@ const MeasurementDetailsDrawer = ({
     const [attachments, setAttachments] = useState(row?.attachments || []);
     const [drawings, setDrawings] = useState(row?.drawings || []);
 
-    // Calculator input state — stored per row
+    // Calculator input state : stored per row
     const [calcInputs, setCalcInputs] = useState({
         qty: row?.qty || 1,
         // Curtain
@@ -399,7 +399,7 @@ const MeasurementDetailsDrawer = ({
 
     const calcType = getCalcType(form.particular || row.particular);
 
-    // Live calculation — runs whenever calcInputs change
+    // Live calculation : runs whenever calcInputs change
     const calcResult = useMemo(() => {
         if (calcType === 'wallpaper') {
             return calculateWallpaperConsumption({

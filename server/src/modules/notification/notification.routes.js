@@ -5,7 +5,7 @@ import notify from './notification.service.js';
 import { sendSuccess } from '../../utils/responseHandler.js';
 
 /**
- * Module 19 — Notifications.
+ * Module 19 : Notifications.
  *
  * No permission guards here beyond being signed in: every route is scoped to the
  * caller's own inbox by their token, so there is nothing to authorise beyond that.

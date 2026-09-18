@@ -3,7 +3,7 @@ import { UOM } from '../../../constants/product.constants.js';
 import { attachmentSchema, applyJsonTransform } from '../../../core/schemaPlugins.js';
 
 /**
- * A fabric in the catalogue — "Blue Velvet", an Italian sheer, a blackout lining.
+ * A fabric in the catalogue : "Blue Velvet", an Italian sheer, a blackout lining.
  *
  * `usableWidthInch` matters far beyond the catalogue: it is what the consumption
  * engine divides the gathered width by, and the reference sheet shows it genuinely
@@ -14,7 +14,7 @@ const fabricSchema = new mongoose.Schema(
     code: { type: String, unique: true, index: true },
     name: { type: String, required: true, trim: true, index: true },
     brand: String,
-    // Not `collection` — that is a reserved path name on a mongoose schema.
+    // Not `collection` : that is a reserved path name on a mongoose schema.
     collectionName: String,
     colour: { type: String, trim: true, index: true },
     composition: String,

@@ -206,7 +206,7 @@ const safeParseArray = (raw) => {
 };
 
 /**
- * MeasurementCapture — Complete Physical Measurement Sheet UI
+ * MeasurementCapture : Complete Physical Measurement Sheet UI
  * Recreates the exact format and layout of the handwritten reference sheet (Measurement sheet.pdf)
  * while maintaining compatibility with the ERP's design system, colors, tokens, and data models.
  */
@@ -469,7 +469,7 @@ const MeasurementCapture = ({
 
     return (
         <div className={`w-full flex flex-col space-y-4 font-sans text-slate-800 dark:text-slate-100 ${className}`}>
-         
+
 
             {/* --- PHYSICAL MEASUREMENT SHEET CONTAINER --- */}
             <div className="w-full bg-white dark:bg-slate-950 p-1 sm:p-2 space-y-4 print:p-0 print:border-none print:shadow-none">
@@ -1083,7 +1083,7 @@ const MeasurementCapture = ({
                                 </label>
                             ))}
                         </div>
-                       
+
                     </div>
 
                 </div>
@@ -1091,7 +1091,7 @@ const MeasurementCapture = ({
             </div>
 
 
-               {/* Top Toolbar / Action Header */}
+            {/* Top Toolbar / Action Header */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-xs print:hidden">
                 <div className="flex items-center gap-1">
                     <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -1151,7 +1151,7 @@ const MeasurementCapture = ({
                     )}
                 </div>
             </div>
-            
+
         </div>
     );
 };

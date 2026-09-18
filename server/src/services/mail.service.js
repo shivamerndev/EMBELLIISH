@@ -6,7 +6,7 @@ import env from '../config/env.js';
  *
  * In development it logs what it would have sent, so quotation and follow-up
  * flows can be exercised end to end. In production it throws rather than
- * returning a fake success — a quotation the client never received must not be
+ * returning a fake success : a quotation the client never received must not be
  * recorded as sent.
  *
  * To make it real, implement `send` against the chosen provider (SES, Postmark,
@@ -15,10 +15,10 @@ import env from '../config/env.js';
 const mailService = {
   async send({ to, subject, html, text }) {
     if (env.nodeEnv === 'production') {
-      throw new Error('No email provider is configured — configure one before sending mail in production');
+      throw new Error('No email provider is configured : configure one before sending mail in production');
     }
 
-    logger.info(`[mail] would send to ${to} — "${subject}"`);
+    logger.info(`[mail] would send to ${to} : "${subject}"`);
     logger.debug(`[mail] body: ${text || html || '(empty)'}`);
 
     return { delivered: false, simulated: true, to, subject };

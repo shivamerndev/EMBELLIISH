@@ -15,7 +15,7 @@ import Logo from '../common/Logo';
 
 /**
  * Navigation is filtered by permission, so each department sees only the parts of
- * the spine it works on — the ERP's "each department sees their own tasks" rule
+ * the spine it works on : the ERP's "each department sees their own tasks" rule
  * expressed in the shell itself.
  */
 const NAV = [

@@ -41,14 +41,14 @@ const ThemeToggle = ({ className }) => {
             : 'left-[22px] bg-white shadow-amber-200/60'
         )}
       >
-        {/* Moon icon — visible in dark mode */}
+        {/* Moon icon : visible in dark mode */}
         <Moon
           className={cn(
             'absolute w-3.5 h-3.5 text-brand-300 transition-all duration-300',
             isDark ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           )}
         />
-        {/* Sun icon — visible in light mode */}
+        {/* Sun icon : visible in light mode */}
         <Sun
           className={cn(
             'absolute w-3.5 h-3.5 text-amber-500 transition-all duration-300',

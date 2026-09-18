@@ -6,13 +6,13 @@ import MeasurementTotals from './MeasurementTotals';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 /**
- * ExcelMeasurementGrid — Primary high-density SaaS Measurement Workspace grid.
+ * ExcelMeasurementGrid : Primary high-density SaaS Measurement Workspace grid.
  * Groups rows by room, provides sticky headers & identity columns,
  * supports inline editing, room collapse, search/filtering, and live totals.
  */
 const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', }) => {
-   
-    
+
+
     const [collapsedRooms, setCollapsedRooms] = useState({});
 
     React.useEffect(() => {
@@ -68,24 +68,24 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
 
     // Compute Grand Totals across all filtered rows live
     const grandTotals = useMemo(() => {
-        let totalWidths   = 0;
-        let netMetres     = 0;
-        let orderMetres   = 0;
+        let totalWidths = 0;
+        let netMetres = 0;
+        let orderMetres = 0;
 
         filteredRowsWithIndex.forEach(({ row }) => {
             const calc = calculateRowConsumption(row);
             totalWidths += (calc.numWidths ?? calc.roundedParts) || 0;
-            netMetres   += calc.netMetres  || 0;
+            netMetres += calc.netMetres || 0;
             orderMetres += calc.orderMetres || calc.fabricMeters || 0;
         });
 
         return {
             totalWindows: filteredRowsWithIndex.length,
-            totalWidths:  Math.round(totalWidths),
-            netMetres:    Math.round(netMetres   * 100) / 100,
-            orderMetres:  Math.round(orderMetres * 100) / 100,
+            totalWidths: Math.round(totalWidths),
+            netMetres: Math.round(netMetres * 100) / 100,
+            orderMetres: Math.round(orderMetres * 100) / 100,
             // backward-compat aliases kept so nothing else breaks
-            totalParts:   Math.round(totalWidths),
+            totalParts: Math.round(totalWidths),
             fabricMeters: Math.round(orderMetres * 100) / 100,
         };
     }, [filteredRowsWithIndex]);
@@ -127,7 +127,7 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
         <div className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
             <div className="overflow-x-auto overflow-y-auto max-h-[60vh] select-none relative scrollbar-thin">
                 <table className="w-full text-left border-collapse text-xs font-sans min-w-[1200px]">
-                    
+
                     <MeasurementGridHeader columnVisibility={columnVisibility} />
 
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950">
@@ -145,9 +145,9 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
                                 const roomSubtotals = items.reduce(
                                     (acc, { row }) => {
                                         const c = calculateRowConsumption(row);
-                                        acc.orderMetres  += c.orderMetres  || c.fabricMeters || 0;
-                                        acc.netMetres    += c.netMetres    || 0;
-                                        acc.totalWidths  += (c.numWidths ?? c.roundedParts) || 0;
+                                        acc.orderMetres += c.orderMetres || c.fabricMeters || 0;
+                                        acc.netMetres += c.netMetres || 0;
+                                        acc.totalWidths += (c.numWidths ?? c.roundedParts) || 0;
                                         return acc;
                                     },
                                     { orderMetres: 0, netMetres: 0, totalWidths: 0 }

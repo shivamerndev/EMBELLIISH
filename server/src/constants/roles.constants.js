@@ -43,11 +43,11 @@ const PERMISSIONS = {
   ACCOUNTS_MANAGE: 'accounts:manage',
   REPORTS_VIEW: 'reports:view',
   USER_MANAGE: 'user:manage',
-  /** Step 7 — sign off a discount past the house limit. The founder's call. */
+  /** Step 7 : sign off a discount past the house limit. The founder's call. */
   DISCOUNT_APPROVE: 'discount:approve',
-  /** Module 7 — the pricing master everyone else quotes from. */
+  /** Module 7 : the pricing master everyone else quotes from. */
   PRICING_MANAGE: 'pricing:manage',
-  /** Module 20 — company details, thresholds, calculation defaults. */
+  /** Module 20 : company details, thresholds, calculation defaults. */
   SETTINGS_MANAGE: 'settings:manage',
 };
 

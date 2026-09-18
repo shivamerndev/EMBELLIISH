@@ -7,7 +7,7 @@ import {
 import { addressSchema, auditEntrySchema, applyJsonTransform } from '../../core/schemaPlugins.js';
 
 /**
- * Module 20 — Settings / Masters.
+ * Module 20 : Settings / Masters.
  *
  * The house rules, in one editable document instead of scattered constants: what
  * counts as a big discount, what the payment split is, what GST to charge, what
@@ -40,7 +40,7 @@ const settingsSchema = new mongoose.Schema(
     },
 
     /**
-     * Step 7 — "Agar DCM 10% se jyada discount dega, to Founder approval lagega."
+     * Step 7 : "Agar DCM 10% se jyada discount dega, to Founder approval lagega."
      * The threshold lives here so the founder can move it without a deploy.
      */
     discount: {
@@ -49,7 +49,7 @@ const settingsSchema = new mongoose.Schema(
       maximumPercent: { type: Number, default: 100, min: 0, max: 100 },
     },
 
-    /** Steps 9, 10, 18 — the 10 / 60 / 30 split new projects inherit. */
+    /** Steps 9, 10, 18 : the 10 / 60 / 30 split new projects inherit. */
     payment: {
       tokenPercent: { type: Number, default: PAYMENT_SCHEDULE.TOKEN, min: 0, max: 100 },
       advancePercent: { type: Number, default: PAYMENT_SCHEDULE.ADVANCE, min: 0, max: 100 },
@@ -61,7 +61,7 @@ const settingsSchema = new mongoose.Schema(
       gstPercent: { type: Number, default: 18, min: 0, max: 100 },
     },
 
-    /** Step 6 defaults — fullness, bolt width, hem allowances, ready-size allowances. */
+    /** Step 6 defaults : fullness, bolt width, hem allowances, ready-size allowances. */
     consumptionDefaults: { type: Object, default: () => ({ ...DEFAULT_CONSUMPTION_CONFIG }) },
     /** Module 7 fallback, when the pricing master has no live entry for a line. */
     rateCardDefaults: { type: Object, default: () => ({ ...DEFAULT_RATE_CARD }) },

@@ -126,7 +126,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
     <Modal
       open={Boolean(item)}
       onClose={onClose}
-      title={`Qualify Lead — ${item?.clientName || ''}`}
+      title={`Qualify Lead : ${item?.clientName || ''}`}
       size="xl"
       footer={
         <>
@@ -296,7 +296,7 @@ export const QualificationPage = () => {
   return (
     <div>
       <PageHeader
-        title="CRM — Lead Qualification"
+        title="CRM : Lead Qualification"
         subtitle="Verify requirement, budget, timeline, and decision maker before approving or rejecting a lead"
       />
 

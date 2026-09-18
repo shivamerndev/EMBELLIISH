@@ -9,7 +9,7 @@ import {
 } from '../../components/ui';
 
 /**
- * Modules 7 and 20 — the Pricing Master and the house rules.
+ * Modules 7 and 20 : the Pricing Master and the house rules.
  *
  * Everything on this page used to live in someone's head or a constant in the
  * code: what counts as a big discount, what the payment split is, what a running
@@ -152,7 +152,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
 
       <Section
         title="Discount approval"
-        hint='Step 7 — "Agar DCM 10% se jyada discount dega, to Founder approval lagega."'
+        hint='Step 7 : "Agar DCM 10% se jyada discount dega, to Founder approval lagega."'
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Founder approval above (%)" hint="A DCM may discount up to this without asking">
@@ -174,7 +174,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
         </div>
       </Section>
 
-      <Section title="Payment schedule" hint="Steps 9, 10 and 18 — what new projects inherit">
+      <Section title="Payment schedule" hint="Steps 9, 10 and 18 : what new projects inherit">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Field label="Token (%)">
             <Input type="number" value={form.payment.tokenPercent ?? 10} onChange={setIn('payment', 'tokenPercent')} />
@@ -202,7 +202,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
         </div>
       </Section>
 
-      <Section title="Notifications" hint='Module 19 — "WhatsApp nahi. ERP me."'>
+      <Section title="Notifications" hint='Module 19 : "WhatsApp nahi. ERP me."'>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {[
             ['emailEnabled', 'Also send by email'],
@@ -261,7 +261,7 @@ const CalculationTab = ({ settings, save, saving }) => {
 
       {group(
         'Ready size allowances',
-        'Step 4 — added to the measured opening to get the finished size. Zero means the surveyor already records finished drops.',
+        'Step 4 : added to the measured opening to get the finished size. Zero means the surveyor already records finished drops.',
         [
           ['readyWidthAllowanceInch', 'Drape width (in)'],
           ['readyDropAllowanceInch', 'Drape drop (in)'],
@@ -270,7 +270,7 @@ const CalculationTab = ({ settings, save, saving }) => {
         ]
       )}
 
-      {group('Fullness', 'The gather ratio — 2.5x is the house standard for main drapes', [
+      {group('Fullness', 'The gather ratio : 2.5x is the house standard for main drapes', [
         ['fullness', 'Main drape'],
         ['sheerFullness', 'Sheer'],
         ['romanFullness', 'Roman blind'],
@@ -430,7 +430,7 @@ const PricingTab = () => {
             {missing.length} chargeable line(s) have no published rate
           </p>
           <p className="text-[11px] text-amber-200/80 mt-1">
-            {missing.map((row) => row.key).join(', ')} — these fall back to the calculation defaults, and a
+            {missing.map((row) => row.key).join(', ')} : these fall back to the calculation defaults, and a
             line priced at zero is dropped from the quotation entirely.
           </p>
         </div>
@@ -439,7 +439,7 @@ const PricingTab = () => {
       <Panel>
         <PanelHeader
           title="Pricing master"
-          subtitle="Module 7 — the rates a quotation is built from. Rates are versioned by date, never edited in place."
+          subtitle="Module 7 : the rates a quotation is built from. Rates are versioned by date, never edited in place."
           icon={IndianRupee}
           actions={
             <Button size="sm" icon={Plus} onClick={() => setPublishing(true)}>
@@ -482,7 +482,7 @@ export const SettingsPage = () => {
     <div>
       <PageHeader
         title="Settings & Masters"
-        subtitle="Modules 7 and 20 — the house rules, the pricing master, and what the calculation engine assumes"
+        subtitle="Modules 7 and 20 : the house rules, the pricing master, and what the calculation engine assumes"
       />
 
       <div className="mb-4">

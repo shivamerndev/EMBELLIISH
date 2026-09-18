@@ -189,7 +189,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
     <Modal
       open={true}
       onClose={onClose}
-      title={`Prepare & Edit Quotation — ${item.clientName || 'Client'}`}
+      title={`Prepare & Edit Quotation : ${item.clientName || 'Client'}`}
       size="full"
       footer={
         <div className="flex items-center justify-between w-full gap-3">
@@ -200,7 +200,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
           </div>
 
           <div className="flex items-center gap-2">
-      
+
             <Button
               type="button"
               variant="outline"
@@ -299,7 +299,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
 
         </div>
 
-        {/* Dedicated Offscreen Printable Target — Always rendered in DOM to allow instant printing from any tab */}
+        {/* Dedicated Offscreen Printable Target : Always rendered in DOM to allow instant printing from any tab */}
         <div
           ref={printContainerRef}
           style={{

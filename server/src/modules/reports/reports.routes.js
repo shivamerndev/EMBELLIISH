@@ -7,7 +7,7 @@ import { sendSuccess } from '../../utils/responseHandler.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-/** No permission gate — every logged-in role can see the dashboard roll-up. */
+/** No permission gate : every logged-in role can see the dashboard roll-up. */
 router.get(
   '/dashboard',
   asyncHandler(async (req, res) =>

@@ -15,7 +15,7 @@ const leadRepository = new BaseRepository(LeadModel, {
 });
 
 /**
- * Steps 1–3 — the call, the qualification conversation, and handing the project
+ * Steps 1–3 : the call, the qualification conversation, and handing the project
  * to a DCM.
  */
 class LeadService extends BaseService {
@@ -33,7 +33,7 @@ class LeadService extends BaseService {
   }
 
   /**
-   * Step 2 — the Senior DCM has called: how many rooms, what budget, where.
+   * Step 2 : the Senior DCM has called: how many rooms, what budget, where.
    * Answers are folded back onto the lead so the pipeline reflects real numbers,
    * not the guess taken down on the first call.
    */
@@ -67,7 +67,7 @@ class LeadService extends BaseService {
     return lead.toJSON();
   }
 
-  /** Step 3 — "Rahul tum ye project handle karo." */
+  /** Step 3 : "Rahul tum ye project handle karo." */
   async assign(id, { assignedDCM, note }, user) {
     const lead = await this.#load(id);
 
@@ -140,7 +140,7 @@ class LeadService extends BaseService {
       const existingKyc = existing.kyc || {};
       const statusInput = updateData.kyc.status;
       const isVerified = statusInput === 'Verified' || statusInput === 'VERIFIED';
-      
+
       if (isVerified) {
         const userName = user?.name || user?.email || user?.username || 'System Admin';
         updateData.kyc.verifiedBy = userName;

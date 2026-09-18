@@ -80,7 +80,7 @@ const STAGE_LABELS = {
 
 /**
  * Gate keys checked before entering a stage. Each key maps to a checker in
- * project.gates.js — keeping the rules declarative here and the queries there.
+ * project.gates.js : keeping the rules declarative here and the queries there.
  */
 const STAGE_GATES = {
   [PROJECT_STAGE.MEASUREMENT]: ['siteVisitDone'],

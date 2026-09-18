@@ -12,12 +12,12 @@ const pricingRepository = new BaseRepository(PriceItemModel, {
 });
 
 /**
- * Module 7 — the Pricing Master.
+ * Module 7 : the Pricing Master.
  *
  * The rate a BOQ costs with is resolved in three steps, most specific first:
  *
  *   1. the project's own rate card  (a negotiated rate, frozen onto the project)
- *   2. the published price list     (this module — what the founder set)
+ *   2. the published price list     (this module : what the founder set)
  *   3. the settings defaults        (module 20, then the engine's constants)
  *
  * So a project quoted last quarter keeps its numbers, a new project picks up
@@ -105,7 +105,7 @@ class PricingService extends BaseService {
       gstPercent: settings.tax?.gstPercent ?? DEFAULT_RATE_CARD.gstPercent,
     };
 
-    // A project's negotiated rate beats the published list — but only where one
+    // A project's negotiated rate beats the published list : but only where one
     // was actually set, so a stored zero cannot wipe out a live rate.
     Object.entries(projectRateCard || {}).forEach(([field, value]) => {
       if (Number.isFinite(Number(value)) && Number(value) > 0) resolved[field] = Number(value);
@@ -114,7 +114,7 @@ class PricingService extends BaseService {
     return resolved;
   }
 
-  /** Which price-list keys are still unpublished — the "why is this line missing?" answer. */
+  /** Which price-list keys are still unpublished : the "why is this line missing?" answer. */
   async coverage() {
     const list = await this.currentPriceList();
     const published = new Set(list.map((item) => item.key));

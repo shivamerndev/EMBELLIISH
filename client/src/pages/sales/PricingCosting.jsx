@@ -41,7 +41,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's10',
         title: 'Material & Labor Costing Overview',
         color: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'costing.dueDate', label: 'Pricing Due Date', type: 'date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -56,7 +56,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'costing.marginModel', label: 'Margin Model', type: 'lookup' },
             { key: 'costing.hiteshApprovalStatus', label: 'Hitesh Approval Status', type: 'status' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'costing.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -80,10 +80,10 @@ const getNestedVal = (obj, path) => {
     if (path === 'costing.totalCost' && obj?.costing) {
         const c = obj.costing;
         const total = (Number(c.catalogueCost) || 0) +
-                      (Number(c.landedCost) || 0) +
-                      (Number(c.localFabricCost) || 0) +
-                      (Number(c.labourCost) || 0) +
-                      (Number(c.sampleCost) || 0);
+            (Number(c.landedCost) || 0) +
+            (Number(c.localFabricCost) || 0) +
+            (Number(c.labourCost) || 0) +
+            (Number(c.sampleCost) || 0);
         return total > 0 ? total : undefined;
     }
 
@@ -190,11 +190,10 @@ const SPREADSHEET_CELL_RENDERERS = {
 
         return (
             <div className="flex flex-col items-center gap-0.5">
-                <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
-                    isHealthy
+                <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${isHealthy
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                         : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                }`}>
+                    }`}>
                     {num.toFixed(1)}%
                 </span>
                 <span className="text-[9px] text-slate-400 dark:text-slate-500">Formula Margin</span>
@@ -449,7 +448,7 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Pricing & Material Costing — ${item?.clientName || item?.code}`}
+            title={`Pricing & Material Costing : ${item?.clientName || item?.code}`}
             subtitle="Configure catalogue, landed, fabric, and labour costs with real-time formula margins and version history retention."
             size="xl"
             footer={
@@ -478,33 +477,30 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
                 <button
                     type="button"
                     onClick={() => setActiveTab('overview')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${
-                        activeTab === 'overview'
+                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${activeTab === 'overview'
                             ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
                             : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                    }`}
+                        }`}
                 >
                     Costing Parameters & Margins
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('lineItems')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
-                        activeTab === 'lineItems'
+                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${activeTab === 'lineItems'
                             ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
                             : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                    }`}
+                        }`}
                 >
                     <Layers className="w-3.5 h-3.5" /> Line-Item Cost Breakdown ({lineItems.length})
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('history')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
-                        activeTab === 'history'
+                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${activeTab === 'history'
                             ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
                             : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                    }`}
+                        }`}
                 >
                     <History className="w-3.5 h-3.5" /> Retained Version History ({history.length})
                 </button>
@@ -561,11 +557,10 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Formula Calculated Margin</span>
-                                <span className={`text-lg font-mono font-bold ${
-                                    formulaMarginPercent !== undefined && formulaMarginPercent >= minMarginThresh
+                                <span className={`text-lg font-mono font-bold ${formulaMarginPercent !== undefined && formulaMarginPercent >= minMarginThresh
                                         ? 'text-emerald-600 dark:text-emerald-400'
                                         : 'text-amber-600 dark:text-amber-400'
-                                }`}>
+                                    }`}>
                                     {formulaMarginPercent !== undefined ? `${formulaMarginPercent}%` : 'N/A'}
                                 </span>
                                 <span className="text-[10px] text-slate-400">Formula: ((Quoted - Cost) / Quoted)*100</span>
@@ -872,8 +867,8 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                         type="button"
                         onClick={() => onSectionChange && onSectionChange(sec.id)}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${currentSection === sec.id
-                                ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
+                            ? `${sec.color} font-semibold shadow-sm ring-1 ring-black/5 dark:ring-white/10`
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-200/50 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
                         {sec.title}

@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
   },
 });
 
-/** Site photos, videos and drawing files — nothing executable. */
+/** Site photos, videos and drawing files : nothing executable. */
 const ALLOWED = /^(image\/(jpeg|png|webp|heic)|video\/(mp4|quicktime)|application\/pdf)$/;
 
 const upload = multer({

@@ -27,7 +27,7 @@ import {
   StatusBadge,
 } from '../../components/ui';
 
-/** Horizontal bar chart — the pipeline reads better as position than as a list. */
+/** Horizontal bar chart : the pipeline reads better as position than as a list. */
 const StageBars = ({ rows, total, tone = 'bg-brand-500' }) => {
   const max = Math.max(1, ...rows.map((row) => row.count));
 

@@ -20,7 +20,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's3',
         title: 'Site Visit (Req. Details)',
         color: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -33,7 +33,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'drawingsRenders', label: 'Drawings / Renders' },
             { key: 'installerAvailability', label: 'Installer Availability' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'siteVisitDueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -655,7 +655,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Site Visit Details — ${item?.clientName || ''}`}
+            title={`Site Visit Details : ${item?.clientName || ''}`}
             size="xl"
         >
             <form onSubmit={submit} className="space-y-6">
@@ -1067,16 +1067,16 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                 <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
 
                     <div className='flex justify-start w-full'>
-                            <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-200 cursor-pointer mb-1.5">
-                                <input
-                                    type="checkbox"
-                                    checked={form.isCompleted}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, isCompleted: e.target.checked }))}
-                                    className="w-5 h-5 accent-green-500 rounded text-brand-600 focus:ring-brand-500"
-                                />
-                                <span>Mark Site Visit as Completed</span>
-                            </label>
-                        </div>
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-200 cursor-pointer mb-1.5">
+                            <input
+                                type="checkbox"
+                                checked={form.isCompleted}
+                                onChange={(e) => setForm((prev) => ({ ...prev, isCompleted: e.target.checked }))}
+                                className="w-5 h-5 accent-green-500 rounded text-brand-600 focus:ring-brand-500"
+                            />
+                            <span>Mark Site Visit as Completed</span>
+                        </label>
+                    </div>
 
                     <Button variant="ghost" onClick={onClose} type="button">Cancel</Button>
                     <Button className={`whitespace-nowrap`} type="submit" loading={pending}>Save Visit Details</Button>

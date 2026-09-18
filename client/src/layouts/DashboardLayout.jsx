@@ -13,7 +13,7 @@ export const DashboardLayout = () => {
     setIsMobileSidebarOpen(false);
   }, [location.pathname, location.search]);
 
-  // Handle window resize — close mobile sidebar when expanding to desktop screen
+  // Handle window resize : close mobile sidebar when expanding to desktop screen
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {

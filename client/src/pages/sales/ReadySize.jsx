@@ -20,7 +20,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's6',
         title: 'Ready Size (Window/Site Details)',
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'readySize.dueDate', label: 'Ready Size Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -33,7 +33,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'readySize.readyHeight', label: 'Ready Height' },
             { key: 'readySize.finalMeasurements', label: 'Final Measurements Grid' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'readySize.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -575,7 +575,7 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Ready Size Confirmation — ${item?.code || ''}`}
+            title={`Ready Size Confirmation : ${item?.code || ''}`}
             subtitle={`Capture & confirm final ready sizes, pelmets, tracks, and versioned site measurements for ${item?.clientName || ''}`}
             size="xl"
         >

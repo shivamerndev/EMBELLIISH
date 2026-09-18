@@ -7,7 +7,7 @@ import crudRouter from './crudRouter.js';
  * Wires the standard repository → service → controller → router chain for modules
  * whose behaviour really is plain CRUD (catalogues, master data, reference lists).
  *
- * Modules with business rules — projects, BOQs, payments, production — define
+ * Modules with business rules : projects, BOQs, payments, production : define
  * those layers explicitly instead; this exists so the boring ones do not need
  * four near-identical files each.
  *

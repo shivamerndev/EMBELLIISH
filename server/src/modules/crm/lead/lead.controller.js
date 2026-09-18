@@ -19,7 +19,7 @@ class LeadController extends BaseController {
 
     this.convert = asyncHandler(async (req, res) => {
       const data = await leadService.convert(req.params.id, req.validated, req.user);
-      return sendSuccess(res, `Lead converted — project ${data.project.code} created`, data, 201);
+      return sendSuccess(res, `Lead converted : project ${data.project.code} created`, data, 201);
     });
 
     this.markLost = asyncHandler(async (req, res) => {

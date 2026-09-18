@@ -27,7 +27,7 @@ const SPREADSHEET_SECTIONS = [
         id: 's7',
         title: 'Consumption / BOQ',
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
-        // All fields — shown in DetailedDrawer
+        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'consumption.sheetDueDate', label: 'Consumption Sheet Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -43,7 +43,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'consumption.panelCount', label: 'Panel Count' },
             { key: 'consumption.liningAccessoryAssumptions', label: 'Lining / accessory assumptions' },
         ],
-        // Subset shown in table — prevents horizontal scrolling
+        // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'consumption.sheetDueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
@@ -668,7 +668,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     const [autoIncrementVersion, setAutoIncrementVersion] = useState(false);
     const [validationError, setValidationError] = useState('');
 
-    // Tab state: 'grid' (Measurements Grid) | 'spec' (BOQ Specification & Details — current tab)
+    // Tab state: 'grid' (Measurements Grid) | 'spec' (BOQ Specification & Details : current tab)
     const [activeTab, setActiveTab] = useState('grid');
 
     // ExcelMeasurementGrid workspace states inside modal
@@ -900,7 +900,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Consumption & BOQ Specification — ${item?.clientName || ''}`}
+            title={`Consumption & BOQ Specification : ${item?.clientName || ''}`}
             size="full"
             footer={
                 <div className="flex items-center justify-between w-full">
