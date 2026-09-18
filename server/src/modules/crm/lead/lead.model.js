@@ -273,6 +273,10 @@ const leadSchema = new mongoose.Schema(
       discount: Number,
       marginRules: String,
       boqVersion: String,
+      quotationSheet: mongoose.Schema.Types.Mixed,
+      coverLetter: mongoose.Schema.Types.Mixed,
+      itemsTable: mongoose.Schema.Types.Mixed,
+      termsAndBanking: mongoose.Schema.Types.Mixed,
     },
 
     // --- Sales & Commercials: Client approval.

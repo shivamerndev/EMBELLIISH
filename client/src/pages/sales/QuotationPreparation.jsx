@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+<<<<<<< HEAD
 import {
     Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip,
     DollarSign, Edit2, Plus, Trash2, ShieldCheck, AlertTriangle, RefreshCw, Layers, Check
 } from 'lucide-react';
 import { currency, date, getErrorMessage, getLocalDate } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+=======
+import {    Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip,
+    DollarSign, Edit2, ShieldCheck, AlertTriangle, Check} from 'lucide-react';
+import { currency, date } from '../../utils/format';
+import { PageHeader, Panel, Button, Badge, Input, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+>>>>>>> 4bef8725b96a281e43649fdd499946993f5708af
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
-import { leadsApi } from '../../api';
-import { useAction } from '../../hooks/useAsync';
+
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import EditQuotationModal from "../../components/quotation/EditQuotationModal";
+import { calculateQuotationTotals } from '../../utils/salesPipeline';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -60,32 +68,6 @@ const getNestedVal = (obj, path) => {
         curr = curr[p];
     }
     return curr;
-};
-
-// Calculate pricing details from quotation values
-const calculateQuotationTotals = (q) => {
-    const cataloguePrice = Number(q.cataloguePrice || 0);
-    const labourPrice = Number(q.labourPrice || 0);
-    const samplePrice = Number(q.samplePrice || 0);
-    const subtotal = cataloguePrice + labourPrice + samplePrice;
-
-    const discountPercent = Number(q.discount || 0);
-    const discountAmount = (subtotal * discountPercent) / 100;
-    const taxableAmount = Math.max(0, subtotal - discountAmount);
-
-    const taxRate = Number(q.taxes ?? 18);
-    const taxAmount = (taxableAmount * taxRate) / 100;
-    const finalQuotedValue = taxableAmount + taxAmount;
-
-    return {
-        subtotal,
-        discountPercent,
-        discountAmount,
-        taxableAmount,
-        taxRate,
-        taxAmount,
-        finalQuotedValue,
-    };
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
@@ -232,6 +214,7 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
+<<<<<<< HEAD
 /* ------------------------------------------------------------- Edit Quotation Modal */
 
 
@@ -662,6 +645,8 @@ const EditQuotationModal = ({ item, onClose, onDone }) => {
         </Modal>
     );
 };
+=======
+>>>>>>> 4bef8725b96a281e43649fdd499946993f5708af
 
 const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's11', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's11';
@@ -779,10 +764,13 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const approvedLeads = rawLeads.filter((lead) => {
-        const status = String(lead.costing?.hiteshApprovalStatus || lead.hiteshApprovalStatus || '').toUpperCase();
-        return status === 'APPROVED';
-    });
+
+    const approvedLeads = rawLeads
+    // This comment is temperory 
+    // .filter((lead) => {
+    //     const status = String(lead.costing?.hiteshApprovalStatus || lead.hiteshApprovalStatus || '').toUpperCase();
+    //     return status === 'APPROVED';
+    // });
 
     const filteredLeads = approvedLeads.filter((lead) => {
         if (search) {
