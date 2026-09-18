@@ -207,7 +207,6 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
-
 const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSection = 's11', onSectionChange }) => {
     const currentSection = (selectedSection && SPREADSHEET_SECTIONS.some((s) => s.id === selectedSection)) ? selectedSection : 's11';
     const visibleSections = SPREADSHEET_SECTIONS.filter((s) => s.id === currentSection);

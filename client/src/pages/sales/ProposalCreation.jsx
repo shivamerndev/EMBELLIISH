@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, FileText, Calendar, CheckCircle2, Paperclip, Send, Pencil, Sparkles,
     ShieldCheck, Lock, Unlock, AlertCircle, Plus, Trash2, Link as LinkIcon, Upload,
-    Loader2, ExternalLink, History, RefreshCw, Layers, Tag, Check, HelpCircle
+    Loader2, ExternalLink, History, RefreshCw, Layers, Tag, Check, HelpCircle, Printer, RotateCcw
 } from 'lucide-react';
-import { date, getMediaUrl } from '../../utils/format';
+import { date, getMediaUrl, getLocalDate } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
@@ -511,109 +511,263 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
     );
 };
 
-import { getLocalDate } from '../../utils/format';
 
-const EditProposalModal = ({ item, onClose, onDone }) => {
+
+const parseNumber = (val) => {
+    if (!val) return 0;
+    const clean = String(val).replace(/[^0-9.]/g, '');
+    return parseFloat(clean) || 0;
+};
+
+const formatIndianNumber = (num) => {
+    if (isNaN(num) || num === null || num === undefined) return '';
+    const parts = num.toString().split('.');
+    let integerPart = parts[0];
+    const decimalPart = parts[1] ? `.${parts[1]}` : '';
+    const lastThree = integerPart.substring(integerPart.length - 3);
+    const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+    if (otherNumbers !== '') {
+        integerPart = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
+    }
+    return integerPart + decimalPart;
+};
+
+const ProposalLetterModal = ({ item, onClose, onDone }) => {
     const prop = item?.proposal || {};
+    const initialLetter = prop.letterData || {};
 
-    const [form, setForm] = useState({
-        dueDate: prop.dueDate ? String(prop.dueDate).slice(0, 10) : getLocalDate(),
-        noVersion: prop.noVersion || '',
-        date: prop.date ? String(prop.date).slice(0, 10) : '',
-        clientBrief: prop.clientBrief || item?.studioMeeting?.feedback || item?.preSiteVisit?.clientRequirements || '',
-        selectedBoqVersion: prop.selectedBoqVersion || item?.consumption?.boqVersion || 'BOQ-v1.0 (Approved)',
-        consumptionSheet: parseAttachmentsOrLinks(prop.consumptionSheet),
-        designDirection: prop.designDirection || '',
-        designDirectionAttachments: parseAttachmentsOrLinks(prop.designDirectionAttachments),
-        minPricing: prop.minPricing !== undefined ? prop.minPricing : '',
-        maxPricing: prop.maxPricing !== undefined ? prop.maxPricing : '',
-        pricingRange: prop.pricingRange || '',
-        terms: prop.terms || '',
-        refundRevisionClause: prop.refundRevisionClause || '',
-        isRefundClauseLocked: prop.isRefundClauseLocked !== false,
-        approvalStatus: prop.approvalStatus || 'PENDING',
-        approvedBy: prop.approvedBy || 'Hitesh / Senior DCM',
+    const [dateVal, setDateVal] = useState(initialLetter.date || '10.11.2025');
+    const [clientName, setClientName] = useState(initialLetter.clientName || item?.clientName || 'Mr. Rakesh Jain');
+
+    const [rooms, setRooms] = useState(initialLetter.rooms || [
+        { srNo: '1.', area: 'Living Area' },
+        { srNo: '2.', area: 'Mandir Area' },
+        { srNo: '3.', area: 'Guest Room' },
+        { srNo: '4.', area: 'Rakesh Room' },
+        { srNo: '5.', area: 'Rishabh Room' },
+        { srNo: '6.', area: 'Rishabh Walking Room' },
+        { srNo: '7.', area: 'Servant Room' },
+        { srNo: '8.', area: 'Kitchen' },
+        { srNo: '9.', area: 'Abhit Room' },
+        { srNo: '10.', area: 'Kids Room' },
+    ]);
+
+    const [opt1, setOpt1] = useState(initialLetter.opt1 || {
+        curtainQty: '748',
+        curtainRate: '3000.00',
+        curtainAmount: '22,44,000/-',
+        blackoutQty: '368',
+        blackoutRate: '395.00',
+        blackoutAmount: '1,45,360/-',
+        stitchingCurtainMft: '370',
+        stitchingLeadMft: '370',
+        stitchingRateCurtain: '850.00',
+        stitchingRateLead: '125.00',
+        stitchingAmountCurtain: '3,14,500/-',
+        stitchingAmountLead: '46,250/-',
+        total: '27,50,110/-'
     });
 
-    const [validationError, setValidationError] = useState(null);
-    const [loadingMasters, setLoadingMasters] = useState(false);
-    const [masterTerms, setMasterTerms] = useState(DEFAULT_MASTER_TERMS);
-    const [masterRefundClause, setMasterRefundClause] = useState(DEFAULT_MASTER_REFUND_CLAUSE);
+    const [opt2, setOpt2] = useState(initialLetter.opt2 || {
+        curtainQty: '748',
+        curtainRate: '4000.00',
+        curtainAmount: '29,92,000/-',
+        blackoutQty: '368',
+        blackoutRate: '395.00',
+        blackoutAmount: '1,45,360/-',
+        stitchingCurtainMft: '370',
+        stitchingLeadMft: '370',
+        stitchingRateCurtain: '850.00',
+        stitchingRateLead: '125.00',
+        stitchingAmountCurtain: '3,14,500/-',
+        stitchingAmountLead: '46,250/-',
+        total: '34,98,110/-'
+    });
 
-    useEffect(() => {
-        setLoadingMasters(true);
-        settingsApi.get()
-            .then((res) => {
-                const comp = res?.data?.company || {};
-                if (comp.termsAndConditions) {
-                    setMasterTerms(comp.termsAndConditions);
+    const [depositAmount, setDepositAmount] = useState(initialLetter.depositAmount || '4,00,000');
+
+    const roomListContainerRef = useRef(null);
+    const roomTableRef = useRef(null);
+    const roomInputsRef = useRef([]);
+    const [newlyAddedIdx, setNewlyAddedIdx] = useState(null);
+
+    const updateRoom = (index, field, value) => {
+        const updated = [...rooms];
+        updated[index] = { ...updated[index], [field]: value };
+        setRooms(updated);
+    };
+
+    const handleAddRoom = () => {
+        const nextIndex = rooms.length;
+        const nextNo = `${nextIndex + 1}.`;
+        const newRoom = { srNo: nextNo, area: 'New Area' };
+        setRooms((prev) => [...prev, newRoom]);
+        setNewlyAddedIdx(nextIndex);
+
+        setTimeout(() => {
+            if (roomListContainerRef.current) {
+                roomListContainerRef.current.scrollTo({
+                    top: roomListContainerRef.current.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+            if (roomInputsRef.current[nextIndex]) {
+                roomInputsRef.current[nextIndex].focus();
+                roomInputsRef.current[nextIndex].select();
+            }
+            if (roomTableRef.current) {
+                roomTableRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 50);
+
+        setTimeout(() => {
+            setNewlyAddedIdx(null);
+        }, 2500);
+    };
+
+    const handleRemoveRoom = (index) => {
+        const updated = rooms.filter((_, idx) => idx !== index);
+        const renumbered = updated.map((r, i) => ({ ...r, srNo: `${i + 1}.` }));
+        setRooms(renumbered);
+    };
+
+    const handleReset = () => {
+        setDateVal('10.11.2025');
+        setClientName(item?.clientName || 'Mr. Rakesh Jain');
+        setRooms([
+            { srNo: '1.', area: 'Living Area' },
+            { srNo: '2.', area: 'Mandir Area' },
+            { srNo: '3.', area: 'Guest Room' },
+            { srNo: '4.', area: 'Rakesh Room' },
+            { srNo: '5.', area: 'Rishabh Room' },
+            { srNo: '6.', area: 'Rishabh Walking Room' },
+            { srNo: '7.', area: 'Servant Room' },
+            { srNo: '8.', area: 'Kitchen' },
+            { srNo: '9.', area: 'Abhit Room' },
+            { srNo: '10.', area: 'Kids Room' },
+        ]);
+        setOpt1({
+            curtainQty: '748',
+            curtainRate: '3000.00',
+            curtainAmount: '22,44,000/-',
+            blackoutQty: '368',
+            blackoutRate: '395.00',
+            blackoutAmount: '1,45,360/-',
+            stitchingCurtainMft: '370',
+            stitchingLeadMft: '370',
+            stitchingRateCurtain: '850.00',
+            stitchingRateLead: '125.00',
+            stitchingAmountCurtain: '3,14,500/-',
+            stitchingAmountLead: '46,250/-',
+            total: '27,50,110/-'
+        });
+        setOpt2({
+            curtainQty: '748',
+            curtainRate: '4000.00',
+            curtainAmount: '29,92,000/-',
+            blackoutQty: '368',
+            blackoutRate: '395.00',
+            blackoutAmount: '1,45,360/-',
+            stitchingCurtainMft: '370',
+            stitchingLeadMft: '370',
+            stitchingRateCurtain: '850.00',
+            stitchingRateLead: '125.00',
+            stitchingAmountCurtain: '3,14,500/-',
+            stitchingAmountLead: '46,250/-',
+            total: '34,98,110/-'
+        });
+        setDepositAmount('4,00,000');
+    };
+
+    const updateOpt1 = (field, val) => {
+        setOpt1((prev) => {
+            const next = { ...prev, [field]: val };
+            if (field === 'curtainQty' || field === 'curtainRate') {
+                const qty = parseNumber(field === 'curtainQty' ? val : prev.curtainQty);
+                const rate = parseNumber(field === 'curtainRate' ? val : prev.curtainRate);
+                if (qty && rate) {
+                    next.curtainAmount = `${formatIndianNumber(qty * rate)}/-`;
                 }
-                if (comp.refundRevisionClause) {
-                    setMasterRefundClause(comp.refundRevisionClause);
+            }
+            if (field === 'blackoutQty' || field === 'blackoutRate') {
+                const qty = parseNumber(field === 'blackoutQty' ? val : prev.blackoutQty);
+                const rate = parseNumber(field === 'blackoutRate' ? val : prev.blackoutRate);
+                if (qty && rate) {
+                    next.blackoutAmount = `${formatIndianNumber(qty * rate)}/-`;
                 }
+            }
+            if (field === 'stitchingCurtainMft' || field === 'stitchingRateCurtain') {
+                const qty = parseNumber(field === 'stitchingCurtainMft' ? val : prev.stitchingCurtainMft);
+                const rate = parseNumber(field === 'stitchingRateCurtain' ? val : prev.stitchingRateCurtain);
+                if (qty && rate) {
+                    next.stitchingAmountCurtain = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
+            if (field === 'stitchingLeadMft' || field === 'stitchingRateLead') {
+                const qty = parseNumber(field === 'stitchingLeadMft' ? val : prev.stitchingLeadMft);
+                const rate = parseNumber(field === 'stitchingRateLead' ? val : prev.stitchingRateLead);
+                if (qty && rate) {
+                    next.stitchingAmountLead = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
 
-                // If lead proposal terms / refund clause are empty, auto-fill from approved masters!
-                setForm((prev) => ({
-                    ...prev,
-                    terms: prev.terms || comp.termsAndConditions || DEFAULT_MASTER_TERMS,
-                    refundRevisionClause: prev.refundRevisionClause || comp.refundRevisionClause || DEFAULT_MASTER_REFUND_CLAUSE,
-                }));
-            })
-            .catch(() => {
-                setForm((prev) => ({
-                    ...prev,
-                    terms: prev.terms || DEFAULT_MASTER_TERMS,
-                    refundRevisionClause: prev.refundRevisionClause || DEFAULT_MASTER_REFUND_CLAUSE,
-                }));
-            })
-            .finally(() => setLoadingMasters(false));
-    }, []);
-
-    // Auto-generate proposal number if empty
-    const handleGeneratePropNo = () => {
-        const leadCode = item?.code || 'LD';
-        const dateStr = new Date().getFullYear();
-        const existingVer = form.noVersion;
-
-        if (existingVer && existingVer.includes('-v')) {
-            const parts = existingVer.split('-v');
-            const currentVerNum = parseFloat(parts[1]) || 1.0;
-            const nextVer = (currentVerNum + 0.1).toFixed(1);
-            setForm((p) => ({ ...p, noVersion: `${parts[0]}-v${nextVer}` }));
-        } else {
-            setForm((p) => ({ ...p, noVersion: `PROP-${leadCode}-${dateStr}-v1.0` }));
-        }
+            const amt1 = parseNumber(next.curtainAmount);
+            const amt2 = parseNumber(next.blackoutAmount);
+            const amt3 = parseNumber(next.stitchingAmountCurtain);
+            const amt4 = parseNumber(next.stitchingAmountLead);
+            const calcTotal = amt1 + amt2 + amt3 + amt4;
+            if (calcTotal > 0 && field !== 'total') {
+                next.total = `${formatIndianNumber(calcTotal)}/-`;
+            }
+            return next;
+        });
     };
 
-    // Auto-fill today's date when proposal is issued
-    const handleSetTodayDate = () => {
-        setForm((p) => ({ ...p, date: new Date().toISOString().slice(0, 10) }));
+    const updateOpt2 = (field, val) => {
+        setOpt2((prev) => {
+            const next = { ...prev, [field]: val };
+            if (field === 'curtainQty' || field === 'curtainRate') {
+                const qty = parseNumber(field === 'curtainQty' ? val : prev.curtainQty);
+                const rate = parseNumber(field === 'curtainRate' ? val : prev.curtainRate);
+                if (qty && rate) {
+                    next.curtainAmount = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
+            if (field === 'blackoutQty' || field === 'blackoutRate') {
+                const qty = parseNumber(field === 'blackoutQty' ? val : prev.blackoutQty);
+                const rate = parseNumber(field === 'blackoutRate' ? val : prev.blackoutRate);
+                if (qty && rate) {
+                    next.blackoutAmount = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
+            if (field === 'stitchingCurtainMft' || field === 'stitchingRateCurtain') {
+                const qty = parseNumber(field === 'stitchingCurtainMft' ? val : prev.stitchingCurtainMft);
+                const rate = parseNumber(field === 'stitchingRateCurtain' ? val : prev.stitchingRateCurtain);
+                if (qty && rate) {
+                    next.stitchingAmountCurtain = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
+            if (field === 'stitchingLeadMft' || field === 'stitchingRateLead') {
+                const qty = parseNumber(field === 'stitchingLeadMft' ? val : prev.stitchingLeadMft);
+                const rate = parseNumber(field === 'stitchingRateLead' ? val : prev.stitchingRateLead);
+                if (qty && rate) {
+                    next.stitchingAmountLead = `${formatIndianNumber(qty * rate)}/-`;
+                }
+            }
+
+            const amt1 = parseNumber(next.curtainAmount);
+            const amt2 = parseNumber(next.blackoutAmount);
+            const amt3 = parseNumber(next.stitchingAmountCurtain);
+            const amt4 = parseNumber(next.stitchingAmountLead);
+            const calcTotal = amt1 + amt2 + amt3 + amt4;
+            if (calcTotal > 0 && field !== 'total') {
+                next.total = `${formatIndianNumber(calcTotal)}/-`;
+            }
+            return next;
+        });
     };
 
-    // Pull from approved client/meeting brief
-    const handlePullClientBrief = () => {
-        const brief = item?.studioMeeting?.feedback || item?.studioMeeting?.architectBrief || item?.preSiteVisit?.clientRequirements;
-        if (brief) {
-            setForm((p) => ({ ...p, clientBrief: brief }));
-        } else {
-            setValidationError('No approved client/meeting brief found on lead record.');
-            setTimeout(() => setValidationError(null), 3000);
-        }
-    };
-
-    // Auto-fetch approved master terms
-    const handlePullMasterTerms = () => {
-        setForm((prev) => ({ ...prev, terms: masterTerms }));
-    };
-
-    // Auto-fetch approved master refund clause
-    const handlePullMasterRefundClause = () => {
-        setForm((prev) => ({ ...prev, refundRevisionClause: masterRefundClause, isRefundClauseLocked: true }));
-    };
-
-    const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
-
-    const { execute, pending, error: apiError } = useAction(
+    const { execute, pending } = useAction(
         (payload) => leadsApi.update(item._id || item.id, { proposal: payload }),
         {
             onSuccess: () => {
@@ -623,371 +777,597 @@ const EditProposalModal = ({ item, onClose, onDone }) => {
         }
     );
 
-    const handleSubmit = () => {
-        setValidationError(null);
-
-        // Validation Rule 1: Proposal Due Date is required when proposal preparation begins
-        if (!form.dueDate) {
-            setValidationError('Proposal Due Date is required when proposal preparation begins.');
-            return;
-        }
-
-        // Validation Rule 7: Minimum price cannot be greater than maximum price
-        if (form.minPricing !== '' && form.maxPricing !== '' && Number(form.minPricing) > Number(form.maxPricing)) {
-            setValidationError('Minimum Price (₹) cannot be greater than Maximum Price (₹).');
-            return;
-        }
-
-        // Format Pricing Range string
-        let formattedPricingRange = form.pricingRange;
-        if (form.minPricing !== '' || form.maxPricing !== '') {
-            const minStr = form.minPricing !== '' ? formatCurrencyINR(form.minPricing) : '₹0';
-            const maxStr = form.maxPricing !== '' ? formatCurrencyINR(form.maxPricing) : '—';
-            formattedPricingRange = `${minStr} - ${maxStr}`;
-        }
-
-        const payload = {
-            ...form,
-            minPricing: form.minPricing !== '' ? Number(form.minPricing) : undefined,
-            maxPricing: form.maxPricing !== '' ? Number(form.maxPricing) : undefined,
-            pricingRange: formattedPricingRange,
+    const handleSave = () => {
+        const letterData = {
+            date: dateVal,
+            clientName,
+            rooms,
+            opt1,
+            opt2,
+            depositAmount
         };
-
-        execute(payload);
+        execute({
+            ...prop,
+            date: dateVal,
+            clientName,
+            pricingRange: `₹${opt1.total} - ₹${opt2.total}`,
+            letterData
+        });
     };
+
+    const roomPairs = useMemo(() => {
+        const pairs = [];
+        for (let i = 0; i < rooms.length; i += 2) {
+            const left = rooms[i] ? { ...rooms[i], srNo: `${i + 1}.`, originalIdx: i } : null;
+            const right = rooms[i + 1] ? { ...rooms[i + 1], srNo: `${i + 2}.`, originalIdx: i + 1 } : null;
+            pairs.push({ left, right, leftIndex: i, rightIndex: i + 1 });
+        }
+        return pairs;
+    }, [rooms]);
 
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Proposal Creation & Commercial Terms : ${item?.clientName || item?.code}`}
-            subtitle="Configure proposal dates, versions, client brief, linked BOQ, design direction, pricing range, and master template terms."
-            size="xl"
+            title={`Proposal Editor & Live Preview — ${clientName || item?.code}`}
+            subtitle="Make edits on the left panel and view real-time document changes on the right."
+            size="full"
             footer={
-                <>
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button
-                        icon={Send}
-                        loading={pending}
-                        onClick={handleSubmit}
-                    >
-                        Save Proposal
-                    </Button>
-                </>
+                <div className="flex items-center justify-between w-full no-print">
+                    <div className="flex items-center gap-2">
+                        <Button variant="secondary" icon={Printer} onClick={() => window.print()}>
+                            Print / Download PDF
+                        </Button>
+                        <Button variant="ghost" icon={RotateCcw} onClick={handleReset}>
+                            Reset Defaults
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button icon={Send} loading={pending} onClick={handleSave}>
+                            Save Proposal
+                        </Button>
+                    </div>
+                </div>
             }
         >
-            <div className="space-y-5">
-                {/* Error Alert */}
-                {(validationError || apiError) && (
-                    <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2.5 text-xs text-rose-600 dark:text-rose-400 font-medium">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>{validationError || apiError?.message}</span>
-                    </div>
-                )}
+            <style>{`
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 12mm 15mm;
+                    }
 
-                {/* Master Template Notice Bar */}
-                <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
-                            <ShieldCheck className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-xs font-semibold text-sky-900 dark:text-sky-200">Company Master Policy Controls</p>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400">All standard terms & revision clauses auto-sync from approved company masters with restricted editing controls.</p>
-                        </div>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        icon={Sparkles}
-                        loading={loadingMasters}
-                        onClick={() => {
-                            handlePullMasterTerms();
-                            handlePullMasterRefundClause();
-                        }}
-                        className="text-xs shrink-0"
-                    >
-                        Fetch Approved Masters
-                    </Button>
-                </div>
+                    html, body, #root {
+                        height: auto !important;
+                        min-height: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: visible !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                    }
 
-                {/* Section 1: Proposal Details & Key Dates */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3.5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-                        <Calendar className="w-4 h-4 text-brand-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                            Proposal Details & Key Dates
+                    div, section, main, article {
+                        max-height: none !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
+
+                    .fixed, [role="dialog"], .panel, [class*="max-h-"], [class*="overflow-"] {
+                        position: static !important;
+                        display: block !important;
+                        flex: none !important;
+                        align-items: stretch !important;
+                        justify-content: flex-start !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        max-width: none !important;
+                        max-height: none !important;
+                        width: 100% !important;
+                    }
+
+                    body * {
+                        visibility: hidden !important;
+                    }
+
+                    .no-print,
+                    header,
+                    nav,
+                    aside,
+                    button,
+                    [class*="backdrop"] {
+                        display: none !important;
+                    }
+
+                    .proposal-letter-document,
+                    .proposal-letter-document * {
+                        visibility: visible !important;
+                    }
+
+                    .proposal-letter-document {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                    }
+
+                    .page-break {
+                        page-break-before: always !important;
+                        break-before: page !important;
+                        margin-top: 0 !important;
+                        padding-top: 20px !important;
+                    }
+                }
+            `}</style>
+
+            <div className="flex flex-col lg:flex-row gap-6 h-full max-h-[82vh] overflow-hidden">
+                {/* LEFT EDIT PANEL */}
+                <div className="w-full lg:w-5/12 xl:w-4/12 space-y-4 overflow-y-auto pr-2 no-print shrink-0">
+                    {/* General Details */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-brand-500" /> Letter Details
                         </h4>
+                        <div className="space-y-3">
+                            <Field label="Client Name">
+                                <Input
+                                    value={clientName}
+                                    onChange={(e) => setClientName(e.target.value)}
+                                    placeholder="e.g. Mr. Rakesh Jain"
+                                />
+                            </Field>
+                            <Field label="Proposal Date">
+                                <Input
+                                    value={dateVal}
+                                    onChange={(e) => setDateVal(e.target.value)}
+                                    placeholder="e.g. 10.11.2025"
+                                />
+                            </Field>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Field label="Proposal Due Date *" hint="Required when preparation begins">
+                    {/* Rooms List */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-purple-500" /> Rooms ({rooms.length})
+                            </h4>
+                            <Button size="sm" variant="ghost" icon={Plus} onClick={handleAddRoom}>
+                                Add Room
+                            </Button>
+                        </div>
+                        <div ref={roomListContainerRef} className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+                            {rooms.map((room, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg border transition-all duration-300 ${newlyAddedIdx === idx
+                                            ? 'border-purple-500 ring-2 ring-purple-500/30 dark:ring-purple-400/40 bg-purple-50/40 dark:bg-purple-950/20'
+                                            : 'border-slate-200/60 dark:border-slate-700/60'
+                                        }`}
+                                >
+                                    <input
+                                        type="text"
+                                        value={room.srNo}
+                                        onChange={(e) => updateRoom(idx, 'srNo', e.target.value)}
+                                        className="w-10 text-xs font-bold text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 py-1"
+                                    />
+                                    <input
+                                        ref={(el) => (roomInputsRef.current[idx] = el)}
+                                        type="text"
+                                        value={room.area}
+                                        onChange={(e) => updateRoom(idx, 'area', e.target.value)}
+                                        className="flex-1 text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 focus:ring-1 focus:ring-purple-500 focus:outline-none"
+                                        placeholder="Area name..."
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveRoom(idx)}
+                                        className="p-1 text-slate-400 hover:text-rose-500 rounded transition"
+                                        title="Remove Room"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Option 1 Commercials */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                            <Tag className="w-4 h-4" /> Option - 1 Commercials
+                        </h4>
+                        <div className="space-y-2.5 text-xs">
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Curtain Main Qty">
+                                    <Input value={opt1.curtainQty} onChange={(e) => updateOpt1('curtainQty', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Curtain Main Rate">
+                                    <Input value={opt1.curtainRate} onChange={(e) => updateOpt1('curtainRate', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Blackout Qty">
+                                    <Input value={opt1.blackoutQty} onChange={(e) => updateOpt1('blackoutQty', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Blackout Rate">
+                                    <Input value={opt1.blackoutRate} onChange={(e) => updateOpt1('blackoutRate', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Stitching Rate (Curtain)">
+                                    <Input value={opt1.stitchingRateCurtain} onChange={(e) => updateOpt1('stitchingRateCurtain', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Stitching Rate (Lead)">
+                                    <Input value={opt1.stitchingRateLead} onChange={(e) => updateOpt1('stitchingRateLead', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <Field label="Option 1 Total (Rs.)">
+                                <Input value={opt1.total} onChange={(e) => updateOpt1('total', e.target.value)} className="text-xs font-bold" />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Option 2 Commercials */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                            <Tag className="w-4 h-4" /> Option - 2 Commercials
+                        </h4>
+                        <div className="space-y-2.5 text-xs">
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Curtain Main Qty">
+                                    <Input value={opt2.curtainQty} onChange={(e) => updateOpt2('curtainQty', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Curtain Main Rate">
+                                    <Input value={opt2.curtainRate} onChange={(e) => updateOpt2('curtainRate', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Blackout Qty">
+                                    <Input value={opt2.blackoutQty} onChange={(e) => updateOpt2('blackoutQty', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Blackout Rate">
+                                    <Input value={opt2.blackoutRate} onChange={(e) => updateOpt2('blackoutRate', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Stitching Rate (Curtain)">
+                                    <Input value={opt2.stitchingRateCurtain} onChange={(e) => updateOpt2('stitchingRateCurtain', e.target.value)} className="text-xs" />
+                                </Field>
+                                <Field label="Stitching Rate (Lead)">
+                                    <Input value={opt2.stitchingRateLead} onChange={(e) => updateOpt2('stitchingRateLead', e.target.value)} className="text-xs" />
+                                </Field>
+                            </div>
+                            <Field label="Option 2 Total (Rs.)">
+                                <Input value={opt2.total} onChange={(e) => updateOpt2('total', e.target.value)} className="text-xs font-bold" />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Deposit */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-amber-500" /> Deposit Amount
+                        </h4>
+                        <Field label="Deposit Required (Rs.)">
                             <Input
-                                type="date"
-                                value={form.dueDate}
-                                onChange={set('dueDate')}
-                                required
-                                className={!form.dueDate ? 'border-amber-400 dark:border-amber-500/50' : ''}
+                                value={depositAmount}
+                                onChange={(e) => setDepositAmount(e.target.value)}
+                                placeholder="e.g. 4,00,000"
+                                className="font-bold text-xs"
                             />
                         </Field>
-
-                        <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label className="field-label mb-0">Proposal No. / Version</label>
-                                <button
-                                    type="button"
-                                    onClick={handleGeneratePropNo}
-                                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
-                                    title="Auto-generate or bump version"
-                                >
-                                    <RefreshCw className="w-3 h-3" />Generate
-                                </button>
-                            </div>
-                            <Input
-                                value={form.noVersion}
-                                onChange={set('noVersion')}
-                                placeholder="PROP-2026-v1.0"
-                                className="font-mono text-xs"
-                            />
-                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Unique number with revision history</p>
-                        </div>
-
-                        <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label className="field-label mb-0">Proposal Date</label>
-                                <button
-                                    type="button"
-                                    onClick={handleSetTodayDate}
-                                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
-                                    title="Set current date"
-                                >
-                                    <Calendar className="w-3 h-3" /> Today
-                                </button>
-                            </div>
-                            <Input
-                                type="date"
-                                value={form.date}
-                                onChange={set('date')}
-                            />
-                            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Captured when proposal is issued</p>
-                        </div>
                     </div>
                 </div>
 
-                {/* Section 2: Client Brief & Linked Consumption BOQ */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Client Brief */}
-                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3 flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60 mb-3">
-                                <div className="flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-brand-500" />
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                        Client Brief
-                                    </h4>
+                {/* RIGHT LIVE PREVIEW PANEL */}
+                <div className="w-full lg:w-7/12 xl:w-8/12 bg-slate-200/60 dark:bg-slate-950 p-4 sm:p-6 overflow-y-auto rounded-xl border border-slate-300 dark:border-slate-800 flex justify-center items-start flex-1">
+                    <div className="proposal-letter-document bg-white text-black font-serif p-8 sm:p-12 shadow-xl w-full max-w-3xl space-y-10 border border-slate-300 rounded-sm min-h-full h-auto">
+                        {/* PAGE 1 */}
+                        <div className="space-y-6">
+                            {/* Header: Logo & Date */}
+                            <div className="flex items-start justify-between border-b border-transparent pb-4">
+                                <div className="flex flex-col">
+                                    <span className="font-serif text-3xl font-normal tracking-wide text-black lowercase">
+                                        embellish
+                                    </span>
+                                    <span className="font-serif text-[11px] tracking-wider text-black font-medium mt-0.5">
+                                        Punctuating Spaces <span className="text-black">•</span>
+                                    </span>
                                 </div>
 
+                                <div className="text-right pt-2 font-serif font-bold text-sm text-black border-b border-black">
+                                    {dateVal}
+                                </div>
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                                Source: Studio Meeting / Pre-Site Visit
-                            </p>
-                            <Textarea
-                                rows={4}
-                                value={form.clientBrief}
-                                onChange={set('clientBrief')}
-                                placeholder="Client requirements, preferences, drape styles, motorization details..."
-                            />
-                        </div>
-                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Pull from approved client/meeting brief</p>
-                    </div>
 
-                    {/* Consumption Sheet */}
-                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3 flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60 mb-3">
-                                <Layers className="w-4 h-4 text-purple-500" />
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                    Consumption Sheet
+                            {/* Salutation */}
+                            <div className="space-y-1 pt-2 font-serif text-sm text-black">
+                                <p className="font-medium">To,</p>
+                                <p className="font-bold border-b border-slate-300 inline-block min-w-[200px]">{clientName}</p>
+                            </div>
+
+                            {/* Body Paragraphs */}
+                            <div className="space-y-3 font-serif text-xs text-black leading-relaxed">
+                                <p>
+                                    Embellish Studio is delighted to have the opportunity to respond to your requirement for custom designed curtains that will add great value to your fabulously designed residence.
+                                </p>
+                                <p>
+                                    The accompanying proposal provides tentative ideas and budgets in response to all of the requirements which would enable us to provide you with exclusively custom designed curtains for your residence.
+                                </p>
+                                <p>
+                                    Until we meet next time to present the main points of the proposal to you in person, here is a quick overview of the proposal's content:
+                                </p>
+                            </div>
+
+                            {/* Section Header */}
+                            <div className="pt-2">
+                                <h4 className="font-serif text-xs font-bold underline text-black flex items-center justify-between">
+                                    <span>Rooms which require custom design curtains</span>
                                 </h4>
                             </div>
 
-                            <div className="space-y-2.5">
-                                <Select
-                                    value={form.selectedBoqVersion}
-                                    onChange={set('selectedBoqVersion')}
-                                    options={[
-                                        { value: item?.consumption?.boqVersion || 'BOQ-v1.0 (Approved)', label: `${item?.consumption?.boqVersion || 'BOQ-v1.0'} (Approved)` },
-                                        { value: 'BOQ-v1.1 (Draft)', label: 'BOQ-v1.1 (Draft Revision)' },
-                                        { value: 'BOQ-v2.0 (Final)', label: 'BOQ-v2.0 (Final Sign-off)' },
-                                    ]}
-                                />
-
-                                {item?.consumption && (
-                                    <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 text-[11px] text-purple-900 dark:text-purple-300 space-y-0.5">
-                                        <p className="font-semibold flex items-center gap-1">
-                                            <Layers className="w-3 h-3 text-purple-600 dark:text-purple-400" /> Linked BOQ: {item.consumption.boqVersion || 'v1.0'}
-                                        </p>
-                                        <p>Prepared By: {item.consumption.boqPreparedBy || 'DCM Team'} • Qty: {item.consumption.quantity || '—'} {item.consumption.unit || 'sqft'}</p>
-                                        {item.consumption.fabricDesignSelection && (
-                                            <p className="truncate">Fabric: {item.consumption.fabricDesignSelection}</p>
+                            {/* Table 1: Rooms Table */}
+                            <div ref={roomTableRef} className="transition-all duration-300">
+                                <table className="w-full border-collapse border border-black font-serif text-xs">
+                                    <thead>
+                                        <tr className="border-b border-black text-left font-bold bg-slate-50/50">
+                                            <th className="border-r border-black p-1.5 w-16 text-center">Sr. No.</th>
+                                            <th className="border-r border-black p-1.5 w-1/2">Areas</th>
+                                            <th className="border-r border-black p-1.5 w-16 text-center">Sr. No.</th>
+                                            <th className="p-1.5 w-1/2">Areas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {roomPairs.length === 0 ? (
+                                            <tr className="border-b border-black">
+                                                <td colSpan={4} className="p-3 text-center text-slate-500 italic">
+                                                    No rooms added yet.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            roomPairs.map((pair, idx) => {
+                                                const isLeftNew = pair.left && pair.leftIndex === newlyAddedIdx;
+                                                const isRightNew = pair.right && pair.rightIndex === newlyAddedIdx;
+                                                return (
+                                                    <tr key={idx} className="border-b border-black">
+                                                        <td className={`border-r border-black p-1 text-center font-bold transition-colors duration-500 ${isLeftNew ? 'bg-amber-200 text-amber-950 font-extrabold' : ''}`}>
+                                                            {pair.left ? pair.left.srNo : ''}
+                                                        </td>
+                                                        <td className={`border-r border-black p-1 font-semibold transition-colors duration-500 ${isLeftNew ? 'bg-amber-200 text-amber-950 font-extrabold' : ''}`}>
+                                                            {pair.left ? (pair.left.area || <span className="text-slate-400 italic font-normal">Unassigned Area</span>) : ''}
+                                                        </td>
+                                                        <td className={`border-r border-black p-1 text-center font-bold transition-colors duration-500 ${isRightNew ? 'bg-amber-200 text-amber-950 font-extrabold' : ''}`}>
+                                                            {pair.right ? pair.right.srNo : ''}
+                                                        </td>
+                                                        <td className={`p-1 font-semibold transition-colors duration-500 ${isRightNew ? 'bg-amber-200 text-amber-950 font-extrabold' : ''}`}>
+                                                            {pair.right ? (pair.right.area || <span className="text-slate-400 italic font-normal">Unassigned Area</span>) : ''}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         )}
-                                    </div>
-                                )}
+                                    </tbody>
+                                </table>
+                            </div>
 
-                                <AttachmentAndLinkUploader
-                                    label="Attached BOQ / Consumption Records"
-                                    attachments={form.consumptionSheet}
-                                    onUpdate={(atts) => setForm((p) => ({ ...p, consumptionSheet: atts }))}
-                                    idPrefix="boq-att"
-                                />
+                            {/* Paragraphs under Table 1 */}
+                            <div className="space-y-3 font-serif text-xs text-black leading-relaxed pt-2">
+                                <p>
+                                    The quantities are just indicative, final consumption can only be derived once we have the designs finalised for individual rooms.
+                                </p>
+                                <p>
+                                    To be able to start custom designing curtains for the rooms we need to have an idea of an approximate budget. This enables us to design accordingly and saves time, energy and resources. The budget is derived through calculating the meter/sqft quantity of the fabrics required as per the sizes of the window, which have provided.
+                                </p>
                             </div>
                         </div>
-                        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Select approved consumption-sheet / BOQ version</p>
-                    </div>
-                </div>
 
-                {/* Section 3: Design Direction */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3.5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-                        <Sparkles className="w-4 h-4 text-amber-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                            Design Direction
-                        </h4>
-                    </div>
+                        {/* PAGE BREAK FOR PRINTING */}
+                        <div className="page-break border-t border-slate-200 dark:border-slate-800 pt-10 space-y-6">
+                            {/* Header: Logo Page 2 */}
+                            <div className="flex items-start justify-between pb-2">
+                                <div className="flex flex-col">
+                                    <span className="font-serif text-3xl font-normal tracking-wide text-black lowercase">
+                                        embellish
+                                    </span>
+                                    <span className="font-serif text-[11px] tracking-wider text-black font-medium mt-0.5">
+                                        Punctuating Spaces <span className="text-black">•</span>
+                                    </span>
+                                </div>
+                            </div>
 
-                    <Field label="Design Direction Vision">
-                        <Textarea
-                            rows={3}
-                            value={form.designDirection}
-                            onChange={set('designDirection')}
-                            placeholder="Describe aesthetic themes, fabric textures, pleat styles, motorization & track specifications..."
-                        />
-                    </Field>
-
-                    <AttachmentAndLinkUploader
-                        label="Design Direction Attachments & Moodboard Links"
-                        attachments={form.designDirectionAttachments}
-                        onUpdate={(atts) => setForm((p) => ({ ...p, designDirectionAttachments: atts }))}
-                        idPrefix="design-att"
-                    />
-                </div>
-
-                {/* Section 4: Pricing Range */}
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 space-y-3.5">
-                    <div className="flex items-center justify-between pb-2 border-b border-emerald-500/20">
-                        <div className="flex items-center gap-2">
-                            <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-300">
-                                    Pricing Range (₹)
+                            {/* OPTION - 1 */}
+                            <div className="space-y-2">
+                                <h4 className="font-serif text-xs font-bold text-black">
+                                    Option - 1
                                 </h4>
+
+                                <table className="w-full border-collapse border border-black font-serif text-xs">
+                                    <thead>
+                                        <tr className="border-b border-black text-center font-bold">
+                                            <th rowSpan={2} className="border-r border-black p-1 text-left w-1/3">Type</th>
+                                            <th colSpan={2} className="border-r border-black p-1">Fabric Qty</th>
+                                            <th rowSpan={2} className="border-r border-black p-1 w-24">Rate</th>
+                                            <th rowSpan={2} className="p-1 w-32">Amount<br />(Rs.)</th>
+                                        </tr>
+                                        <tr className="border-b border-black text-center font-bold">
+                                            <th className="border-r border-black p-1 w-16">Mtr</th>
+                                            <th className="border-r border-black p-1">Sqft/Rnft</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold">Curtain – Main / sheer</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold">Mtrs</td>
+                                            <td className="border-r border-black p-1 text-center font-bold">{opt1.curtainQty}</td>
+                                            <td className="border-r border-black p-1 text-right font-bold">{opt1.curtainRate}</td>
+                                            <td className="p-1 text-right font-bold">{opt1.curtainAmount}</td>
+                                        </tr>
+
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold">Blackout Fabric</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold">mtrs</td>
+                                            <td className="border-r border-black p-1 text-center font-bold">{opt1.blackoutQty}</td>
+                                            <td className="border-r border-black p-1 text-right font-bold">{opt1.blackoutRate}</td>
+                                            <td className="p-1 text-right font-bold">{opt1.blackoutAmount}</td>
+                                        </tr>
+
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold align-top">Stitching, lead bands</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold align-top">
+                                                Rnft<br />rnft
+                                            </td>
+                                            <td className="border-r border-black p-1 text-center font-bold align-top space-y-1">
+                                                <div>Curtain – {opt1.stitchingCurtainMft} mft</div>
+                                                <div>Lead bands – {opt1.stitchingLeadMft} mft</div>
+                                            </td>
+                                            <td className="border-r border-black p-1 text-right font-bold align-top space-y-1">
+                                                <div>{opt1.stitchingRateCurtain}</div>
+                                                <div>{opt1.stitchingRateLead}</div>
+                                            </td>
+                                            <td className="p-1 text-right font-bold align-top space-y-1">
+                                                <div>{opt1.stitchingAmountCurtain}</div>
+                                                <div>{opt1.stitchingAmountLead}</div>
+                                            </td>
+                                        </tr>
+
+                                        <tr className="border-b border-black h-4">
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td></td>
+                                        </tr>
+
+                                        <tr className="font-bold">
+                                            <td className="border-r border-black p-1 text-left">Total</td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="p-1 text-right">{opt1.total}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* OPTION - 2 */}
+                            <div className="space-y-2 pt-2">
+                                <h4 className="font-serif text-xs font-bold text-black">
+                                    Option - 2
+                                </h4>
+
+                                <table className="w-full border-collapse border border-black font-serif text-xs">
+                                    <thead>
+                                        <tr className="border-b border-black text-center font-bold">
+                                            <th rowSpan={2} className="border-r border-black p-1 text-left w-1/3">Type</th>
+                                            <th colSpan={2} className="border-r border-black p-1">Fabric Qty</th>
+                                            <th rowSpan={2} className="border-r border-black p-1 w-24">Rate</th>
+                                            <th rowSpan={2} className="p-1 w-32">Amount<br />(Rs.)</th>
+                                        </tr>
+                                        <tr className="border-b border-black text-center font-bold">
+                                            <th className="border-r border-black p-1 w-16">Mtr</th>
+                                            <th className="border-r border-black p-1">Sqft/Rnft</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold">Curtain – Main / sheer</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold">Mtrs</td>
+                                            <td className="border-r border-black p-1 text-center font-bold">{opt2.curtainQty}</td>
+                                            <td className="border-r border-black p-1 text-right font-bold">{opt2.curtainRate}</td>
+                                            <td className="p-1 text-right font-bold">{opt2.curtainAmount}</td>
+                                        </tr>
+
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold">Blackout Fabric</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold">mtrs</td>
+                                            <td className="border-r border-black p-1 text-center font-bold">{opt2.blackoutQty}</td>
+                                            <td className="border-r border-black p-1 text-right font-bold">{opt2.blackoutRate}</td>
+                                            <td className="p-1 text-right font-bold">{opt2.blackoutAmount}</td>
+                                        </tr>
+
+                                        <tr className="border-b border-black">
+                                            <td className="border-r border-black p-1 font-semibold align-top">Stitching, lead bands</td>
+                                            <td className="border-r border-black p-1 text-center font-semibold align-top">
+                                                Rnft<br />rnft
+                                            </td>
+                                            <td className="border-r border-black p-1 text-center font-bold align-top space-y-1">
+                                                <div>Curtain – {opt2.stitchingCurtainMft} mft</div>
+                                                <div>Lead bands – {opt2.stitchingLeadMft} mft</div>
+                                            </td>
+                                            <td className="border-r border-black p-1 text-right font-bold align-top space-y-1">
+                                                <div>{opt2.stitchingRateCurtain}</div>
+                                                <div>{opt2.stitchingRateLead}</div>
+                                            </td>
+                                            <td className="p-1 text-right font-bold align-top space-y-1">
+                                                <div>{opt2.stitchingAmountCurtain}</div>
+                                                <div>{opt2.stitchingAmountLead}</div>
+                                            </td>
+                                        </tr>
+
+                                        <tr className="border-b border-black h-4">
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td className="border-r border-black"></td>
+                                            <td></td>
+                                        </tr>
+
+                                        <tr className="font-bold">
+                                            <td className="border-r border-black p-1 text-left">Total</td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="border-r border-black p-1"></td>
+                                            <td className="p-1 text-right">{opt2.total}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Note */}
+                            <p className="font-serif text-xs font-bold italic text-black pt-1">
+                                Note: GST, Transportation & Installation charges Not Included
+                            </p>
+
+                            {/* Design Paragraph */}
+                            <div className="font-serif text-xs leading-relaxed text-black pt-1 space-y-1">
+                                <p className="font-bold">Design:</p>
+                                <p>
+                                    Since we design our custom made curtains we need to go through a rigorous exercise of the conceptualization, mood boards, samplings and the other forms of presentation. This will give you a visual idea of how your drapes will look after installation and what embellishments will be used to achieve the world class look. In order for us to begin the designing process we would kindly request you to release a deposit of Rs.{' '}
+                                    <span className="font-bold border-b border-black px-1 text-center inline-block">{depositAmount}/-</span>
+                                    {' '}which will be adjusted towards your final billing.
+                                </p>
+                            </div>
+
+                            {/* Closing & Signoff */}
+                            <div className="font-serif text-xs leading-relaxed text-black pt-3 space-y-3">
+                                <p>
+                                    We hope you find the above in order, looking forward to work on this project with you. Thanking you in anticipation.
+                                </p>
+                                <p>
+                                    For any clarification or discussion on the proposal letter, please get in touch with us.
+                                </p>
+                                <div className="pt-2 space-y-0.5">
+                                    <p className="font-medium">Kind Regards,</p>
+                                    <br />
+                                    <p className="font-semibold">Arisha Arisha</p>
+                                    <p>E : <a href="mailto:arisha@embelliish.com" className="underline">arisha@embelliish.com</a></p>
+                                </div>
                             </div>
                         </div>
-
-                        {(form.minPricing !== '' || form.maxPricing !== '') && (
-                            <Badge tone="green" className="font-mono text-xs px-2.5 py-1">
-                                Estimate: {formatCurrencyINR(form.minPricing) || '₹0'} - {formatCurrencyINR(form.maxPricing) || '—'}
-                            </Badge>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Minimum Estimate (₹)">
-                            <Input
-                                type="number"
-                                min="0"
-                                placeholder="e.g. 250000"
-                                value={form.minPricing}
-                                onChange={set('minPricing')}
-                            />
-                        </Field>
-                        <Field label="Maximum Estimate (₹)">
-                            <Input
-                                type="number"
-                                min="0"
-                                placeholder="e.g. 350000"
-                                value={form.maxPricing}
-                                onChange={set('maxPricing')}
-                            />
-                        </Field>
                     </div>
                 </div>
-
-                {/* Section 5: Standard Terms */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-indigo-500" />
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                Terms
-                            </h4>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handlePullMasterTerms}
-                            className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline"
-                        >
-                            Re-fetch Master Terms
-                        </button>
-                    </div>
-
-                    <Textarea
-                        rows={4}
-                        value={form.terms}
-                        onChange={set('terms')}
-                        placeholder="Standard payment split, validity, and measurement sign-off terms..."
-                    />
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Auto-fetched approved standard commercial terms</p>
-                </div>
-
-                {/* Section 6: Refund & Revision Policy */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-                        <div className="flex items-center gap-2">
-                            <RefreshCw className="w-4 h-4 text-amber-500" />
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                Refund & Revision Policy
-                            </h4>
-                            {form.isRefundClauseLocked ? (
-                                <Badge tone="rose" className="text-[10px] py-0 px-1.5 flex items-center gap-0.5">
-                                    <Lock className="w-2.5 h-2.5" /> Locked
-                                </Badge>
-                            ) : (
-                                <Badge tone="amber" className="text-[10px] py-0 px-1.5 flex items-center gap-0.5">
-                                    <Unlock className="w-2.5 h-2.5" /> Editing Unlocked
-                                </Badge>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handlePullMasterRefundClause}
-                                className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold hover:underline"
-                            >
-                                Re-fetch
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForm((p) => ({ ...p, isRefundClauseLocked: !p.isRefundClauseLocked }))}
-                                className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 underline"
-                            >
-                                {form.isRefundClauseLocked ? 'Unlock Edit' : 'Lock Clause'}
-                            </button>
-                        </div>
-                    </div>
-
-                    <Textarea
-                        rows={4}
-                        value={form.refundRevisionClause}
-                        onChange={set('refundRevisionClause')}
-                        disabled={form.isRefundClauseLocked}
-                        className={form.isRefundClauseLocked ? 'bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed opacity-90' : ''}
-                        placeholder="Approved refund & revision policy clause..."
-                    />
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Auto-fetched approved clause; restricted manual override</p>
-                </div>
-
             </div>
         </Modal>
     );
@@ -1177,7 +1557,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
             )}
 
             {editingLead && (
-                <EditProposalModal
+                <ProposalLetterModal
                     item={editingLead}
                     onClose={() => setEditingLead(null)}
                     onDone={reload}

@@ -21,6 +21,8 @@ export const usersApi = {
   create: (payload) => api.post('/users', payload),
 };
 
+/* ------------------------------------------------------------- Members */
+
 export const membersApi = {
   summary: () => api.get('/members/summary'),
   list: (params) => api.get('/members', { params }),

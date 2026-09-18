@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { Search, Users, ShieldCheck, PhoneCall, Pencil, ArrowRightCircle, ArrowRight, UserCheck, Check } from 'lucide-react';
 import { leadsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
-import { humanise } from '../../utils/format';
+import { humanise, getLocalDate, getLocalDateTime } from '../../utils/format';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select, Textarea,
   Loading, ErrorState, Tabs, Pagination, DelayBadge, ViewSwitcher,
@@ -132,7 +132,7 @@ const DCM_MANAGERS_LIST = [
 
 /* ------------------------------------------------------------- Assignment Form Modal */
 
-import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 
 const EditAssignmentModal = ({ item, onClose, onDone }) => {
   const currentUser = useSelector((state) => state.auth.user);
@@ -241,10 +241,6 @@ const EditAssignmentModal = ({ item, onClose, onDone }) => {
     if (isReassignmentYes) {
       if (!form.reassignedToName?.trim() || form.reassignedToName === 'None / NA') {
         setFormError('Reassigned To is required when Reassignment Required is Yes.');
-        return;
-      }
-      if (!form.reassignmentReason?.trim()) {
-        setFormError('Reassignment Reason is required when Reassignment Required is Yes.');
         return;
       }
     }
@@ -575,8 +571,8 @@ export const DcmAssignmentPage = () => {
                       </tr>
                     ) : (
                       paginated.map((row) => (
-                        <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                        <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
                             <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                           </td>
@@ -609,7 +605,7 @@ export const DcmAssignmentPage = () => {
                             {row.reassignmentReason || 'N/A'}
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-400">{row.updatedUser || '—'}</td>
-                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
                             <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(row)} className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-xs font-semibold">
                               Assign
                             </Button>

@@ -327,24 +327,14 @@ export const LeadDetailsModal = ({
 
           <div className="flex items-center justify-end gap-2 shrink-0">
             {!isEditing ? (
-              <>
-                <Button
-                  variant="primary"
-                  icon={UserCheck}
-                  onClick={() => setShowReassignModal(true)}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
-                >
-                  Reassign DCM
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={Pencil}
-                  onClick={startEditing}
-                  className="bg-[#836444]/10 hover:bg-[#836444]/20 text-[#836444] dark:text-amber-300 border-[#836444]/30 font-semibold text-xs"
-                >
-                  Edit Lead
-                </Button>
-              </>
+              <Button
+                variant="secondary"
+                icon={Pencil}
+                onClick={startEditing}
+                className="bg-[#836444]/10 hover:bg-[#836444]/20 text-[#836444] dark:text-amber-300 border-[#836444]/30 font-semibold text-xs"
+              >
+                Edit Lead
+              </Button>
             ) : (
               <Button
                 variant="ghost"

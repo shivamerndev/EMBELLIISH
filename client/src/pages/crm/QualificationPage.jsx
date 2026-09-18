@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Users, UserCheck, PhoneCall, Pencil, ArrowRightCircle, ArrowRight } from 'lucide-react';
 import { leadsApi } from '../../api';
+import { getLocalDate, getLocalDateTime } from '../../utils/format';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import {
   PageHeader, Panel, Button, Modal, Field, Input, Select,
@@ -58,7 +59,7 @@ const DecisionBadge = ({ value }) => {
   );
 };
 
-import { getLocalDate, getLocalDateTime } from '../../utils/format';
+
 
 /* ------------------------------------------------------------- Qualification Form Modal */
 
@@ -86,7 +87,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
         onDone();
         onClose();
         const code = item?.code || '';
-        navigate(`/crm/follow-ups${code ? `?search=${encodeURIComponent(code)}` : ''}`);
+        navigate(`/crm/sales-commercials/pre-site-visit${code ? `?search=${encodeURIComponent(code)}` : ''}`);
       }
     }
   );
@@ -371,8 +372,8 @@ export const QualificationPage = () => {
                       </tr>
                     ) : (
                       paginated.map((row) => (
-                        <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                        <tr key={row._id || row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                          <td className="p-3 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
                             <span className="font-bold text-slate-900 dark:text-slate-100">{row.code}</span>
                             <span className="block text-xs text-amber-900 dark:text-amber-200 font-bold">{row.clientName || row.companyName || '—'}</span>
                           </td>
@@ -399,7 +400,7 @@ export const QualificationPage = () => {
                           <td className="p-3 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={row.rejectionHoldReason || '—'}>
                             {row.rejectionHoldReason || '—'}
                           </td>
-                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100/50 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
+                          <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
                             <div className="flex items-center justify-end gap-1.5">
                               <Button size="sm" variant="outline" icon={Pencil} onClick={() => setEditing(row)}>
                                 Qualify

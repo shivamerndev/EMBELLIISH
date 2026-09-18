@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Paperclip, Eye, Pencil, UserCheck, Building2, BadgeDollarSign, Sparkles, ClipboardList, Users } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
-import { currency, date } from '../../utils/format';
+import { currency, date, getLocalDate } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Loading, ErrorState, EmptyState, Tabs, StatTile, Modal, Field, Pagination, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
@@ -194,7 +194,7 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
-import { getLocalDate } from '../../utils/format';
+
 
 const SiteVisitModal = ({ lead, onClose, onSave }) => {
     const [dueDate, setDueDate] = useState(
