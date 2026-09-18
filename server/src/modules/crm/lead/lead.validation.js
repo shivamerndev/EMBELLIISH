@@ -302,7 +302,12 @@ const quotationDetailsSchema = z
     discount: z.coerce.number().optional(),
     marginRules: z.string().optional(),
     boqVersion: z.string().optional(),
+    quotationSheet: z.any().optional(),
+    coverLetter: z.any().optional(),
+    itemsTable: z.any().optional(),
+    termsAndBanking: z.any().optional(),
   })
+  .passthrough()
   .optional();
 
 const clientSelectionItemSchema = z.object({
