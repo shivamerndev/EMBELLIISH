@@ -48,7 +48,7 @@ const NAV = [
           { label: 'Quotation Preparation', path: '/crm/sales-commercials/quotation' },
           { label: 'Client Approval', path: '/crm/sales-commercials/client-approval' },
           { label: "KYC/Customer Conversion", path: '/crm/sales-commercials/kyc' },
-          { label: 'Site Detail Sheet ', path: '/crm/sales-commercials/ready-size' }
+          { label: 'Site Detail Sheet', path: '/crm/sales-commercials/ready-size' }
         ],
       },
     ],

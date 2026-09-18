@@ -44,6 +44,9 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
   } else if (stageKey === 'kyc') {
     dueDate = lead.kycDueDate || lead.dueDate;
     isCompleted = lead.kycStatus === 'VERIFIED' || lead.status === 'CONVERTED';
+  } else if (stageKey === 'ready-size') {
+    dueDate = lead.readySize?.dueDate || lead.dueDate;
+    isCompleted = Boolean(lead.readySize?.confirmationDate);
   }
 
   const handleCardClick = () => {
@@ -56,6 +59,10 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
 
   const handleNextStepRedirect = (e) => {
     e.stopPropagation();
+    if (stageKey === 'ready-size') {
+      navigate(`/crm/sales-commercials/leads/${lead.code}?tab=ready-size`);
+      return;
+    }
     const { url } = getNextStageUrl(stageKey, lead.code);
     navigate(url);
   };
@@ -149,12 +156,16 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
           <Button
             size="sm"
             variant="outline"
-            icon={ArrowRight}
-            className="text-[11px] h-7 px-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30"
+            icon={stageKey === 'ready-size' ? CheckCircle2 : ArrowRight}
+            className={`text-[11px] h-7 px-2 ${
+              stageKey === 'ready-size'
+                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+            }`}
             onClick={handleNextStepRedirect}
-            title="Move & Redirect to Next Step"
+            title={stageKey === 'ready-size' ? 'Production Dossier' : 'Move & Redirect to Next Step'}
           >
-            Next Step
+            {stageKey === 'ready-size' ? 'Production' : 'Next Step'}
           </Button>
         </div>
       </div>

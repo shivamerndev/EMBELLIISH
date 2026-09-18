@@ -176,13 +176,13 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
           {activeTab === 'stages' && (() => {
             const stages = [
               { name: 'Measurement Capture', key: 'measurement', data: lead.measurement, desc: 'Site dimensions & survey details' },
-              { name: 'Ready Size Confirmation', key: 'readySize', data: lead.readySize, desc: 'Pelmet & channel sizing verification' },
               { name: 'Consumption & BOQ', key: 'consumption', data: lead.consumption, desc: 'Fabric & component calculations' },
               { name: 'Pricing & Costing', key: 'costing', data: lead.costing, desc: 'Cost estimation & rate breakdown' },
               { name: 'Quotation Preparation', key: 'quotation', data: lead.quotation, desc: 'Formal quote draft & pricing terms' },
               { name: 'Proposal Creation', key: 'proposal', data: lead.proposal, desc: 'Design proposal & client presentation' },
               { name: 'Token Advance', key: 'token', data: lead.token, desc: 'Booking deposit & token confirmation' },
               { name: 'KYC Document Verification', key: 'kyc', data: lead.kyc, desc: 'Client identification & document check' },
+              { name: 'Site Detail Sheet', key: 'readySize', data: lead.readySize, desc: 'Site details, Design PPT & Selection PPT for production' },
             ];
 
             // Derive current position from lead.stage (authoritative source)
