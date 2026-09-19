@@ -153,9 +153,11 @@ export const DateInput = ({
   max,
   name,
   id,
+  size,
   ...props
 }) => {
   const inputRef = React.useRef(null);
+  const sizeClasses = size === 'sm' ? '!py-1.5 !px-2.5 text-xs' : '';
 
   // Auto-populate present date ONLY when user clicks/focuses an empty date field
   const handleAutoPopulate = (e) => {
@@ -218,7 +220,7 @@ export const DateInput = ({
   };
 
   return (
-    <div className="relative inline-flex items-center w-full">
+    <div className="relative flex items-center w-full min-w-0">
       <input
         ref={inputRef}
         type={type}
@@ -232,7 +234,7 @@ export const DateInput = ({
         disabled={disabled}
         min={min}
         max={max}
-        className={cn('field-input pr-10', className)}
+        className={cn('field-input pr-10', sizeClasses, className)}
         {...props}
       />
       <button
@@ -240,7 +242,7 @@ export const DateInput = ({
         tabIndex={-1}
         disabled={disabled}
         onClick={handleIconClick}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-amber-700/80 dark:text-amber-400/80 hover:text-amber-900 dark:hover:text-amber-200 focus:outline-none transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-amber-700/80 dark:text-amber-400/80 hover:text-amber-900 dark:hover:text-amber-200 focus:outline-none transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed z-10"
         title="Open calendar picker"
         aria-label="Open calendar picker"
       >
@@ -252,7 +254,8 @@ export const DateInput = ({
 
 export const DatePicker = DateInput;
 
-export const Input = ({ className, type, value, onChange, onFocus, onClick, onPointerDown, ...props }) => {
+export const Input = ({ className, type, value, onChange, onFocus, onClick, onPointerDown, size, ...props }) => {
+  const sizeClasses = size === 'sm' ? '!py-1.5 !px-2.5 text-xs' : '';
   if (type === 'date' || type === 'datetime-local') {
     return (
       <DateInput
@@ -263,6 +266,7 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, onPo
         onFocus={onFocus}
         onClick={onClick}
         onPointerDown={onPointerDown}
+        size={size}
         {...props}
       />
     );
@@ -296,7 +300,7 @@ export const Input = ({ className, type, value, onChange, onFocus, onClick, onPo
       onFocus={handleFocus}
       onClick={handleClick}
       onPointerDown={onPointerDown}
-      className={cn('field-input', className)}
+      className={cn('field-input', sizeClasses, className)}
       {...props}
     />
   );
