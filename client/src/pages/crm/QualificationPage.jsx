@@ -86,8 +86,7 @@ const EditQualificationModal = ({ item, onClose, onDone }) => {
       onSuccess: () => {
         onDone();
         onClose();
-        const code = item?.code || '';
-        navigate(`/crm/sales-commercials/pre-site-visit${code ? `?search=${encodeURIComponent(code)}` : ''}`);
+        navigate(`/crm/sales-commercials/leads`);
       }
     }
   );
