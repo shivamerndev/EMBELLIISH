@@ -40,6 +40,7 @@ export const SiteDetailSheetEditor = ({
   room,
   onUpdateRoom,
   onSave,
+  onDeleteRoom,
 }) => {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [targetItemIndex, setTargetItemIndex] = useState(null);
@@ -189,9 +190,23 @@ export const SiteDetailSheetEditor = ({
     <div className="space-y-6">
       {/* Room Header Fields */}
       <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-          Room Sheet Information
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Room Sheet Information
+          </h3>
+          {onDeleteRoom && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              icon={Trash2}
+              onClick={onDeleteRoom}
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs h-7"
+            >
+              Delete Room
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -581,7 +596,7 @@ export const SiteDetailSheetEditor = ({
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Room Production Notes
           </h3>
-          <Button size="xs" variant="outline" icon={Plus} onClick={handleAddNote}>
+          <Button size="sm" variant="outline" icon={Plus} onClick={handleAddNote}>
             Add Note
           </Button>
         </div>
