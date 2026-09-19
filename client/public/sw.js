@@ -46,6 +46,9 @@ self.addEventListener('fetch', (event) => {
   // Ignore non-HTTP/HTTPS requests
   if (!url.protocol.startsWith('http')) return;
 
+  // Ignore Vite development server HMR and module requests
+  if (url.pathname.includes('@vite') || url.pathname.includes('@react-refresh') || url.searchParams.has('t')) return;
+
   // Pass mutation requests (POST, PUT, PATCH, DELETE) straight to network
   if (request.method !== 'GET' && request.method !== 'HEAD') return;
 

@@ -713,7 +713,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
-                        <Field label="INSTALLER NAME">
+                        <Field label="Key Person Availability Name">
                             <Input
                                 placeholder="Write name of the installer..."
                                 value={form.installerName}
@@ -721,7 +721,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                             />
                         </Field>
 
-                        <Field label="INSTALLER NUMBER" hint="Country code + 10 digit mobile number required">
+                        <Field label="Key Person Mobile" hint="Country code + 10 digit mobile number required">
                             <PhoneInput
                                 name="installerPhone"
                                 placeholder="9876543210"

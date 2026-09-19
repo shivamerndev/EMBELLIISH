@@ -10,6 +10,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
+    host: true,
     proxy: {
       // Same-origin in development, so no CORS round trip and no base-URL config.
       '/api': {

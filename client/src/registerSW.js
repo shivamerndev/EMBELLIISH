@@ -3,6 +3,17 @@
  */
 export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
+    // In development mode, unregister any existing service worker to prevent
+    // caching Vite dev assets and breaking HMR WebSocket connection.
+    if (import.meta.env.DEV) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+      return;
+    }
+
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/sw.js')
