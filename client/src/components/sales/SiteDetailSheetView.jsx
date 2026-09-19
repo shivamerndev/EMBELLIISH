@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, Printer, ZoomIn, ZoomOut, Maximize2, Download, Image as ImageIcon, X } from 'lucide-react';
+import { useState } from 'react';
+import { Eye, X, Printer, ZoomIn, ZoomOut, RotateCcw, Pencil } from 'lucide-react';
 import { Button } from '../ui';
 
 /**
@@ -13,7 +13,6 @@ export const SiteDetailSheetView = ({
   architect = 'ADID Atelier LLP.',
   siteIncharge = 'Amit / Ashish / Sachin / Hemant',
   sheetNo = 1,
-  totalSheets = 1,
   onPrint,
   onEditRoom,
 }) => {
@@ -31,68 +30,81 @@ export const SiteDetailSheetView = ({
   const items = Array.isArray(room.items) ? room.items : [];
   const notes = Array.isArray(room.notes) ? room.notes : (room.notes ? [room.notes] : []);
 
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(1.4, Number((z + 0.1).toFixed(1))));
+  const handleZoomOut = () => setZoomLevel((z) => Math.max(0.7, Number((z - 0.1).toFixed(1))));
+  const handleZoomReset = () => setZoomLevel(1);
+
   return (
-    <div className="space-y-4">
-      {/* Action Bar for Sheet */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 print:hidden">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            Viewing Sheet: <strong className="text-slate-900 dark:text-slate-100">{room.roomTitle || room.sheetName}</strong>
+    <div className="space-y-2">
+      {/* Action & Zoom Toolbar */}
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-900/80 rounded-lg border border-slate-200 dark:border-slate-800 text-xs no-print">
+        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">Zoom:</span>
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300 transition"
+            title="Zoom out"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <span className="font-mono text-xs w-10 text-center font-medium text-slate-700 dark:text-slate-300">
+            {Math.round(zoomLevel * 100)}%
           </span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-            Sheet {room.sheetNo || sheetNo} of {totalSheets}
-          </span>
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300 transition"
+            title="Zoom in"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          {zoomLevel !== 1 && (
+            <button
+              type="button"
+              onClick={handleZoomReset}
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition text-[11px]"
+              title="Reset zoom"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Zoom controls */}
-          <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 text-xs">
-            <button
-              type="button"
-              onClick={() => setZoomLevel((z) => Math.max(0.7, z - 0.1))}
-              className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
-              title="Zoom out"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <span className="px-2 py-1 font-mono text-[11px] border-x border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-              {Math.round(zoomLevel * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => setZoomLevel((z) => Math.min(1.4, z + 0.1))}
-              className="px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
-              title="Zoom in"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
           {onEditRoom && (
-            <Button size="sm" variant="outline" onClick={onEditRoom}>
-              Edit Room Data
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              icon={Pencil}
+              onClick={onEditRoom}
+              className="text-xs"
+            >
+              Edit Sheet
             </Button>
           )}
-
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={Printer}
-            onClick={() => {
-              if (onPrint) onPrint();
-              else window.print();
-            }}
-          >
-            Print Sheet
-          </Button>
+          {onPrint && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={Printer}
+              onClick={onPrint}
+              className="text-xs"
+              title="Print this room sheet in invoice format"
+            >
+              Print Sheet
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Sheet Container with Zoom & Scroll */}
-      <div className="overflow-x-auto pb-4 bg-slate-200/60 dark:bg-slate-950 p-3 sm:p-6 rounded-2xl border border-slate-300/80 dark:border-slate-800 print:p-0 print:bg-white print:border-0 print:overflow-visible">
+      <div className="overflow-x-auto bg-slate-200/60 dark:bg-slate-950 border border-slate-300/80 dark:border-slate-800 print:p-0 print:bg-white print:border-0 print:overflow-visible rounded-lg">
         <div
           style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
-          className="transition-transform duration-150 inline-block min-w-[1200px] w-full bg-white text-slate-900 border border-slate-400 shadow-xl rounded-sm p-4 sm:p-6 font-sans print:shadow-none print:border-none print:p-2 print:transform-none"
+          className="transition-transform duration-150 inline-block min-w-[1200px] w-full bg-white text-slate-900 border border-slate-400 shadow-xl rounded-sm font-sans print:shadow-none print:border-none print:p-2 print:transform-none"
           id="site-detail-single-room-sheet"
         >
           {/* Top Title Banner */}

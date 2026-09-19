@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, CheckSquare, Calendar, CheckCircle2, Paperclip, Home, Pencil,
     Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText,
-    FileSpreadsheet, Download, ExternalLink, UploadCloud, Presentation, FileUp, Printer, Save
+    FileSpreadsheet, Download, ExternalLink, UploadCloud, Presentation, FileUp, Printer, Save, ChevronDown
 } from 'lucide-react';
 import { date } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
@@ -18,6 +18,7 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
 import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
 import { SAMPLE_SITE_DETAIL_ROOMS } from '../../components/sales/siteSheetDefaults';
+import { printSiteDetailSheet, printAllSiteDetailSheets } from '../../components/sales/siteSheetPrintService';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -433,82 +434,9 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit, users = []) => {
     return <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block" title={String(raw)}>{String(raw)}</span>;
 };
 
-const MultiSelectUsersControl = ({ selectedUsers = [], users = [], onChange }) => {
-    const eligibleUsers = users.filter((u) => {
-        const role = String(u.role || '').toUpperCase();
-        const name = String(u.name || '').toLowerCase();
-        const isAllowedRole =
-            role === 'PROJECT_COORDINATOR' ||
-            role.includes('COORDINATOR') ||
-            role === 'DCM' ||
-            role === 'SENIOR_DCM' ||
-            role === 'INSTALLER' ||
-            role.includes('CONFIRMER');
-        const isAffectedNamedUser = name.includes('ishani') || name.includes('rucha');
-        return isAllowedRole || isAffectedNamedUser;
-    });
-
-    const toggleUser = (userId) => {
-        if (selectedUsers.includes(userId)) {
-            onChange(selectedUsers.filter((id) => id !== userId));
-        } else {
-            onChange([...selectedUsers, userId]);
-        }
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg">
-                {selectedUsers.length === 0 ? (
-                    <span className="text-xs text-slate-400 py-0.5">Select confirmers (DCM, PC, Installer...)...</span>
-                ) : (
-                    selectedUsers.map((uid) => {
-                        const uObj = users.find((u) => (u._id || u.id) === uid) || { name: uid };
-                        return (
-                            <Badge key={uid} tone="blue" className="inline-flex items-center gap-1 text-xs py-0.5 px-2">
-                                <span>{uObj.name}</span>
-                                {uObj.role && <span className="opacity-70 text-[9px]">({uObj.role})</span>}
-                                <button
-                                    type="button"
-                                    onClick={() => toggleUser(uid)}
-                                    className="hover:text-rose-600 focus:outline-none ml-1"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </Badge>
-                        );
-                    })
-                )}
-            </div>
-
-            <div className="max-h-36 overflow-y-auto p-1.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950/60 divide-y divide-slate-100 dark:divide-slate-900">
-                {eligibleUsers.map((u) => {
-                    const uid = u._id || u.id;
-                    const isSelected = selectedUsers.includes(uid);
-                    return (
-                        <button
-                            key={uid}
-                            type="button"
-                            onClick={() => toggleUser(uid)}
-                            className={`w-full flex items-center justify-between p-1.5 text-left text-xs rounded transition ${isSelected ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 font-semibold' : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'}`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700'}`}>
-                                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                </div>
-                                <span>{u.name}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-mono">{u.role || 'Staff'}</span>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
 const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
-    // Initialise rooms from lead data or Master Excel defaults
+
+
     const initialRooms = useMemo(() => {
         const existing = item?.readySize?.siteDetailRooms;
         if (Array.isArray(existing) && existing.length > 0) {
@@ -533,6 +461,8 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
 
     const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'edit' | 'all-rooms'
     const [savedSuccess, setSavedSuccess] = useState(false);
+    const [printing, setPrinting] = useState(false);
+    const [printMenuOpen, setPrintMenuOpen] = useState(false);
 
     const activeRoom = useMemo(() => {
         return rooms.find((r) => r.id === activeRoomId) || rooms[0];
@@ -623,53 +553,81 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
         setActiveTab('edit');
     };
 
-    const handleDeleteRoom = (roomId) => {
-        if (rooms.length <= 1) return;
+    const handleDeleteRoom = (roomId, e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (rooms.length <= 1) {
+            alert('Cannot delete the only room sheet. At least one room sheet is required.');
+            return;
+        }
+
+        const roomToDelete = rooms.find((r) => r.id === roomId);
+        const roomTitle = roomToDelete?.roomTitle || roomToDelete?.sheetName || 'this room sheet';
+        if (!window.confirm(`Are you sure you want to delete "${roomTitle}"?`)) {
+            return;
+        }
+
+        const roomIndex = rooms.findIndex((r) => r.id === roomId);
         const filtered = rooms.filter((r) => r.id !== roomId);
         setRooms(filtered);
+
         if (activeRoomId === roomId) {
-            setActiveRoomId(filtered[0]?.id);
+            const nextIndex = Math.max(0, roomIndex - 1);
+            setActiveRoomId(filtered[nextIndex]?.id || filtered[0]?.id);
         }
     };
 
-    const handleNextRoom = () => {
-        if (activeRoomIndex < rooms.length - 1) {
-            setActiveRoomId(rooms[activeRoomIndex + 1].id);
+    const handlePrintCurrentRoom = async () => {
+        setPrinting(true);
+        setPrintMenuOpen(false);
+        try {
+            await printSiteDetailSheet({
+                room: activeRoom,
+                clientName: item?.clientName,
+                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || 'A/3-D Amitesh LLP'),
+                architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
+                siteIncharge: activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant',
+                sheetNo: activeRoom?.sheetNo || activeRoomIndex + 1,
+                totalSheets: rooms.length,
+                leadCode: item?.code || item?.leadNumber,
+                company: 'embellish',
+            });
+        } catch (err) {
+            console.error('[ReadySize] Failed to print current room sheet:', err);
+        } finally {
+            setPrinting(false);
         }
     };
 
-    const handlePrevRoom = () => {
-        if (activeRoomIndex > 0) {
-            setActiveRoomId(rooms[activeRoomIndex - 1].id);
+    const handlePrintAllRooms = async () => {
+        setPrinting(true);
+        setPrintMenuOpen(false);
+        try {
+            await printAllSiteDetailSheets({
+                rooms: rooms,
+                clientName: item?.clientName,
+                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || 'A/3-D Amitesh LLP'),
+                architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
+                siteIncharge: activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant',
+                leadCode: item?.code || item?.leadNumber,
+                company: 'embellish',
+            });
+        } catch (err) {
+            console.error('[ReadySize] Failed to batch print all room sheets:', err);
+        } finally {
+            setPrinting(false);
         }
-    };
-
-    const handlePrint = () => {
-        window.print();
-    };
-
-    const handleSaveAndClose = async () => {
-        await saveSheet(rooms);
-        onClose();
     };
 
     return (
-        <Modal
-            open={Boolean(item)}
-            onClose={onClose}
-            title={
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                        Site Detail Sheet (Production Room Sheets)
-                    </span>
-                    <Badge tone="blue" className="font-mono text-xs">
-                        {item?.code || ''}
-                    </Badge>
-                    <Badge tone="slate" className="text-xs">
-                        {item?.clientName || ''}
-                    </Badge>
-                </div>
-            }
+        <Modal open={Boolean(item)} onClose={onClose}
+            title={<div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
+                    Site Detail Sheet
+                </span>
+                <Badge tone="slate" className="text-xs">
+                    {item?.clientName || ''}
+                </Badge>
+            </div>}
             size="full"
             footer={
                 <div className="flex items-center justify-between w-full gap-3 flex-wrap">
@@ -677,8 +635,6 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         <span>
                             Active: <strong className="text-slate-800 dark:text-slate-200">{activeRoom?.roomTitle || activeRoom?.sheetName}</strong>
                         </span>
-                        <span>•</span>
-                        <span>Sheet <strong>{activeRoom?.sheetNo}</strong> of <strong>{rooms.length}</strong></span>
                         <span>•</span>
                         <span>Treatments: <strong>{activeRoom?.items?.length || 0}</strong></span>
                         {savedSuccess && (
@@ -689,30 +645,79 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Invoice-Style Print Action with Dropdown Options */}
+                        <div className="relative">
+                            <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    icon={Printer}
+                                    loading={printing}
+                                    onClick={handlePrintCurrentRoom}
+                                    title={`Print ${activeRoom?.roomTitle || activeRoom?.sheetName || 'current room'} in invoice format`}
+                                    className="rounded-r-none border-r border-slate-200 dark:border-slate-800 text-xs font-semibold"
+                                >
+                                    Print Sheet
+                                </Button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPrintMenuOpen((prev) => !prev)}
+                                    className="px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-r-lg transition flex items-center"
+                                    title="More print options"
+                                >
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {printMenuOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setPrintMenuOpen(false)}
+                                    />
+                                    <div
+                                        className="absolute bottom-full right-0 mb-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1.5 z-50 text-xs animate-in fade-in"
+                                    >
+                                        <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Print Invoice / Spec Sheet
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handlePrintCurrentRoom}
+                                            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium text-slate-800 dark:text-slate-200 transition"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Printer className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                                                <span>Current Room Sheet</span>
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-mono">1 sheet</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handlePrintAllRooms}
+                                            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-medium text-slate-800 dark:text-slate-200 transition"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                <span>All Room Sheets</span>
+                                            </div>
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 font-bold text-emerald-600 dark:text-emerald-400">
+                                                {rooms.length} sheets
+                                            </span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         <Button
                             type="button"
-                            variant="outline"
-                            icon={Printer}
-                            onClick={handlePrint}
-                            title="Print current room sheet"
-                        >
-                            Print Sheet
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="secondary"
                             icon={Save}
                             loading={saving}
                             onClick={() => saveSheet(rooms)}
                         >
                             Save Changes
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleSaveAndClose}
-                            loading={saving}
-                        >
-                            Save & Close
                         </Button>
                         <Button
                             type="button"
@@ -726,25 +731,6 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             }
         >
             <div className="space-y-4">
-                {/* Print specific style tag to cleanly isolate room sheet on paper */}
-                <style>{`
-                    @media print {
-                        body * { visibility: hidden !important; }
-                        #site-detail-single-room-sheet, #site-detail-single-room-sheet * { visibility: visible !important; }
-                        #site-detail-single-room-sheet {
-                            position: absolute !important;
-                            left: 0 !important;
-                            top: 0 !important;
-                            width: 100% !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
-                            border: none !important;
-                            box-shadow: none !important;
-                            transform: scale(0.9) !important;
-                            transform-origin: top left !important;
-                        }
-                    }
-                `}</style>
 
                 {/* Error Alert */}
                 {saveError && (
@@ -755,17 +741,16 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                 )}
 
                 {/* Top Control Header: Room Switcher & Main Tab Switcher */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 py-2 px-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
                     {/* View Modes Tabs */}
                     <div className="flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-lg">
                         <button
                             type="button"
                             onClick={() => setActiveTab('preview')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                                activeTab === 'preview'
-                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${activeTab === 'preview'
+                                ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                }`}
                         >
                             <FileSpreadsheet className="w-3.5 h-3.5" />
                             <span>Site Sheet Preview</span>
@@ -773,53 +758,29 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         <button
                             type="button"
                             onClick={() => setActiveTab('edit')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                                activeTab === 'edit'
-                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${activeTab === 'edit'
+                                ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                }`}
                         >
                             <Pencil className="w-3.5 h-3.5" />
                             <span>Edit Room Sheet</span>
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('all-rooms')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                                activeTab === 'all-rooms'
-                                    ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-xs'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                            }`}
-                        >
-                            <Layers className="w-3.5 h-3.5" />
-                            <span>All Rooms ({rooms.length})</span>
-                        </button>
                     </div>
 
-                    {/* Room Quick Nav (Prev / Next) */}
-                    <div className="flex items-center gap-1 text-xs">
+                    {rooms.length > 1 && (
                         <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={handlePrevRoom}
-                            disabled={activeRoomIndex <= 0}
-                            title="Previous Room"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={(e) => handleDeleteRoom(activeRoomId, e)}
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs"
+                            title={`Delete ${activeRoom?.roomTitle || activeRoom?.sheetName || 'Current Room Sheet'}`}
                         >
-                            ← Prev Room
+                            Delete Room Sheet
                         </Button>
-                        <span className="font-mono text-[11px] px-2 text-slate-500 font-semibold">
-                            {activeRoomIndex + 1} / {rooms.length}
-                        </span>
-                        <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={handleNextRoom}
-                            disabled={activeRoomIndex >= rooms.length - 1}
-                            title="Next Room"
-                        >
-                            Next Room →
-                        </Button>
-                    </div>
+                    )}
                 </div>
 
                 {/* Dedicated Room Selector Pill Navigation Bar */}
@@ -827,42 +788,36 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                     {rooms.map((r, idx) => {
                         const isSelected = r.id === activeRoomId;
                         const itemsCount = Array.isArray(r.items) ? r.items.length : 0;
-                        const isGuestRoom = (r.roomTitle || r.sheetName || '').toLowerCase().includes('guest');
 
                         return (
-                            <button
+                            <div
                                 key={r.id || idx}
-                                type="button"
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => setActiveRoomId(r.id)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs whitespace-nowrap transition-all border ${
-                                    isSelected
-                                        ? 'bg-brand-600 text-white border-brand-700 shadow-sm font-semibold'
-                                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/70 font-medium'
-                                }`}
-                            >
-                                <Home className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
-                                <span>{r.roomTitle || r.sheetName}</span>
-                                <span
-                                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                                        isSelected
-                                            ? 'bg-white/20 text-white font-bold'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        setActiveRoomId(r.id);
+                                    }
+                                }}
+                                className={`group flex items-center gap-2 px-3 py-2 rounded-md text-xs whitespace-nowrap transition-all border cursor-pointer select-none ${isSelected
+                                    ? 'bg-brand-600 text-white border-brand-700 shadow-sm font-semibold'
+                                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/70 font-medium'
                                     }`}
-                                >
-                                    Sheet {r.sheetNo || idx + 1}
-                                </span>
+                            >
+                                <span>{r.roomTitle || r.sheetName}</span>
                                 {itemsCount > 0 && (
                                     <span
-                                        className={`px-1 py-0.2 rounded text-[9px] font-bold ${
-                                            isSelected
-                                                ? 'bg-white/30 text-white'
-                                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                        }`}
+                                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isSelected
+                                            ? 'bg-white/30 text-white'
+                                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                            }`}
                                     >
-                                        {itemsCount} {itemsCount === 1 ? 'item' : 'items'}
+                                        {itemsCount}
                                     </span>
                                 )}
-                            </button>
+
+                            </div>
                         );
                     })}
 
@@ -887,108 +842,16 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         siteIncharge={activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant'}
                         sheetNo={activeRoom?.sheetNo || activeRoomIndex + 1}
                         totalSheets={rooms.length}
-                        onPrint={handlePrint}
+                        onPrint={handlePrintCurrentRoom}
                         onEditRoom={() => setActiveTab('edit')}
                     />
-                ) : activeTab === 'edit' ? (
+                ) : (
                     <SiteDetailSheetEditor
                         room={activeRoom}
                         onUpdateRoom={handleUpdateActiveRoom}
                         onSave={() => saveSheet(rooms)}
+                        onDeleteRoom={rooms.length > 1 ? (e) => handleDeleteRoom(activeRoomId, e) : undefined}
                     />
-                ) : (
-                    /* All Rooms Overview Tab */
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                    All Configured Room Sheets ({rooms.length})
-                                </h3>
-                                <p className="text-xs text-slate-500">
-                                    Each room has its own dedicated single sheet invoice for production handoff.
-                                </p>
-                            </div>
-                            <Button size="sm" icon={Plus} onClick={handleAddRoom}>
-                                Add New Room
-                            </Button>
-                        </div>
-
-                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-                            <table className="w-full text-xs text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 uppercase font-semibold text-[10px]">
-                                    <tr>
-                                        <th className="p-3 w-16 text-center">Sheet #</th>
-                                        <th className="p-3">Room Name</th>
-                                        <th className="p-3">Site Incharge</th>
-                                        <th className="p-3 text-center">Treatments</th>
-                                        <th className="p-3">Primary Treatments</th>
-                                        <th className="p-3 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {rooms.map((r, idx) => {
-                                        const count = Array.isArray(r.items) ? r.items.length : 0;
-                                        const treatmentNames = (r.items || []).map((it) => it.type).filter(Boolean).slice(0, 3).join(', ');
-
-                                        return (
-                                            <tr key={r.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                                                <td className="p-3 font-mono font-bold text-center text-slate-600">
-                                                    {r.sheetNo || idx + 1}
-                                                </td>
-                                                <td className="p-3 font-bold text-slate-900 dark:text-slate-100">
-                                                    {r.roomTitle || r.sheetName}
-                                                </td>
-                                                <td className="p-3 text-slate-600 dark:text-slate-400">
-                                                    {r.siteIncharge || 'Amit / Ashish / Sachin / Hemant'}
-                                                </td>
-                                                <td className="p-3 text-center">
-                                                    <Badge tone={count > 0 ? 'emerald' : 'slate'}>
-                                                        {count} {count === 1 ? 'treatment' : 'treatments'}
-                                                    </Badge>
-                                                </td>
-                                                <td className="p-3 text-slate-500 truncate max-w-xs">
-                                                    {treatmentNames || '—'}
-                                                </td>
-                                                <td className="p-3 text-right space-x-1.5">
-                                                    <Button
-                                                        size="xs"
-                                                        variant="secondary"
-                                                        icon={FileSpreadsheet}
-                                                        onClick={() => {
-                                                            setActiveRoomId(r.id);
-                                                            setActiveTab('preview');
-                                                        }}
-                                                    >
-                                                        Preview Sheet
-                                                    </Button>
-                                                    <Button
-                                                        size="xs"
-                                                        variant="outline"
-                                                        icon={Pencil}
-                                                        onClick={() => {
-                                                            setActiveRoomId(r.id);
-                                                            setActiveTab('edit');
-                                                        }}
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    {rooms.length > 1 && (
-                                                        <Button
-                                                            size="xs"
-                                                            variant="ghost"
-                                                            icon={Trash2}
-                                                            onClick={() => handleDeleteRoom(r.id)}
-                                                            className="text-rose-500 hover:text-rose-600"
-                                                        />
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 )}
             </div>
         </Modal>
@@ -1061,7 +924,6 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                             title="Open Room-wise Site Detail Sheet Preview"
                                             className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                                         />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Site Detail Sheet" />
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Lead Details" />
                                     </div>
                                 </td>
@@ -1273,5 +1135,5 @@ const ReadySize = ({ items: itemsProp = [] }) => {
     );
 };
 
-export default ReadySize;
 
+export default ReadySize;
