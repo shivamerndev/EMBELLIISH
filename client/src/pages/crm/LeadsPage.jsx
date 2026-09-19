@@ -1252,16 +1252,6 @@ export const LeadsPage = () => {
                               <div className="flex items-center justify-end gap-1.5">
                                 <Button
                                   size="sm"
-                                  variant="secondary"
-                                  icon={UserCheck}
-                                  onClick={() => setReassigningLead(row)}
-                                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold"
-                                  title="Reassign DCM"
-                                >
-                                  Reassign DCM
-                                </Button>
-                                <Button
-                                  size="sm"
                                   variant="ghost"
                                   icon={Pencil}
                                   onClick={() => setEditing(row)}

@@ -745,6 +745,7 @@ const LeadDetails = () => {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Proposal Due Date" value={lead.proposal?.dueDate ? date(lead.proposal.dueDate) : null} />
+                        <InfoTile label="Proposal Actual Date" value={lead.proposal?.actualDate ? date(lead.proposal.actualDate) : null} />
                         <InfoTile label="Proposal No. / Version" value={lead.proposal?.noVersion} />
                         <InfoTile label="Proposal Date" value={lead.proposal?.date ? date(lead.proposal.date) : null} />
                         <InfoTile label="Design Direction" value={lead.proposal?.designDirection} />

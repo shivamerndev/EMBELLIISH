@@ -197,6 +197,7 @@ const proposalSchema = z
     approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
     approvedBy: z.string().optional(),
   })
+  .passthrough()
   .optional();
 
 const tokenSchema = z
