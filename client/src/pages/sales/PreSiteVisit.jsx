@@ -713,7 +713,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
-                        <Field label="Key Person Availability Name">
+                        <Field label="Key Person Name">
                             <Input
                                 placeholder="Write name of the installer..."
                                 value={form.installerName}
@@ -731,48 +731,50 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                             />
                         </Field>
                     </div>
-                </div>
 
-                {/* Responsible Person Availability Slots */}
-                <Field label="RESPONSIBLE PERSON AVAILABILITY">
-                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        {form.availabilitySlots.map((slot, index) => (
-                            <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
-                                <div className="flex-1 min-w-[140px]">
-                                    <Input
-                                        type="date"
-                                        size="sm"
-                                        value={slot.date}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
-                                        placeholder="Availability Date"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-[160px]">
-                                    <Input
-                                        size="sm"
-                                        value={slot.timeSlot}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
-                                        placeholder="e.g. 00 AM - 01"
-                                    />
-                                </div>
-                                {form.availabilitySlots.length > 1 && (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleRemoveSlot(slot.id)}
-                                        className="text-rose-500 hover:text-rose-700"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                )}
+                    {/* Key Person Availability Slots */}
+                    <div className="border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
+                        <Field label="KEY PERSON AVAILABILITY">
+                            <div className="space-y-2 mt-1">
+                                {form.availabilitySlots.map((slot, index) => (
+                                    <div key={slot.id || index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 min-w-0 overflow-hidden">
+                                        <div className="w-full min-w-0">
+                                            <Input
+                                                type="date"
+                                                size="sm"
+                                                value={slot.date}
+                                                onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
+                                                placeholder="Availability Date"
+                                            />
+                                        </div>
+                                        <div className="w-full min-w-0">
+                                            <Input
+                                                size="sm"
+                                                value={slot.timeSlot}
+                                                onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
+                                                placeholder="e.g. 10:00 AM - 01:00 PM"
+                                            />
+                                        </div>
+                                        {form.availabilitySlots.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleRemoveSlot(slot.id)}
+                                                className="text-rose-500 hover:text-rose-700 shrink-0 self-center justify-self-end"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
+                                    Add Availability Slot
+                                </Button>
                             </div>
-                        ))}
-                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
-                            Add Availability Slot
-                        </Button>
+                        </Field>
                     </div>
-                </Field>
+                </div>
 
                 {/* Grid Section 2: Site Address Inputs */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
