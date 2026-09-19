@@ -159,6 +159,7 @@ const leadSchema = new mongoose.Schema(
     // --- Sales & Commercials: Proposal.
     proposal: {
       dueDate: Date,
+      actualDate: Date,
       noVersion: String,
       date: Date,
       clientBrief: String,
