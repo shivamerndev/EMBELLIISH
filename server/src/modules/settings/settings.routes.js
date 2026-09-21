@@ -60,7 +60,7 @@ const settingsSchema = z.object({
     .optional(),
   payment: z
     .object({
-      tokenPercent: percent.optional(),
+      firstAdvancePercent: percent.optional(),
       advancePercent: percent.optional(),
       balancePercent: percent.optional(),
       invoiceDueDays: z.coerce.number().int().nonnegative().optional(),

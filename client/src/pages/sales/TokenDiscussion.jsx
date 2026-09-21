@@ -20,29 +20,29 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 const SPREADSHEET_SECTIONS = [
     {
         id: 's9',
-        title: 'Token Discussion',
+        title: 'Advance Discussion',
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
-            { key: 'token.discussionDueDate', label: 'Token Discussion Due' },
+            { key: 'advance.discussionDueDate', label: 'Advance Discussion Due' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'token.amount', label: 'Token Amount (₹)' },
-            { key: 'token.status', label: 'Token Status' },
-            { key: 'token.receivedDate', label: 'Token Received Date' },
-            { key: 'token.clientBudgetResponse', label: 'Client Budget Response' },
-            { key: 'token.proposal', label: 'Proposal' },
-            { key: 'token.budgetEstimate', label: 'Budget Estimate (₹)' },
-            { key: 'token.clientResponse', label: 'Client Response' },
-            { key: 'token.projectTimeline', label: 'Project Timeline' },
-            { key: 'token.commercialTerms', label: 'Commercial Terms' },
+            { key: 'advance.amount', label: 'Advance Amount (₹)' },
+            { key: 'advance.status', label: 'Advance Status' },
+            { key: 'advance.receivedDate', label: 'Advance Received Date' },
+            { key: 'advance.clientBudgetResponse', label: 'Client Budget Response' },
+            { key: 'advance.proposal', label: 'Proposal' },
+            { key: 'advance.budgetEstimate', label: 'Budget Estimate (₹)' },
+            { key: 'advance.clientResponse', label: 'Client Response' },
+            { key: 'advance.projectTimeline', label: 'Project Timeline' },
+            { key: 'advance.commercialTerms', label: 'Commercial Terms' },
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
-            { key: 'token.discussionDueDate', label: 'Due Date' },
+            { key: 'advance.discussionDueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
-            { key: 'token.amount', label: 'Token Amount' },
-            { key: 'token.status', label: 'Status' },
-            { key: 'token.clientResponse', label: 'Client Response' },
+            { key: 'advance.amount', label: 'Advance Amount' },
+            { key: 'advance.status', label: 'Status' },
+            { key: 'advance.clientResponse', label: 'Client Response' },
         ]
     }
 ];
@@ -91,8 +91,8 @@ const normalizeTokenStatus = (st) => {
 const SPREADSHEET_CELL_RENDERERS = {
     delayStatus: (lead) => (
         <DelayBadge
-            dueDate={lead.token?.discussionDueDate}
-            isCompleted={Boolean(lead.token?.receivedDate || lead.token?.status === 'Received')}
+            dueDate={lead.advance?.discussionDueDate}
+            isCompleted={Boolean(lead.advance?.receivedDate || lead.advance?.status === 'Received')}
         />
     ),
     sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
@@ -115,10 +115,10 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
-    'token.discussionDueDate': (lead) => {
-        const val = lead.token?.discussionDueDate;
+    'advance.discussionDueDate': (lead) => {
+        const val = lead.advance?.discussionDueDate;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        const isOverdue = !lead.token?.receivedDate && new Date(val) < new Date();
+        const isOverdue = !lead.advance?.receivedDate && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
                 <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -128,20 +128,20 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
-    'token.amount': (lead) => {
-        const val = lead.token?.amount;
+    'advance.amount': (lead) => {
+        const val = lead.advance?.amount;
         if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-bold">{currency(val)}</span>;
     },
-    'token.status': (lead) => {
-        const raw = lead.token?.status;
+    'advance.status': (lead) => {
+        const raw = lead.advance?.status;
         const st = normalizeTokenStatus(raw);
         const opt = TOKEN_STATUS_OPTIONS.find((o) => o.value.toLowerCase() === st.toLowerCase()) || { tone: 'slate' };
         return <Badge tone={opt.tone}>{st}</Badge>;
     },
-    'token.receivedDate': (lead) => {
-        const st = normalizeTokenStatus(lead.token?.status);
-        const val = lead.token?.receivedDate;
+    'advance.receivedDate': (lead) => {
+        const st = normalizeTokenStatus(lead.advance?.status);
+        const val = lead.advance?.receivedDate;
         if (!val) {
             if (st === 'Received') {
                 return (
@@ -159,14 +159,14 @@ const SPREADSHEET_CELL_RENDERERS = {
             </span>
         );
     },
-    'token.clientBudgetResponse': (lead) => {
-        const val = lead.token?.clientBudgetResponse;
+    'advance.clientBudgetResponse': (lead) => {
+        const val = lead.advance?.clientBudgetResponse;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         const opt = CLIENT_BUDGET_RESPONSE_OPTIONS.find((o) => o.value === val);
         return <Badge tone={opt ? opt.tone : 'slate'}>{val}</Badge>;
     },
-    'token.proposal': (lead) => {
-        const val = lead.token?.proposal || lead.proposal?.noVersion || lead.proposal?.selectedBoqVersion;
+    'advance.proposal': (lead) => {
+        const val = lead.advance?.proposal || lead.proposal?.noVersion || lead.proposal?.selectedBoqVersion;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
             <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
@@ -175,13 +175,13 @@ const SPREADSHEET_CELL_RENDERERS = {
             </span>
         );
     },
-    'token.budgetEstimate': (lead) => {
-        const val = lead.token?.budgetEstimate;
+    'advance.budgetEstimate': (lead) => {
+        const val = lead.advance?.budgetEstimate;
         if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-semibold">{currency(val)}</span>;
     },
-    'token.clientResponse': (lead) => {
-        const val = lead.token?.clientResponse;
+    'advance.clientResponse': (lead) => {
+        const val = lead.advance?.clientResponse;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
             <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px] block mx-auto text-xs" title={val}>
@@ -189,10 +189,10 @@ const SPREADSHEET_CELL_RENDERERS = {
             </span>
         );
     },
-    'token.projectTimeline': (lead) => {
-        const start = lead.token?.projectTimelineStart;
-        const end = lead.token?.projectTimelineEnd;
-        const str = lead.token?.projectTimeline;
+    'advance.projectTimeline': (lead) => {
+        const start = lead.advance?.projectTimelineStart;
+        const end = lead.advance?.projectTimelineEnd;
+        const str = lead.advance?.projectTimeline;
 
         if (start || end) {
             return (
@@ -205,10 +205,10 @@ const SPREADSHEET_CELL_RENDERERS = {
         if (!str) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return <span className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-[160px] block mx-auto" title={str}>{str}</span>;
     },
-    'token.commercialTerms': (lead) => {
-        const terms = lead.token?.commercialTerms;
-        const template = lead.token?.masterTemplate;
-        const notes = lead.token?.commercialTermsNotes;
+    'advance.commercialTerms': (lead) => {
+        const terms = lead.advance?.commercialTerms;
+        const template = lead.advance?.masterTemplate;
+        const notes = lead.advance?.commercialTermsNotes;
 
         if (!terms && !template && !notes) return <span className="text-slate-400 dark:text-slate-600">—</span>;
 
@@ -274,12 +274,12 @@ const formatDatetimeLocal = (val) => {
     }
 };
 
-/* ------------------------------------------------------------- Edit Token Discussion Modal */
+/* ------------------------------------------------------------- Edit Advance Discussion Modal */
 
 
 const EditTokenModal = ({ item, onClose, onDone }) => {
     const navigate = useNavigate();
-    const tok = item?.token || {};
+    const tok = item?.advance || {};
     const [redirectOnSave, setRedirectOnSave] = useState(false);
     const redirectRef = useRef(false);
 
@@ -301,7 +301,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
 
     const { execute, pending, error: apiError } = useAction(
         async ({ payload, shouldRedirect }) => {
-            const res = await leadsApi.update(item._id || item.id, { token: payload });
+            const res = await leadsApi.update(item._id || item.id, { advance: payload });
             return { res, shouldRedirect };
         },
         {
@@ -492,7 +492,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                                 <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                     <div className="flex items-center justify-end gap-1">
                                         <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Token Details" />
+                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Advance Details" />
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -534,7 +534,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
         setLoading(true);
         setError(null);
         handleFetchLeads()
-            .catch((err) => setError(err?.message || 'Failed to fetch token discussion data'))
+            .catch((err) => setError(err?.message || 'Failed to fetch advance discussion data'))
             .finally(() => setLoading(false));
     };
 
@@ -567,8 +567,8 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
         const propApproval = String(lead.proposal?.approvalStatus || lead.proposalApprovalStatus || lead.proposal?.status || '').toUpperCase();
         const isProposalApproved = propApproval === 'APPROVED' || propApproval === 'COMPLETED' || propApproval === 'SUBMITTED' || propApproval === 'SENT';
 
-        const isTokenStage = Boolean(
-            lead.stage && ['token', 'token discussion', 'budgeting', 'budgeting / token discussion'].includes(String(lead.stage).toLowerCase())
+        const isAdvanceStage = Boolean(
+            lead.stage && ['advance', 'advance discussion', 'budgeting', 'budgeting / advance discussion'].includes(String(lead.stage).toLowerCase())
         );
 
         const hasProposalData = Boolean(
@@ -577,16 +577,16 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
             lead.proposal?.selectedBoqVersion
         );
 
-        const hasTokenActivity = Boolean(
-            lead.token?.discussionDueDate ||
-            lead.token?.amount ||
-            lead.token?.receivedDate ||
-            (lead.token?.status && !['NOT_DISCUSSED', 'Not Discussed', 'not_discussed'].includes(lead.token.status)) ||
-            lead.token?.clientBudgetResponse ||
-            lead.token?.clientResponse
+        const hasAdvanceActivity = Boolean(
+            lead.advance?.discussionDueDate ||
+            lead.advance?.amount ||
+            lead.advance?.receivedDate ||
+            (lead.advance?.status && !['NOT_DISCUSSED', 'Not Discussed', 'not_discussed'].includes(lead.advance.status)) ||
+            lead.advance?.clientBudgetResponse ||
+            lead.advance?.clientResponse
         );
 
-        return isProposalApproved || isTokenStage || hasTokenActivity || hasProposalData;
+        return isProposalApproved || isAdvanceStage || hasAdvanceActivity || hasProposalData;
     });
 
     const filteredLeads = approvedLeads.filter((lead) => {
@@ -602,9 +602,9 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
     });
 
     const totalCount = approvedLeads.length;
-    const tokenReceivedCount = approvedLeads.filter((l) => normalizeTokenStatus(l.token?.status) === 'Received' || l.token?.receivedDate).length;
-    const totalTokenValue = approvedLeads.reduce((acc, l) => acc + Number(l.token?.amount || 0), 0);
-    const pendingDiscussions = approvedLeads.filter((l) => l.token?.discussionDueDate && !l.token?.receivedDate).length;
+    const advanceReceivedCount = approvedLeads.filter((l) => normalizeTokenStatus(l.advance?.status) === 'Received' || l.advance?.receivedDate).length;
+    const totalAdvanceValue = approvedLeads.reduce((acc, l) => acc + Number(l.advance?.amount || 0), 0);
+    const pendingDiscussions = approvedLeads.filter((l) => l.advance?.discussionDueDate && !l.advance?.receivedDate).length;
 
     return (
         <div>
@@ -613,10 +613,10 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Token Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
-                <StatTile label="Token Received" value={tokenReceivedCount} sub="Tokens secured" icon={CheckCircle2} tone="green" />
-                <StatTile label="Total Token Amount" value={currency(totalTokenValue, { compact: true })} sub="Cumulative token value" icon={Wallet} tone="emerald" />
-                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Token meetings due" icon={Calendar} tone="blue" />
+                <StatTile label="Advance Pipeline" value={totalCount} sub="Active commercial leads" icon={BadgeDollarSign} tone="amber" />
+                <StatTile label="Advance Received" value={advanceReceivedCount} sub="Advances secured" icon={CheckCircle2} tone="green" />
+                <StatTile label="Total Advance Amount" value={currency(totalAdvanceValue, { compact: true })} sub="Cumulative advance value" icon={Wallet} tone="emerald" />
+                <StatTile label="Pending Discussions" value={pendingDiscussions} sub="Advance meetings due" icon={Calendar} tone="blue" />
             </div>
 
             <Panel className="mb-4">
@@ -648,7 +648,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
 
             {loading ? (
                 <Panel className="p-12 text-center">
-                    <Loading text="Loading Token Data..." />
+                    <Loading text="Loading Advance Data..." />
                 </Panel>
             ) : error ? (
                 <ErrorState error={error} onRetry={reload} />
@@ -656,8 +656,8 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                 <Panel className="p-8 text-center">
                     <EmptyState
                         icon={BadgeDollarSign}
-                        title="No Token Records Found"
-                        hint={search ? "Try adjusting your search query." : "Leads appear here once a Proposal is created/approved or token activity is updated."}
+                        title="No Advance Records Found"
+                        hint={search ? "Try adjusting your search query." : "Leads appear here once a Proposal is created/approved or advance activity is updated."}
                     />
                 </Panel>
             ) : viewMode === 'cards' ? (
@@ -674,7 +674,7 @@ const TokenDiscussion = ({ items: itemsProp = [] }) => {
                     )}
                     empty={
                         <Panel className="p-8 text-center">
-                            <EmptyState icon={BadgeDollarSign} title="No Token Records Found" hint="Try adjusting search parameters." />
+                            <EmptyState icon={BadgeDollarSign} title="No Advance Records Found" hint="Try adjusting search parameters." />
                         </Panel>
                     }
                 />

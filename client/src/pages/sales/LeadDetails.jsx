@@ -292,7 +292,7 @@ const DETAIL_TABS = [
     { id: 'studio-meeting', label: 'Studio Meeting', icon: CalendarCheck2 },
     { id: 'consumption-boq', label: 'Consumption / BOQ', icon: FileText },
     { id: 'proposal', label: 'Proposal Creation', icon: ReceiptText },
-    { id: 'token-discussion', label: 'Token Discussion', icon: Wallet },
+    { id: 'token-discussion', label: 'Advance Discussion', icon: Wallet },
     { id: 'pricing-costing', label: 'Pricing & Costing', icon: BadgeDollarSign },
     { id: 'quotation', label: 'Quotation Prep', icon: ReceiptText },
     { id: 'client-approval', label: 'Client Approval', icon: ShieldCheck },
@@ -776,30 +776,30 @@ const LeadDetails = () => {
             </div>
         )}
 
-        {/* STAGE 8: BUDGETING / TOKEN DISCUSSION */}
+        {/* STAGE 8: BUDGETING / ADVANCE DISCUSSION */}
         {activeDetailTab === 'token-discussion' && (
             <div className="space-y-4">
                 <div className="p-4 bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <Wallet className="w-3.5 h-3.5" />Budgeting / Token Discussion
+                        <Wallet className="w-3.5 h-3.5" />Budgeting / Advance Discussion
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                        <InfoTile label="Token Discussion Due" value={lead.token?.discussionDueDate ? date(lead.token.discussionDueDate) : null} />
-                        <InfoTile label="Token Amount" value={lead.token?.amount ? currency(lead.token.amount) : null} />
-                        <InfoTile label="Token Status" value={lead.token?.status ? humanise(lead.token.status) : null} />
-                        <InfoTile label="Token Received Date" value={lead.token?.receivedDate ? date(lead.token.receivedDate) : null} />
-                        <InfoTile label="Budget Estimate" value={lead.token?.budgetEstimate ? currency(lead.token.budgetEstimate) : null} />
-                        <InfoTile label="Project Timeline" value={lead.token?.projectTimeline} />
-                        <InfoTile label="Client Budget Response" value={lead.token?.clientBudgetResponse} />
-                        <InfoTile label="Client Response" value={lead.token?.clientResponse} />
+                        <InfoTile label="Advance Discussion Due" value={lead.advance?.discussionDueDate ? date(lead.advance.discussionDueDate) : null} />
+                        <InfoTile label="Advance Amount" value={lead.advance?.amount ? currency(lead.advance.amount) : null} />
+                        <InfoTile label="Advance Status" value={lead.advance?.status ? humanise(lead.advance.status) : null} />
+                        <InfoTile label="Advance Received Date" value={lead.advance?.receivedDate ? date(lead.advance.receivedDate) : null} />
+                        <InfoTile label="Budget Estimate" value={lead.advance?.budgetEstimate ? currency(lead.advance.budgetEstimate) : null} />
+                        <InfoTile label="Project Timeline" value={lead.advance?.projectTimeline} />
+                        <InfoTile label="Client Budget Response" value={lead.advance?.clientBudgetResponse} />
+                        <InfoTile label="Client Response" value={lead.advance?.clientResponse} />
                     </div>
-                    {lead.token?.commercialTerms && (
+                    {lead.advance?.commercialTerms && (
                         <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
                             <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Commercial Terms</span>
-                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.token.commercialTerms)}</p>
+                            <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{renderFormattedText(lead.advance.commercialTerms)}</p>
                         </div>
                     )}
-                    <AttachmentLinks label="Proposal Attachment" files={lead.token?.proposalAttachment} />
+                    <AttachmentLinks label="Proposal Attachment" files={lead.advance?.proposalAttachment} />
                 </div>
             </div>
         )}

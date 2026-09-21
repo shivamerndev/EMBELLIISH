@@ -40,10 +40,10 @@ class SettingsService {
     // The payment split has to add up, or every milestone gate downstream lies.
     if (patch.payment) {
       const merged = { ...settings.payment.toObject(), ...patch.payment };
-      const total = merged.tokenPercent + merged.advancePercent + merged.balancePercent;
+      const total = merged.firstAdvancePercent + merged.advancePercent + merged.balancePercent;
       if (Math.round(total) !== 100) {
         throw ApiError.badRequest(
-          `Token, advance and balance must add up to 100% : this adds up to ${Math.round(total)}%`
+          `Advance (1st), advance and balance must add up to 100% : this adds up to ${Math.round(total)}%`
         );
       }
     }
@@ -80,7 +80,7 @@ class SettingsService {
   async paymentSchedule() {
     const settings = await this.get();
     return {
-      tokenPercent: settings.payment?.tokenPercent ?? 10,
+      firstAdvancePercent: settings.payment?.firstAdvancePercent ?? 10,
       advancePercent: settings.payment?.advancePercent ?? 60,
       balancePercent: settings.payment?.balancePercent ?? 30,
     };

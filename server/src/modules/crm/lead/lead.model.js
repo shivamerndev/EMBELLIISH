@@ -189,8 +189,8 @@ const leadSchema = new mongoose.Schema(
       ],
     },
 
-    // --- Sales & Commercials: Token / advance discussion.
-    token: {
+    // --- Sales & Commercials: Advance discussion.
+    advance: {
       discussionDueDate: Date,
       amount: Number,
       status: {

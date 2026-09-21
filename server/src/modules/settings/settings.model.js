@@ -51,7 +51,7 @@ const settingsSchema = new mongoose.Schema(
 
     /** Steps 9, 10, 18 : the 10 / 60 / 30 split new projects inherit. */
     payment: {
-      tokenPercent: { type: Number, default: PAYMENT_SCHEDULE.TOKEN, min: 0, max: 100 },
+      firstAdvancePercent: { type: Number, default: PAYMENT_SCHEDULE.FIRST_ADVANCE, min: 0, max: 100 },
       advancePercent: { type: Number, default: PAYMENT_SCHEDULE.ADVANCE, min: 0, max: 100 },
       balancePercent: { type: Number, default: PAYMENT_SCHEDULE.BALANCE, min: 0, max: 100 },
       invoiceDueDays: { type: Number, default: 7 },

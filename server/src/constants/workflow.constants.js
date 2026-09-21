@@ -2,7 +2,7 @@
  * The Embellish operating spine, encoded.
  *
  *   Lead → Qualification → Assign DCM → Site Visit → Measurement → Consumption
- *   Sheet (BOQ) → Design → Quotation → Token → Advance → Activation → Execution
+ *   Sheet (BOQ) → Design → Quotation → Advance (1st) → Advance (2nd) → Activation → Execution
  *   Drawing → Purchase → Inventory → Production → QC → Packing → Dispatch →
  *   Final Payment → Installation → Rework → Closure
  *
@@ -17,7 +17,7 @@ const PROJECT_STAGE = {
   BOQ: 'BOQ',
   DESIGN: 'DESIGN',
   QUOTATION: 'QUOTATION',
-  TOKEN_RECEIVED: 'TOKEN_RECEIVED',
+  FIRST_ADVANCE_RECEIVED: 'FIRST_ADVANCE_RECEIVED',
   ADVANCE_RECEIVED: 'ADVANCE_RECEIVED',
   ACTIVE: 'ACTIVE',
   EXECUTION_DRAWING: 'EXECUTION_DRAWING',
@@ -40,7 +40,7 @@ const STAGE_ORDER = [
   PROJECT_STAGE.BOQ,
   PROJECT_STAGE.DESIGN,
   PROJECT_STAGE.QUOTATION,
-  PROJECT_STAGE.TOKEN_RECEIVED,
+  PROJECT_STAGE.FIRST_ADVANCE_RECEIVED,
   PROJECT_STAGE.ADVANCE_RECEIVED,
   PROJECT_STAGE.ACTIVE,
   PROJECT_STAGE.EXECUTION_DRAWING,
@@ -62,7 +62,7 @@ const STAGE_LABELS = {
   [PROJECT_STAGE.BOQ]: 'Consumption Sheet (BOQ)',
   [PROJECT_STAGE.DESIGN]: 'Design Finalisation',
   [PROJECT_STAGE.QUOTATION]: 'Quotation',
-  [PROJECT_STAGE.TOKEN_RECEIVED]: 'Token Received',
+  [PROJECT_STAGE.FIRST_ADVANCE_RECEIVED]: 'Advance Received (1st)',
   [PROJECT_STAGE.ADVANCE_RECEIVED]: 'Advance Received',
   [PROJECT_STAGE.ACTIVE]: 'Project Active',
   [PROJECT_STAGE.EXECUTION_DRAWING]: 'Execution Drawing',
@@ -87,10 +87,10 @@ const STAGE_GATES = {
   [PROJECT_STAGE.BOQ]: ['hasMeasurements'],
   [PROJECT_STAGE.DESIGN]: ['boqGenerated'],
   [PROJECT_STAGE.QUOTATION]: ['boqGenerated'],
-  [PROJECT_STAGE.TOKEN_RECEIVED]: ['quotationApproved', 'tokenPaid'],
+  [PROJECT_STAGE.FIRST_ADVANCE_RECEIVED]: ['quotationApproved', 'firstAdvancePaid'],
   [PROJECT_STAGE.ADVANCE_RECEIVED]: ['advancePaid'],
-  // Step 10: token + advance + design + measurement, all four, before Active.
-  [PROJECT_STAGE.ACTIVE]: ['tokenPaid', 'advancePaid', 'designApproved', 'hasMeasurements'],
+  // Step 10: first advance + advance + design + measurement, all four, before Active.
+  [PROJECT_STAGE.ACTIVE]: ['firstAdvancePaid', 'advancePaid', 'designApproved', 'hasMeasurements'],
   [PROJECT_STAGE.EXECUTION_DRAWING]: ['projectActivated'],
   [PROJECT_STAGE.PURCHASE]: ['drawingApproved'],
   [PROJECT_STAGE.MATERIAL_RECEIVED]: ['materialAvailable'],
@@ -108,13 +108,13 @@ const STAGE_GATES = {
 
 /** Payment milestones from Steps 9, 10 and 18. */
 const PAYMENT_MILESTONE = {
-  TOKEN: 'TOKEN',
+  FIRST_ADVANCE: 'FIRST_ADVANCE',
   ADVANCE: 'ADVANCE',
   BALANCE: 'BALANCE',
 };
 
 const PAYMENT_SCHEDULE = {
-  [PAYMENT_MILESTONE.TOKEN]: 10,
+  [PAYMENT_MILESTONE.FIRST_ADVANCE]: 10,
   [PAYMENT_MILESTONE.ADVANCE]: 60,
   [PAYMENT_MILESTONE.BALANCE]: 30,
 };
