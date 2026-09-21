@@ -64,6 +64,7 @@ const leadSchema = new mongoose.Schema(
     assignedInstaller: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     installerName: { type: String, trim: true },
     installerPhone: { type: String, trim: true },
+    siteVisitNotes: { type: String, trim: true },
     clientArchitectAvailability: String,
     scope: mongoose.Schema.Types.Mixed,
     rooms: mongoose.Schema.Types.Mixed,
