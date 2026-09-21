@@ -5,7 +5,7 @@ import { applyJsonTransform } from '../../core/schemaPlugins.js';
  * Module 19 : Notifications.
  *
  * "WhatsApp nahi. ERP me." The point of this module is that the things people
- * currently learn from a group message : the token cleared, QC failed, a discount
+ * currently learn from a group message : the advance cleared, QC failed, a discount
  * needs the founder, the fabric never arrived : land on the right person's screen
  * inside the system that already knows about them.
  *

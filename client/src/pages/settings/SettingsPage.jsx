@@ -97,11 +97,11 @@ const CompanyTab = ({ settings, save, saving }) => {
       </Section>
 
       <Section title="Approved Standard Terms" hint="Pulled automatically into proposals & quotations when creating commercial documents">
-        <Textarea rows={4} value={form.termsAndConditions || ''} onChange={set('termsAndConditions')} placeholder="1. Validity: Proposal pricing valid for 15 days...&#10;2. Payment: 10% token, 60% advance, 30% balance..." />
+        <Textarea rows={4} value={form.termsAndConditions || ''} onChange={set('termsAndConditions')} placeholder="1. Validity: Proposal pricing valid for 15 days...&#10;2. Payment: 10% advance (1st), 60% advance, 30% balance..." />
       </Section>
 
       <Section title="Approved Refund & Revision Clause" hint="Pulled automatically into proposals for refund & revision policies">
-        <Textarea rows={4} value={form.refundRevisionClause || ''} onChange={set('refundRevisionClause')} placeholder="1. Revision Policy: Up to 2 minor revision rounds included...&#10;2. Refund Policy: Token is refundable within 7 days prior to measurement..." />
+        <Textarea rows={4} value={form.refundRevisionClause || ''} onChange={set('refundRevisionClause')} placeholder="1. Revision Policy: Up to 2 minor revision rounds included...&#10;2. Refund Policy: Advance is refundable within 7 days prior to measurement..." />
       </Section>
     </Panel>
   );
@@ -131,7 +131,7 @@ const RulesTab = ({ settings, save, saving, error }) => {
     setForm((p) => ({ ...p, notifications: { ...p.notifications, [key]: e.target.checked } }));
 
   const split =
-    (Number(form.payment.tokenPercent) || 0) +
+    (Number(form.payment.firstAdvancePercent) || 0) +
     (Number(form.payment.advancePercent) || 0) +
     (Number(form.payment.balancePercent) || 0);
 
@@ -176,8 +176,8 @@ const RulesTab = ({ settings, save, saving, error }) => {
 
       <Section title="Payment schedule" hint="Steps 9, 10 and 18 : what new projects inherit">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Field label="Token (%)">
-            <Input type="number" value={form.payment.tokenPercent ?? 10} onChange={setIn('payment', 'tokenPercent')} />
+          <Field label="Advance 1st (%)">
+            <Input type="number" value={form.payment.firstAdvancePercent ?? 10} onChange={setIn('payment', 'firstAdvancePercent')} />
           </Field>
           <Field label="Advance (%)">
             <Input type="number" value={form.payment.advancePercent ?? 60} onChange={setIn('payment', 'advancePercent')} />

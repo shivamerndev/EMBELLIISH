@@ -199,7 +199,7 @@ const proposalSchema = z
   })
   .optional();
 
-const tokenSchema = z
+const advanceSchema = z
   .object({
     discussionDueDate: z.coerce.date().optional().nullable(),
     amount: z.coerce.number().optional().nullable(),
@@ -539,7 +539,7 @@ const rawCreateLeadSchema = z.object({
   readySize: readySizeSchema,
   consumption: consumptionSchema,
   proposal: proposalSchema,
-  token: tokenSchema,
+  advance: advanceSchema,
   costing: costingSchema,
   quotation: quotationDetailsSchema,
   approval: approvalSchema,
