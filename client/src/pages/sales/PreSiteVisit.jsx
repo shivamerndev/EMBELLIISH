@@ -27,6 +27,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'siteAddress', label: 'Site Address' },
             { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
             { key: 'assignedInstaller', label: 'Assigned Installer / Measurement Person' },
+            { key: 'siteVisitNotes', label: 'Site Visit Notes' },
             { key: 'clientArchitectAvailability', label: 'Client / Architect Availability' },
             { key: 'scope', label: 'Scope' },
             { key: 'rooms', label: 'Rooms' },
@@ -257,6 +258,15 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
+    siteVisitNotes: (lead) => {
+        const val = lead.siteVisitNotes;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="text-slate-700 dark:text-slate-300 text-xs line-clamp-2 max-w-[200px] mx-auto block text-left" title={val}>
+                {val}
+            </span>
+        );
+    },
     clientArchitectAvailability: (lead) => {
         const slots = parseAvailabilitySlots(lead.clientArchitectAvailability);
         if (slots.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
@@ -419,6 +429,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
         installerName: item?.installerName || '',
         installerPhone: item?.installerPhone || item?.installerNumber || '',
+        siteVisitNotes: item?.siteVisitNotes || '',
         addressLine1: initialAddress.addressLine1,
         postalCode: initialAddress.postalCode,
         state: initialAddress.state,
@@ -631,6 +642,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             assignedInstallers: form.assignedInstallers,
             installerName: form.installerName?.trim() || undefined,
             installerPhone: form.installerPhone?.trim() || undefined,
+            siteVisitNotes: form.siteVisitNotes?.trim() || undefined,
             clientArchitectAvailability: availabilityString || undefined,
             scope: scopeParts,
             rooms: form.roomsSelected,
@@ -730,6 +742,17 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                 defaultCountry="+91"
                             />
                         </Field>
+
+                        <div className="md:col-span-2">
+                            <Field label="Key Person / Site Visit Notes">
+                                <Textarea
+                                    rows={4}
+                                    placeholder="Write site visit notes or details..."
+                                    value={form.siteVisitNotes}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, siteVisitNotes: e.target.value }))}
+                                />
+                            </Field>
+                        </div>
                     </div>
 
                     {/* Key Person Availability Slots */}

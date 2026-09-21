@@ -603,7 +603,7 @@ export const LeadDetailsModal = ({
                   </Field>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 ${form.architectInvolved === 'Yes' ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-4`}>
                   <Field label="Lead Source">
                     <Select
                       value={form.source}
@@ -617,13 +617,15 @@ export const LeadDetailsModal = ({
                       ]}
                     />
                   </Field>
-                  <Field label="Architect / Designer Name">
-                    <Input
-                      value={form.architectName}
-                      onChange={setFormKey('architectName')}
-                      placeholder="Search or enter architect name..."
-                    />
-                  </Field>
+                  {form.architectInvolved === 'Yes' && (
+                    <Field label="Architect / Designer Name">
+                      <Input
+                        value={form.architectName}
+                        onChange={setFormKey('architectName')}
+                        placeholder="Search or enter architect name..."
+                      />
+                    </Field>
+                  )}
                 </div>
               </div>
 
