@@ -1,6 +1,6 @@
 import React from 'react';
 import { Copy, Trash2, Sliders } from 'lucide-react';
-import MeasurementCell from './MeasurementCell';
+import MeasurementCell from '../measurement/MeasurementCell';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 const PARTICULAR_OPTIONS = [
@@ -182,26 +182,6 @@ const MeasurementRow = ({
                 </>
             )}
 
-            {/* --- FABRIC REQUIREMENT & LIVE CALCULATED OUTPUTS (Documented) --- */}
-            {isColVisible('fabricRequirement') && (
-                <>
-                    {/* Repeat Cut Drop (inches) */}
-                    <MeasurementCell type="readonly" isCalculated value={calc.repeatCutDrop ?? 0} unit='"' />
-                    {/* No. of Widths */}
-                    <MeasurementCell type="readonly" isCalculated value={calc.numWidths ?? calc.roundedParts ?? 0} unit="" />
-                    {/* Net Metres (after wastage, before order rounding) */}
-                    <MeasurementCell type="readonly" isCalculated value={calc.netMetres != null ? calc.netMetres : (calc.fabricMeters ?? 0)} unit="m" />
-                    {/* Order Metres (final, rounded to increment) */}
-                    <MeasurementCell type="readonly" isCalculated value={calc.orderMetres ?? calc.fabricMeters ?? 0} unit="m" />
-                    {/* Railroad Check */}
-                    <MeasurementCell
-                        type="readonly"
-                        isCalculated
-                        value={calc.railroadCheck && calc.railroadCheck !== '—' ? calc.railroadCheck : '—'}
-                        unit=""
-                    />
-                </>
-            )}
 
             {/* --- ACTIONS --- */}
             <td className="px-2 py-1 text-center align-middle bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 w-[110px] min-w-[110px]">

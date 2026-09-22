@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, DoorOpen } from 'lucide-react';
 /**
  * Compact Room Group Row Header with Expand/Collapse toggle and room summary stats.
  */
-const MeasurementRoomGroup = ({
+const ConsumptionRoomGroup = ({
     roomName = 'Unassigned Room',
     srIndex = 1,
     itemCount = 0,
@@ -31,13 +31,7 @@ const MeasurementRoomGroup = ({
             {/* Sticky Room Name */}
             <td className="sticky left-[52px] z-20 bg-slate-100 dark:bg-slate-900 px-3 border-r border-slate-300 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                    {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400 shrink-0 transition-transform" />
-                    ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform" />
-                    )}
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                        <DoorOpen className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
                         {roomName}
                     </span>
                 </div>
@@ -77,4 +71,4 @@ const MeasurementRoomGroup = ({
     );
 };
 
-export default React.memo(MeasurementRoomGroup);
+export default React.memo(ConsumptionRoomGroup);

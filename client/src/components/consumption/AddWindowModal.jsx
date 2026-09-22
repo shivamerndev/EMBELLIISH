@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, DoorOpen, ShieldAlert } from 'lucide-react';
+import { Plus, ShieldAlert } from 'lucide-react';
 import { Button, Input, Select, Field, Modal } from '../ui';
 
 const PARTICULAR_OPTIONS = [
@@ -142,14 +142,10 @@ const AddWindowMeasurementModal = ({
     };
 
     return (
-        <Modal
-            open={open}
-            onClose={onClose}
-            title="Add Window Measurement"
-            subtitle="Add a new measurement to a selected room in this project."
-            size="sm"
-        >
+        <Modal open={open} onClose={onClose} title="Add Window Measurement" subtitle="Add a new measurement to a selected room in this project." size="sm">
+
             <form onSubmit={handleSubmit} className="space-y-4">
+
                 {validationError && (
                     <div className="p-3 text-xs bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2 font-medium">
                         <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
@@ -159,9 +155,7 @@ const AddWindowMeasurementModal = ({
 
                 {/* ROOM SELECTION (DYNAMIC) */}
                 <Field label="Target Room" required error={validationError && !selectedRoom ? 'Please select a room' : undefined}>
-                    <Select
-                        value={selectedRoom}
-                        onChange={(e) => {
+                    <Select value={selectedRoom} onChange={(e) => {
                             setSelectedRoom(e.target.value);
                             if (validationError) setValidationError('');
                         }}
@@ -171,8 +165,7 @@ const AddWindowMeasurementModal = ({
                                 value: r,
                                 label: `${String(i + 1).padStart(2, '0')} : ${r}`
                             }))
-                        ]}
-                        className={!selectedRoom && validationError ? 'border-rose-500 focus:ring-rose-500' : ''}
+                        ]}                        className={!selectedRoom && validationError ? 'border-rose-500 focus:ring-rose-500' : ''}
                     />
                 </Field>
 

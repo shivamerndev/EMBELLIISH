@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import MeasurementGridHeader from './MeasurementGridHeader';
-import MeasurementRoomGroup from './MeasurementRoomGroup';
-import MeasurementRow from './MeasurementRow';
-import MeasurementTotals from './MeasurementTotals';
+import TableHeader from './TableHeader';
+import ConsumptionRoomGroup from './ConsumptionRoomGroup';
+import MeasurementRow from './ConsumptionRow';
+import MeasurementTotals from './ConsumptionTotal';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 /**
@@ -128,7 +128,8 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
             <div className="overflow-x-auto overflow-y-auto max-h-[60vh] select-none relative scrollbar-thin">
                 <table className="w-full text-left border-collapse text-xs font-sans min-w-[1200px]">
 
-                    <MeasurementGridHeader columnVisibility={columnVisibility} />
+                    <TableHeader columnVisibility={columnVisibility} typeFilter={typeFilter} />
+
 
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950">
                         {Object.keys(roomGroups).length === 0 ? (
@@ -155,7 +156,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
 
                                 return (
                                     <React.Fragment key={roomName}>
-                                        <MeasurementRoomGroup
+                                        <ConsumptionRoomGroup
                                             roomName={roomName}
                                             srIndex={roomSrIdx + 1}
                                             itemCount={items.length}

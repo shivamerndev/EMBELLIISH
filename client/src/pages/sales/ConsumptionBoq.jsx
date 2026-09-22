@@ -18,7 +18,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import HeaderTools from '../../components/consumption/HeaderTools';
 import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
-import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
+import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 const SPREADSHEET_SECTIONS = [
@@ -673,7 +673,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     // ExcelMeasurementGrid workspace states inside modal
     const [workspaceSearch, setWorkspaceSearch] = useState('');
     const [workspaceRoomFilter, setWorkspaceRoomFilter] = useState('ALL');
-    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('ALL');
+    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('MAIN_CURTAIN');
     const [columnVisibility, setColumnVisibility] = useState({
         windowSize: true,
         pelmetSize: true,
@@ -950,13 +950,50 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                         </button>
                     </div>
                 </div>
-
                 {(error || validationError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
                         <span>{validationError || error?.message || String(error)}</span>
                     </div>
                 )}
+
+
+                
+                    {/* Calculator Type Selector */}
+                    {activeTab === 'grid' && (
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceTypeFilter('MAIN_CURTAIN')}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'MAIN_CURTAIN'
+                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                    }`}
+                            >
+                                Curtains
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceTypeFilter('ROMAN_BLIND')}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'ROMAN_BLIND'
+                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                    }`}
+                            >
+                                Roman blind
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setWorkspaceTypeFilter('WALLPAPER')}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'WALLPAPER'
+                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                    }`}
+                            >
+                                Wallpaper
+                            </button>
+                        </div>
+                    )}
 
                 {/* TAB 1: Measurements Grid Workspace */}
                 {activeTab === 'grid' && (
@@ -1383,14 +1420,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 )}
             </div>
 
-            {/* Row Details Inspector Drawer */}
-            {/* <MeasurementDetailsDrawer
-                open={inspectorRowIndex !== null}
-                row={inspectorRowIndex !== null ? finalMeasurementsGrid[inspectorRowIndex] : null}
-                rowIndex={inspectorRowIndex}
-                onClose={() => setInspectorRowIndex(null)}
-                onSaveRowDetails={handleSaveRowDetails}
-            /> */}
 
             {/* Add Window Measurement Modal */}
             <AddWindowMeasurementModal
