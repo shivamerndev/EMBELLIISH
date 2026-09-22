@@ -27,6 +27,7 @@ import Kyc from '../pages/sales/Kyc.jsx';
 import MembersPage from '../pages/members/MembersPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import NotFound from '../pages/NotFound';
+import Test from '../pages/Test';
 
 export const AppRoutes = () => (
   <Routes>
@@ -68,6 +69,8 @@ export const AppRoutes = () => (
         <Route index element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Route>
+
+    <Route path="/test" element={<Test />} />
 
     <Route path="*" element={<NotFound />} />
   </Routes>

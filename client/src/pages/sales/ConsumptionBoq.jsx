@@ -16,9 +16,8 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, fabricsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import MeasurementToolbar from '../../components/measurement/MeasurementToolbar';
-import ExcelMeasurementGrid from '../../components/measurement/ExcelMeasurementGrid';
-import MeasurementDetailsDrawer from '../../components/measurement/MeasurementDetailsDrawer';
+import HeaderTools from '../../components/consumption/HeaderTools';
+import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
 import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
@@ -962,7 +961,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 {/* TAB 1: Measurements Grid Workspace */}
                 {activeTab === 'grid' && (
                     <div className="space-y-3">
-                        <MeasurementToolbar
+                        <HeaderTools
                             searchQuery={workspaceSearch}
                             onSearchChange={setWorkspaceSearch}
                             roomFilter={workspaceRoomFilter}
@@ -978,7 +977,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                             isSaving={pending}
                         />
 
-                        <ExcelMeasurementGrid
+                        <ConsumptionGrid
                             rows={finalMeasurementsGrid}
                             onUpdateRows={handleGridRowsUpdate}
                             searchQuery={workspaceSearch}
@@ -1385,13 +1384,13 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             </div>
 
             {/* Row Details Inspector Drawer */}
-            <MeasurementDetailsDrawer
+            {/* <MeasurementDetailsDrawer
                 open={inspectorRowIndex !== null}
                 row={inspectorRowIndex !== null ? finalMeasurementsGrid[inspectorRowIndex] : null}
                 rowIndex={inspectorRowIndex}
                 onClose={() => setInspectorRowIndex(null)}
                 onSaveRowDetails={handleSaveRowDetails}
-            />
+            /> */}
 
             {/* Add Window Measurement Modal */}
             <AddWindowMeasurementModal

@@ -6,11 +6,11 @@ import MeasurementTotals from './MeasurementTotals';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 
 /**
- * ExcelMeasurementGrid : Primary high-density SaaS Measurement Workspace grid.
+ * ConsumptionGrid : Primary high-density SaaS Measurement Workspace grid.
  * Groups rows by room, provides sticky headers & identity columns,
  * supports inline editing, room collapse, search/filtering, and live totals.
  */
-const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', }) => {
+const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', }) => {
 
 
     const [collapsedRooms, setCollapsedRooms] = useState({});
@@ -191,4 +191,4 @@ const ExcelMeasurementGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomF
     );
 };
 
-export default React.memo(ExcelMeasurementGrid);
+export default React.memo(ConsumptionGrid);

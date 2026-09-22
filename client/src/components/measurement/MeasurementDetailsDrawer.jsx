@@ -507,11 +507,7 @@ const MeasurementDetailsDrawer = ({
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">{form.room || 'Living Room'} • {form.particular || 'Main Curtain'}</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition"
-                    >
+                    <button type="button" onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -521,13 +517,9 @@ const MeasurementDetailsDrawer = ({
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         return (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveSection(tab.id)}
-                                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${activeSection === tab.id
-                                    ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-950'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                            <button key={tab.id} type="button" onClick={() => setActiveSection(tab.id)} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${activeSection === tab.id
+                                ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-950'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                     }`}
                             >
                                 <Icon className="w-3.5 h-3.5" />
