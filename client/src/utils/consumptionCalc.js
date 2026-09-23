@@ -167,60 +167,89 @@ const EMPTY_WALLPAPER = {
  */
 export function calculateCurtainConsumption(row = {}) {
     const qty = Math.max(1, Number(row.qty ?? row.quantity) || 1);
+
     const rawTrackWidth = row.trackWidth !== undefined && row.trackWidth !== '' && row.trackWidth !== null
         ? Number(row.trackWidth)
-        : toInches(row.outToOutWidth ?? row.o2oWidth ?? row.frameToFrameWidth ?? row.f2fWidth ?? row.confirmedWidth ?? row.width, row.unit);
-    const trackWidthInch = Number.isFinite(rawTrackWidth) ? rawTrackWidth : 0;
+        : Number(row.outToOutWidth ?? row.o2oWidth ?? row.frameToFrameWidth ?? row.f2fWidth ?? row.confirmedWidth ?? row.width);
 
     const rawFinishedDrop = row.finishedDrop !== undefined && row.finishedDrop !== '' && row.finishedDrop !== null
         ? Number(row.finishedDrop)
-        : toInches(row.outToOutHeight ?? row.o2oHeight ?? row.frameToFrameHeight ?? row.f2fHeight ?? row.confirmedHeight ?? row.height, row.unit);
-    const finishedDropInch = Number.isFinite(rawFinishedDrop) ? rawFinishedDrop : 0;
+        : Number(row.outToOutHeight ?? row.o2oHeight ?? row.frameToFrameHeight ?? row.f2fHeight ?? row.confirmedHeight ?? row.height);
 
-    const fabricWidthInch = Number(row.fabricWidth) || 54;
-    const usableWidthRaw = Number(row.usableWidth) || 0;
-    const verticalRepeat = Number(row.verticalRepeat) || 0;
-    const fullness = Number(row.fullness) || 2.5;
-    const leftReturn = Number(row.leftReturn ?? row.curtainReturnLeft) || 0;
-    const rightReturn = Number(row.rightReturn ?? row.curtainReturnRight) || 0;
-    const centreOverlap = Number(row.centreOverlap) || 0;
-    const topAllowance = Number(row.topAllowance) || 0;
-    const bottomHem = Number(row.bottomHem) || 0;
-    const wastage = Number(row.wastage) || 0;
-    const orderIncrement = Number(row.orderIncrement) || 0.5;
-    const pleatByDesign = String(row.pleatByDesign || 'No').toLowerCase() === 'yes';
-    const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
-    const isRailroaded = fabricDirection === 'railroaded';
-
-    // Guard: minimum required inputs
-    if (trackWidthInch <= 0 || fabricWidthInch <= 0 || finishedDropInch <= 0) {
+    if (!Number.isFinite(rawTrackWidth) || rawTrackWidth <= 0 || !Number.isFinite(rawFinishedDrop) || rawFinishedDrop <= 0) {
         return EMPTY_CURTAIN;
     }
 
-    // AG : Auto Safety (bracket lookup)
-    const autoSafety = getAutoSafety(trackWidthInch);
+    // Determine unit mode: if > 200, values are in millimetres (standard architectural/window measurements)
+    const isMillimetres = rawTrackWidth > 200 || rawFinishedDrop > 200;
 
-    // AH : Effective Width
-    const effectiveWidth = trackWidthInch + leftReturn + rightReturn + centreOverlap + autoSafety;
+    const trackWidthM = isMillimetres ? rawTrackWidth / 1000 : (rawTrackWidth > 10 ? rawTrackWidth * 0.0254 : rawTrackWidth);
+    const finishedDropM = isMillimetres ? rawFinishedDrop / 1000 : (rawFinishedDrop > 10 ? rawFinishedDrop * 0.0254 : rawFinishedDrop);
 
-    // AI : Flat Fabric Width
+    // Fabric width: entered in cm (e.g. 138), mm, or metres
+    const rawFabricWidth = Number(row.fabricWidth) || 138;
+    const fabricWidthM = rawFabricWidth > 10
+        ? (rawFabricWidth > 300 ? rawFabricWidth / 1000 : (rawFabricWidth < 100 ? rawFabricWidth * 0.0254 : rawFabricWidth / 100))
+        : (rawFabricWidth > 0 ? rawFabricWidth : 1.38);
+
+    // Usable width: entered in cm (e.g. 136)
+    const rawUsableWidth = Number(row.usableWidth) || 0;
+    const usableWidthM = rawUsableWidth > 0
+        ? (rawUsableWidth > 10 ? (rawUsableWidth > 300 ? rawUsableWidth / 1000 : (rawUsableWidth < 100 ? rawUsableWidth * 0.0254 : rawUsableWidth / 100)) : rawUsableWidth)
+        : fabricWidthM;
+
+    // Vertical repeat: entered in cm (e.g. 74)
+    const rawRepeat = Number(row.verticalRepeat) || 0;
+    const verticalRepeatM = rawRepeat > 0
+        ? (rawRepeat > 10 ? (rawRepeat > 300 ? rawRepeat / 1000 : (rawRepeat < 100 ? rawRepeat * 0.0254 : rawRepeat / 100)) : rawRepeat)
+        : 0;
+
+    const fullness = Number(row.fullness) || 2;
+
+    const normalizeAllowance = (val) => {
+        if (val === null || val === undefined || val === '') return 0;
+        const n = Number(val);
+        if (!Number.isFinite(n)) return 0;
+        return n > 5 ? n / 1000 : n;
+    };
+
+    const leftReturn = normalizeAllowance(row.leftReturn ?? row.curtainReturnLeft);
+    const rightReturn = normalizeAllowance(row.rightReturn ?? row.curtainReturnRight);
+    const centreOverlap = normalizeAllowance(row.centreOverlap);
+    const topAllowance = normalizeAllowance(row.topAllowance);
+    const bottomHem = row.bottomHem !== undefined && row.bottomHem !== '' ? normalizeAllowance(row.bottomHem) : 0.2;
+
+    const rawWastage = Number(row.wastage);
+    const wastage = Number.isFinite(rawWastage) ? (rawWastage > 1 ? rawWastage / 100 : rawWastage) : 0.05;
+
+    const orderIncrement = Number(row.orderIncrement) || 0.1;
+    const pleatByDesign = String(row.pleatByDesign || row.pleatingByDesign || 'No').toLowerCase() === 'yes';
+    const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
+    const isRailroaded = fabricDirection === 'railroaded';
+
+    const autoSafety = Number(row.autoSafety) || 0;
+
+    // Effective Width (m)
+    const effectiveWidth = trackWidthM + leftReturn + rightReturn + centreOverlap + autoSafety;
+
+    // Flat Fabric Width (m)
     const flatFabricWidth = effectiveWidth * fullness;
 
-    // AJ : Usable Width Applied
-    const usableWidthApplied = usableWidthRaw > 0 ? usableWidthRaw : fabricWidthInch;
+    // Usable Width Applied (m)
+    const usableWidthApplied = usableWidthM > 0 ? usableWidthM : fabricWidthM;
 
-    // AK : Number of Widths: ROUND to nearest (NOT ceiling : curtains use standard rounding)
+    // Number of Widths: ROUND to nearest integer
     const pleatMult = pleatByDesign ? 1.2 : 1;
     const rawWidths = (flatFabricWidth / usableWidthApplied) * pleatMult;
-    const numWidths = Math.round(rawWidths); // nearest integer per documentation §3 "Width Rounding Precision"
+    const numWidths = Math.round(rawWidths);
 
-    // AL : Raw Cut Drop
-    const rawCutDrop = finishedDropInch + topAllowance + bottomHem;
+    // Raw Cut Drop (m)
+    const rawCutDrop = finishedDropM + topAllowance + bottomHem;
 
-    // AM : Repeat-Adjusted Cut Drop
-    const repeatCutDrop = applyRepeat(rawCutDrop, verticalRepeat);
+    // Repeat-Adjusted Cut Drop (m)
+    const repeatCutDrop = verticalRepeatM > 0 ? ceiling(rawCutDrop / verticalRepeatM) * verticalRepeatM : rawCutDrop;
 
-    // AQ : Railroad Check
+    // Railroad Check
     let railroadCheck = 'Not applicable';
     if (isRailroaded) {
         railroadCheck = repeatCutDrop <= usableWidthApplied
@@ -228,53 +257,46 @@ export function calculateCurtainConsumption(row = {}) {
             : 'Cannot railroad at this height';
     }
 
-    // AN : Raw Metres (direction-dependent)
+    // Raw Metres
     let rawMetres = 0;
     if (isRailroaded) {
         if (repeatCutDrop <= usableWidthApplied) {
-            // Railroaded: running length is the flat fabric width
-            // Doc: "flatFabricWidth × (1 + pleatMult) × 0.0254 × qty"
-            // Interpreted: flatFabricWidth × pleatMult (already 1.2 for pleat) × INCH_TO_METRE × qty
-            rawMetres = flatFabricWidth * pleatMult * INCH_TO_METRE * qty;
+            rawMetres = flatFabricWidth * pleatMult * qty;
         }
-        // Cannot railroad → rawMetres = 0
     } else {
-        // Normal direction
-        rawMetres = numWidths * repeatCutDrop * INCH_TO_METRE * qty;
+        rawMetres = numWidths * repeatCutDrop * qty;
     }
 
-    // AO : Net Metres
+    // Net Metres
     const netMetres = rawMetres * (1 + wastage);
 
-    // AP : Order Metres: CEILING(netMetres / orderIncrement) × orderIncrement
+    // Order Metres: CEILING(netMetres / orderIncrement) * orderIncrement
     const orderMetres = orderIncrement > 0
         ? ceiling(netMetres / orderIncrement) * orderIncrement
         : round(netMetres, 2);
 
-    // AR : Cutting Instruction
-    const cuttingInstruction = curtainInstruction({ numWidths, repeatCutDrop, qty });
+    // Cutting Instruction
+    const cuttingInstruction = `${numWidths} width(s) × ${round(repeatCutDrop, 2)}m drop × ${qty} set(s)`;
 
     return {
         valid: true,
-        autoSafety,
+        autoSafety: round(autoSafety, 2),
         effectiveWidth: round(effectiveWidth, 2),
         flatFabricWidth: round(flatFabricWidth, 2),
         usableWidthApplied: round(usableWidthApplied, 2),
         numWidths,
         rawCutDrop: round(rawCutDrop, 2),
         repeatCutDrop: round(repeatCutDrop, 2),
-        rawMetres: round(rawMetres, 3),
-        netMetres: round(netMetres, 3),
+        rawMetres: round(rawMetres, 2),
+        netMetres: round(netMetres, 2),
         orderMetres: round(orderMetres, 2),
         railroadCheck,
         cuttingInstruction,
         // backward-compat aliases (used by grid totals aggregation)
-        heightPerPartM: round(repeatCutDrop * INCH_TO_METRE, 2),
+        heightPerPartM: round(repeatCutDrop, 2),
         roundedParts: numWidths,
         fabricMeters: round(orderMetres, 2),
         blackoutMeters: 0,
-        romanSqft: 0,
-        rnft: 0,
     };
 }
 
@@ -299,43 +321,67 @@ export function calculateCurtainConsumption(row = {}) {
  */
 export function calculateRomanBlindConsumption(row = {}) {
     const qty = Math.max(1, Number(row.qty ?? row.quantity) || 1);
+
     const rawBlindWidth = row.blindWidth !== undefined && row.blindWidth !== '' && row.blindWidth !== null
         ? Number(row.blindWidth)
-        : toInches(row.outToOutWidth ?? row.o2oWidth ?? row.frameToFrameWidth ?? row.f2fWidth ?? row.confirmedWidth ?? row.width, row.unit);
-    const blindWidthInch = Number.isFinite(rawBlindWidth) ? rawBlindWidth : 0;
+        : (row.finishedBlindWidth !== undefined && row.finishedBlindWidth !== '' && row.finishedBlindWidth !== null
+            ? Number(row.finishedBlindWidth)
+            : toInches(row.outToOutWidth ?? row.o2oWidth ?? row.frameToFrameWidth ?? row.f2fWidth ?? row.confirmedWidth ?? row.width, row.unit));
+    const blindWidthInch = Number.isFinite(rawBlindWidth) ? (rawBlindWidth > 200 ? rawBlindWidth / 25.4 : rawBlindWidth) : 0;
 
     const rawBlindDrop = row.blindDrop !== undefined && row.blindDrop !== '' && row.blindDrop !== null
         ? Number(row.blindDrop)
-        : toInches(row.outToOutHeight ?? row.o2oHeight ?? row.frameToFrameHeight ?? row.f2fHeight ?? row.confirmedHeight ?? row.height, row.unit);
-    const blindDropInch = Number.isFinite(rawBlindDrop) ? rawBlindDrop : 0;
+        : (row.finishedBlindDrop !== undefined && row.finishedBlindDrop !== '' && row.finishedBlindDrop !== null
+            ? Number(row.finishedBlindDrop)
+            : toInches(row.outToOutHeight ?? row.o2oHeight ?? row.frameToFrameHeight ?? row.f2fHeight ?? row.confirmedHeight ?? row.height, row.unit));
+    const blindDropInch = Number.isFinite(rawBlindDrop) ? (rawBlindDrop > 200 ? rawBlindDrop / 25.4 : rawBlindDrop) : 0;
 
-    const fabricWidthInch = Number(row.fabricWidth) || 54;
-    const usableWidthRaw = Number(row.usableWidth) || 0;
+    const fabricWidthInch = row.fabricWidth !== undefined && row.fabricWidth !== '' && row.fabricWidth !== null
+        ? Number(row.fabricWidth)
+        : 54;
+    const usableWidthRaw = row.usableWidth !== undefined && row.usableWidth !== '' && row.usableWidth !== null
+        ? Number(row.usableWidth)
+        : 52;
     const verticalRepeat = Number(row.verticalRepeat) || 0;
-    const leftAllowance = Number(row.leftAllowance) || 0;
-    const rightAllowance = Number(row.rightAllowance) || 0;
-    const topAllowance = Number(row.topAllowance) || 0;
-    const bottomAllowance = Number(row.bottomAllowance) || 0;
-    const wastage = Number(row.wastage) || 0;
-    const orderIncrement = Number(row.orderIncrement) || 0.5;
+    const leftAllowance = row.leftAllowance !== undefined && row.leftAllowance !== '' && row.leftAllowance !== null
+        ? Number(row.leftAllowance)
+        : 1.5;
+    const rightAllowance = row.rightAllowance !== undefined && row.rightAllowance !== '' && row.rightAllowance !== null
+        ? Number(row.rightAllowance)
+        : 1.5;
+    const topAllowance = row.topAllowance !== undefined && row.topAllowance !== '' && row.topAllowance !== null
+        ? Number(row.topAllowance)
+        : 2;
+    const bottomAllowance = row.bottomAllowance !== undefined && row.bottomAllowance !== '' && row.bottomAllowance !== null
+        ? Number(row.bottomAllowance)
+        : 3;
+    const rawWastage = row.wastage !== undefined && row.wastage !== '' && row.wastage !== null ? Number(row.wastage) : 0.05;
+    const wastage = Number.isFinite(rawWastage) ? (rawWastage > 1 ? rawWastage / 100 : rawWastage) : 0.05;
+    const orderIncrement = row.orderIncrement !== undefined && row.orderIncrement !== '' && row.orderIncrement !== null ? Number(row.orderIncrement) : 0.5;
     const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
     const isRailroaded = fabricDirection === 'railroaded';
 
     if (blindWidthInch <= 0 || blindDropInch <= 0 || fabricWidthInch <= 0) {
-        return EMPTY_ROMAN;
+        return {
+            ...EMPTY_ROMAN,
+            railroadRunningWidth: 0,
+        };
     }
 
     // Effective usable width
     const usableWidthApplied = usableWidthRaw > 0 ? usableWidthRaw : fabricWidthInch;
 
-    // Required Cut Width
+    // Required Cut Width: Finished Blind Width + Left Allowance + Right Allowance
     const requiredCutWidth = blindWidthInch + leftAllowance + rightAllowance;
 
-    // Raw Cut Drop
+    // Raw Cut Drop: Finished Blind Drop + Top Allowance + Bottom Allowance
     const rawCutDrop = blindDropInch + topAllowance + bottomAllowance;
 
     // Repeat-Adjusted Cut Drop (same rule as curtain)
     const repeatCutDrop = applyRepeat(rawCutDrop, verticalRepeat);
+
+    // Railroad Running Width
+    const railroadRunningWidth = isRailroaded ? repeatCutDrop : 0;
 
     // Number of Widths : CEILING (Roman Blinds ALWAYS round UP, never nearest)
     // Documentation §"Critical Rule": 9.1 → 10, 9.9 → 10
@@ -343,13 +389,10 @@ export function calculateRomanBlindConsumption(row = {}) {
         ? Math.ceil(requiredCutWidth / usableWidthApplied)
         : 0;
 
-    // Railroad Check
-    let railroadCheck = '—';
-    if (isRailroaded) {
-        railroadCheck = repeatCutDrop <= usableWidthApplied
-            ? 'OK to railroad'
-            : 'Cannot railroad at this height';
-    }
+    // Railroad Check: checks if Repeat Cut Drop fits within roll usable width
+    const railroadCheck = repeatCutDrop <= usableWidthApplied
+        ? 'OK to railroad'
+        : 'Cannot railroad at this height';
 
     // Raw Metres
     let rawMetres = 0;
@@ -379,9 +422,10 @@ export function calculateRomanBlindConsumption(row = {}) {
         usableWidthApplied: round(usableWidthApplied, 2),
         rawCutDrop: round(rawCutDrop, 2),
         repeatCutDrop: round(repeatCutDrop, 2),
+        railroadRunningWidth: round(railroadRunningWidth, 2),
         numWidths,
-        rawMetres: round(rawMetres, 3),
-        netMetres: round(netMetres, 3),
+        rawMetres: round(rawMetres, 2),
+        netMetres: round(netMetres, 2),
         orderMetres: round(orderMetres, 2),
         railroadCheck,
         cuttingInstruction,

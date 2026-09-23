@@ -16,11 +16,11 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, fabricsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import MeasurementToolbar from '../../components/measurement/MeasurementToolbar';
-import ExcelMeasurementGrid from '../../components/measurement/ExcelMeasurementGrid';
-import MeasurementDetailsDrawer from '../../components/measurement/MeasurementDetailsDrawer';
-import AddWindowMeasurementModal from '../../components/measurement/AddWindowMeasurementModal';
+import HeaderTools from '../../components/consumption/HeaderTools';
+import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
+import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
+import TypesTab from '@/components/consumption/TypesTab';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -674,13 +674,24 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
     // ExcelMeasurementGrid workspace states inside modal
     const [workspaceSearch, setWorkspaceSearch] = useState('');
     const [workspaceRoomFilter, setWorkspaceRoomFilter] = useState('ALL');
-    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('ALL');
+    const [workspaceTypeFilter, setWorkspaceTypeFilter] = useState('MAIN_CURTAIN');
     const [columnVisibility, setColumnVisibility] = useState({
         windowSize: true,
         pelmetSize: true,
         wire: true,
-        returnSize: true,
-        fabricRequirement: true,
+        measurements: true,
+        trackDrop: true,
+        fabric: true,
+        allowances: true,
+        calculations: true,
+        fabricOrder: true,
+        flags: true,
+        rb_finishedSize: true,
+        rb_fabric: true,
+        rb_allowances: true,
+        rb_calculations: true,
+        rb_fabricOrder: true,
+        rb_flags: true,
     });
     const [lastAddedRoom, setLastAddedRoom] = useState('');
     const [inspectorRowIndex, setInspectorRowIndex] = useState(null);
@@ -951,7 +962,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                         </button>
                     </div>
                 </div>
-
                 {(error || validationError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -962,7 +972,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 {/* TAB 1: Measurements Grid Workspace */}
                 {activeTab === 'grid' && (
                     <div className="space-y-3">
-                        <MeasurementToolbar
+                        <HeaderTools
                             searchQuery={workspaceSearch}
                             onSearchChange={setWorkspaceSearch}
                             roomFilter={workspaceRoomFilter}
@@ -978,16 +988,26 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                             isSaving={pending}
                         />
 
-                        <ExcelMeasurementGrid
-                            rows={finalMeasurementsGrid}
-                            onUpdateRows={handleGridRowsUpdate}
-                            searchQuery={workspaceSearch}
-                            roomFilter={workspaceRoomFilter}
-                            typeFilter={workspaceTypeFilter}
-                            columnVisibility={columnVisibility}
-                            onOpenDetails={handleOpenRowDetails}
-                            lastAddedRoom={lastAddedRoom}
-                        />
+                        {/* Chrome Window Container: Tabs + Grid */}
+                        <div className="flex flex-col">
+                            <TypesTab
+                                setWorkspaceTypeFilter={setWorkspaceTypeFilter}
+                                workspaceTypeFilter={workspaceTypeFilter}
+                                rows={finalMeasurementsGrid}
+                                onAddMeasurement={() => setIsAddModalOpen(true)}
+                            />
+
+                            <ConsumptionGrid
+                                rows={finalMeasurementsGrid}
+                                onUpdateRows={handleGridRowsUpdate}
+                                searchQuery={workspaceSearch}
+                                roomFilter={workspaceRoomFilter}
+                                typeFilter={workspaceTypeFilter}
+                                columnVisibility={columnVisibility}
+                                onOpenDetails={handleOpenRowDetails}
+                                lastAddedRoom={lastAddedRoom}
+                            />
+                        </div>
                     </div>
                 )}
 
@@ -1384,14 +1404,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 )}
             </div>
 
-            {/* Row Details Inspector Drawer */}
-            <MeasurementDetailsDrawer
-                open={inspectorRowIndex !== null}
-                row={inspectorRowIndex !== null ? finalMeasurementsGrid[inspectorRowIndex] : null}
-                rowIndex={inspectorRowIndex}
-                onClose={() => setInspectorRowIndex(null)}
-                onSaveRowDetails={handleSaveRowDetails}
-            />
 
             {/* Add Window Measurement Modal */}
             <AddWindowMeasurementModal
@@ -1401,6 +1413,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 availableRooms={modalAvailableRooms}
                 existingRows={finalMeasurementsGrid}
                 preselectedRoom={workspaceRoomFilter !== 'ALL' ? workspaceRoomFilter : ''}
+                defaultParticular={workspaceTypeFilter}
             />
         </Modal>
     );

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Sparkles, Check, ChevronDown, Home, FileText } from 'lucide-react';
+import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Check, FileText } from 'lucide-react';
 import { Button } from '../ui';
 import { printMeasurementSheet } from './measurementPrintService';
 
