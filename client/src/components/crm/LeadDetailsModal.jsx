@@ -309,7 +309,7 @@ export const LeadDetailsModal = ({
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
                   {isEditing ? `Edit Lead : ${codeVal}` : 'Lead Details'}
                 </h3>
-                <span className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-[#836444] text-white dark:bg-amber-600 dark:text-white shadow-2xs shrink-0">
+                <span className="px-2 py-0.5 text-xs   font-bold rounded-md bg-[#836444] text-white dark:bg-amber-600 dark:text-white shadow-2xs shrink-0">
                   {codeVal}
                 </span>
                 <StatusPill
@@ -377,7 +377,7 @@ export const LeadDetailsModal = ({
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Mobile Phone</span>
-                  <span className="text-sm font-mono font-semibold text-slate-800 dark:text-slate-200">{phoneVal}</span>
+                  <span className="text-sm   font-semibold text-slate-800 dark:text-slate-200">{phoneVal}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Indicative Budget</span>

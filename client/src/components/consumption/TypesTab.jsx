@@ -157,11 +157,10 @@ const TypesTab = ({
                                         }
                                     }}
                                     title={`${tab.label} (${tab.count} items)`}
-                                    className={`group relative flex items-center gap-2 h-9 px-3.5 text-xs font-sans transition-all z-10 shrink-0 cursor-pointer select-none ${
-                                        isActive
+                                    className={`group relative flex items-center gap-2 h-9 px-3.5 text-xs font-sans transition-all z-10 shrink-0 cursor-pointer select-none ${isActive
                                             ? 'bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-semibold rounded-t-[10px] -mb-[1px] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] border-t border-l border-r border-slate-300/80 dark:border-slate-800'
                                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-300/50 dark:hover:bg-slate-800/60 rounded-t-[8px]'
-                                    }`}
+                                        }`}
                                 >
                                     {/* Favicon */}
                                     <span className={`shrink-0 ${tab.iconColor}`}>
@@ -173,11 +172,10 @@ const TypesTab = ({
 
                                     {/* Count Badge */}
                                     <span
-                                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono transition-colors ${
-                                            isActive
+                                        className={`text-[10px] px-1.5 py-0.5 rounded-full   transition-colors ${isActive
                                                 ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold'
                                                 : 'bg-slate-300/60 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-300 dark:group-hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         {tab.count}
                                     </span>
@@ -227,7 +225,7 @@ const TypesTab = ({
                         </button>
                     )}
                 </div>
-                
+
             </div>
         </div>
     );

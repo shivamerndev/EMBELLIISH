@@ -48,7 +48,7 @@ export const SiteDetailSheetView = ({
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <span className="font-mono text-xs w-10 text-center font-medium text-slate-700 dark:text-slate-300">
+          <span className="  text-xs w-10 text-center font-medium text-slate-700 dark:text-slate-300">
             {Math.round(zoomLevel * 100)}%
           </span>
           <button
@@ -144,7 +144,7 @@ export const SiteDetailSheetView = ({
                 <tbody>
                   <tr className="border-b border-slate-200">
                     <td className="w-28 font-bold py-0.5 text-black">Sheet no :</td>
-                    <td className="py-0.5 text-black font-mono font-bold text-sm">
+                    <td className="py-0.5 text-black   font-bold text-sm">
                       {room.sheetNo || sheetNo}
                     </td>
                   </tr>
@@ -277,7 +277,7 @@ export const SiteDetailSheetView = ({
                     return (
                       <tr key={item.id || idx} className="divide-x divide-black hover:bg-amber-50/20 transition group">
                         {/* SR */}
-                        <td className="p-2 font-mono font-bold text-center bg-slate-50">{item.srNo || idx + 1}</td>
+                        <td className="p-2   font-bold text-center bg-slate-50">{item.srNo || idx + 1}</td>
 
                         {/* Look */}
                         <td className="p-1 text-center align-middle">
@@ -294,17 +294,17 @@ export const SiteDetailSheetView = ({
                         </td>
 
                         {/* Actual Window Width & Height */}
-                        <td className="p-2 font-mono font-bold text-center align-middle text-slate-900">
+                        <td className="p-2   font-bold text-center align-middle text-slate-900">
                           {item.windowWidth || '—'}
                         </td>
-                        <td className="p-2 font-mono font-bold text-center align-middle text-slate-900">
+                        <td className="p-2   font-bold text-center align-middle text-slate-900">
                           {item.windowHeight || '—'}
                         </td>
 
                         {/* Pelmet Width, Drop, Return */}
-                        <td className="p-2 font-mono text-center align-middle">{item.pelmetWidth || '—'}</td>
-                        <td className="p-2 font-mono text-center align-middle">{item.pelmetDrop || '—'}</td>
-                        <td className="p-2 font-mono text-center align-middle">{item.pelmetReturn || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.pelmetWidth || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.pelmetDrop || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.pelmetReturn || '—'}</td>
 
                         {/* Catalogue Images Gallery */}
                         <td className="p-2 border-l-2 border-black align-middle bg-slate-50/50">
@@ -348,21 +348,21 @@ export const SiteDetailSheetView = ({
                         </td>
 
                         {/* Width with Peach highlight if applicable */}
-                        <td className={`p-2 font-mono font-bold text-center align-middle ${isPeachWidth ? 'bg-[#fed7aa] text-amber-950' : ''}`}>
+                        <td className={`p-2   font-bold text-center align-middle ${isPeachWidth ? 'bg-[#fed7aa] text-amber-950' : ''}`}>
                           {item.fabricWidth || '—'}
                         </td>
 
                         {/* Repeat V & H */}
-                        <td className="p-2 font-mono text-center align-middle">{item.repeatV || '—'}</td>
-                        <td className="p-2 font-mono text-center align-middle">{item.repeatH || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.repeatV || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.repeatH || '—'}</td>
 
                         {/* Fullness */}
-                        <td className="p-2 font-mono font-bold text-center align-middle text-slate-800">
+                        <td className="p-2   font-bold text-center align-middle text-slate-800">
                           {item.fullness || '—'}
                         </td>
 
                         {/* Qty (mtrs) */}
-                        <td className="p-2 font-mono font-bold text-center align-middle text-slate-950">
+                        <td className="p-2   font-bold text-center align-middle text-slate-950">
                           {item.qtyMtrs || '—'}
                         </td>
 
@@ -372,7 +372,7 @@ export const SiteDetailSheetView = ({
                         </td>
 
                         {/* Parts */}
-                        <td className="p-2 font-mono text-center align-middle">{item.parts || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.parts || '—'}</td>
 
                         {/* Opening */}
                         <td className="p-2 font-medium text-center align-middle whitespace-pre-line">
@@ -380,14 +380,14 @@ export const SiteDetailSheetView = ({
                         </td>
 
                         {/* Ready size Width & Height */}
-                        <td className="p-2 font-mono text-center align-middle">{item.readyWidth || '—'}</td>
-                        <td className="p-2 font-mono text-center align-middle">{item.readyHeight || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.readyWidth || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.readyHeight || '—'}</td>
 
                         {/* Workshop Lining Type & Qty */}
                         <td className="p-2 text-left align-middle border-l-2 border-black font-medium leading-tight">
                           {item.liningType || '—'}
                         </td>
-                        <td className="p-2 font-mono text-center align-middle">{item.liningQty || '—'}</td>
+                        <td className="p-2   text-center align-middle">{item.liningQty || '—'}</td>
 
                         {/* Tieback with Sky Blue highlight if custom */}
                         <td className={`p-2 font-semibold text-center align-middle ${isCustomTieback ? 'bg-[#bae6fd] text-sky-950' : ''}`}>

@@ -35,8 +35,8 @@ const SalesCommercialsTable = ({ items, onView, onEdit }) => {
                             const p = lead.priority || 'MEDIUM';
                             return (
                                 <tr key={lead.id || lead._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition">
-                                    <td className="p-3 font-mono text-slate-400">{idx + 1}</td>
-                                    <td className="p-3 font-mono font-bold text-brand-600 dark:text-brand-400">
+                                    <td className="p-3   text-slate-400">{idx + 1}</td>
+                                    <td className="p-3   font-bold text-brand-600 dark:text-brand-400">
                                         <button type="button" onClick={() => onView(lead)} className="hover:underline">
                                             {lead.code}
                                         </button>
@@ -54,13 +54,13 @@ const SalesCommercialsTable = ({ items, onView, onEdit }) => {
                                             {lead.status || 'NEW'}
                                         </Badge>
                                     </td>
-                                    <td className="p-3 text-right font-mono font-semibold text-slate-900 dark:text-slate-200">
+                                    <td className="p-3 text-right   font-semibold text-slate-900 dark:text-slate-200">
                                         {currency(Number(lead.budgetEstimate || lead.estimatedBudget || 0))}
                                     </td>
                                     <td className="p-3 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button size="sm" variant="ghost" icon={Eye} onClick={() => onView(lead)} />
-                                         Move to site visit<Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit && onEdit(lead)} />
+                                            Move to site visit<Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit && onEdit(lead)} />
                                         </div>
                                     </td>
                                 </tr>

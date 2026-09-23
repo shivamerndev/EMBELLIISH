@@ -167,12 +167,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.siteVisitCompleted || lead.actualSiteVisitDateTime)}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -196,7 +196,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = lead.siteVisitRequired && !lead.actualSiteVisitDateTime && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue" />}
@@ -207,7 +207,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.actualSiteVisitDateTime;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                 {date(val, { time: true })}
             </span>
@@ -250,7 +250,7 @@ const SPREADSHEET_CELL_RENDERERS = {
                     {primary}
                 </span>
                 {extraCount > 0 && (
-                    <Badge tone="blue" className="text-[9px] px-1 py-0 font-mono">
+                    <Badge tone="blue" className="text-[9px] px-1 py-0  ">
                         +{extraCount}
                     </Badge>
                 )}
@@ -1134,7 +1134,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {visibleItems.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>

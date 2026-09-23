@@ -13,7 +13,7 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
         <tfoot className="sticky bottom-0 z-30 font-semibold select-none border-t-2 border-amber-600/40 dark:border-slate-700 shadow-md">
             <tr className="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs" style={{ height: '42px' }}>
                 {/* Sticky Identity Footer */}
-                <td className="sticky left-0 z-40 bg-slate-100 dark:bg-slate-900 px-2 py-2 text-center border-r border-slate-300 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                <td className="sticky left-0 z-40 bg-slate-100 dark:bg-slate-900 px-2 py-2 text-center border-r border-slate-300 dark:border-slate-800   text-[11px] font-bold text-slate-600 dark:text-slate-400">
                     TOTAL
                 </td>
                 <td className="sticky left-[52px] z-40 bg-slate-100 dark:bg-slate-900 px-3 py-2 border-r border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">
@@ -50,7 +50,7 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                         <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                         <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                         <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
+                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
                     </>
                 )}
 
@@ -71,16 +71,16 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                         )}
                         {isColVisible('fabricOrder') && (
                             <>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
                             </>
                         )}
                         {isColVisible('flags') && (
                             <>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                             </>
@@ -108,14 +108,14 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
                             </>
                         )}
                         {isColVisible('rb_flags') && (
                             <>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                             </>
@@ -129,7 +129,7 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                         {isColVisible('wp_wallInfo') && (
                             <>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                             </>
@@ -148,12 +148,12 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                         )}
                         {isColVisible('wp_orderOutput') && (
                             <>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.baseRolls || '—'}</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{totals.finalOrderRolls || '—'}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-slate-700 dark:text-slate-300 font-bold">{totals.baseRolls || '—'}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{totals.finalOrderRolls || '—'}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                             </>
                         )}

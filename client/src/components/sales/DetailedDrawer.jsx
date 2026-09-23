@@ -120,7 +120,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Phone Number</span>
-                  <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5 font-mono">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5  ">
                     <Phone className="w-3.5 h-3.5 text-emerald-500" />
                     <span>{lead.phone || lead.contactPhone || '—'}</span>
                   </p>
@@ -221,7 +221,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
                       <span>Workflow Progress</span>
-                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{progressPercent}%</span>
+                      <span className="  font-bold text-slate-700 dark:text-slate-300">{progressPercent}%</span>
                     </div>
                     <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
@@ -261,7 +261,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
                           ) : isCurrent ? (
                             <Clock className="w-3.5 h-3.5 text-white shrink-0" />
                           ) : (
-                            <span className="text-[10px] font-bold font-mono">{idx + 1}</span>
+                            <span className="text-[10px] font-bold  ">{idx + 1}</span>
                           )}
                         </div>
 
@@ -276,7 +276,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 shrink-0">
+                              <span className="text-[10px]   font-bold text-slate-400 dark:text-slate-500 shrink-0">
                                 STEP 0{idx + 1}
                               </span>
                               <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
@@ -294,7 +294,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
 
                           {/* Extra info if stage has data */}
                           {(stageDate || stageStatus) && (
-                            <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                            <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400  ">
                               {stageStatus && <span>Status: {String(stageStatus)}</span>}
                               {stageDate && <span>Updated: {date(stageDate)}</span>}
                             </div>

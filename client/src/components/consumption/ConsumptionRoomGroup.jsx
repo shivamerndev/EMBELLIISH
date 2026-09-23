@@ -23,7 +23,7 @@ const ConsumptionRoomGroup = ({
         >
             {/* Sticky SR / Group Badge */}
             <td className="sticky left-0 z-20 bg-slate-100 dark:bg-slate-900 px-2 text-center border-r border-slate-300 dark:border-slate-800">
-                <span className="font-mono text-[11px] font-bold text-brand-700 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20">
+                <span className="  text-[11px] font-bold text-brand-700 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20">
                     {formattedSr}
                 </span>
             </td>
@@ -45,7 +45,7 @@ const ConsumptionRoomGroup = ({
             </td>
 
             {/* Remaining Spanned Summary Cells */}
-            <td colSpan={colSpan} className="px-4 text-xs text-slate-600 dark:text-slate-400 font-mono">
+            <td colSpan={colSpan} className="px-4 text-xs text-slate-600 dark:text-slate-400  ">
                 <div className="flex items-center gap-6 text-[11px]">
                     {summary.totalWidths > 0 && (
                         <span>

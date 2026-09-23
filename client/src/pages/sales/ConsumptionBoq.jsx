@@ -132,7 +132,7 @@ const calculateVariance = (prevW, prevH, confW, confH, unit) => {
     const signH = diffH > 0 ? `+${diffH}` : `${diffH}`;
 
     return (
-        <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold text-[11px]">
+        <span className="text-amber-600 dark:text-amber-400   font-semibold text-[11px]">
             W: {signW}{unit} / H: {signH}{unit}
         </span>
     );
@@ -424,12 +424,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.consumption?.boqPreparedDate || lead.boq?.status === 'Completed')}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -450,7 +450,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = !lead.consumption?.boqVersion && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue for Consumption BOQ" />}
@@ -485,7 +485,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const unit = lead.consumption?.unit || '';
         if (qty === undefined || qty === null || qty === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <span className="  text-xs font-semibold text-slate-800 dark:text-slate-200">
                 {Number(qty).toLocaleString('en-US', { maximumFractionDigits: 2 })} {unit ? <span className="text-[10px] text-slate-500 font-normal">{unit}</span> : ''}
             </span>
         );
@@ -493,14 +493,14 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.unit': (lead) => {
         const unit = lead.consumption?.unit;
         if (!unit) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <Badge tone="slate" className="text-[10px] font-mono">{unit}</Badge>;
+        return <Badge tone="slate" className="text-[10px]  ">{unit}</Badge>;
     },
     'consumption.wastageAllowance': (lead) => {
         const raw = lead.consumption?.wastageAllowance;
         if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         const formatted = String(raw).includes('%') ? raw : `${raw}%`;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300/60 dark:border-amber-700/60">
+            <span className="inline-flex items-center gap-1 text-[11px]   font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300/60 dark:border-amber-700/60">
                 <Percent className="w-3 h-3 text-amber-500" />
                 {formatted}
             </span>
@@ -509,7 +509,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.boqVersion': (lead) => {
         const ver = lead.consumption?.boqVersion;
         if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <Badge tone="purple" className="font-mono text-[10px] font-bold">{ver}</Badge>;
+        return <Badge tone="purple" className="  text-[10px] font-bold">{ver}</Badge>;
     },
     'consumption.roomList': (lead) => {
         const rooms = lead.consumption?.roomList || autoFetchRooms(lead);
@@ -542,7 +542,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.consumption?.boqPreparedDate;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-slate-600 dark:text-slate-400 whitespace-nowrap justify-center">
                 <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                 {date(val, { time: true })}
             </span>
@@ -569,7 +569,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.panelCount': (lead) => {
         const count = lead.consumption?.panelCount;
         if (count === undefined || count === null || count === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{count} panel(s)</span>;
+        return <span className="  text-xs font-bold text-slate-800 dark:text-slate-200">{count} panel(s)</span>;
     },
     'consumption.liningAccessoryAssumptions': (lead) => {
         const raw = lead.consumption?.liningAccessoryAssumptions;
@@ -1038,7 +1038,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                                         value={form.boqVersion}
                                         onChange={set('boqVersion')}
                                         placeholder="e.g. v1.0"
-                                        className="font-mono"
+                                        className=" "
                                     />
                                     <Button
                                         type="button"
@@ -1093,7 +1093,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                                                         <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
                                                             {gridRow.room} ({gridRow.windowId})
                                                         </td>
-                                                        <td className="p-1.5 font-mono text-slate-500">
+                                                        <td className="p-1.5   text-slate-500">
                                                             {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
                                                         </td>
                                                         <td className="p-1.5 w-[110px]">
@@ -1211,7 +1211,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                                         placeholder="e.g. 10"
                                         className="pr-8"
                                     />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400   text-xs font-bold">%</span>
                                 </div>
                             </Field>
 
@@ -1470,7 +1470,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>

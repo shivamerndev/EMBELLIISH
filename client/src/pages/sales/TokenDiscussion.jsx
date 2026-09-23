@@ -95,12 +95,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.advance?.receivedDate || lead.advance?.status === 'Received')}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -121,7 +121,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = !lead.advance?.receivedDate && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue" />}
@@ -131,7 +131,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'advance.amount': (lead) => {
         const val = lead.advance?.amount;
         if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-bold">{currency(val)}</span>;
+        return <span className="  text-slate-900 dark:text-slate-100 text-xs font-bold">{currency(val)}</span>;
     },
     'advance.status': (lead) => {
         const raw = lead.advance?.status;
@@ -153,7 +153,7 @@ const SPREADSHEET_CELL_RENDERERS = {
             return <span className="text-slate-400 dark:text-slate-600">—</span>;
         }
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                 {date(val)}
             </span>
@@ -169,7 +169,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.advance?.proposal || lead.proposal?.noVersion || lead.proposal?.selectedBoqVersion;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+            <span className="inline-flex items-center gap-1 text-xs   font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                 <FileText className="w-3 h-3 text-purple-500 shrink-0" />
                 {val}
             </span>
@@ -178,7 +178,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'advance.budgetEstimate': (lead) => {
         const val = lead.advance?.budgetEstimate;
         if (val === undefined || val === null || val === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="font-mono text-slate-900 dark:text-slate-100 text-xs font-semibold">{currency(val)}</span>;
+        return <span className="  text-slate-900 dark:text-slate-100 text-xs font-semibold">{currency(val)}</span>;
     },
     'advance.clientResponse': (lead) => {
         const val = lead.advance?.clientResponse;
@@ -196,7 +196,7 @@ const SPREADSHEET_CELL_RENDERERS = {
 
         if (start || end) {
             return (
-                <span className="font-mono text-[11px] text-slate-800 dark:text-slate-200 whitespace-nowrap font-medium">
+                <span className="  text-[11px] text-slate-800 dark:text-slate-200 whitespace-nowrap font-medium">
                     {start ? date(start) : 'TBD'} → {end ? date(end) : 'TBD'}
                 </span>
             );
@@ -250,7 +250,7 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     }
 
     if (typeof raw === 'number') {
-        return <span className="font-mono text-slate-900 dark:text-slate-200 text-xs font-semibold">{currency(raw)}</span>;
+        return <span className="  text-slate-900 dark:text-slate-200 text-xs font-semibold">{currency(raw)}</span>;
     }
 
     if (typeof raw === 'boolean') {
@@ -358,7 +358,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
             size="lg"
             footer={
                 <div className="flex items-center justify-between w-full gap-2 flex-wrap">
-                   
+
                     <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={onClose}>Cancel</Button>
                         <Button onClick={(e) => handleSubmit(e, false)} loading={pending && !redirectOnSave}>Save Advance Detail</Button>
@@ -385,7 +385,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                                     placeholder="e.g. 5,00,000"
                                     value={form.budgetEstimate}
                                     onChange={(e) => setForm((p) => ({ ...p, budgetEstimate: formatBudgetValue(e.target.value) }))}
-                                    className="pl-7 font-mono"
+                                    className="pl-7  "
                                 />
                             </div>
                         </Field>
@@ -399,7 +399,7 @@ const EditTokenModal = ({ item, onClose, onDone }) => {
                                     placeholder="e.g. 50,000"
                                     value={form.amount}
                                     onChange={(e) => setForm((p) => ({ ...p, amount: formatBudgetValue(e.target.value) }))}
-                                    className="pl-7 font-mono"
+                                    className="pl-7  "
                                 />
                             </div>
                         </Field>
@@ -477,7 +477,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>

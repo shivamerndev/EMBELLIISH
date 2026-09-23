@@ -140,7 +140,7 @@ const ViewMemberModal = ({ item, onClose }) => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950">
             <div>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Number</p>
-              <p className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 mt-1">{member?.phone || '—'}</p>
+              <p className="text-xs   font-semibold text-slate-800 dark:text-slate-200 mt-1">{member?.phone || '—'}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Address</p>
@@ -621,7 +621,7 @@ export const MembersPage = () => {
       key: 'phone',
       header: 'Contact Number',
       render: (m) => (
-        <span className="font-mono text-slate-800 dark:text-slate-200 text-xs font-semibold">{m.phone || '—'}</span>
+        <span className="  text-slate-800 dark:text-slate-200 text-xs font-semibold">{m.phone || '—'}</span>
       ),
     },
     {

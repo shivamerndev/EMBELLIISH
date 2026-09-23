@@ -121,7 +121,7 @@ const MeasurementCell = ({
         return (
             <td
                 colSpan={colSpan}
-                className={`px-2 py-1 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/40 border-r border-slate-200 dark:border-slate-800/80 align-middle ${textAlign} ${className}`}
+                className={`px-2 py-1 text-xs   font-medium text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/40 border-r border-slate-200 dark:border-slate-800/80 align-middle ${textAlign} ${className}`}
                 title={isCalculated ? 'System Calculated Field' : undefined}
             >
                 <div className={`flex items-center ${isTextResult ? 'justify-center' : 'justify-end'} gap-1`}>
@@ -145,7 +145,7 @@ const MeasurementCell = ({
         <td
             colSpan={colSpan}
             onClick={() => setIsEditing(true)}
-            className={`px-2 py-1 text-xs font-mono text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800/80 align-middle transition-colors cursor-cell group ${isEditing ? 'bg-amber-500/10 dark:bg-amber-950/30' : 'hover:bg-slate-100/80 dark:hover:bg-slate-900/80'} ${alignClass} ${className}`}
+            className={`px-2 py-1 text-xs   text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800/80 align-middle transition-colors cursor-cell group ${isEditing ? 'bg-amber-500/10 dark:bg-amber-950/30' : 'hover:bg-slate-100/80 dark:hover:bg-slate-900/80'} ${alignClass} ${className}`}
         >
             {isEditing ? (
                 type === 'select' ? (
@@ -179,7 +179,7 @@ const MeasurementCell = ({
                         max={max}
                         step={step}
                         placeholder={placeholder}
-                        className={`w-full h-7 px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-slate-900 border border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 rounded text-slate-900 dark:text-slate-100 shadow-sm ${alignClass}`}
+                        className={`w-full h-7 px-1.5 py-0.5 text-xs   bg-white dark:bg-slate-900 border border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 rounded text-slate-900 dark:text-slate-100 shadow-sm ${alignClass}`}
                     />
                 )
             ) : (

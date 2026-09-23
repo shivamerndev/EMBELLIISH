@@ -249,12 +249,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(['Approved', 'Completed', 'Submitted', 'Sent'].includes(lead.proposal?.approvalStatus || lead.proposal?.status) || lead.proposal?.date)}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -265,7 +265,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = !lead.proposal?.date && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Proposal Preparation Overdue" />}
@@ -278,11 +278,11 @@ const SPREADSHEET_CELL_RENDERERS = {
         if (!noVer) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
             <div className="flex flex-col items-center justify-center gap-0.5">
-                <span className="font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20 whitespace-nowrap">
+                <span className="  text-[11px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20 whitespace-nowrap">
                     {noVer}
                 </span>
                 {revCount > 0 && (
-                    <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
+                    <span className="text-[9px]   text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
                         <History className="w-2.5 h-2.5" /> {revCount} rev(s)
                     </span>
                 )}
@@ -293,7 +293,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.proposal?.date;
         if (!val) return <Badge tone="slate" className="text-[10px]">UNISSUED</Badge>;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                 {date(val)}
             </span>
@@ -328,7 +328,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         return (
             <div className="flex flex-col items-center gap-0.5 justify-center">
                 {boqVer && (
-                    <Badge tone="purple" className="text-[10px] font-mono">
+                    <Badge tone="purple" className="text-[10px]  ">
                         <Layers className="w-2.5 h-2.5 mr-1" /> {boqVer}
                     </Badge>
                 )}
@@ -364,7 +364,7 @@ const SPREADSHEET_CELL_RENDERERS = {
             const minStr = minP ? formatCurrencyINR(minP) : '₹0';
             const maxStr = maxP ? formatCurrencyINR(maxP) : '—';
             return (
-                <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+                <span className="  text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                     {minStr} - {maxStr}
                 </span>
             );
@@ -372,7 +372,7 @@ const SPREADSHEET_CELL_RENDERERS = {
 
         if (rawRange) {
             return (
-                <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+                <span className="  text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                     {rawRange}
                 </span>
             );
@@ -484,7 +484,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
@@ -952,8 +952,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                 <div
                                     key={idx}
                                     className={`flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg border transition-all duration-300 ${newlyAddedIdx === idx
-                                            ? 'border-purple-500 ring-2 ring-purple-500/30 dark:ring-purple-400/40 bg-purple-50/40 dark:bg-purple-950/20'
-                                            : 'border-slate-200/60 dark:border-slate-700/60'
+                                        ? 'border-purple-500 ring-2 ring-purple-500/30 dark:ring-purple-400/40 bg-purple-50/40 dark:bg-purple-950/20'
+                                        : 'border-slate-200/60 dark:border-slate-700/60'
                                         }`}
                                 >
                                     <input

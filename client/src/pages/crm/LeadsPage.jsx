@@ -1092,105 +1092,105 @@ export const LeadsPage = () => {
                         const contactPersonVal = row.contactPerson || row.contactName || '—';
                         const sourceVal = row.source || row.leadSource || '—';
 
-                      return (
-                        <tr
-                          key={row._id || row.id}
-                          onClick={() => setViewingLead(row)}
-                          className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer group"
-                        >
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setViewingLead(row);
-                              }}
-                              className="text-[#836444] dark:text-amber-300 font-bold hover:underline font-mono"
-                            >
-                              {row.code || '—'}
-                            </button>
-                          </td>
-                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
-                          <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
-                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.email || '—'}</td>
-                          <td className="p-3 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
-                              {sourceVal}
-                            </span>
-                          </td>
-                          <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
-                          <td className="p-3 text-center whitespace-nowrap">
-                            <DelayBadge
-                              dueDate={row.assignmentDueDate || row.dueDate || row.qualificationDueDate || row.createdAt}
-                              isCompleted={row.status === 'CONVERTED' || row.status === 'QUALIFIED'}
-                              fallback={<span className="text-slate-400">—</span>}
-                            />
-                          </td>
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
-                          <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
-                          <td className="p-3 text-center">
-                            <BudgetClassBadge value={row.budgetClassification || 'A'} />
-                          </td>
-                          <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
-                          <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
-                          <td className="p-3 text-center">
-                            <RelationshipBadge value={row.previousClientRelationship} />
-                          </td>
-                          <td className="p-3 text-slate-700 dark:text-slate-300">{row.existingRelationshipOwner || 'NA'}</td>
-                          <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.requirementSummary || row.requirement || '—'}>
-                            {row.requirementSummary || row.requirement || '—'}
-                          </td>
-                          <td className="p-3 text-center">
-                            <ArchitectInvolvedBadge value={row.architectInvolved} />
-                          </td>
-                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex flex-col gap-1 max-w-[200px]">
-                              {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 items-center">
-                                  {row.attachments.map((att, i) => (
-                                    <a
-                                      key={i}
-                                      href={att.url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium truncate max-w-[170px]"
-                                      title={att.filename || att.url}
-                                    >
-                                      <Paperclip className="w-3 h-3 shrink-0 text-slate-500 dark:text-slate-400" />
-                                      <span className="truncate">{att.filename || `File ${i + 1}`}</span>
-                                    </a>
-                                  ))}
-                                </div>
-                              ) : null}
-
-                              {row.attachmentUrl ? (
-                                <a
-                                  href={row.attachmentUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline max-w-[180px] truncate"
-                                  title={row.attachmentUrl}
-                                >
-                                  <Paperclip className="w-3 h-3 shrink-0" />
-                                  <span className="truncate">View Link</span>
-                                </a>
-                              ) : null}
-
-                              {!row.attachmentUrl && (!row.attachments || row.attachments.length === 0) && (
-                                <span className="text-slate-600 dark:text-slate-500 italic text-[11px]">No docs</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                icon={Pencil}
-                                onClick={() => setEditing(row)}
-                                title="Edit Lead Record"
+                        return (
+                          <tr
+                            key={row._id || row.id}
+                            onClick={() => setViewingLead(row)}
+                            className="hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors border-b border-slate-200 dark:border-slate-800 cursor-pointer group"
+                          >
+                            <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky left-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setViewingLead(row);
+                                }}
+                                className="text-[#836444] dark:text-amber-300 font-bold hover:underline  "
+                              >
+                                {row.code || '—'}
+                              </button>
+                            </td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formattedDate}</td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{contactPersonVal}</td>
+                            <td className="p-3   text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.phone || '—'}</td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.email || '—'}</td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-sm">
+                                {sourceVal}
+                              </span>
+                            </td>
+                            <td className="p-3 font-bold text-amber-900 dark:text-amber-200 whitespace-nowrap text-sm">{clientNameVal}</td>
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <DelayBadge
+                                dueDate={row.assignmentDueDate || row.dueDate || row.qualificationDueDate || row.createdAt}
+                                isCompleted={row.status === 'CONVERTED' || row.status === 'QUALIFIED'}
+                                fallback={<span className="text-slate-400">—</span>}
                               />
+                            </td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
+                            <td className="p-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{formatBudgetDisplay(row.indicativeBudget || row.budget)}</td>
+                            <td className="p-3 text-center">
+                              <BudgetClassBadge value={row.budgetClassification || 'A'} />
+                            </td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
+                            <td className="p-3   text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
+                            <td className="p-3 text-center">
+                              <RelationshipBadge value={row.previousClientRelationship} />
+                            </td>
+                            <td className="p-3 text-slate-700 dark:text-slate-300">{row.existingRelationshipOwner || 'NA'}</td>
+                            <td className="p-3 max-w-[180px] truncate text-slate-600 dark:text-slate-400" title={row.requirementSummary || row.requirement || '—'}>
+                              {row.requirementSummary || row.requirement || '—'}
+                            </td>
+                            <td className="p-3 text-center">
+                              <ArchitectInvolvedBadge value={row.architectInvolved} />
+                            </td>
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex flex-col gap-1 max-w-[200px]">
+                                {Array.isArray(row.attachments) && row.attachments.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 items-center">
+                                    {row.attachments.map((att, i) => (
+                                      <a
+                                        key={i}
+                                        href={att.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium truncate max-w-[170px]"
+                                        title={att.filename || att.url}
+                                      >
+                                        <Paperclip className="w-3 h-3 shrink-0 text-slate-500 dark:text-slate-400" />
+                                        <span className="truncate">{att.filename || `File ${i + 1}`}</span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                ) : null}
+
+                                {row.attachmentUrl ? (
+                                  <a
+                                    href={row.attachmentUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline max-w-[180px] truncate"
+                                    title={row.attachmentUrl}
+                                  >
+                                    <Paperclip className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">View Link</span>
+                                  </a>
+                                ) : null}
+
+                                {!row.attachmentUrl && (!row.attachments || row.attachments.length === 0) && (
+                                  <span className="text-slate-600 dark:text-slate-500 italic text-[11px]">No docs</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  icon={Pencil}
+                                  onClick={() => setEditing(row)}
+                                  title="Edit Lead Record"
+                                />
                               </div>
                             </td>
                             <td className="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{archName}</td>
@@ -1199,7 +1199,7 @@ export const LeadsPage = () => {
                               <BudgetClassBadge value={row.budgetClassification || 'A'} />
                             </td>
                             <td className="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.location || '—'}</td>
-                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
+                            <td className="p-3   text-slate-700 dark:text-slate-300 whitespace-nowrap">{row.pincode || row.pinCode || row.address?.pincode || '—'}</td>
                             <td className="p-3 text-center">
                               <RelationshipBadge value={row.previousClientRelationship} />
                             </td>

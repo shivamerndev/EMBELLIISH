@@ -270,7 +270,7 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
         {/* Lead Summary Header */}
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 dark:bg-amber-950/40 dark:border-amber-800/60 flex items-center justify-between text-xs">
           <div>
-            <span className="font-mono font-bold text-amber-800 dark:text-amber-300">{item?.code || 'LEAD'}</span>
+            <span className="  font-bold text-amber-800 dark:text-amber-300">{item?.code || 'LEAD'}</span>
             <span className="ml-2 font-bold text-stone-900 dark:text-stone-100">{item?.clientName || item?.companyName}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -406,7 +406,7 @@ const ReassignDcmCard = ({ item, onReassign }) => {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              <span className="  text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {item.code || 'LD'}
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40">
@@ -427,7 +427,7 @@ const ReassignDcmCard = ({ item, onReassign }) => {
             <span className="font-medium text-slate-800 dark:text-slate-200">{contactPersonVal}</span>
           </div>
           {item.phone && (
-            <div className="flex items-center justify-between font-mono">
+            <div className="flex items-center justify-between  ">
               <span className="text-slate-400">Phone:</span>
               <span>{item.phone}</span>
             </div>
@@ -439,7 +439,7 @@ const ReassignDcmCard = ({ item, onReassign }) => {
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-slate-400">DCM Capacity:</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-slate-700 dark:text-slate-300">{item.dcmActiveProjectCount || 0} active</span>
+              <span className="  text-slate-700 dark:text-slate-300">{item.dcmActiveProjectCount || 0} active</span>
               <DcmCapacityBadge value={item.dcmCapacityStatus} />
             </div>
           </div>
@@ -457,7 +457,7 @@ const ReassignDcmCard = ({ item, onReassign }) => {
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
-        <span className="text-[10px] text-slate-400 font-mono">
+        <span className="text-[10px] text-slate-400  ">
           Due: {item.assignmentDueDate ? new Date(item.assignmentDueDate).toLocaleDateString('en-GB') : '—'}
         </span>
         <Button

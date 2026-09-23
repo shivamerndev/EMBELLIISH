@@ -57,7 +57,7 @@ const MeasurementRow = ({
             style={{ height: '44px' }}
         >
             {/* Sticky SR */}
-            <td className="sticky left-0 z-20 bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-2 text-center border-r border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-500 font-medium w-[52px] min-w-[52px]">
+            <td className="sticky left-0 z-20 bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-2 text-center border-r border-slate-200 dark:border-slate-800 text-xs   text-slate-500 font-medium w-[52px] min-w-[52px]">
                 {itemSr}
             </td>
 

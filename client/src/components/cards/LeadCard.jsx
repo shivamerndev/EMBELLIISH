@@ -34,7 +34,7 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              <span className="  text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {lead.code || 'LEAD'}
               </span>
               <span className="text-[11px] px-2 py-0.5 rounded-md font-semibold bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40">
@@ -49,7 +49,7 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
           <DelayBadge
             dueDate={lead.assignmentDueDate || lead.dueDate || lead.qualificationDueDate || lead.createdAt}
             isCompleted={lead.status === 'CONVERTED' || lead.status === 'QUALIFIED'}
-            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+            fallback={<span className="text-slate-400 text-xs  ">—</span>}
           />
         </div>
 
@@ -60,7 +60,7 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
             <span className="font-medium truncate">{contactPersonVal}</span>
           </div>
           {lead.phone && (
-            <div className="flex items-center gap-2 font-mono">
+            <div className="flex items-center gap-2  ">
               <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span>{lead.phone}</span>
             </div>
@@ -100,7 +100,7 @@ export const LeadCard = ({ lead, onView, onEdit, onDelete, onReassign }) => {
 
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
-        <span className="text-[10px] text-slate-400 font-mono">{formattedDate}</span>
+        <span className="text-[10px] text-slate-400  ">{formattedDate}</span>
 
         <div className="flex items-center gap-1.5">
           <Button
