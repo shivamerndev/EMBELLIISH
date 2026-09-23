@@ -32,7 +32,7 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
         </th>
 
         {/* ── Shared: Window Size O2O + F2F ── */}
-        {isColVisible('windowSize') && (
+        {!isWallpaper && isColVisible('windowSize') && (
           <>
             <th colSpan={2} className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
               WINDOW — O2O
@@ -44,7 +44,7 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
         )}
 
         {/* ── Shared: Pelmet Size O2O + F2F ── */}
-        {isColVisible('pelmetSize') && (
+        {!isWallpaper && isColVisible('pelmetSize') && (
           <>
             <th colSpan={2} className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6e5441] dark:bg-slate-900/80">
               PELMET — O2O
@@ -56,14 +56,14 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
         )}
 
         {/* ── Shared: Wire ── */}
-        {isColVisible('wire') && (
+        {!isWallpaper && isColVisible('wire') && (
           <th colSpan={2} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
             WIRE — SIDE DROP
           </th>
         )}
 
         {/* ── Shared: Measurements ── */}
-        {isColVisible('measurements') && (
+        {!isWallpaper && isColVisible('measurements') && (
           <th colSpan={4} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6e5441] dark:bg-slate-900/80">
             MEASUREMENTS
           </th>
@@ -226,7 +226,7 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
       <tr className="bg-[#836444] dark:bg-slate-900/95 text-amber-50 dark:text-slate-300 text-[10px] font-semibold border-b-2 border-amber-900/60 dark:border-slate-700 shadow-sm">
 
         {/* ── Shared: Window O2O + F2F ── */}
-        {isColVisible('windowSize') && (
+        {!isWallpaper && isColVisible('windowSize') && (
           <>
             <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Width (mm)</th>
             <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Height (mm)</th>
@@ -236,7 +236,7 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
         )}
 
         {/* ── Shared: Pelmet O2O + F2F ── */}
-        {isColVisible('pelmetSize') && (
+        {!isWallpaper && isColVisible('pelmetSize') && (
           <>
             <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Width (mm)</th>
             <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Drop (mm)</th>
@@ -245,16 +245,16 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
           </>
         )}
 
-        {/* ── Shared: Wire ── */}
-        {isColVisible('wire') && (
+        {/* ── Shared: Wire (Right then Left matching todo.md) ── */}
+        {!isWallpaper && isColVisible('wire') && (
           <>
-            <th className="border-r border-amber-700/30 dark:border-slate-800 px-1.5 py-1 text-center w-[65px] min-w-[65px]">Left</th>
-            <th className="border-r border-amber-700/40 dark:border-slate-800 px-1.5 py-1 text-center w-[65px] min-w-[65px]">Right</th>
+            <th className="border-r border-amber-700/30 dark:border-slate-800 px-1.5 py-1 text-center w-[65px] min-w-[65px]">Right</th>
+            <th className="border-r border-amber-700/40 dark:border-slate-800 px-1.5 py-1 text-center w-[65px] min-w-[65px]">Left</th>
           </>
         )}
 
         {/* ── Shared: Measurements ── */}
-        {isColVisible('measurements') && (
+        {!isWallpaper && isColVisible('measurements') && (
           <>
             <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[80px] min-w-[80px]">Rnft</th>
             <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Roman Sqft</th>
@@ -337,58 +337,58 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
             {/* Finished Size: Width + Drop */}
             {isColVisible('rb_finishedSize') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Finished Blind Width</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Finished Blind Drop</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Finished Blind Width (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Finished Blind Drop (in)</th>
               </>
             )}
 
             {/* Fabric: Width / Usable Width / Vertical Repeat */}
             {isColVisible('rb_fabric') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Fabric Width</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Usable Width</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Vertical Repeat</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Fabric Width (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Useable Width (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Vertical Repeat (in)</th>
               </>
             )}
 
             {/* Allowances: Left / Right / Top / Bottom / Wastage */}
             {isColVisible('rb_allowances') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Left Allowance</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Right Allowance</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Top Allowance</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Bottom Allowance</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[75px] min-w-[75px]">Wastage</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Left Allowance (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Right Allowance (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Top Allowance (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Bottom Allowance (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]">Wastage (%)</th>
               </>
             )}
 
             {/* Calculations: Order Increment / Fabric Direction / Required Cut Width */}
             {isColVisible('rb_calculations') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Order Increment</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[100px] min-w-[100px]">Fabric Direction</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Required Cut Width</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Order Increment (m)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[140px] min-w-[140px]">Fabric Direction (Normal/Railroaded)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[115px] min-w-[115px]">Required Cut Width (in)</th>
               </>
             )}
 
             {/* Fabric Order: Raw Cut Drop / Repeat Cut Drop / Railroad Running Width / No. of Widths / Raw Metres / Net Metres */}
             {isColVisible('rb_fabricOrder') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Raw Cut Drop</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Repeat Cut Drop</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[130px] min-w-[130px]">Railroad Running Width</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">No. of Widths</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Raw Metres</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]">Net Metres</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Raw Cut Drop (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Repeat Cut Drop (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[135px] min-w-[135px]">Railroad Running Width (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">No. of Widths (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Raw Metres (m)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Net Metres (m)</th>
               </>
             )}
 
             {/* Flags: Order Metres / Railroad Check / Cutting Instruction */}
             {isColVisible('rb_flags') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Order Metres</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[100px] min-w-[100px]">Railroad Check</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[115px] min-w-[115px]">Cutting Instruction</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Order Metres (m)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[125px] min-w-[125px]">Railroad Check (status)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[160px] min-w-[160px]">Cutting Instruction (text)</th>
               </>
             )}
           </>

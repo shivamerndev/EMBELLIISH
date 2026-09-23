@@ -101,10 +101,17 @@ const curtainInstruction = ({ numWidths, repeatCutDrop, qty }) =>
         ? `${numWidths} width(s) × ${round(repeatCutDrop, 1)}" drop × ${qty} set(s)`
         : '';
 
-const romanInstruction = ({ numWidths, repeatCutDrop, qty }) =>
-    numWidths && repeatCutDrop && qty
-        ? `${numWidths} width(s) × ${round(repeatCutDrop, 1)}" drop × ${qty} blind(s)`
+const romanInstruction = ({ isRailroaded, rawCutDrop, usableWidthApplied, railroadRunningWidth, numWidths, repeatCutDrop, qty }) => {
+    if (isRailroaded) {
+        if (rawCutDrop <= usableWidthApplied) {
+            return `${round(railroadRunningWidth, 1)} in running width x ${qty} blind(s) - railroaded`;
+        }
+        return 'CANNOT RAILROAD AT THIS HEIGHT';
+    }
+    return numWidths && repeatCutDrop && qty
+        ? `${numWidths} width(s) x ${round(repeatCutDrop, 1)} in x ${qty} blind(s)`
         : '';
+};
 
 const wallpaperInstruction = ({ requiredStrips, adjustedStripLength, qty }) =>
     requiredStrips && adjustedStripLength
@@ -125,7 +132,7 @@ const EMPTY_CURTAIN = {
 
 const EMPTY_ROMAN = {
     valid: false,
-    requiredCutWidth: 0, rawCutDrop: 0, repeatCutDrop: 0, numWidths: 0,
+    requiredCutWidth: 0, rawCutDrop: 0, repeatCutDrop: 0, railroadRunningWidth: 0, numWidths: 0,
     rawMetres: 0, netMetres: 0, orderMetres: 0,
     railroadCheck: '—', cuttingInstruction: '',
     // backward-compat aliases
@@ -226,8 +233,7 @@ export function calculateCurtainConsumption(row = {}) {
     const pleatByDesign = String(row.pleatByDesign || row.pleatingByDesign || 'No').toLowerCase() === 'yes';
     const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
     const isRailroaded = fabricDirection === 'railroaded';
-
-    const autoSafety = Number(row.autoSafety) || 0;
+    const autoSafety = normalizeAllowance(row.autoSafety);
 
     // Effective Width (m)
     const effectiveWidth = trackWidthM + leftReturn + rightReturn + centreOverlap + autoSafety;
@@ -345,18 +351,18 @@ export function calculateRomanBlindConsumption(row = {}) {
     const verticalRepeat = Number(row.verticalRepeat) || 0;
     const leftAllowance = row.leftAllowance !== undefined && row.leftAllowance !== '' && row.leftAllowance !== null
         ? Number(row.leftAllowance)
-        : 1.5;
+        : 2;
     const rightAllowance = row.rightAllowance !== undefined && row.rightAllowance !== '' && row.rightAllowance !== null
         ? Number(row.rightAllowance)
-        : 1.5;
+        : 2;
     const topAllowance = row.topAllowance !== undefined && row.topAllowance !== '' && row.topAllowance !== null
         ? Number(row.topAllowance)
-        : 2;
+        : 4;
     const bottomAllowance = row.bottomAllowance !== undefined && row.bottomAllowance !== '' && row.bottomAllowance !== null
         ? Number(row.bottomAllowance)
-        : 3;
-    const rawWastage = row.wastage !== undefined && row.wastage !== '' && row.wastage !== null ? Number(row.wastage) : 0.05;
-    const wastage = Number.isFinite(rawWastage) ? (rawWastage > 1 ? rawWastage / 100 : rawWastage) : 0.05;
+        : 8;
+    const rawWastage = row.wastage !== undefined && row.wastage !== '' && row.wastage !== null ? Number(row.wastage) : 0;
+    const wastage = Number.isFinite(rawWastage) ? (rawWastage > 1 ? rawWastage / 100 : rawWastage) : 0;
     const orderIncrement = row.orderIncrement !== undefined && row.orderIncrement !== '' && row.orderIncrement !== null ? Number(row.orderIncrement) : 0.5;
     const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
     const isRailroaded = fabricDirection === 'railroaded';
@@ -380,26 +386,30 @@ export function calculateRomanBlindConsumption(row = {}) {
     // Repeat-Adjusted Cut Drop (same rule as curtain)
     const repeatCutDrop = applyRepeat(rawCutDrop, verticalRepeat);
 
-    // Railroad Running Width
-    const railroadRunningWidth = isRailroaded ? repeatCutDrop : 0;
+    // Railroad Running Width (AG12: IF(OR(AD12="",AC12<>"Railroaded"),"",IF(V12>0,CEILING(AD12/V12,1)*V12,AD12)))
+    const railroadRunningWidth = isRailroaded
+        ? (verticalRepeat > 0 ? ceiling(requiredCutWidth / verticalRepeat) * verticalRepeat : requiredCutWidth)
+        : 0;
 
-    // Number of Widths : CEILING (Roman Blinds ALWAYS round UP, never nearest)
-    // Documentation §"Critical Rule": 9.1 → 10, 9.9 → 10
-    const numWidths = usableWidthApplied > 0
+    // Number of Widths : CEILING (AH12: IF(OR(AD12="",AC12<>"Normal",U12<=0),"",CEILING(AD12/U12,1)))
+    // Only applies for Normal direction; railroaded blinds run as single continuous width
+    const numWidths = (!isRailroaded && usableWidthApplied > 0)
         ? Math.ceil(requiredCutWidth / usableWidthApplied)
         : 0;
 
-    // Railroad Check: checks if Repeat Cut Drop fits within roll usable width
-    const railroadCheck = repeatCutDrop <= usableWidthApplied
-        ? 'OK to railroad'
-        : 'Cannot railroad at this height';
+    // Railroad Check (AL12: IF(R12="","",IF(AC12="Railroaded",IF(AE12<=U12,"OK to railroad","Cannot railroad at this height"),"Not applicable")))
+    let railroadCheck = 'Not applicable';
+    if (isRailroaded) {
+        railroadCheck = rawCutDrop <= usableWidthApplied
+            ? 'OK to railroad'
+            : 'Cannot railroad at this height';
+    }
 
-    // Raw Metres
+    // Raw Metres (AI12: IF(AD12="","",IF(AC12="Railroaded",IF(AE12<=U12,AG12*0.0254*Q12,""),AH12*AF12*0.0254*Q12)))
     let rawMetres = 0;
     if (isRailroaded) {
-        if (repeatCutDrop <= usableWidthApplied) {
-            // Railroaded: running length is the required cut width
-            rawMetres = requiredCutWidth * INCH_TO_METRE * qty;
+        if (rawCutDrop <= usableWidthApplied) {
+            rawMetres = railroadRunningWidth * INCH_TO_METRE * qty;
         }
     } else {
         rawMetres = numWidths * repeatCutDrop * INCH_TO_METRE * qty;
@@ -413,8 +423,16 @@ export function calculateRomanBlindConsumption(row = {}) {
         ? ceiling(netMetres / orderIncrement) * orderIncrement
         : round(netMetres, 2);
 
-    // Cutting Instruction
-    const cuttingInstruction = romanInstruction({ numWidths, repeatCutDrop, qty });
+    // Cutting Instruction (AM12)
+    const cuttingInstruction = romanInstruction({
+        isRailroaded,
+        rawCutDrop,
+        usableWidthApplied,
+        railroadRunningWidth,
+        numWidths,
+        repeatCutDrop,
+        qty,
+    });
 
     return {
         valid: true,

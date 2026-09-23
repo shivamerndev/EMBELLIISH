@@ -6,7 +6,8 @@ import React from 'react';
 const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => {
     const isColVisible = (key) => columnVisibility[key] !== false;
     const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
-    const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
+    const isWallpaper = typeFilter === 'WALLPAPER';
+    const isCurtain = !isRoman && !isWallpaper && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
 
     return (
         <tfoot className="sticky bottom-0 z-30 font-semibold select-none border-t-2 border-amber-600/40 dark:border-slate-700 shadow-md">
@@ -19,32 +20,32 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                     Project Summary
                 </td>
                 <td className="sticky left-[202px] z-40 bg-slate-100 dark:bg-slate-900 px-3 py-2 border-r-4 border-r-amber-500/80 dark:border-r-amber-500/70 text-slate-500 text-[11px] font-normal shadow-[4px_0_10px_rgba(0,0,0,0.15)]">
-                    {totals.totalWindows || 0} Window Records
+                    {totals.totalWindows || 0} Records
                 </td>
 
                 {/* Window Size Blank Footer */}
-                {isColVisible('windowSize') && (
+                {!isWallpaper && isColVisible('windowSize') && (
                     <td colSpan={4} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">
                         —
                     </td>
                 )}
 
                 {/* Pelmet Size Blank Footer */}
-                {isColVisible('pelmetSize') && (
+                {!isWallpaper && isColVisible('pelmetSize') && (
                     <td colSpan={4} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">
                         —
                     </td>
                 )}
 
                 {/* Wire Blank Footer */}
-                {isColVisible('wire') && (
+                {!isWallpaper && isColVisible('wire') && (
                     <td colSpan={2} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">
                         —
                     </td>
                 )}
 
                 {/* Measurements Footer */}
-                {isColVisible('measurements') && (
+                {!isWallpaper && isColVisible('measurements') && (
                     <>
                         <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                         <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
@@ -118,6 +119,46 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                             </>
+                        )}
+                    </>
+                )}
+
+                {/* ══════════════ WALLPAPER ONLY FOOTERS ══════════════ */}
+                {isWallpaper && (
+                    <>
+                        {isColVisible('wp_wallInfo') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            </>
+                        )}
+                        {isColVisible('wp_rollSpecs') && (
+                            <td colSpan={4} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('wp_allowances') && (
+                            <td colSpan={3} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('wp_orderSettings') && (
+                            <td colSpan={5} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('wp_calculations') && (
+                            <td colSpan={5} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('wp_orderOutput') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.baseRolls || '—'}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{totals.finalOrderRolls || '—'}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            </>
+                        )}
+                        {isColVisible('wp_flags') && (
+                            <td colSpan={4} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                         )}
                     </>
                 )}

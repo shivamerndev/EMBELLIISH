@@ -30,13 +30,18 @@ const MeasurementRow = ({
 }) => {
     const isColVisible = (key) => columnVisibility[key] !== false;
     const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
-    const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
+    const isWallpaper = typeFilter === 'WALLPAPER';
+    const isCurtain = !isRoman && !isWallpaper && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
 
     // Calculate live consumption outputs for responsive display
     const calc = calculateRowConsumption(row);
 
-    const handleFieldChange = (field, val) => {
-        onUpdateRow(rowIndex, { [field]: val });
+    const handleFieldChange = (fieldOrObj, val) => {
+        if (typeof fieldOrObj === 'object' && fieldOrObj !== null) {
+            onUpdateRow(rowIndex, fieldOrObj);
+        } else {
+            onUpdateRow(rowIndex, { [fieldOrObj]: val });
+        }
     };
 
     const hasSubDetails = Boolean(
@@ -57,12 +62,24 @@ const MeasurementRow = ({
             </td>
 
             {/* Sticky AREA / Window ID */}
-            <td className="sticky left-[52px] z-20 bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-3 border-r border-slate-200 dark:border-slate-800 w-[150px] min-w-[150px]">
-                <div className="flex flex-col">
-                    <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate">
-                        {row.windowId || row.label || `W-0${itemSr}`}
-                    </span>
-                    <span className="text-[10px] text-slate-400 truncate">{row.room || 'Living Room'}</span>
+            <td className="sticky left-[52px] z-20 bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-2 py-1 border-r border-slate-200 dark:border-slate-800 w-[150px] min-w-[150px]">
+                <div className="flex flex-col gap-0.5">
+                    <input
+                        type="text"
+                        value={row.room ?? ''}
+                        onChange={(e) => handleFieldChange('room', e.target.value)}
+                        placeholder="Living Room"
+                        className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 rounded px-1 py-0.5 focus:outline-none transition w-full truncate"
+                        title="Area / Room"
+                    />
+                    <input
+                        type="text"
+                        value={row.windowId || row.label || ''}
+                        onChange={(e) => handleFieldChange({ windowId: e.target.value, label: e.target.value })}
+                        placeholder={`W-0${itemSr}`}
+                        className="text-[10px] text-slate-500 dark:text-slate-400 bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 rounded px-1 py-0 focus:outline-none transition w-full truncate"
+                        title="Window ID"
+                    />
                 </div>
             </td>
 
@@ -82,7 +99,7 @@ const MeasurementRow = ({
             </td>
 
             {/* --- WINDOW SIZE (O2O & F2F) --- */}
-            {isColVisible('windowSize') && (
+            {!isWallpaper && isColVisible('windowSize') && (
                 <>
                     <MeasurementCell
                         type="number"
@@ -116,7 +133,7 @@ const MeasurementRow = ({
             )}
 
             {/* --- PELMET SIZE --- */}
-            {isColVisible('pelmetSize') && (
+            {!isWallpaper && isColVisible('pelmetSize') && (
                 <>
                     <MeasurementCell
                         type="number"
@@ -149,24 +166,24 @@ const MeasurementRow = ({
                 </>
             )}
 
-            {/* --- WIRE --- */}
-            {isColVisible('wire') && (
+            {/* --- WIRE (Right then Left matching todo.md) --- */}
+            {!isWallpaper && isColVisible('wire') && (
                 <>
-                    <MeasurementCell
-                        type="checkbox"
-                        value={row.wireLeft}
-                        onChange={(val) => handleFieldChange('wireLeft', val)}
-                    />
                     <MeasurementCell
                         type="checkbox"
                         value={row.wireRight}
                         onChange={(val) => handleFieldChange('wireRight', val)}
                     />
+                    <MeasurementCell
+                        type="checkbox"
+                        value={row.wireLeft}
+                        onChange={(val) => handleFieldChange('wireLeft', val)}
+                    />
                 </>
             )}
 
             {/* --- MEASUREMENTS (Shared: Rnft / Roman Sqft / Window / Qty) --- */}
-            {isColVisible('measurements') && (
+            {!isWallpaper && isColVisible('measurements') && (
                 <>
                     <MeasurementCell
                         type="number"
@@ -264,20 +281,14 @@ const MeasurementRow = ({
                             <MeasurementCell
                                 type="number"
                                 value={row.leftReturn ?? row.curtainReturnLeft ?? 0.05}
-                                onChange={(val) => {
-                                    handleFieldChange('leftReturn', val);
-                                    handleFieldChange('curtainReturnLeft', val);
-                                }}
+                                onChange={(val) => handleFieldChange({ leftReturn: val, curtainReturnLeft: val })}
                                 step="0.01"
                                 placeholder="0"
                             />
                             <MeasurementCell
                                 type="number"
                                 value={row.rightReturn ?? row.curtainReturnRight ?? 0}
-                                onChange={(val) => {
-                                    handleFieldChange('rightReturn', val);
-                                    handleFieldChange('curtainReturnRight', val);
-                                }}
+                                onChange={(val) => handleFieldChange({ rightReturn: val, curtainReturnRight: val })}
                                 step="0.01"
                                 placeholder="0"
                             />
@@ -326,10 +337,7 @@ const MeasurementRow = ({
                                 type="select"
                                 align="center"
                                 value={row.pleatingByDesign ?? row.pleatByDesign ?? 'No'}
-                                onChange={(val) => {
-                                    handleFieldChange('pleatingByDesign', val);
-                                    handleFieldChange('pleatByDesign', val);
-                                }}
+                                onChange={(val) => handleFieldChange({ pleatingByDesign: val, pleatByDesign: val })}
                                 options={['No', 'Yes']}
                             />
                             <MeasurementCell
@@ -340,10 +348,13 @@ const MeasurementRow = ({
                                 options={['Normal', 'Railroaded']}
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="number"
                                 align="center"
-                                value={calc.autoSafety ?? 0}
+                                value={row.autoSafety !== undefined && row.autoSafety !== '' ? row.autoSafety : (calc.autoSafety ?? 0)}
+                                onChange={(val) => handleFieldChange('autoSafety', val)}
+                                min={0}
+                                step="0.01"
+                                placeholder="0"
                             />
                             <MeasurementCell
                                 type="readonly"
@@ -438,20 +449,14 @@ const MeasurementRow = ({
                             <MeasurementCell
                                 type="number"
                                 value={row.finishedBlindWidth ?? row.blindWidth ?? (row.outToOutWidth ? (Number(row.outToOutWidth) > 200 ? Math.round((Number(row.outToOutWidth) / 25.4) * 10) / 10 : row.outToOutWidth) : '')}
-                                onChange={(val) => {
-                                    handleFieldChange('finishedBlindWidth', val);
-                                    handleFieldChange('blindWidth', val);
-                                }}
+                                onChange={(val) => handleFieldChange({ finishedBlindWidth: val, blindWidth: val })}
                                 placeholder="—"
                                 min={0}
                             />
                             <MeasurementCell
                                 type="number"
                                 value={row.finishedBlindDrop ?? row.blindDrop ?? (row.outToOutHeight ? (Number(row.outToOutHeight) > 200 ? Math.round((Number(row.outToOutHeight) / 25.4) * 10) / 10 : row.outToOutHeight) : '')}
-                                onChange={(val) => {
-                                    handleFieldChange('finishedBlindDrop', val);
-                                    handleFieldChange('blindDrop', val);
-                                }}
+                                onChange={(val) => handleFieldChange({ finishedBlindDrop: val, blindDrop: val })}
                                 placeholder="—"
                                 min={0}
                             />
@@ -490,38 +495,38 @@ const MeasurementRow = ({
                         <>
                             <MeasurementCell
                                 type="number"
-                                value={row.leftAllowance ?? 1.5}
+                                value={row.leftAllowance ?? 2}
                                 onChange={(val) => handleFieldChange('leftAllowance', val)}
-                                step="0.1"
-                                placeholder="1.5"
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.rightAllowance ?? 1.5}
-                                onChange={(val) => handleFieldChange('rightAllowance', val)}
-                                step="0.1"
-                                placeholder="1.5"
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.topAllowance ?? 2}
-                                onChange={(val) => handleFieldChange('topAllowance', val)}
                                 step="0.1"
                                 placeholder="2"
                             />
                             <MeasurementCell
                                 type="number"
-                                value={row.bottomAllowance ?? 3}
-                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
+                                value={row.rightAllowance ?? 2}
+                                onChange={(val) => handleFieldChange('rightAllowance', val)}
                                 step="0.1"
-                                placeholder="3"
+                                placeholder="2"
                             />
                             <MeasurementCell
                                 type="number"
-                                value={row.wastage ?? 0.05}
+                                value={row.topAllowance ?? 4}
+                                onChange={(val) => handleFieldChange('topAllowance', val)}
+                                step="0.1"
+                                placeholder="4"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.bottomAllowance ?? 8}
+                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
+                                step="0.1"
+                                placeholder="8"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastage ?? 0}
                                 onChange={(val) => handleFieldChange('wastage', val)}
                                 step="0.01"
-                                placeholder="0.05"
+                                placeholder="0"
                             />
                         </>
                     )}
@@ -547,7 +552,6 @@ const MeasurementRow = ({
                                 type="readonly"
                                 isCalculated
                                 value={calc.requiredCutWidth ?? 0}
-                                unit='"'
                             />
                         </>
                     )}
@@ -559,36 +563,31 @@ const MeasurementRow = ({
                                 type="readonly"
                                 isCalculated
                                 value={calc.rawCutDrop ?? 0}
-                                unit='"'
                             />
                             <MeasurementCell
                                 type="readonly"
                                 isCalculated
                                 value={calc.repeatCutDrop ?? 0}
-                                unit='"'
                             />
                             <MeasurementCell
                                 type="readonly"
                                 isCalculated
                                 value={calc.railroadRunningWidth ? calc.railroadRunningWidth : '—'}
-                                unit={calc.railroadRunningWidth ? '"' : ''}
                             />
                             <MeasurementCell
                                 type="readonly"
                                 isCalculated
-                                value={calc.numWidths ?? 0}
+                                value={calc.numWidths ? calc.numWidths : '—'}
                             />
                             <MeasurementCell
                                 type="readonly"
                                 isCalculated
                                 value={calc.rawMetres ?? 0}
-                                unit="m"
                             />
                             <MeasurementCell
                                 type="readonly"
                                 isCalculated
                                 value={calc.netMetres ?? 0}
-                                unit="m"
                             />
                         </>
                     )}
@@ -600,7 +599,6 @@ const MeasurementRow = ({
                                 type="readonly"
                                 isCalculated
                                 value={calc.orderMetres ?? 0}
-                                unit="m"
                                 className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
                             />
                             <MeasurementCell
@@ -615,6 +613,259 @@ const MeasurementRow = ({
                                 isCalculated
                                 align="center"
                                 value={calc.cuttingInstruction || '—'}
+                            />
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* ══════════════ WALLPAPER ONLY ══════════════ */}
+            {isWallpaper && (
+                <>
+                    {/* Wall Info */}
+                    {isColVisible('wp_wallInfo') && (
+                        <>
+                            <MeasurementCell
+                                type="text"
+                                align="left"
+                                value={row.wallElevation || row.wallId || row.windowId || ''}
+                                onChange={(val) => handleFieldChange({ wallElevation: val, wallId: val, windowId: val })}
+                                placeholder="Wall 1"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                align="center"
+                                value={row.qty ?? 1}
+                                onChange={(val) => handleFieldChange('qty', val)}
+                                min={1}
+                                placeholder="1"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wallWidth ?? ''}
+                                onChange={(val) => handleFieldChange('wallWidth', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wallHeight ?? ''}
+                                onChange={(val) => handleFieldChange('wallHeight', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Roll Specs */}
+                    {isColVisible('wp_rollSpecs') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.rollWidth ?? 21}
+                                onChange={(val) => handleFieldChange('rollWidth', val)}
+                                placeholder="21"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.rollLength ?? 10.05}
+                                onChange={(val) => handleFieldChange('rollLength', val)}
+                                placeholder="10.05"
+                                min={0}
+                                step="0.01"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.verticalRepeat ?? 0}
+                                onChange={(val) => handleFieldChange('verticalRepeat', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.patternMatch || 'None'}
+                                onChange={(val) => handleFieldChange('patternMatch', val)}
+                                options={['None', 'Random', 'Straight', 'Half Drop']}
+                            />
+                        </>
+                    )}
+
+                    {/* Allowances */}
+                    {isColVisible('wp_allowances') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.topAllowance ?? 0}
+                                onChange={(val) => handleFieldChange('topAllowance', val)}
+                                placeholder="0"
+                                min={0}
+                                step="0.1"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.bottomAllowance ?? 0}
+                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
+                                placeholder="0"
+                                min={0}
+                                step="0.1"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastage ?? 0}
+                                onChange={(val) => handleFieldChange('wastage', val)}
+                                placeholder="0"
+                                min={0}
+                                step="0.01"
+                            />
+                        </>
+                    )}
+
+                    {/* Order Settings */}
+                    {isColVisible('wp_orderSettings') && (
+                        <>
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.orderingUnit || 'Metres'}
+                                onChange={(val) => handleFieldChange('orderingUnit', val)}
+                                options={['Metres', 'Rolls']}
+                            />
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.orderIncrementRequired || 'No'}
+                                onChange={(val) => handleFieldChange('orderIncrementRequired', val)}
+                                options={['No', 'Yes']}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.orderIncrement ?? 0.5}
+                                onChange={(val) => handleFieldChange('orderIncrement', val)}
+                                placeholder="0.5"
+                                min={0}
+                                step="0.1"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.minimumOrder ?? 0}
+                                onChange={(val) => handleFieldChange('minimumOrder', val)}
+                                placeholder="0"
+                                min={0}
+                                step="0.5"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.spareRolls ?? 0}
+                                onChange={(val) => handleFieldChange('spareRolls', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Calculations */}
+                    {isColVisible('wp_calculations') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.rawCutDrop ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.adjustedStripLength ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.stripsPerWall ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.requiredStrips ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.stripsPerRoll ?? 0}
+                            />
+                        </>
+                    )}
+
+                    {/* Order Output */}
+                    {isColVisible('wp_orderOutput') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.requiredMetres ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.baseRolls ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.finalOrderMetres ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.finalOrderRolls ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.finalOrderQuantity ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.finalOrderQuantity ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.orderUnit || 'Metres'}
+                            />
+                        </>
+                    )}
+
+                    {/* Flags */}
+                    {isColVisible('wp_flags') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.orderCheck || 'OK'}
+                                className={calc.orderCheck && calc.orderCheck !== 'OK' ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.cuttingInstruction || '—'}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.approxCoverageArea ?? (calc.rawCutDrop && row.wallWidth ? Math.round((Number(calc.rawCutDrop) * Number(row.wallWidth)) / 1550 * 100) / 100 : 0)}
+                                unit="m²"
+                            />
+                            <MeasurementCell
+                                type="text"
+                                align="left"
+                                value={row.notes || ''}
+                                onChange={(val) => handleFieldChange('notes', val)}
+                                placeholder="Notes..."
                             />
                         </>
                     )}

@@ -692,6 +692,13 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         rb_calculations: true,
         rb_fabricOrder: true,
         rb_flags: true,
+        wp_wallInfo: true,
+        wp_rollSpecs: true,
+        wp_allowances: true,
+        wp_orderSettings: true,
+        wp_calculations: true,
+        wp_orderOutput: true,
+        wp_flags: true,
     });
     const [lastAddedRoom, setLastAddedRoom] = useState('');
     const [inspectorRowIndex, setInspectorRowIndex] = useState(null);

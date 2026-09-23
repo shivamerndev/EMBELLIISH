@@ -242,7 +242,12 @@ const RomanResults = ({ r }) => {
             <ResultRow label="Required Cut Width" value={r.requiredCutWidth} unit=" in" />
             <ResultRow label="Raw Cut Drop" value={r.rawCutDrop} unit=" in" />
             <ResultRow label="Repeat Cut Drop" value={r.repeatCutDrop} unit=" in" />
-            <ResultRow label="No. of Widths" value={r.numWidths} unit=" widths" />
+            {r.railroadRunningWidth > 0 && (
+                <ResultRow label="Railroad Running Width" value={r.railroadRunningWidth} unit=" in" />
+            )}
+            {r.numWidths > 0 && (
+                <ResultRow label="No. of Widths" value={r.numWidths} unit=" widths" />
+            )}
             <ResultRow label="Raw Metres" value={r.rawMetres} unit=" m" />
             <ResultRow label="Net Metres (+ wastage)" value={r.netMetres} unit=" m" />
             <ResultRow label="Order Metres" value={r.orderMetres} unit=" m" highlight />
@@ -327,8 +332,8 @@ const MeasurementDetailsDrawer = ({
         pleatByDesign: row?.pleatByDesign || 'No',
         fabricDirection: row?.fabricDirection || 'Normal',
         // Roman Blind
-        blindWidth: row?.blindWidth || '',
-        blindDrop: row?.blindDrop || '',
+        blindWidth: row?.finishedBlindWidth || row?.blindWidth || '',
+        blindDrop: row?.finishedBlindDrop || row?.blindDrop || '',
         leftAllowance: row?.leftAllowance || '',
         rightAllowance: row?.rightAllowance || '',
         bottomAllowance: row?.bottomAllowance || '',
@@ -377,8 +382,8 @@ const MeasurementDetailsDrawer = ({
                 orderIncrement: row.orderIncrement ?? prev.orderIncrement,
                 pleatByDesign: row.pleatByDesign ?? prev.pleatByDesign,
                 fabricDirection: row.fabricDirection ?? prev.fabricDirection,
-                blindWidth: row.blindWidth ?? prev.blindWidth,
-                blindDrop: row.blindDrop ?? prev.blindDrop,
+                blindWidth: row.finishedBlindWidth ?? row.blindWidth ?? prev.blindWidth,
+                blindDrop: row.finishedBlindDrop ?? row.blindDrop ?? prev.blindDrop,
                 leftAllowance: row.leftAllowance ?? prev.leftAllowance,
                 rightAllowance: row.rightAllowance ?? prev.rightAllowance,
                 bottomAllowance: row.bottomAllowance ?? prev.bottomAllowance,
