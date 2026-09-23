@@ -3,8 +3,10 @@ import React from 'react';
 /**
  * Sticky Footer Summary Row aligned precisely with grid columns.
  */
-const MeasurementTotals = ({ totals = {}, columnVisibility = {} }) => {
+const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => {
     const isColVisible = (key) => columnVisibility[key] !== false;
+    const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
+    const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
 
     return (
         <tfoot className="sticky bottom-0 z-30 font-semibold select-none border-t-2 border-amber-600/40 dark:border-slate-700 shadow-md">
@@ -41,11 +43,83 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {} }) => {
                     </td>
                 )}
 
-                {/* Return Size Blank Footer */}
-                {isColVisible('returnSize') && (
-                    <td colSpan={2} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">
-                        —
-                    </td>
+                {/* Measurements Footer */}
+                {isColVisible('measurements') && (
+                    <>
+                        <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center font-mono text-slate-700 dark:text-slate-300 font-bold">{totals.totalQty || totals.totalWindows || 0}</td>
+                    </>
+                )}
+
+                {/* ══════════════ CURTAIN ONLY FOOTERS ══════════════ */}
+                {isCurtain && (
+                    <>
+                        {isColVisible('trackDrop') && (
+                            <td colSpan={2} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('fabric') && (
+                            <td colSpan={3} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('allowances') && (
+                            <td colSpan={7} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('calculations') && (
+                            <td colSpan={7} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('fabricOrder') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                            </>
+                        )}
+                        {isColVisible('flags') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            </>
+                        )}
+                    </>
+                )}
+
+                {/* ══════════════ ROMAN BLIND ONLY FOOTERS ══════════════ */}
+                {isRoman && (
+                    <>
+                        {isColVisible('rb_finishedSize') && (
+                            <td colSpan={2} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('rb_fabric') && (
+                            <td colSpan={3} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('rb_allowances') && (
+                            <td colSpan={5} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('rb_calculations') && (
+                            <td colSpan={3} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                        )}
+                        {isColVisible('rb_fabricOrder') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-brand-700 dark:text-brand-300 font-bold">{totals.totalWidths || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.rawMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
+                            </>
+                        )}
+                        {isColVisible('rb_flags') && (
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            </>
+                        )}
+                    </>
                 )}
 
                 <td className="bg-slate-100 dark:bg-slate-900 text-center text-slate-400 font-normal text-[11px]">

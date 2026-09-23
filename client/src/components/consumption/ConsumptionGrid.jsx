@@ -10,7 +10,7 @@ import { calculateRowConsumption } from '../../utils/consumptionCalc';
  * Groups rows by room, provides sticky headers & identity columns,
  * supports inline editing, room collapse, search/filtering, and live totals.
  */
-const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', }) => {
+const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter = 'ALL', typeFilter = 'ALL', columnVisibility = {}, onOpenDetails, lastAddedRoom = '', className = '', }) => {
 
 
     const [collapsedRooms, setCollapsedRooms] = useState({});
@@ -66,22 +66,63 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
         return groups;
     }, [filteredRowsWithIndex]);
 
+    // Compute dynamic visible column count to span room groups cleanly across entire table
+    const visibleColsCount = useMemo(() => {
+        let count = 3; // SR, Area, Particular
+        const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
+        const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
+        const isColVisible = (key) => columnVisibility[key] !== false;
+
+        if (isColVisible('windowSize')) count += 4;
+        if (isColVisible('pelmetSize')) count += 4;
+        if (isColVisible('wire')) count += 2;
+        if (isColVisible('measurements')) count += 4;
+
+        if (isCurtain) {
+            if (isColVisible('trackDrop')) count += 2;
+            if (isColVisible('fabric')) count += 3;
+            if (isColVisible('allowances')) count += 7;
+            if (isColVisible('calculations')) count += 7;
+            if (isColVisible('fabricOrder')) count += 5;
+            if (isColVisible('flags')) count += 3;
+        }
+
+        if (isRoman) {
+            if (isColVisible('rb_finishedSize')) count += 2;
+            if (isColVisible('rb_fabric')) count += 3;
+            if (isColVisible('rb_allowances')) count += 5;
+            if (isColVisible('rb_calculations')) count += 3;
+            if (isColVisible('rb_fabricOrder')) count += 6;
+            if (isColVisible('rb_flags')) count += 3;
+        }
+
+        count += 1; // Actions
+        return count;
+    }, [columnVisibility, typeFilter]);
+
     // Compute Grand Totals across all filtered rows live
     const grandTotals = useMemo(() => {
+        let totalWindows = filteredRowsWithIndex.length;
+        let totalQty = 0;
         let totalWidths = 0;
+        let rawMetres = 0;
         let netMetres = 0;
         let orderMetres = 0;
 
         filteredRowsWithIndex.forEach(({ row }) => {
             const calc = calculateRowConsumption(row);
+            totalQty += Number(row.qty ?? 1) || 1;
             totalWidths += (calc.numWidths ?? calc.roundedParts) || 0;
+            rawMetres += calc.rawMetres || 0;
             netMetres += calc.netMetres || 0;
             orderMetres += calc.orderMetres || calc.fabricMeters || 0;
         });
 
         return {
-            totalWindows: filteredRowsWithIndex.length,
+            totalWindows,
+            totalQty,
             totalWidths: Math.round(totalWidths),
+            rawMetres: Math.round(rawMetres * 100) / 100,
             netMetres: Math.round(netMetres * 100) / 100,
             orderMetres: Math.round(orderMetres * 100) / 100,
             // backward-compat aliases kept so nothing else breaks
@@ -124,7 +165,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
     };
 
     return (
-        <div className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div className={`w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-b-xl rounded-t-none overflow-hidden shadow-sm flex flex-col ${className}`}>
             <div className="overflow-x-auto overflow-y-auto max-h-[60vh] select-none relative scrollbar-thin">
                 <table className="w-full text-left border-collapse text-xs font-sans min-w-[1200px]">
 
@@ -134,7 +175,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950">
                         {Object.keys(roomGroups).length === 0 ? (
                             <tr>
-                                <td colSpan={25} className="py-12 text-center text-slate-400 font-sans italic">
+                                <td colSpan={visibleColsCount} className="py-12 text-center text-slate-400 font-sans italic">
                                     No window measurement records match the selected filters.
                                 </td>
                             </tr>
@@ -162,6 +203,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
                                             itemCount={items.length}
                                             isExpanded={isExpanded}
                                             onToggleExpand={() => toggleRoomExpand(roomName)}
+                                            colSpan={visibleColsCount - 3}
                                             summary={roomSubtotals}
                                         />
 
@@ -177,6 +219,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
                                                     onDeleteRow={handleDeleteRow}
                                                     onOpenDetails={(r, idx) => onOpenDetails(r, idx)}
                                                     columnVisibility={columnVisibility}
+                                                    typeFilter={typeFilter}
                                                 />
                                             ))}
                                     </React.Fragment>
@@ -185,7 +228,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
                         )}
                     </tbody>
 
-                    <MeasurementTotals totals={grandTotals} columnVisibility={columnVisibility} />
+                    <MeasurementTotals totals={grandTotals} columnVisibility={columnVisibility} typeFilter={typeFilter} />
                 </table>
             </div>
         </div>

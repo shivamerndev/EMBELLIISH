@@ -2,8 +2,8 @@
 const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => {
 
   const isColVisible = (key) => columnVisibility[key] !== false;
-  const isCurtain    = typeFilter === 'MAIN_CURTAIN';
-  const isRoman      = typeFilter === 'ROMAN_BLIND';
+  const isRoman      = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
+  const isCurtain    = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
   const isWallpaper  = typeFilter === 'WALLPAPER';
 
   return (

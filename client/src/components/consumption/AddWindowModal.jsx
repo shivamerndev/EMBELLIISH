@@ -30,10 +30,11 @@ const AddWindowMeasurementModal = ({
     availableRooms = [],
     existingRows = [],
     preselectedRoom = '',
+    defaultParticular = 'MAIN_CURTAIN',
 }) => {
     const [selectedRoom, setSelectedRoom] = useState('');
     const [windowId, setWindowId] = useState('');
-    const [particular, setParticular] = useState('MAIN_CURTAIN');
+    const [particular, setParticular] = useState(defaultParticular || 'MAIN_CURTAIN');
     const [quantity, setQuantity] = useState(1);
     const [unit, setUnit] = useState('mm');
     const [validationError, setValidationError] = useState('');
@@ -80,12 +81,12 @@ const AddWindowMeasurementModal = ({
         if (open) {
             setSelectedRoom(preselectedRoom || (normalizedRooms.length > 0 ? normalizedRooms[0] : ''));
             setWindowId(generateNextWindowId());
-            setParticular('MAIN_CURTAIN');
+            setParticular(defaultParticular || 'MAIN_CURTAIN');
             setQuantity(1);
             setUnit('mm');
             setValidationError('');
         }
-    }, [open, preselectedRoom, normalizedRooms, generateNextWindowId]);
+    }, [open, preselectedRoom, normalizedRooms, generateNextWindowId, defaultParticular]);
 
     if (!open) return null;
 

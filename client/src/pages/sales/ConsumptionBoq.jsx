@@ -20,6 +20,7 @@ import HeaderTools from '../../components/consumption/HeaderTools';
 import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
 import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
+import TypesTab from '@/components/consumption/TypesTab';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -678,8 +679,19 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         windowSize: true,
         pelmetSize: true,
         wire: true,
-        returnSize: true,
-        fabricRequirement: true,
+        measurements: true,
+        trackDrop: true,
+        fabric: true,
+        allowances: true,
+        calculations: true,
+        fabricOrder: true,
+        flags: true,
+        rb_finishedSize: true,
+        rb_fabric: true,
+        rb_allowances: true,
+        rb_calculations: true,
+        rb_fabricOrder: true,
+        rb_flags: true,
     });
     const [lastAddedRoom, setLastAddedRoom] = useState('');
     const [inspectorRowIndex, setInspectorRowIndex] = useState(null);
@@ -957,44 +969,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-
-                
-                    {/* Calculator Type Selector */}
-                    {activeTab === 'grid' && (
-                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
-                            <button
-                                type="button"
-                                onClick={() => setWorkspaceTypeFilter('MAIN_CURTAIN')}
-                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'MAIN_CURTAIN'
-                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
-                            >
-                                Curtains
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setWorkspaceTypeFilter('ROMAN_BLIND')}
-                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'ROMAN_BLIND'
-                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
-                            >
-                                Roman blind
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setWorkspaceTypeFilter('WALLPAPER')}
-                                className={`px-3 py-1 rounded-md text-xs font-medium transition ${workspaceTypeFilter === 'WALLPAPER'
-                                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
-                            >
-                                Wallpaper
-                            </button>
-                        </div>
-                    )}
-
                 {/* TAB 1: Measurements Grid Workspace */}
                 {activeTab === 'grid' && (
                     <div className="space-y-3">
@@ -1014,16 +988,26 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                             isSaving={pending}
                         />
 
-                        <ConsumptionGrid
-                            rows={finalMeasurementsGrid}
-                            onUpdateRows={handleGridRowsUpdate}
-                            searchQuery={workspaceSearch}
-                            roomFilter={workspaceRoomFilter}
-                            typeFilter={workspaceTypeFilter}
-                            columnVisibility={columnVisibility}
-                            onOpenDetails={handleOpenRowDetails}
-                            lastAddedRoom={lastAddedRoom}
-                        />
+                        {/* Chrome Window Container: Tabs + Grid */}
+                        <div className="flex flex-col">
+                            <TypesTab
+                                setWorkspaceTypeFilter={setWorkspaceTypeFilter}
+                                workspaceTypeFilter={workspaceTypeFilter}
+                                rows={finalMeasurementsGrid}
+                                onAddMeasurement={() => setIsAddModalOpen(true)}
+                            />
+
+                            <ConsumptionGrid
+                                rows={finalMeasurementsGrid}
+                                onUpdateRows={handleGridRowsUpdate}
+                                searchQuery={workspaceSearch}
+                                roomFilter={workspaceRoomFilter}
+                                typeFilter={workspaceTypeFilter}
+                                columnVisibility={columnVisibility}
+                                onOpenDetails={handleOpenRowDetails}
+                                lastAddedRoom={lastAddedRoom}
+                            />
+                        </div>
                     </div>
                 )}
 
@@ -1429,6 +1413,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                 availableRooms={modalAvailableRooms}
                 existingRows={finalMeasurementsGrid}
                 preselectedRoom={workspaceRoomFilter !== 'ALL' ? workspaceRoomFilter : ''}
+                defaultParticular={workspaceTypeFilter}
             />
         </Modal>
     );

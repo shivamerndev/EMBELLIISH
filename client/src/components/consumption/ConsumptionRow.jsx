@@ -26,8 +26,11 @@ const MeasurementRow = ({
     onDeleteRow,
     onOpenDetails,
     columnVisibility = {},
+    typeFilter = 'MAIN_CURTAIN',
 }) => {
     const isColVisible = (key) => columnVisibility[key] !== false;
+    const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
+    const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
 
     // Calculate live consumption outputs for responsive display
     const calc = calculateRowConsumption(row);
@@ -162,23 +165,459 @@ const MeasurementRow = ({
                 </>
             )}
 
-            {/* --- RETURN SIZE (Supports Negative Values) --- */}
-            {isColVisible('returnSize') && (
+            {/* --- MEASUREMENTS (Shared: Rnft / Roman Sqft / Window / Qty) --- */}
+            {isColVisible('measurements') && (
                 <>
                     <MeasurementCell
                         type="number"
-                        value={row.curtainReturnLeft ?? ''}
-                        onChange={(val) => handleFieldChange('curtainReturnLeft', val)}
-                        allowNegative={true}
-                        placeholder="0"
+                        value={row.rnft ?? ''}
+                        onChange={(val) => handleFieldChange('rnft', val)}
+                        placeholder="—"
+                        min={0}
                     />
                     <MeasurementCell
                         type="number"
-                        value={row.curtainReturnRight ?? ''}
-                        onChange={(val) => handleFieldChange('curtainReturnRight', val)}
-                        allowNegative={true}
-                        placeholder="0"
+                        value={row.romanSqft ?? ''}
+                        onChange={(val) => handleFieldChange('romanSqft', val)}
+                        placeholder="—"
+                        min={0}
                     />
+                    <MeasurementCell
+                        type="text"
+                        align="center"
+                        value={row.windowId || row.label || ''}
+                        onChange={(val) => handleFieldChange('windowId', val)}
+                        placeholder="—"
+                    />
+                    <MeasurementCell
+                        type="number"
+                        align="center"
+                        value={row.qty ?? 1}
+                        onChange={(val) => handleFieldChange('qty', val)}
+                        min={1}
+                        placeholder="1"
+                    />
+                </>
+            )}
+
+            {/* ══════════════ CURTAIN ONLY ══════════════ */}
+            {isCurtain && (
+                <>
+                    {/* Track & Drop */}
+                    {isColVisible('trackDrop') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.trackWidth ?? row.outToOutWidth ?? ''}
+                                onChange={(val) => handleFieldChange('trackWidth', val)}
+                                placeholder="—"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.finishedDrop ?? row.outToOutHeight ?? ''}
+                                onChange={(val) => handleFieldChange('finishedDrop', val)}
+                                placeholder="—"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Fabric */}
+                    {isColVisible('fabric') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.fabricWidth ?? 138}
+                                onChange={(val) => handleFieldChange('fabricWidth', val)}
+                                placeholder="138"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.usableWidth ?? 136}
+                                onChange={(val) => handleFieldChange('usableWidth', val)}
+                                placeholder="136"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.verticalRepeat ?? 0}
+                                onChange={(val) => handleFieldChange('verticalRepeat', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Allowances (7 cols) */}
+                    {isColVisible('allowances') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.fullness ?? 2}
+                                onChange={(val) => handleFieldChange('fullness', val)}
+                                step="0.1"
+                                min={0}
+                                placeholder="2"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.leftReturn ?? row.curtainReturnLeft ?? 0.05}
+                                onChange={(val) => {
+                                    handleFieldChange('leftReturn', val);
+                                    handleFieldChange('curtainReturnLeft', val);
+                                }}
+                                step="0.01"
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.rightReturn ?? row.curtainReturnRight ?? 0}
+                                onChange={(val) => {
+                                    handleFieldChange('rightReturn', val);
+                                    handleFieldChange('curtainReturnRight', val);
+                                }}
+                                step="0.01"
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.centreOverlap ?? 0}
+                                onChange={(val) => handleFieldChange('centreOverlap', val)}
+                                step="0.01"
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.topAllowance ?? 0}
+                                onChange={(val) => handleFieldChange('topAllowance', val)}
+                                step="0.01"
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.bottomHem ?? 0.2}
+                                onChange={(val) => handleFieldChange('bottomHem', val)}
+                                step="0.01"
+                                placeholder="0.2"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastage ?? 0.05}
+                                onChange={(val) => handleFieldChange('wastage', val)}
+                                step="0.01"
+                                placeholder="0.05"
+                            />
+                        </>
+                    )}
+
+                    {/* Calculations (7 cols) */}
+                    {isColVisible('calculations') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.orderIncrement ?? 0.1}
+                                onChange={(val) => handleFieldChange('orderIncrement', val)}
+                                step="0.05"
+                                placeholder="0.1"
+                            />
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.pleatingByDesign ?? row.pleatByDesign ?? 'No'}
+                                onChange={(val) => {
+                                    handleFieldChange('pleatingByDesign', val);
+                                    handleFieldChange('pleatByDesign', val);
+                                }}
+                                options={['No', 'Yes']}
+                            />
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.fabricDirection ?? 'Normal'}
+                                onChange={(val) => handleFieldChange('fabricDirection', val)}
+                                options={['Normal', 'Railroaded']}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.autoSafety ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.effectiveWidth ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.flatFabricWidth ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.usableWidthApplied ?? 0}
+                                unit="m"
+                            />
+                        </>
+                    )}
+
+                    {/* Fabric Order (5 cols) */}
+                    {isColVisible('fabricOrder') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.numWidths ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.rawCutDrop ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.repeatCutDrop ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.rawMetres ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.netMetres ?? 0}
+                                unit="m"
+                            />
+                        </>
+                    )}
+
+                    {/* Flags (3 cols) */}
+                    {isColVisible('flags') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.orderMetres ?? 0}
+                                unit="m"
+                                className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.railroadCheck ?? '—'}
+                                className={calc.railroadCheck === 'Cannot railroad at this height' ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.cuttingInstruction || '—'}
+                            />
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* ══════════════ ROMAN BLIND ONLY ══════════════ */}
+            {isRoman && (
+                <>
+                    {/* Finished Size */}
+                    {isColVisible('rb_finishedSize') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.finishedBlindWidth ?? row.blindWidth ?? (row.outToOutWidth ? (Number(row.outToOutWidth) > 200 ? Math.round((Number(row.outToOutWidth) / 25.4) * 10) / 10 : row.outToOutWidth) : '')}
+                                onChange={(val) => {
+                                    handleFieldChange('finishedBlindWidth', val);
+                                    handleFieldChange('blindWidth', val);
+                                }}
+                                placeholder="—"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.finishedBlindDrop ?? row.blindDrop ?? (row.outToOutHeight ? (Number(row.outToOutHeight) > 200 ? Math.round((Number(row.outToOutHeight) / 25.4) * 10) / 10 : row.outToOutHeight) : '')}
+                                onChange={(val) => {
+                                    handleFieldChange('finishedBlindDrop', val);
+                                    handleFieldChange('blindDrop', val);
+                                }}
+                                placeholder="—"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Fabric */}
+                    {isColVisible('rb_fabric') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.fabricWidth ?? 54}
+                                onChange={(val) => handleFieldChange('fabricWidth', val)}
+                                placeholder="54"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.usableWidth ?? 52}
+                                onChange={(val) => handleFieldChange('usableWidth', val)}
+                                placeholder="52"
+                                min={0}
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.verticalRepeat ?? 0}
+                                onChange={(val) => handleFieldChange('verticalRepeat', val)}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </>
+                    )}
+
+                    {/* Allowances */}
+                    {isColVisible('rb_allowances') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.leftAllowance ?? 1.5}
+                                onChange={(val) => handleFieldChange('leftAllowance', val)}
+                                step="0.1"
+                                placeholder="1.5"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.rightAllowance ?? 1.5}
+                                onChange={(val) => handleFieldChange('rightAllowance', val)}
+                                step="0.1"
+                                placeholder="1.5"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.topAllowance ?? 2}
+                                onChange={(val) => handleFieldChange('topAllowance', val)}
+                                step="0.1"
+                                placeholder="2"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.bottomAllowance ?? 3}
+                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
+                                step="0.1"
+                                placeholder="3"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastage ?? 0.05}
+                                onChange={(val) => handleFieldChange('wastage', val)}
+                                step="0.01"
+                                placeholder="0.05"
+                            />
+                        </>
+                    )}
+
+                    {/* Calculations */}
+                    {isColVisible('rb_calculations') && (
+                        <>
+                            <MeasurementCell
+                                type="number"
+                                value={row.orderIncrement ?? 0.5}
+                                onChange={(val) => handleFieldChange('orderIncrement', val)}
+                                step="0.1"
+                                placeholder="0.5"
+                            />
+                            <MeasurementCell
+                                type="select"
+                                align="center"
+                                value={row.fabricDirection ?? 'Normal'}
+                                onChange={(val) => handleFieldChange('fabricDirection', val)}
+                                options={['Normal', 'Railroaded']}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.requiredCutWidth ?? 0}
+                                unit='"'
+                            />
+                        </>
+                    )}
+
+                    {/* Fabric Order */}
+                    {isColVisible('rb_fabricOrder') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.rawCutDrop ?? 0}
+                                unit='"'
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.repeatCutDrop ?? 0}
+                                unit='"'
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.railroadRunningWidth ? calc.railroadRunningWidth : '—'}
+                                unit={calc.railroadRunningWidth ? '"' : ''}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.numWidths ?? 0}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.rawMetres ?? 0}
+                                unit="m"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.netMetres ?? 0}
+                                unit="m"
+                            />
+                        </>
+                    )}
+
+                    {/* Flags */}
+                    {isColVisible('rb_flags') && (
+                        <>
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                value={calc.orderMetres ?? 0}
+                                unit="m"
+                                className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.railroadCheck ?? '—'}
+                                className={calc.railroadCheck === 'Cannot railroad at this height' ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
+                            />
+                            <MeasurementCell
+                                type="readonly"
+                                isCalculated
+                                align="center"
+                                value={calc.cuttingInstruction || '—'}
+                            />
+                        </>
+                    )}
                 </>
             )}
 
