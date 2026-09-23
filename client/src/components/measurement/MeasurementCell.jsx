@@ -107,7 +107,7 @@ const MeasurementCell = ({
     }
 
     // --- Readonly / Calculated Cell
-    if (type === 'readonly' || isCalculated) {
+    if ((type === 'readonly' || isCalculated) && !onChange) {
         let displayVal = value;
         if (value === null || value === undefined || value === '') displayVal = '—';
         else if (typeof value === 'number') {

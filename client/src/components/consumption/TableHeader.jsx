@@ -187,31 +187,17 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
               </th>
             )}
 
-            {/* Order Settings: Ordering Unit / Order Increment Required? / Order Increment / Min Order / Spare Rolls */}
-            {isColVisible('wp_orderSettings') && (
-              <th colSpan={5} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
-                ORDER SETTINGS
-              </th>
-            )}
-
-            {/* Calculations: Raw Cut Drop / Adj. Strip Length / Strips/Wall / Req. Strips / Strips/Roll */}
+            {/* Calculations: Raw Cut Drop / Repeat Adjusted Drop / Drops per Wall / Drops per Roll / Total Drops Required / Base Rolls Required / Wastage Adjusted Rolls / Final Rolls to Order */}
             {isColVisible('wp_calculations') && (
-              <th colSpan={5} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#785c48] dark:bg-slate-900/90">
+              <th colSpan={8} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#785c48] dark:bg-slate-900/90">
                 CALCULATIONS
               </th>
             )}
 
-            {/* Order Output: Req. Metres / Base Rolls / Final Order Metres / Final Order Rolls / Calc. Consumption / Final Order Qty / Order Unit */}
-            {isColVisible('wp_orderOutput') && (
-              <th colSpan={7} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6e5441] dark:bg-slate-900/80">
-                ORDER OUTPUT
-              </th>
-            )}
-
-            {/* Flags: Order Check / Cutting Instruction / Approx. Coverage Area / Notes */}
+            {/* Roll Order & Details: Roll Check / Order Rolls / Cutting Instruction / Approx. Coverage Area / Notes */}
             {isColVisible('wp_flags') && (
-              <th colSpan={4} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
-                FLAGS
+              <th colSpan={5} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
+                ROLL ORDER & DETAILS
               </th>
             )}
           </>
@@ -400,74 +386,54 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
             {/* Wall Info: Wall/Elevation / Qty / Wall Width / Wall Height */}
             {isColVisible('wp_wallInfo') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-left w-[130px] min-w-[130px]">Wall / Elevation</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[55px] min-w-[55px]">Qty</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Wall Width</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Wall Height</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-left w-[130px] min-w-[130px]">Wall / Elevation (text)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[55px] min-w-[55px]">Qty (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Wall Width (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Wall Height (in)</th>
               </>
             )}
 
             {/* Roll Specs: Roll Width / Roll Length / Vertical Repeat / Pattern Match */}
             {isColVisible('wp_rollSpecs') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]">Roll Width</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[90px] min-w-[90px]">Roll Width (in)</th>
                 <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Roll Length (m)</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Vertical Repeat</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[100px] min-w-[100px]">Pattern Match</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Vertical Repeat (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[110px] min-w-[110px]">Pattern Match (type)</th>
               </>
             )}
 
             {/* Allowances: Top / Bottom / Wastage */}
             {isColVisible('wp_allowances') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Top Allowance</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Bottom Allowance</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[75px] min-w-[75px]">Wastage</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Top Allowance (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Bottom Allowance (in)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]">Wastage (%)</th>
               </>
             )}
 
-            {/* Order Settings: Ordering Unit / Order Increment Required? / Order Increment / Min Order / Spare Rolls */}
-            {isColVisible('wp_orderSettings') && (
-              <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[100px] min-w-[100px]">Ordering Unit</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[115px] min-w-[115px]">Order Increment Req?</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Order Increment (m)</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Min. Order (m)</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[85px] min-w-[85px]">Spare Rolls</th>
-              </>
-            )}
-
-            {/* Calculations: Raw Cut Drop / Adj. Strip Length / Strips per Wall / Required Strips / Strips per Roll */}
+            {/* Calculations: Raw Cut Drop / Repeat Adjusted Drop / Drops per Wall / Drops per Roll / Total Drops Required / Base Rolls Required / Wastage Adjusted Rolls / Final Rolls to Order */}
             {isColVisible('wp_calculations') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Raw Cut Drop</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[115px] min-w-[115px]">Adj. Strip Length</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Strips / Wall</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Req. Strips</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Strips / Roll</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Raw Cut Drop (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[130px] min-w-[130px]">Repeat Adjusted Drop (in)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Drops per Wall (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Drops per Roll (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[130px] min-w-[130px]">Total Drops Required (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[125px] min-w-[125px]">Base Rolls Required (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[140px] min-w-[140px]">Wastage Adjusted Rolls (no.)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-right w-[130px] min-w-[130px]">Final Rolls to Order (no.)</th>
               </>
             )}
 
-            {/* Order Output: Req. Metres / Base Rolls / Final Order Metres / Final Order Rolls / Calc. Consumption / Final Order Qty / Order Unit */}
-            {isColVisible('wp_orderOutput') && (
-              <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[95px] min-w-[95px]">Req. Metres</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Base Rolls Req.</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[110px] min-w-[110px]">Final Order Metres</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Final Order Rolls</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[120px] min-w-[120px]">Calc. Consumption</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[105px] min-w-[105px]">Final Order Qty</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-center w-[85px] min-w-[85px]">Order Unit</th>
-              </>
-            )}
-
-            {/* Flags: Order Check / Cutting Instruction / Approx. Coverage Area / Notes */}
+            {/* Roll Order & Details: Roll Check / Order Rolls / Cutting Instruction / Approx. Coverage Area / Notes */}
             {isColVisible('wp_flags') && (
               <>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[95px] min-w-[95px]">Order Check</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[115px] min-w-[115px]">Cutting Instruction</th>
-                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[120px] min-w-[120px]">Approx. Coverage Area</th>
-                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-left w-[120px] min-w-[120px]">Notes</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-center w-[110px] min-w-[110px]">Roll Check (status)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[100px] min-w-[100px]">Order Rolls (no.)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-left w-[220px] min-w-[220px]">Cutting Instruction (text)</th>
+                <th className="border-r border-amber-700/30 dark:border-slate-800 px-2 py-1 text-right w-[140px] min-w-[140px]">Approx. Coverage Area (sq ft)</th>
+                <th className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1 text-left w-[140px] min-w-[140px]">Notes (text)</th>
               </>
             )}
           </>

@@ -141,13 +141,39 @@ const EMPTY_ROMAN = {
 
 const EMPTY_WALLPAPER = {
     valid: false,
-    rawCutDrop: 0, adjustedStripLength: 0, stripsPerWall: 0,
-    requiredStrips: 0, stripsPerRoll: 0, requiredMetres: 0,
-    baseRolls: 0, finalOrderMetres: 0, finalOrderRolls: 0,
-    finalOrderQuantity: 0, orderUnit: 'Metres',
-    orderCheck: '—', cuttingInstruction: '',
+    rawCutDrop: 0,
+    repeatAdjustedDrop: 0,
+    adjustedStripLength: 0,
+    dropsPerWall: 0,
+    stripsPerWall: 0,
+    dropsPerRoll: 0,
+    stripsPerRoll: 0,
+    totalDropsRequired: 0,
+    requiredStrips: 0,
+    baseRollsRequired: 0,
+    baseRolls: 0,
+    wastageAdjustedRolls: 0,
+    finalRollsToOrder: 0,
+    finalOrderRolls: 0,
+    rollCheck: '—',
+    orderCheck: '—',
+    orderRolls: 0,
+    finalOrderQuantity: 0,
+    cuttingInstruction: '',
+    approxCoverageArea: 0,
+    orderUnit: 'rolls',
     // backward-compat aliases
-    heightPerPartM: 0, roundedParts: 0, fabricMeters: 0, blackoutMeters: 0, romanSqft: 0,
+    requiredMetres: 0,
+    finalOrderMetres: 0,
+    heightPerPartM: 0,
+    roundedParts: 0,
+    fabricMeters: 0,
+    blackoutMeters: 0,
+    romanSqft: 0,
+    rnft: 0,
+    orderMetres: 0,
+    numWidths: 0,
+    netMetres: 0,
 };
 
 // ─── 1. CURTAIN CALCULATOR ─────────────────────────────────────────────────────
@@ -183,7 +209,19 @@ export function calculateCurtainConsumption(row = {}) {
         ? Number(row.finishedDrop)
         : Number(row.outToOutHeight ?? row.o2oHeight ?? row.frameToFrameHeight ?? row.f2fHeight ?? row.confirmedHeight ?? row.height);
 
-    if (!Number.isFinite(rawTrackWidth) || rawTrackWidth <= 0 || !Number.isFinite(rawFinishedDrop) || rawFinishedDrop <= 0) {
+    const hasManualInputs = (
+        (row.effectiveWidth !== undefined && row.effectiveWidth !== '' && row.effectiveWidth !== null) ||
+        (row.flatFabricWidth !== undefined && row.flatFabricWidth !== '' && row.flatFabricWidth !== null) ||
+        (row.usableWidthApplied !== undefined && row.usableWidthApplied !== '' && row.usableWidthApplied !== null) ||
+        (row.numWidths !== undefined && row.numWidths !== '' && row.numWidths !== null) ||
+        (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null) ||
+        (row.repeatCutDrop !== undefined && row.repeatCutDrop !== '' && row.repeatCutDrop !== null) ||
+        (row.rawMetres !== undefined && row.rawMetres !== '' && row.rawMetres !== null) ||
+        (row.netMetres !== undefined && row.netMetres !== '' && row.netMetres !== null) ||
+        (row.orderMetres !== undefined && row.orderMetres !== '' && row.orderMetres !== null)
+    );
+
+    if (!hasManualInputs && (!Number.isFinite(rawTrackWidth) || rawTrackWidth <= 0 || !Number.isFinite(rawFinishedDrop) || rawFinishedDrop <= 0)) {
         return EMPTY_CURTAIN;
     }
 
@@ -236,28 +274,42 @@ export function calculateCurtainConsumption(row = {}) {
     const autoSafety = normalizeAllowance(row.autoSafety);
 
     // Effective Width (m)
-    const effectiveWidth = trackWidthM + leftReturn + rightReturn + centreOverlap + autoSafety;
+    const effectiveWidth = (row.effectiveWidth !== undefined && row.effectiveWidth !== '' && row.effectiveWidth !== null)
+        ? Number(row.effectiveWidth)
+        : trackWidthM + leftReturn + rightReturn + centreOverlap + autoSafety;
 
     // Flat Fabric Width (m)
-    const flatFabricWidth = effectiveWidth * fullness;
+    const flatFabricWidth = (row.flatFabricWidth !== undefined && row.flatFabricWidth !== '' && row.flatFabricWidth !== null)
+        ? Number(row.flatFabricWidth)
+        : effectiveWidth * fullness;
 
     // Usable Width Applied (m)
-    const usableWidthApplied = usableWidthM > 0 ? usableWidthM : fabricWidthM;
+    const usableWidthApplied = (row.usableWidthApplied !== undefined && row.usableWidthApplied !== '' && row.usableWidthApplied !== null)
+        ? Number(row.usableWidthApplied)
+        : (usableWidthM > 0 ? usableWidthM : fabricWidthM);
 
     // Number of Widths: ROUND to nearest integer
     const pleatMult = pleatByDesign ? 1.2 : 1;
     const rawWidths = (flatFabricWidth / usableWidthApplied) * pleatMult;
-    const numWidths = Math.round(rawWidths);
+    const numWidths = (row.numWidths !== undefined && row.numWidths !== '' && row.numWidths !== null)
+        ? Number(row.numWidths)
+        : Math.round(rawWidths);
 
     // Raw Cut Drop (m)
-    const rawCutDrop = finishedDropM + topAllowance + bottomHem;
+    const rawCutDrop = (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null)
+        ? Number(row.rawCutDrop)
+        : finishedDropM + topAllowance + bottomHem;
 
     // Repeat-Adjusted Cut Drop (m)
-    const repeatCutDrop = verticalRepeatM > 0 ? ceiling(rawCutDrop / verticalRepeatM) * verticalRepeatM : rawCutDrop;
+    const repeatCutDrop = (row.repeatCutDrop !== undefined && row.repeatCutDrop !== '' && row.repeatCutDrop !== null)
+        ? Number(row.repeatCutDrop)
+        : (verticalRepeatM > 0 ? ceiling(rawCutDrop / verticalRepeatM) * verticalRepeatM : rawCutDrop);
 
     // Railroad Check
-    let railroadCheck = 'Not applicable';
-    if (isRailroaded) {
+    let railroadCheck = (row.railroadCheck !== undefined && row.railroadCheck !== '' && row.railroadCheck !== null)
+        ? row.railroadCheck
+        : 'Not applicable';
+    if (isRailroaded && !(row.railroadCheck !== undefined && row.railroadCheck !== '' && row.railroadCheck !== null)) {
         railroadCheck = repeatCutDrop <= usableWidthApplied
             ? 'OK to railroad'
             : 'Cannot railroad at this height';
@@ -265,7 +317,9 @@ export function calculateCurtainConsumption(row = {}) {
 
     // Raw Metres
     let rawMetres = 0;
-    if (isRailroaded) {
+    if (row.rawMetres !== undefined && row.rawMetres !== '' && row.rawMetres !== null) {
+        rawMetres = Number(row.rawMetres);
+    } else if (isRailroaded) {
         if (repeatCutDrop <= usableWidthApplied) {
             rawMetres = flatFabricWidth * pleatMult * qty;
         }
@@ -274,15 +328,21 @@ export function calculateCurtainConsumption(row = {}) {
     }
 
     // Net Metres
-    const netMetres = rawMetres * (1 + wastage);
+    const netMetres = (row.netMetres !== undefined && row.netMetres !== '' && row.netMetres !== null)
+        ? Number(row.netMetres)
+        : rawMetres * (1 + wastage);
 
     // Order Metres: CEILING(netMetres / orderIncrement) * orderIncrement
-    const orderMetres = orderIncrement > 0
-        ? ceiling(netMetres / orderIncrement) * orderIncrement
-        : round(netMetres, 2);
+    const orderMetres = (row.orderMetres !== undefined && row.orderMetres !== '' && row.orderMetres !== null)
+        ? Number(row.orderMetres)
+        : (orderIncrement > 0
+            ? ceiling(netMetres / orderIncrement) * orderIncrement
+            : round(netMetres, 2));
 
     // Cutting Instruction
-    const cuttingInstruction = `${numWidths} width(s) × ${round(repeatCutDrop, 2)}m drop × ${qty} set(s)`;
+    const cuttingInstruction = (row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' && row.cuttingInstruction !== null)
+        ? row.cuttingInstruction
+        : `${numWidths} width(s) × ${round(repeatCutDrop, 2)}m drop × ${qty} set(s)`;
 
     return {
         valid: true,
@@ -418,8 +478,10 @@ export function calculateRomanBlindConsumption(row = {}) {
             : 0);
 
     // Railroad Check (AL12: IF(R12="","",IF(AC12="Railroaded",IF(AE12<=U12,"OK to railroad","Cannot railroad at this height"),"Not applicable")))
-    let railroadCheck = 'Not applicable';
-    if (isRailroaded) {
+    let railroadCheck = (row.railroadCheck !== undefined && row.railroadCheck !== '' && row.railroadCheck !== null)
+        ? row.railroadCheck
+        : 'Not applicable';
+    if (isRailroaded && !(row.railroadCheck !== undefined && row.railroadCheck !== '' && row.railroadCheck !== null)) {
         railroadCheck = rawCutDrop <= usableWidthApplied
             ? 'OK to railroad'
             : 'Cannot railroad at this height';
@@ -450,15 +512,17 @@ export function calculateRomanBlindConsumption(row = {}) {
             : round(netMetres, 2));
 
     // Cutting Instruction (AM12)
-    const cuttingInstruction = romanInstruction({
-        isRailroaded,
-        rawCutDrop,
-        usableWidthApplied,
-        railroadRunningWidth,
-        numWidths,
-        repeatCutDrop,
-        qty,
-    });
+    const cuttingInstruction = (row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' && row.cuttingInstruction !== null)
+        ? row.cuttingInstruction
+        : romanInstruction({
+            isRailroaded,
+            rawCutDrop,
+            usableWidthApplied,
+            railroadRunningWidth,
+            numWidths,
+            repeatCutDrop,
+            qty,
+        });
 
     return {
         valid: true,
@@ -517,127 +581,179 @@ export function calculateWallpaperConsumption(row = {}) {
     const wallHeightInch = Number.isFinite(rawWallHeight) ? rawWallHeight : 0;
 
     const rollWidthInch = Number(row.rollWidth) || 21;
-    const rollLengthMetres = Number(row.rollLength) || 10.05; // metres per doc
+    const rollLengthMetres = Number(row.rollLength) || 10.05; // metres per sheet
     const verticalRepeat = Number(row.verticalRepeat) || 0;
-    const patternMatch = String(row.patternMatch || 'None');
-    const topAllowance = Number(row.topAllowance) || 0;
-    const bottomAllowance = Number(row.bottomAllowance) || 0;
-    const wastage = Number(row.wastage) || 0;
-    const orderingUnit = String(row.orderingUnit || 'Metres');
-    const orderIncrRequired = String(row.orderIncrementRequired || 'No').toLowerCase() === 'yes';
-    const orderIncrement = Number(row.orderIncrement) || 0.5;
-    const minimumOrder = Number(row.minimumOrder) || 0;
-    const spareRolls = Number(row.spareRolls) || 0;
+    const patternMatch = String(row.patternMatch || 'Straight');
+    const topAllowance = row.topAllowance !== undefined && row.topAllowance !== '' ? Number(row.topAllowance) : 2;
+    const bottomAllowance = row.bottomAllowance !== undefined && row.bottomAllowance !== '' ? Number(row.bottomAllowance) : 2;
+    const rawWastage = row.wastage !== undefined && row.wastage !== '' ? Number(row.wastage) : 0.05;
+    const wastageRate = Number.isFinite(rawWastage) ? (rawWastage > 1 ? rawWastage / 100 : rawWastage) : 0.05;
 
-    if (wallWidthInch <= 0 || wallHeightInch <= 0 || rollWidthInch <= 0 || rollLengthMetres <= 0) {
-        return { ...EMPTY_WALLPAPER, orderUnit: orderingUnit };
+    const hasManualInputs = (
+        (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null) ||
+        (row.repeatAdjustedDrop !== undefined && row.repeatAdjustedDrop !== '' && row.repeatAdjustedDrop !== null) ||
+        (row.adjustedStripLength !== undefined && row.adjustedStripLength !== '' && row.adjustedStripLength !== null) ||
+        (row.dropsPerWall !== undefined && row.dropsPerWall !== '' && row.dropsPerWall !== null) ||
+        (row.stripsPerWall !== undefined && row.stripsPerWall !== '' && row.stripsPerWall !== null) ||
+        (row.dropsPerRoll !== undefined && row.dropsPerRoll !== '' && row.dropsPerRoll !== null) ||
+        (row.stripsPerRoll !== undefined && row.stripsPerRoll !== '' && row.stripsPerRoll !== null) ||
+        (row.totalDropsRequired !== undefined && row.totalDropsRequired !== '' && row.totalDropsRequired !== null) ||
+        (row.requiredStrips !== undefined && row.requiredStrips !== '' && row.requiredStrips !== null) ||
+        (row.baseRollsRequired !== undefined && row.baseRollsRequired !== '' && row.baseRollsRequired !== null) ||
+        (row.baseRolls !== undefined && row.baseRolls !== '' && row.baseRolls !== null) ||
+        (row.wastageAdjustedRolls !== undefined && row.wastageAdjustedRolls !== '' && row.wastageAdjustedRolls !== null) ||
+        (row.finalRollsToOrder !== undefined && row.finalRollsToOrder !== '' && row.finalRollsToOrder !== null) ||
+        (row.finalOrderRolls !== undefined && row.finalOrderRolls !== '' && row.finalOrderRolls !== null) ||
+        (row.orderRolls !== undefined && row.orderRolls !== '' && row.orderRolls !== null) ||
+        (row.approxCoverageArea !== undefined && row.approxCoverageArea !== '' && row.approxCoverageArea !== null)
+    );
+
+    if (!hasManualInputs && (wallWidthInch <= 0 || wallHeightInch <= 0 || rollWidthInch <= 0 || rollLengthMetres <= 0)) {
+        return { ...EMPTY_WALLPAPER };
     }
 
-    // S : Raw Cut Drop
-    const rawCutDrop = wallHeightInch + topAllowance + bottomAllowance;
+    // 12. Raw Cut Drop (in): Wall Height + Top Allowance + Bottom Allowance
+    const rawCutDrop = (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null)
+        ? Number(row.rawCutDrop)
+        : wallHeightInch + topAllowance + bottomAllowance;
 
-    // T : Adjusted Strip Length (pattern-aware)
-    let adjustedStripLength = rawCutDrop;
-    if (verticalRepeat > 0) {
+    // 13. Repeat Adjusted Drop (in): pattern-aware repeat adjustment
+    let repeatAdjustedDrop = rawCutDrop;
+    if (row.repeatAdjustedDrop !== undefined && row.repeatAdjustedDrop !== '' && row.repeatAdjustedDrop !== null) {
+        repeatAdjustedDrop = Number(row.repeatAdjustedDrop);
+    } else if (row.adjustedStripLength !== undefined && row.adjustedStripLength !== '' && row.adjustedStripLength !== null) {
+        repeatAdjustedDrop = Number(row.adjustedStripLength);
+    } else if (verticalRepeat > 0) {
         const pm = patternMatch.toLowerCase().trim();
-        // Only 'Straight' and 'Half Drop' patterns require repeat adjustment
-        if (pm === 'straight' || pm === 'half drop') {
-            adjustedStripLength = ceiling(rawCutDrop / verticalRepeat) * verticalRepeat;
+        if (pm === 'none' || pm === 'random' || pm === 'none / random') {
+            repeatAdjustedDrop = rawCutDrop;
+        } else if (pm === 'half drop') {
+            repeatAdjustedDrop = ceiling(rawCutDrop / verticalRepeat, 1) * verticalRepeat + (verticalRepeat / 2);
+        } else {
+            // 'Straight' or default pattern match
+            repeatAdjustedDrop = ceiling(rawCutDrop / verticalRepeat, 1) * verticalRepeat;
         }
-        // 'None' and 'Random' → no adjustment
     }
 
-    // U : Strips per Wall: CEILING(wallWidth / rollWidth)
-    const stripsPerWall = Math.ceil(wallWidthInch / rollWidthInch);
+    // 14. Drops per Wall (no.): CEILING(Wall Width / Roll Width)
+    const dropsPerWall = (row.dropsPerWall !== undefined && row.dropsPerWall !== '' && row.dropsPerWall !== null)
+        ? Number(row.dropsPerWall)
+        : (row.stripsPerWall !== undefined && row.stripsPerWall !== '' && row.stripsPerWall !== null
+            ? Number(row.stripsPerWall)
+            : Math.ceil(wallWidthInch / rollWidthInch));
 
-    // V : Required Strips (all walls combined)
-    const requiredStrips = stripsPerWall * qty;
+    // 15. Drops per Roll (no.): FLOOR((Roll Length (m) * 39.37007874) / Repeat Adjusted Drop)
+    const rollLengthInches = rollLengthMetres * 39.37007874;
+    const dropsPerRoll = (row.dropsPerRoll !== undefined && row.dropsPerRoll !== '' && row.dropsPerRoll !== null)
+        ? Number(row.dropsPerRoll)
+        : (row.stripsPerRoll !== undefined && row.stripsPerRoll !== '' && row.stripsPerRoll !== null
+            ? Number(row.stripsPerRoll)
+            : (repeatAdjustedDrop > 0 ? Math.floor(rollLengthInches / repeatAdjustedDrop) : 0));
 
-    // Convert roll length to inches for strips-per-roll calculation
-    const rollLengthInches = rollLengthMetres * METRE_TO_INCH;
+    // 16. Total Drops Required (no.): Drops per Wall * Qty
+    const totalDropsRequired = (row.totalDropsRequired !== undefined && row.totalDropsRequired !== '' && row.totalDropsRequired !== null)
+        ? Number(row.totalDropsRequired)
+        : (row.requiredStrips !== undefined && row.requiredStrips !== '' && row.requiredStrips !== null
+            ? Number(row.requiredStrips)
+            : dropsPerWall * qty);
 
-    // W : Strips per Roll: FLOOR(rollLengthInches / adjustedStripLength)
-    const stripsPerRoll = adjustedStripLength > 0
-        ? floorTo(rollLengthInches / adjustedStripLength, 1)
-        : 0;
-
-    if (stripsPerRoll <= 0) {
+    if (dropsPerRoll <= 0 && !hasManualInputs) {
         return {
             ...EMPTY_WALLPAPER,
-            valid: true, // inputs are valid but roll is too short
+            valid: true,
             rawCutDrop: round(rawCutDrop, 2),
-            adjustedStripLength: round(adjustedStripLength, 2),
-            stripsPerWall,
-            requiredStrips,
+            repeatAdjustedDrop: round(repeatAdjustedDrop, 2),
+            adjustedStripLength: round(repeatAdjustedDrop, 2),
+            dropsPerWall,
+            stripsPerWall: dropsPerWall,
+            dropsPerRoll: 0,
             stripsPerRoll: 0,
-            orderUnit: orderingUnit,
-            orderCheck: 'Roll too short for one full strip : check strip length vs roll length',
+            totalDropsRequired,
+            requiredStrips: totalDropsRequired,
+            rollCheck: 'ERROR: Full strip cannot fit within roll',
+            orderCheck: 'ERROR: Full strip cannot fit within roll',
+            cuttingInstruction: 'ERROR: Full strip cannot fit within roll',
+            approxCoverageArea: round((wallWidthInch * wallHeightInch * qty) / 144, 2),
         };
     }
 
-    // X : Required Metres (base, before wastage)
-    const baseRequiredMetres = (requiredStrips / stripsPerRoll) * rollLengthMetres;
+    // 17. Base Rolls Required (no.): ROUNDUP(Total Drops Required / Drops per Roll, 0)
+    const baseRollsRequired = (row.baseRollsRequired !== undefined && row.baseRollsRequired !== '' && row.baseRollsRequired !== null)
+        ? Number(row.baseRollsRequired)
+        : (row.baseRolls !== undefined && row.baseRolls !== '' && row.baseRolls !== null
+            ? Number(row.baseRolls)
+            : (dropsPerRoll > 0 ? Math.ceil(totalDropsRequired / dropsPerRoll) : 0));
 
-    // Apply wastage
-    const requiredMetres = baseRequiredMetres * (1 + wastage);
+    // 18. Wastage Adjusted Rolls (no.): ROUNDUP(Base Rolls Required * (1 + Wastage), 0)
+    const wastageAdjustedRolls = (row.wastageAdjustedRolls !== undefined && row.wastageAdjustedRolls !== '' && row.wastageAdjustedRolls !== null)
+        ? Number(row.wastageAdjustedRolls)
+        : Math.ceil(baseRollsRequired * (1 + wastageRate));
 
-    // Y : Base Rolls
-    const baseRolls = Math.ceil(requiredStrips / stripsPerRoll);
+    // 19. Final Rolls to Order (no.)
+    const finalRollsToOrder = (row.finalRollsToOrder !== undefined && row.finalRollsToOrder !== '' && row.finalRollsToOrder !== null)
+        ? Number(row.finalRollsToOrder)
+        : (row.finalOrderRolls !== undefined && row.finalOrderRolls !== '' && row.finalOrderRolls !== null
+            ? Number(row.finalOrderRolls)
+            : wastageAdjustedRolls);
 
-    // Z / [ : Final Order Quantity
-    let finalOrderMetres = 0;
-    let finalOrderRolls = 0;
-    let orderCheck = 'OK';
+    // 20. Roll Check (status)
+    const rollCheck = (row.rollCheck !== undefined && row.rollCheck !== '' && row.rollCheck !== null)
+        ? row.rollCheck
+        : (row.orderCheck !== undefined && row.orderCheck !== '' && row.orderCheck !== null
+            ? row.orderCheck
+            : (dropsPerRoll <= 0 && rollLengthMetres > 0 ? 'ERROR: Full strip cannot fit within roll' : 'OK'));
 
-    if (orderingUnit.toLowerCase() === 'rolls') {
-        // Ordering by Rolls: base rolls + spare rolls
-        finalOrderRolls = baseRolls + spareRolls;
-        orderCheck = stripsPerRoll >= 1 ? 'OK' : 'Roll too short for one strip';
-    } else {
-        // Ordering by Metres
-        if (orderIncrRequired) {
-            const rounded = ceiling(requiredMetres / orderIncrement) * orderIncrement;
-            finalOrderMetres = minimumOrder > 0 ? Math.max(minimumOrder, rounded) : rounded;
-            if (minimumOrder > 0 && requiredMetres < minimumOrder) {
-                orderCheck = `Minimum order applied (${minimumOrder}m)`;
-            }
-        } else {
-            finalOrderMetres = round(requiredMetres, 2);
-        }
-    }
+    // 21. Order Rolls (no.)
+    const orderRolls = (row.orderRolls !== undefined && row.orderRolls !== '' && row.orderRolls !== null)
+        ? Number(row.orderRolls)
+        : finalRollsToOrder;
 
-    const finalOrderQuantity = orderingUnit.toLowerCase() === 'rolls'
-        ? finalOrderRolls
-        : finalOrderMetres;
+    // 22. Cutting Instruction (text)
+    // Excel formula: dropsPerWall & " drop(s) per wall x " & ROUND(rawCutDrop, 0) & " in cut drop; " & dropsPerRoll & " drops/roll; order " & orderRolls & " roll(s)"
+    const cuttingInstruction = (row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' && row.cuttingInstruction !== null)
+        ? row.cuttingInstruction
+        : `${dropsPerWall} drop(s) per wall x ${round(rawCutDrop, 0)} in cut drop; ${dropsPerRoll} drops/roll; order ${orderRolls} roll(s)`;
 
-    // Cutting Instruction
-    const cuttingInstruction = wallpaperInstruction({ requiredStrips, adjustedStripLength, qty });
+    // 23. Approx. Coverage Area (sq ft): Wall Width * Wall Height * Qty / 144
+    const approxCoverageArea = (row.approxCoverageArea !== undefined && row.approxCoverageArea !== '' && row.approxCoverageArea !== null)
+        ? Number(row.approxCoverageArea)
+        : round((wallWidthInch * wallHeightInch * qty) / 144, 2);
 
     return {
         valid: true,
         rawCutDrop: round(rawCutDrop, 2),
-        adjustedStripLength: round(adjustedStripLength, 2),
-        stripsPerWall,
-        requiredStrips,
-        stripsPerRoll: Math.floor(stripsPerRoll),
-        requiredMetres: round(requiredMetres, 3),
-        baseRolls,
-        finalOrderMetres: round(finalOrderMetres, 2),
-        finalOrderRolls,
-        finalOrderQuantity: round(finalOrderQuantity, 2),
-        orderUnit: orderingUnit,
-        orderCheck,
+        repeatAdjustedDrop: round(repeatAdjustedDrop, 2),
+        adjustedStripLength: round(repeatAdjustedDrop, 2), // alias
+        dropsPerWall,
+        stripsPerWall: dropsPerWall, // alias
+        dropsPerRoll,
+        stripsPerRoll: dropsPerRoll, // alias
+        totalDropsRequired,
+        requiredStrips: totalDropsRequired, // alias
+        baseRollsRequired,
+        baseRolls: baseRollsRequired, // alias
+        wastageAdjustedRolls,
+        finalRollsToOrder,
+        finalOrderRolls: finalRollsToOrder, // alias
+        rollCheck,
+        orderCheck: rollCheck, // alias
+        orderRolls,
+        finalOrderQuantity: orderRolls, // alias
         cuttingInstruction,
+        approxCoverageArea,
+        orderUnit: 'rolls',
         // backward-compat aliases
-        heightPerPartM: round(adjustedStripLength * INCH_TO_METRE, 2),
-        roundedParts: stripsPerWall,
-        fabricMeters: orderingUnit.toLowerCase() !== 'rolls' ? round(finalOrderMetres, 2) : 0,
+        requiredMetres: 0,
+        finalOrderMetres: 0,
+        heightPerPartM: round(repeatAdjustedDrop * INCH_TO_METRE, 2),
+        roundedParts: dropsPerWall,
+        fabricMeters: 0,
         blackoutMeters: 0,
-        romanSqft: 0,
+        romanSqft: approxCoverageArea,
         rnft: 0,
-        orderMetres: orderingUnit.toLowerCase() !== 'rolls' ? round(finalOrderMetres, 2) : 0,
-        numWidths: stripsPerWall,
-        netMetres: round(requiredMetres, 3),
+        orderMetres: 0,
+        numWidths: dropsPerWall,
+        netMetres: 0,
     };
 }
 

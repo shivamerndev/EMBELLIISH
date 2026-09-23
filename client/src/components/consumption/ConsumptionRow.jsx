@@ -357,21 +357,30 @@ const MeasurementRow = ({
                                 placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.effectiveWidth ?? 0}
+                                type="number"
+                                value={row.effectiveWidth !== undefined && row.effectiveWidth !== '' ? row.effectiveWidth : (calc.effectiveWidth ?? 0)}
+                                onChange={(val) => handleFieldChange('effectiveWidth', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.flatFabricWidth ?? 0}
+                                type="number"
+                                value={row.flatFabricWidth !== undefined && row.flatFabricWidth !== '' ? row.flatFabricWidth : (calc.flatFabricWidth ?? 0)}
+                                onChange={(val) => handleFieldChange('flatFabricWidth', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.usableWidthApplied ?? 0}
+                                type="number"
+                                value={row.usableWidthApplied !== undefined && row.usableWidthApplied !== '' ? row.usableWidthApplied : (calc.usableWidthApplied ?? 0)}
+                                onChange={(val) => handleFieldChange('usableWidthApplied', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                         </>
@@ -381,32 +390,47 @@ const MeasurementRow = ({
                     {isColVisible('fabricOrder') && (
                         <>
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.numWidths ?? 0}
+                                type="number"
+                                value={row.numWidths !== undefined && row.numWidths !== '' ? row.numWidths : (calc.numWidths ?? 0)}
+                                onChange={(val) => handleFieldChange('numWidths', val)}
+                                step="1"
+                                min={0}
+                                placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.rawCutDrop ?? 0}
+                                type="number"
+                                value={row.rawCutDrop !== undefined && row.rawCutDrop !== '' ? row.rawCutDrop : (calc.rawCutDrop ?? 0)}
+                                onChange={(val) => handleFieldChange('rawCutDrop', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.repeatCutDrop ?? 0}
+                                type="number"
+                                value={row.repeatCutDrop !== undefined && row.repeatCutDrop !== '' ? row.repeatCutDrop : (calc.repeatCutDrop ?? 0)}
+                                onChange={(val) => handleFieldChange('repeatCutDrop', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.rawMetres ?? 0}
+                                type="number"
+                                value={row.rawMetres !== undefined && row.rawMetres !== '' ? row.rawMetres : (calc.rawMetres ?? 0)}
+                                onChange={(val) => handleFieldChange('rawMetres', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.netMetres ?? 0}
+                                type="number"
+                                value={row.netMetres !== undefined && row.netMetres !== '' ? row.netMetres : (calc.netMetres ?? 0)}
+                                onChange={(val) => handleFieldChange('netMetres', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                             />
                         </>
@@ -416,24 +440,29 @@ const MeasurementRow = ({
                     {isColVisible('flags') && (
                         <>
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.orderMetres ?? 0}
+                                type="number"
+                                value={row.orderMetres !== undefined && row.orderMetres !== '' ? row.orderMetres : (calc.orderMetres ?? 0)}
+                                onChange={(val) => handleFieldChange('orderMetres', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 unit="m"
                                 className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="select"
                                 align="center"
-                                value={calc.railroadCheck ?? '—'}
-                                className={calc.railroadCheck === 'Cannot railroad at this height' ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
+                                value={row.railroadCheck ?? calc.railroadCheck ?? '—'}
+                                onChange={(val) => handleFieldChange('railroadCheck', val)}
+                                options={['Not applicable', 'OK to railroad', 'Cannot railroad at this height', '—']}
+                                className={((row.railroadCheck ?? calc.railroadCheck) === 'Cannot railroad at this height') ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="text"
                                 align="center"
-                                value={calc.cuttingInstruction || '—'}
+                                value={row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' ? row.cuttingInstruction : (calc.cuttingInstruction || '—')}
+                                onChange={(val) => handleFieldChange('cuttingInstruction', val)}
+                                placeholder="—"
                             />
                         </>
                     )}
@@ -617,23 +646,28 @@ const MeasurementRow = ({
                     {isColVisible('rb_flags') && (
                         <>
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.orderMetres ?? 0}
+                                type="number"
+                                value={row.orderMetres !== undefined && row.orderMetres !== '' ? row.orderMetres : (calc.orderMetres ?? 0)}
+                                onChange={(val) => handleFieldChange('orderMetres', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
                                 className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="select"
                                 align="center"
-                                value={calc.railroadCheck ?? '—'}
-                                className={calc.railroadCheck === 'Cannot railroad at this height' ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
+                                value={row.railroadCheck ?? calc.railroadCheck ?? '—'}
+                                onChange={(val) => handleFieldChange('railroadCheck', val)}
+                                options={['Not applicable', 'OK to railroad', 'Cannot railroad at this height', '—']}
+                                className={((row.railroadCheck ?? calc.railroadCheck) === 'Cannot railroad at this height') ? 'text-rose-600 dark:text-rose-400 font-semibold' : ''}
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="text"
                                 align="center"
-                                value={calc.cuttingInstruction || '—'}
+                                value={row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' ? row.cuttingInstruction : (calc.cuttingInstruction || '—')}
+                                onChange={(val) => handleFieldChange('cuttingInstruction', val)}
+                                placeholder="—"
                             />
                         </>
                     )}
@@ -706,9 +740,9 @@ const MeasurementRow = ({
                             <MeasurementCell
                                 type="select"
                                 align="center"
-                                value={row.patternMatch || 'None'}
+                                value={row.patternMatch || 'Straight'}
                                 onChange={(val) => handleFieldChange('patternMatch', val)}
-                                options={['None', 'Random', 'Straight', 'Half Drop']}
+                                options={['Straight', 'Half Drop', 'None', 'Random']}
                             />
                         </>
                     )}
@@ -718,168 +752,137 @@ const MeasurementRow = ({
                         <>
                             <MeasurementCell
                                 type="number"
-                                value={row.topAllowance ?? 0}
+                                value={row.topAllowance ?? 2}
                                 onChange={(val) => handleFieldChange('topAllowance', val)}
-                                placeholder="0"
-                                min={0}
-                                step="0.1"
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.bottomAllowance ?? 0}
-                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
-                                placeholder="0"
-                                min={0}
-                                step="0.1"
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.wastage ?? 0}
-                                onChange={(val) => handleFieldChange('wastage', val)}
-                                placeholder="0"
-                                min={0}
-                                step="0.01"
-                            />
-                        </>
-                    )}
-
-                    {/* Order Settings */}
-                    {isColVisible('wp_orderSettings') && (
-                        <>
-                            <MeasurementCell
-                                type="select"
-                                align="center"
-                                value={row.orderingUnit || 'Metres'}
-                                onChange={(val) => handleFieldChange('orderingUnit', val)}
-                                options={['Metres', 'Rolls']}
-                            />
-                            <MeasurementCell
-                                type="select"
-                                align="center"
-                                value={row.orderIncrementRequired || 'No'}
-                                onChange={(val) => handleFieldChange('orderIncrementRequired', val)}
-                                options={['No', 'Yes']}
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.orderIncrement ?? 0.5}
-                                onChange={(val) => handleFieldChange('orderIncrement', val)}
-                                placeholder="0.5"
-                                min={0}
-                                step="0.1"
-                            />
-                            <MeasurementCell
-                                type="number"
-                                value={row.minimumOrder ?? 0}
-                                onChange={(val) => handleFieldChange('minimumOrder', val)}
-                                placeholder="0"
+                                placeholder="2"
                                 min={0}
                                 step="0.5"
                             />
                             <MeasurementCell
                                 type="number"
-                                value={row.spareRolls ?? 0}
-                                onChange={(val) => handleFieldChange('spareRolls', val)}
-                                placeholder="0"
+                                value={row.bottomAllowance ?? 2}
+                                onChange={(val) => handleFieldChange('bottomAllowance', val)}
+                                placeholder="2"
                                 min={0}
+                                step="0.5"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastage !== undefined && row.wastage !== '' ? (Number(row.wastage) > 1 ? Number(row.wastage) : Number(row.wastage) * 100) : 5}
+                                onChange={(val) => handleFieldChange('wastage', val !== '' ? Number(val) / 100 : '')}
+                                placeholder="5"
+                                min={0}
+                                step="1"
+                                unit="%"
                             />
                         </>
                     )}
 
-                    {/* Calculations */}
+                    {/* Calculations (8 columns per sheet) */}
                     {isColVisible('wp_calculations') && (
                         <>
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.rawCutDrop ?? 0}
+                                type="number"
+                                value={row.rawCutDrop !== undefined && row.rawCutDrop !== '' ? row.rawCutDrop : (calc.rawCutDrop ?? 0)}
+                                onChange={(val) => handleFieldChange('rawCutDrop', val)}
+                                step="0.1"
+                                min={0}
+                                placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.adjustedStripLength ?? 0}
+                                type="number"
+                                value={row.repeatAdjustedDrop !== undefined && row.repeatAdjustedDrop !== '' ? row.repeatAdjustedDrop : (calc.repeatAdjustedDrop ?? calc.adjustedStripLength ?? 0)}
+                                onChange={(val) => handleFieldChange({ repeatAdjustedDrop: val, adjustedStripLength: val })}
+                                step="0.1"
+                                min={0}
+                                placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.stripsPerWall ?? 0}
+                                type="number"
+                                value={row.dropsPerWall !== undefined && row.dropsPerWall !== '' ? row.dropsPerWall : (calc.dropsPerWall ?? calc.stripsPerWall ?? 0)}
+                                onChange={(val) => handleFieldChange({ dropsPerWall: val, stripsPerWall: val })}
+                                step="1"
+                                min={0}
+                                placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.requiredStrips ?? 0}
+                                type="number"
+                                value={row.dropsPerRoll !== undefined && row.dropsPerRoll !== '' ? row.dropsPerRoll : (calc.dropsPerRoll ?? calc.stripsPerRoll ?? 0)}
+                                onChange={(val) => handleFieldChange({ dropsPerRoll: val, stripsPerRoll: val })}
+                                step="1"
+                                min={0}
+                                placeholder="0"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.stripsPerRoll ?? 0}
+                                type="number"
+                                value={row.totalDropsRequired !== undefined && row.totalDropsRequired !== '' ? row.totalDropsRequired : (calc.totalDropsRequired ?? calc.requiredStrips ?? 0)}
+                                onChange={(val) => handleFieldChange({ totalDropsRequired: val, requiredStrips: val })}
+                                step="1"
+                                min={0}
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.baseRollsRequired !== undefined && row.baseRollsRequired !== '' ? row.baseRollsRequired : (calc.baseRollsRequired ?? calc.baseRolls ?? 0)}
+                                onChange={(val) => handleFieldChange({ baseRollsRequired: val, baseRolls: val })}
+                                step="1"
+                                min={0}
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.wastageAdjustedRolls !== undefined && row.wastageAdjustedRolls !== '' ? row.wastageAdjustedRolls : (calc.wastageAdjustedRolls ?? 0)}
+                                onChange={(val) => handleFieldChange('wastageAdjustedRolls', val)}
+                                step="1"
+                                min={0}
+                                placeholder="0"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.finalRollsToOrder !== undefined && row.finalRollsToOrder !== '' ? row.finalRollsToOrder : (calc.finalRollsToOrder ?? calc.finalOrderRolls ?? 0)}
+                                onChange={(val) => handleFieldChange({ finalRollsToOrder: val, finalOrderRolls: val })}
+                                step="1"
+                                min={0}
+                                placeholder="0"
                             />
                         </>
                     )}
 
-                    {/* Order Output */}
-                    {isColVisible('wp_orderOutput') && (
-                        <>
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.requiredMetres ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.baseRolls ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.finalOrderMetres ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.finalOrderRolls ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.finalOrderQuantity ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.finalOrderQuantity ?? 0}
-                            />
-                            <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                align="center"
-                                value={calc.orderUnit || 'Metres'}
-                            />
-                        </>
-                    )}
-
-                    {/* Flags */}
+                    {/* Roll Order & Details (5 columns per sheet) */}
                     {isColVisible('wp_flags') && (
                         <>
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
+                                type="text"
                                 align="center"
-                                value={calc.orderCheck || 'OK'}
-                                className={calc.orderCheck && calc.orderCheck !== 'OK' ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''}
+                                value={row.rollCheck !== undefined && row.rollCheck !== '' ? row.rollCheck : (calc.rollCheck || calc.orderCheck || 'OK')}
+                                onChange={(val) => handleFieldChange({ rollCheck: val, orderCheck: val })}
+                                placeholder="OK"
+                                className={((row.rollCheck || calc.rollCheck || calc.orderCheck) && ((row.rollCheck ?? calc.rollCheck ?? calc.orderCheck) !== 'OK')) ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                align="center"
-                                value={calc.cuttingInstruction || '—'}
+                                type="number"
+                                value={row.orderRolls !== undefined && row.orderRolls !== '' ? row.orderRolls : (calc.orderRolls ?? calc.finalRollsToOrder ?? 0)}
+                                onChange={(val) => handleFieldChange('orderRolls', val)}
+                                step="1"
+                                min={0}
+                                placeholder="0"
+                                className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20"
                             />
                             <MeasurementCell
-                                type="readonly"
-                                isCalculated
-                                value={calc.approxCoverageArea ?? (calc.rawCutDrop && row.wallWidth ? Math.round((Number(calc.rawCutDrop) * Number(row.wallWidth)) / 1550 * 100) / 100 : 0)}
-                                unit="m²"
+                                type="text"
+                                align="left"
+                                value={row.cuttingInstruction !== undefined && row.cuttingInstruction !== '' ? row.cuttingInstruction : (calc.cuttingInstruction || '—')}
+                                onChange={(val) => handleFieldChange('cuttingInstruction', val)}
+                                placeholder="—"
+                            />
+                            <MeasurementCell
+                                type="number"
+                                value={row.approxCoverageArea !== undefined && row.approxCoverageArea !== '' ? row.approxCoverageArea : (calc.approxCoverageArea ?? 0)}
+                                onChange={(val) => handleFieldChange('approxCoverageArea', val)}
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
+                                unit="sq ft"
                             />
                             <MeasurementCell
                                 type="text"

@@ -103,10 +103,8 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
             if (isColVisible('wp_wallInfo')) count += 4;
             if (isColVisible('wp_rollSpecs')) count += 4;
             if (isColVisible('wp_allowances')) count += 3;
-            if (isColVisible('wp_orderSettings')) count += 5;
-            if (isColVisible('wp_calculations')) count += 5;
-            if (isColVisible('wp_orderOutput')) count += 7;
-            if (isColVisible('wp_flags')) count += 4;
+            if (isColVisible('wp_calculations')) count += 8;
+            if (isColVisible('wp_flags')) count += 5;
         }
 
         count += 1; // Actions
@@ -123,16 +121,24 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
         let orderMetres = 0;
         let baseRolls = 0;
         let finalOrderRolls = 0;
+        let totalDropsRequired = 0;
+        let wastageAdjustedRolls = 0;
+        let orderRolls = 0;
+        let approxCoverageArea = 0;
 
         filteredRowsWithIndex.forEach(({ row }) => {
             const calc = calculateRowConsumption(row);
             totalQty += Number(row.qty ?? 1) || 1;
-            totalWidths += (calc.numWidths ?? calc.stripsPerWall ?? calc.roundedParts) || 0;
+            totalWidths += (calc.numWidths ?? calc.dropsPerWall ?? calc.stripsPerWall ?? calc.roundedParts) || 0;
             rawMetres += calc.rawMetres || 0;
             netMetres += calc.netMetres || calc.requiredMetres || 0;
             orderMetres += calc.orderMetres || calc.finalOrderMetres || calc.fabricMeters || 0;
-            baseRolls += calc.baseRolls || 0;
-            finalOrderRolls += calc.finalOrderRolls || 0;
+            baseRolls += calc.baseRollsRequired || calc.baseRolls || 0;
+            finalOrderRolls += calc.finalRollsToOrder || calc.finalOrderRolls || 0;
+            totalDropsRequired += calc.totalDropsRequired || 0;
+            wastageAdjustedRolls += calc.wastageAdjustedRolls || 0;
+            orderRolls += Number(row.orderRolls ?? calc.orderRolls ?? calc.finalRollsToOrder ?? 0) || 0;
+            approxCoverageArea += calc.approxCoverageArea || 0;
         });
 
         return {
@@ -144,6 +150,10 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
             orderMetres: Math.round(orderMetres * 100) / 100,
             baseRolls,
             finalOrderRolls,
+            totalDropsRequired,
+            wastageAdjustedRolls,
+            orderRolls,
+            approxCoverageArea: Math.round(approxCoverageArea * 100) / 100,
             // backward-compat aliases kept so nothing else breaks
             totalParts: Math.round(totalWidths),
             fabricMeters: Math.round(orderMetres * 100) / 100,

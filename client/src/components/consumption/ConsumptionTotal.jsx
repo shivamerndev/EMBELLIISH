@@ -140,25 +140,26 @@ const MeasurementTotals = ({ totals = {}, columnVisibility = {}, typeFilter = 'M
                         {isColVisible('wp_allowances') && (
                             <td colSpan={3} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
                         )}
-                        {isColVisible('wp_orderSettings') && (
-                            <td colSpan={5} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                        )}
                         {isColVisible('wp_calculations') && (
-                            <td colSpan={5} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                        )}
-                        {isColVisible('wp_orderOutput') && (
                             <>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-slate-700 dark:text-slate-300 font-semibold">{(totals.netMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-slate-700 dark:text-slate-300 font-bold">{totals.baseRolls || '—'}</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)} m</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-center   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{totals.finalOrderRolls || '—'}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
-                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right   text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{(totals.orderMetres || 0).toFixed(2)}</td>
                                 <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-slate-700 dark:text-slate-300 font-semibold">{totals.totalDropsRequired || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-slate-700 dark:text-slate-300 font-semibold">{totals.baseRolls || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-slate-700 dark:text-slate-300 font-semibold">{totals.wastageAdjustedRolls || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-slate-700 dark:text-slate-300 font-semibold">{totals.finalOrderRolls || 0}</td>
                             </>
                         )}
                         {isColVisible('wp_flags') && (
-                            <td colSpan={4} className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            <>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50/10">{totals.orderRolls || totals.finalOrderRolls || 0}</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 px-2 py-2 text-right text-slate-700 dark:text-slate-300 font-semibold">{(totals.approxCoverageArea || 0).toFixed(2)} sq ft</td>
+                                <td className="border-r border-slate-300 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-center text-slate-400 font-normal italic text-[11px]">—</td>
+                            </>
                         )}
                     </>
                 )}
