@@ -367,7 +367,17 @@ export function calculateRomanBlindConsumption(row = {}) {
     const fabricDirection = String(row.fabricDirection || 'Normal').toLowerCase();
     const isRailroaded = fabricDirection === 'railroaded';
 
-    if (blindWidthInch <= 0 || blindDropInch <= 0 || fabricWidthInch <= 0) {
+    const hasManualInputs = (
+        (row.requiredCutWidth !== undefined && row.requiredCutWidth !== '' && row.requiredCutWidth !== null) ||
+        (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null) ||
+        (row.repeatCutDrop !== undefined && row.repeatCutDrop !== '' && row.repeatCutDrop !== null) ||
+        (row.railroadRunningWidth !== undefined && row.railroadRunningWidth !== '' && row.railroadRunningWidth !== null) ||
+        (row.numWidths !== undefined && row.numWidths !== '' && row.numWidths !== null) ||
+        (row.rawMetres !== undefined && row.rawMetres !== '' && row.rawMetres !== null) ||
+        (row.netMetres !== undefined && row.netMetres !== '' && row.netMetres !== null)
+    );
+
+    if (!hasManualInputs && (blindWidthInch <= 0 || blindDropInch <= 0 || fabricWidthInch <= 0)) {
         return {
             ...EMPTY_ROMAN,
             railroadRunningWidth: 0,
@@ -377,25 +387,35 @@ export function calculateRomanBlindConsumption(row = {}) {
     // Effective usable width
     const usableWidthApplied = usableWidthRaw > 0 ? usableWidthRaw : fabricWidthInch;
 
-    // Required Cut Width: Finished Blind Width + Left Allowance + Right Allowance
-    const requiredCutWidth = blindWidthInch + leftAllowance + rightAllowance;
+    // Required Cut Width: Finished Blind Width + Left Allowance + Right Allowance (or manual override)
+    const requiredCutWidth = (row.requiredCutWidth !== undefined && row.requiredCutWidth !== '' && row.requiredCutWidth !== null)
+        ? Number(row.requiredCutWidth)
+        : (blindWidthInch > 0 ? blindWidthInch + leftAllowance + rightAllowance : 0);
 
-    // Raw Cut Drop: Finished Blind Drop + Top Allowance + Bottom Allowance
-    const rawCutDrop = blindDropInch + topAllowance + bottomAllowance;
+    // Raw Cut Drop: Finished Blind Drop + Top Allowance + Bottom Allowance (or manual override)
+    const rawCutDrop = (row.rawCutDrop !== undefined && row.rawCutDrop !== '' && row.rawCutDrop !== null)
+        ? Number(row.rawCutDrop)
+        : (blindDropInch > 0 ? blindDropInch + topAllowance + bottomAllowance : 0);
 
-    // Repeat-Adjusted Cut Drop (same rule as curtain)
-    const repeatCutDrop = applyRepeat(rawCutDrop, verticalRepeat);
+    // Repeat-Adjusted Cut Drop (same rule as curtain) (or manual override)
+    const repeatCutDrop = (row.repeatCutDrop !== undefined && row.repeatCutDrop !== '' && row.repeatCutDrop !== null)
+        ? Number(row.repeatCutDrop)
+        : applyRepeat(rawCutDrop, verticalRepeat);
 
-    // Railroad Running Width (AG12: IF(OR(AD12="",AC12<>"Railroaded"),"",IF(V12>0,CEILING(AD12/V12,1)*V12,AD12)))
-    const railroadRunningWidth = isRailroaded
-        ? (verticalRepeat > 0 ? ceiling(requiredCutWidth / verticalRepeat) * verticalRepeat : requiredCutWidth)
-        : 0;
+    // Railroad Running Width (AG12: IF(OR(AD12="",AC12<>"Railroaded"),"",IF(V12>0,CEILING(AD12/V12,1)*V12,AD12))) (or manual override)
+    const railroadRunningWidth = (row.railroadRunningWidth !== undefined && row.railroadRunningWidth !== '' && row.railroadRunningWidth !== null)
+        ? Number(row.railroadRunningWidth)
+        : (isRailroaded
+            ? (verticalRepeat > 0 ? ceiling(requiredCutWidth / verticalRepeat) * verticalRepeat : requiredCutWidth)
+            : 0);
 
-    // Number of Widths : CEILING (AH12: IF(OR(AD12="",AC12<>"Normal",U12<=0),"",CEILING(AD12/U12,1)))
+    // Number of Widths : CEILING (AH12: IF(OR(AD12="",AC12<>"Normal",U12<=0),"",CEILING(AD12/U12,1))) (or manual override)
     // Only applies for Normal direction; railroaded blinds run as single continuous width
-    const numWidths = (!isRailroaded && usableWidthApplied > 0)
-        ? Math.ceil(requiredCutWidth / usableWidthApplied)
-        : 0;
+    const numWidths = (row.numWidths !== undefined && row.numWidths !== '' && row.numWidths !== null)
+        ? Number(row.numWidths)
+        : ((!isRailroaded && usableWidthApplied > 0 && requiredCutWidth > 0)
+            ? Math.ceil(requiredCutWidth / usableWidthApplied)
+            : 0);
 
     // Railroad Check (AL12: IF(R12="","",IF(AC12="Railroaded",IF(AE12<=U12,"OK to railroad","Cannot railroad at this height"),"Not applicable")))
     let railroadCheck = 'Not applicable';
@@ -405,9 +425,11 @@ export function calculateRomanBlindConsumption(row = {}) {
             : 'Cannot railroad at this height';
     }
 
-    // Raw Metres (AI12: IF(AD12="","",IF(AC12="Railroaded",IF(AE12<=U12,AG12*0.0254*Q12,""),AH12*AF12*0.0254*Q12)))
+    // Raw Metres (AI12: IF(AD12="","",IF(AC12="Railroaded",IF(AE12<=U12,AG12*0.0254*Q12,""),AH12*AF12*0.0254*Q12))) (or manual override)
     let rawMetres = 0;
-    if (isRailroaded) {
+    if (row.rawMetres !== undefined && row.rawMetres !== '' && row.rawMetres !== null) {
+        rawMetres = Number(row.rawMetres);
+    } else if (isRailroaded) {
         if (rawCutDrop <= usableWidthApplied) {
             rawMetres = railroadRunningWidth * INCH_TO_METRE * qty;
         }
@@ -415,13 +437,17 @@ export function calculateRomanBlindConsumption(row = {}) {
         rawMetres = numWidths * repeatCutDrop * INCH_TO_METRE * qty;
     }
 
-    // Net Metres
-    const netMetres = rawMetres * (1 + wastage);
+    // Net Metres (or manual override)
+    const netMetres = (row.netMetres !== undefined && row.netMetres !== '' && row.netMetres !== null)
+        ? Number(row.netMetres)
+        : rawMetres * (1 + wastage);
 
-    // Order Metres: CEILING(netMetres / orderIncrement) × orderIncrement
-    const orderMetres = orderIncrement > 0
-        ? ceiling(netMetres / orderIncrement) * orderIncrement
-        : round(netMetres, 2);
+    // Order Metres: CEILING(netMetres / orderIncrement) × orderIncrement (or manual override)
+    const orderMetres = (row.orderMetres !== undefined && row.orderMetres !== '' && row.orderMetres !== null)
+        ? Number(row.orderMetres)
+        : (orderIncrement > 0
+            ? ceiling(netMetres / orderIncrement) * orderIncrement
+            : round(netMetres, 2));
 
     // Cutting Instruction (AM12)
     const cuttingInstruction = romanInstruction({

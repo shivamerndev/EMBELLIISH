@@ -525,7 +525,7 @@ const MeasurementDetailsDrawer = ({
                             <button key={tab.id} type="button" onClick={() => setActiveSection(tab.id)} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${activeSection === tab.id
                                 ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-950'
                                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                                    }`}
+                                }`}
                             >
                                 <Icon className="w-3.5 h-3.5" />
                                 {tab.label}

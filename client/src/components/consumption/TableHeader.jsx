@@ -2,9 +2,9 @@
 const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => {
 
   const isColVisible = (key) => columnVisibility[key] !== false;
-  const isRoman      = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
-  const isCurtain    = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
-  const isWallpaper  = typeFilter === 'WALLPAPER';
+  const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
+  const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
+  const isWallpaper = typeFilter === 'WALLPAPER';
 
   return (
     <thead className="sticky top-0 z-30 select-none text-slate-800 dark:text-slate-200">
@@ -71,7 +71,7 @@ const TableHeader = ({ columnVisibility = {}, typeFilter = 'MAIN_CURTAIN' }) => 
 
         {/* ══════════════ CURTAIN ONLY ══════════════ */}
         {isCurtain && (
-          <>  
+          <>
             {/* Track & Drop */}
             {isColVisible('trackDrop') && (
               <th colSpan={2} className="border-r border-amber-700/40 dark:border-slate-800 px-2 py-1.5 text-center bg-[#6b5240] dark:bg-slate-900/70">
