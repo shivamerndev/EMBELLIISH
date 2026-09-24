@@ -19,6 +19,7 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import HeaderTools from '../../components/consumption/HeaderTools';
 import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
 import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
+import { printConsumptionSheet } from '../../components/consumption/consumptionPrintService';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 import TypesTab from '@/components/consumption/TypesTab';
 
@@ -993,6 +994,13 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                             onSaveChanges={submit}
                             onAddMeasurement={() => setIsAddModalOpen(true)}
                             isSaving={pending}
+                            onPrintSheet={(isBlank) => {
+                                printConsumptionSheet({
+                                    header: item,
+                                    rows: finalMeasurementsGrid,
+                                    preparedBy: currentUser?.name || form.boqPreparedBy,
+                                }, isBlank);
+                            }}
                         />
 
                         {/* Chrome Window Container: Tabs + Grid */}

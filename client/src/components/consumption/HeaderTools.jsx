@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Plus, SlidersHorizontal, Check, RefreshCw, Save, AlertCircle } from 'lucide-react';
-import { Button, Input, Select } from '../ui';
+import { Search, Plus, Check, RefreshCw, Save, AlertCircle, Printer } from 'lucide-react';
+import { Button } from '../ui';
 
 /**
  * Compact, modern SaaS Toolbar for Measurement Workspace.
@@ -18,6 +18,7 @@ const MeasurementToolbar = ({
     saveState = 'saved', // 'saved', 'saving', 'unsaved', 'error'
     onSaveChanges,
     onAddMeasurement,
+    onPrintSheet,
     isSaving = false,
 }) => {
     const [showColsPopover, setShowColsPopover] = useState(false);
@@ -77,6 +78,19 @@ const MeasurementToolbar = ({
                             </span>
                         )}
                     </div>
+
+                    {/* Print Consumption Sheet Button */}
+                    {onPrintSheet && (
+                        <button
+                            type="button"
+                            onClick={() => onPrintSheet(false)}
+                            title="Print Consumption Sheet (A4 Landscape Physical Format)"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm"
+                        >
+                            <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                            <span>Print Sheet</span>
+                        </button>
+                    )}
 
                     {/* Manual Save Button */}
                     <button
