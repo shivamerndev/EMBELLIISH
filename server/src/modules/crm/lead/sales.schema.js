@@ -15,7 +15,7 @@ export const siteVisitFields = {
   clientArchitectAvailability: String,
   scope: mongoose.Schema.Types.Mixed,
   rooms: mongoose.Schema.Types.Mixed,
-  drawingsRenders: String,
+  drawingsRenders: mongoose.Schema.Types.Mixed,
   installerAvailability: {
     type: String,
     enum: ['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE'],

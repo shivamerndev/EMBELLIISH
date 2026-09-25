@@ -610,8 +610,6 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             .map((s) => (s.date ? `${s.date}: ${s.timeSlot}` : s.timeSlot))
             .join('; ');
 
-        const drawingsString = form.attachments.length > 0 ? JSON.stringify(form.attachments) : '';
-
         const primaryInstallerId = form.assignedInstallers.length > 0 ? form.assignedInstallers[0] : undefined;
 
         const addressParts = [
@@ -634,7 +632,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             clientArchitectAvailability: availabilityString || undefined,
             scope: scopeParts,
             rooms: form.roomsSelected,
-            drawingsRenders: drawingsString || undefined,
+            drawingsRenders: form.attachments.length > 0 ? form.attachments : [],
             installerAvailability: form.installerAvailability
         });
     };

@@ -523,7 +523,7 @@ const rawCreateLeadSchema = z.object({
   clientArchitectAvailability: z.string().optional(),
   scope: z.union([z.array(z.string()), z.string()]).optional().nullable(),
   rooms: z.union([z.array(z.string()), z.string()]).optional().nullable(),
-  drawingsRenders: z.string().optional(),
+  drawingsRenders: z.union([z.string(), z.array(z.any()), z.record(z.any())]).optional().nullable(),
   installerAvailability: z.enum(['AVAILABLE', 'BUSY', 'ON_SITE', 'UNAVAILABLE']).optional(),
   measurement: measurementSchema,
   studioMeeting: studioMeetingSchema,
