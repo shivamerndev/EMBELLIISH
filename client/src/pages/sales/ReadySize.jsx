@@ -985,26 +985,8 @@ const ReadySize = ({ items: itemsProp = [] }) => {
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
     const productionLeads = rawLeads.filter((lead) => {
-        const hasKycProgress = Boolean(
-            lead.kyc?.status === 'Verified' ||
-            lead.kyc?.status === 'VERIFIED' ||
-            lead.kyc?.verificationDate ||
-            lead.kyc?.actualDate ||
-            lead.kyc?.billingLegalName ||
-            lead.kyc?.gstin ||
-            lead.approval?.clientApprovalStatus === 'APPROVED' ||
-            lead.clientApprovalStatus === 'APPROVED'
-        );
-        const hasSiteDetailActivity = Boolean(
-            lead.readySize?.siteDetailSheetGoogleLink ||
-            (Array.isArray(lead.readySize?.siteDetailSheetAttachments) && lead.readySize.siteDetailSheetAttachments.length > 0) ||
-            lead.readySize?.designPpt ||
-            lead.readySize?.selectionPpt ||
-            lead.readySize?.confirmationDate ||
-            lead.readySize?.dueDate ||
-            lead.studioMeeting?.date
-        );
-        return hasKycProgress || hasSiteDetailActivity;
+        const kycStatus = String(lead.kyc?.status || lead.kycStatus || 'Pending').trim().toLowerCase();
+        return Boolean(kycStatus && kycStatus !== 'pending');
     });
 
     const filteredLeads = productionLeads.filter((lead) => {
