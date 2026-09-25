@@ -781,30 +781,21 @@ const MeasurementRow = ({
                     {/* Calculations (8 columns per sheet) */}
                     {isColVisible('wp_calculations') && (
                         <>
-                            <MeasurementCell
-                                type="number"
+                            <MeasurementCell type="number"
                                 value={row.rawCutDrop !== undefined && row.rawCutDrop !== '' ? row.rawCutDrop : (calc.rawCutDrop ?? 0)}
-                                onChange={(val) => handleFieldChange('rawCutDrop', val)}
-                                step="0.1"
-                                min={0}
-                                placeholder="0"
+                                onChange={(val) => handleFieldChange('rawCutDrop', val)} step="0.1" min={0} placeholder="0"
                             />
-                            <MeasurementCell
-                                type="number"
+
+                            <MeasurementCell type="number"
                                 value={row.repeatAdjustedDrop !== undefined && row.repeatAdjustedDrop !== '' ? row.repeatAdjustedDrop : (calc.repeatAdjustedDrop ?? calc.adjustedStripLength ?? 0)}
                                 onChange={(val) => handleFieldChange({ repeatAdjustedDrop: val, adjustedStripLength: val })}
-                                step="0.1"
-                                min={0}
-                                placeholder="0"
-                            />
-                            <MeasurementCell
-                                type="number"
+                                step="0.1" min={0} placeholder="0" />
+
+                            <MeasurementCell type="number"
                                 value={row.dropsPerWall !== undefined && row.dropsPerWall !== '' ? row.dropsPerWall : (calc.dropsPerWall ?? calc.stripsPerWall ?? 0)}
                                 onChange={(val) => handleFieldChange({ dropsPerWall: val, stripsPerWall: val })}
-                                step="1"
-                                min={0}
-                                placeholder="0"
-                            />
+                                step="1" min={0} placeholder="0" />
+
                             <MeasurementCell
                                 type="number"
                                 value={row.dropsPerRoll !== undefined && row.dropsPerRoll !== '' ? row.dropsPerRoll : (calc.dropsPerRoll ?? calc.stripsPerRoll ?? 0)}
