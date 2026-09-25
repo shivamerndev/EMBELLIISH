@@ -12,6 +12,21 @@ const fetchApprovedLeadsService = async () => {
     const edge = lead.salesCommercial || {};
     const isSiteVisitRequired = (edge.siteVisitRequired ?? lead.siteVisitRequired) !== false;
 
+    const rawCosting = edge.costing || lead.costing;
+    const costing = rawCosting ? {
+      dueDate: rawCosting.dueDate,
+      version: rawCosting.version || 'v1.0',
+      category: rawCosting.category,
+      price: rawCosting.price !== undefined && rawCosting.price !== null ? Number(rawCosting.price) : 0,
+      costingHistory: Array.isArray(rawCosting.costingHistory) ? rawCosting.costingHistory.map((h) => ({
+        version: h.version || 'v1.0',
+        dueDate: h.dueDate,
+        category: h.category,
+        price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+        savedAt: h.savedAt,
+      })) : [],
+    } : rawCosting;
+
     return {
       ...edge,
       ...lead,
@@ -34,7 +49,7 @@ const fetchApprovedLeadsService = async () => {
       consumption: edge.consumption || lead.consumption,
       proposal: edge.proposal || lead.proposal,
       advance: edge.advance || lead.advance,
-      costing: edge.costing || lead.costing,
+      costing,
       quotation: edge.quotation || lead.quotation,
       approval: edge.approval || lead.approval,
       presentation: edge.presentation || lead.presentation,
@@ -50,11 +65,27 @@ const getLeadDetailService = async (id) => {
     throw ApiError.notFound('Lead not found');
   }
   const edge = lead.salesCommercial || {};
+  const rawCosting = edge.costing || lead.costing;
+  const costing = rawCosting ? {
+    dueDate: rawCosting.dueDate,
+    version: rawCosting.version || 'v1.0',
+    category: rawCosting.category,
+    price: rawCosting.price !== undefined && rawCosting.price !== null ? Number(rawCosting.price) : 0,
+    costingHistory: Array.isArray(rawCosting.costingHistory) ? rawCosting.costingHistory.map((h) => ({
+      version: h.version || 'v1.0',
+      dueDate: h.dueDate,
+      category: h.category,
+      price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+      savedAt: h.savedAt,
+    })) : [],
+  } : rawCosting;
+
   return {
     ...edge,
     ...lead,
     _id: lead._id,
     id: lead._id,
+    costing,
     salesCommercial: edge,
   };
 };

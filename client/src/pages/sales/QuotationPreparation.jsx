@@ -138,7 +138,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'quotation.marginRules': (lead) => {
         const q = lead.quotation || {};
         const totals = calculateQuotationTotals(q);
-        const totalCost = Number(lead.costing?.totalCost || lead.costing?.landedCost || 0);
+        const totalCost = Number(lead.costing?.price || 0);
 
         if (!totalCost || totals.taxableAmount === 0) {
             return <span className="text-slate-500 dark:text-slate-400 text-xs italic">{q.marginRules || 'Rule Pending'}</span>;
@@ -323,13 +323,12 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-
-    const approvedLeads = rawLeads
-    // This comment is temperory 
-    // .filter((lead) => {
-    //     const status = String(lead.costing?.hiteshApprovalStatus || lead.hiteshApprovalStatus || '').toUpperCase();
-    //     return status === 'APPROVED';
-    // });
+    const approvedLeads = rawLeads.filter((lead) => {
+        const rawPrice = lead?.costing?.price;
+        if (rawPrice === undefined || rawPrice === null || rawPrice === '') return false;
+        const price = Number(rawPrice);
+        return !isNaN(price) && price !== 0;
+    });
 
     const filteredLeads = approvedLeads.filter((lead) => {
         if (search) {
@@ -361,7 +360,7 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <StatTile label="Total Quotation Pipeline" value={totalCount} sub="Leads with Hitesh-approved pricing" icon={FileSpreadsheet} tone="emerald" />
+                <StatTile label="Total Quotation Pipeline" value={totalCount} sub="Leads with material costing (price !== 0)" icon={FileSpreadsheet} tone="emerald" />
                 <StatTile label="Quotations Issued" value={quotationsIssued} sub="Quotes generated" icon={CheckCircle2} tone="green" />
                 <StatTile label="Total Quoted Value" value={currency(totalQuotedValue, { compact: true })} sub="Cumulative quote value" icon={DollarSign} tone="blue" />
                 <StatTile label="Approved Discounts" value={discountsApproved} sub="Discount approvals granted" icon={Calendar} tone="amber" />
@@ -402,7 +401,7 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={FileSpreadsheet} title="No Approved Quotation Records Found" hint="Only leads with Hitesh-approved pricing appear here. Try adjusting search parameters or approving pricing in Pricing & Costing." />
+                    <EmptyState icon={FileSpreadsheet} title="No Quotation Records Found" hint="Only leads with pricing material costing (price !== 0) appear here. Try adjusting search parameters or setting price in Pricing & Costing." />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -418,7 +417,7 @@ const QuotationPreparation = ({ items: itemsProp = [] }) => {
                     )}
                     empty={
                         <Panel className="p-8 text-center">
-                            <EmptyState icon={FileSpreadsheet} title="No Approved Quotation Records Found" hint="Only leads with Hitesh-approved pricing appear here." />
+                            <EmptyState icon={FileSpreadsheet} title="No Quotation Records Found" hint="Only leads with pricing material costing (price !== 0) appear here." />
                         </Panel>
                     }
                 />

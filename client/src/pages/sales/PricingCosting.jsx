@@ -1,21 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-    Search,
-    Eye,
-    Calculator,
-    Calendar,
-    CheckCircle2,
-    Paperclip,
-    DollarSign,
-    Pencil,
-    ShieldAlert,
-    ShieldCheck,
-    History,
-    Plus,
-    Trash2,
-    Layers
-} from 'lucide-react';
+import { Search, Eye, Calculator, Calendar, CheckCircle2, Paperclip, DollarSign, Pencil, History } from 'lucide-react';
 import { currency, date, getLocalDate } from '../../utils/format';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
@@ -27,15 +12,6 @@ import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 
-const APPROVED_MARGIN_MODELS = [
-    { value: 'Standard Margin', label: 'Standard Margin (25% - 35% Target)' },
-    { value: 'Cost Plus', label: 'Cost Plus Fixed Fee Model' },
-    { value: 'Target Margin', label: 'Target Return / Value-Based Margin' },
-    { value: 'Volume Discount', label: 'Volume Discount / Bulk Project Pricing' },
-    { value: 'High Margin Luxury', label: 'High-Margin Luxury (40%+ Target)' },
-    { value: 'Custom Pricing', label: 'Custom Commercial Pricing Model' },
-];
-
 const SPREADSHEET_SECTIONS = [
     {
         id: 's10',
@@ -45,24 +21,17 @@ const SPREADSHEET_SECTIONS = [
         cols: [
             { key: 'costing.dueDate', label: 'Pricing Due Date', type: 'date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'costing.catalogueCost', label: 'Catalogue Cost (₹)', type: 'currency' },
             { key: 'costing.version', label: 'Costing Version / Revision', type: 'version' },
-            { key: 'costing.landedCost', label: 'Landed Cost (₹)', type: 'currency' },
-            { key: 'costing.localFabricCost', label: 'Local Fabric Cost (₹)', type: 'currency' },
-            { key: 'costing.labourCost', label: 'Labour / Custom Cost (₹)', type: 'currency' },
-            { key: 'costing.totalCost', label: 'Total Cost (₹)', type: 'calculated_currency' },
-            { key: 'costing.calculatedMargin', label: 'Calculated Margin %', type: 'formula_percent' },
-            { key: 'costing.sampleCost', label: 'Sample Cost (₹)', type: 'currency' },
-            { key: 'costing.marginModel', label: 'Margin Model', type: 'lookup' },
-            { key: 'costing.hiteshApprovalStatus', label: 'Hitesh Approval Status', type: 'status' },
+            { key: 'costing.category', label: 'Costing Category', type: 'category' },
+            { key: 'costing.price', label: 'Price (₹)', type: 'currency' },
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'costing.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
-            { key: 'costing.totalCost', label: 'Total Cost' },
-            { key: 'costing.calculatedMargin', label: 'Margin %' },
-            { key: 'costing.hiteshApprovalStatus', label: 'Approval Status' },
+            { key: 'costing.version', label: 'Version' },
+            { key: 'costing.category', label: 'Category' },
+            { key: 'costing.price', label: 'Price' },
         ]
     }
 ];
@@ -75,39 +44,14 @@ const getNestedVal = (obj, path) => {
         if (curr === null || curr === undefined) break;
         curr = curr[p];
     }
-    if (curr !== undefined && curr !== null) return curr;
-
-    if (path === 'costing.totalCost' && obj?.costing) {
-        const c = obj.costing;
-        const total = (Number(c.catalogueCost) || 0) +
-            (Number(c.landedCost) || 0) +
-            (Number(c.localFabricCost) || 0) +
-            (Number(c.labourCost) || 0) +
-            (Number(c.sampleCost) || 0);
-        return total > 0 ? total : undefined;
-    }
-
-    if (path === 'costing.calculatedMargin' && obj?.costing) {
-        const c = obj.costing;
-        if (c.calculatedMargin !== undefined && c.calculatedMargin !== null) return c.calculatedMargin;
-        if (c.calculatedMarginPercent !== undefined && c.calculatedMarginPercent !== null) return c.calculatedMarginPercent;
-
-        const totalCost = getNestedVal(obj, 'costing.totalCost');
-        const quotedVal = Number(obj.quotation?.finalQuotedValue || obj.token?.budgetEstimate || 0);
-        if (quotedVal > 0 && totalCost > 0) {
-            const margin = ((quotedVal - totalCost) / quotedVal) * 100;
-            return Math.round(margin * 10) / 10;
-        }
-    }
-
-    return undefined;
+    return curr;
 };
 
 const SPREADSHEET_CELL_RENDERERS = {
     delayStatus: (lead) => (
         <DelayBadge
             dueDate={lead.costing?.dueDate}
-            isCompleted={Boolean(['Approved', 'Completed'].includes(lead.costing?.status) || lead.costing?.calculatedMargin)}
+            isCompleted={Boolean(lead.costing?.category || lead.costing?.version || (lead.costing?.price !== undefined && lead.costing?.price > 0))}
         />
     ),
     sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
@@ -137,7 +81,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const d = new Date(raw);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const isPastDue = d < today && !lead.costing?.totalCost;
+        const isPastDue = d < today && !(lead.costing?.price !== undefined && lead.costing?.price > 0);
 
         return (
             <div className="flex flex-col items-center gap-0.5">
@@ -168,61 +112,29 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
-    'costing.totalCost': (lead) => {
-        const total = getNestedVal(lead, 'costing.totalCost');
-        if (!total && total !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+    'costing.category': (lead) => {
+        const raw = lead.costing?.category;
+        if (!raw) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const cat = String(raw).toLowerCase();
+        let tone = 'slate';
+        if (cat === 'a') tone = 'brand';
+        else if (cat === 'b') tone = 'blue';
+        else if (cat === 'c') tone = 'violet';
+        return (
+            <Badge tone={tone} className="uppercase font-bold tracking-wider text-[11px] px-2 py-0.5">
+                Category {cat.toUpperCase()}
+            </Badge>
+        );
+    },
+    'costing.price': (lead) => {
+        const raw = lead.costing?.price;
+        const price = (raw !== undefined && raw !== null && !isNaN(Number(raw))) ? Number(raw) : 0;
         return (
             <div className="flex flex-col items-center">
-                <span className="  text-slate-900 dark:text-slate-100 text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
-                    {currency(total)}
+                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold font-mono bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                    {currency(price)}
                 </span>
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 font-sans">Sum of all costs</span>
-            </div>
-        );
-    },
-    'costing.calculatedMargin': (lead) => {
-        const margin = getNestedVal(lead, 'costing.calculatedMargin');
-        if (margin === undefined || margin === null) return <span className="text-slate-400 dark:text-slate-600 italic">Auto-calculated</span>;
-
-        const num = Number(margin);
-        const minThresh = lead.costing?.minMarginThreshold ?? 25;
-        const isHealthy = num >= minThresh;
-
-        return (
-            <div className="flex flex-col items-center gap-0.5">
-                <span className={`  text-xs font-bold px-2 py-0.5 rounded border ${isHealthy
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                    : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                    }`}>
-                    {num.toFixed(1)}%
-                </span>
-                <span className="text-[9px] text-slate-400 dark:text-slate-500">Formula Margin</span>
-            </div>
-        );
-    },
-    'costing.marginModel': (lead) => {
-        const model = lead.costing?.marginModel || 'Standard Margin';
-        return (
-            <span className="text-slate-700 dark:text-slate-300 text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded truncate max-w-[140px] inline-block" title={model}>
-                {model}
-            </span>
-        );
-    },
-    'costing.hiteshApprovalStatus': (lead) => {
-        const c = lead.costing || {};
-        const req = c.hiteshApprovalRequired;
-        const st = c.hiteshApprovalStatus || (req ? 'PENDING' : 'NOT_REQUIRED');
-        let tone = 'slate';
-        if (st === 'APPROVED') tone = 'green';
-        else if (st === 'PENDING') tone = 'amber';
-        else if (st === 'REJECTED') tone = 'rose';
-
-        return (
-            <div className="flex flex-col items-center gap-0.5">
-                <Badge tone={tone}>{st.replace(/_/g, ' ')}</Badge>
-                {req && st === 'PENDING' && (
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap">⚠️ Needs Sign-off</span>
-                )}
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 font-sans">Base Price</span>
             </div>
         );
     }
@@ -270,583 +182,275 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
 };
 
 
-
 /* ------------------------------------------------------------- Edit Costing Modal */
 const EditCostingModal = ({ item, onClose, onDone }) => {
     const c = item?.costing || {};
-    const q = item?.quotation || {};
 
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'lineItems' | 'history'
-
-    const initialSellingPrice = Number(q.finalQuotedValue || item?.token?.budgetEstimate || 0);
+    const initialCategory = ['a', 'b', 'c'].includes(String(c.category || '').toLowerCase())
+        ? String(c.category).toLowerCase()
+        : 'a';
+    const initialPrice = c.price !== undefined && c.price !== null && !isNaN(Number(c.price))
+        ? Number(c.price)
+        : 0;
+    const initialDueDate = c.dueDate ? String(c.dueDate).slice(0, 10) : getLocalDate();
+    const initialVersion = c.version || 'v1.0';
 
     const [form, setForm] = useState({
-        dueDate: c.dueDate ? String(c.dueDate).slice(0, 10) : getLocalDate(),
-        version: c.version || 'v1.0',
-        catalogueCost: c.catalogueCost ?? '',
-        landedCost: c.landedCost ?? '',
-        localFabricCost: c.localFabricCost ?? '',
-        labourCost: c.labourCost ?? '',
-        sampleCost: c.sampleCost ?? '',
-        totalCost: c.totalCost ?? '',
-        sellingPrice: initialSellingPrice || '',
-        calculatedMargin: c.calculatedMargin ?? '',
-        marginModel: c.marginModel || 'Standard Margin',
-        minMarginThreshold: c.minMarginThreshold ?? 25,
-        maxDiscountThreshold: c.maxDiscountThreshold ?? 15,
-        discount: q.discount ?? 0,
-        hiteshApprovalStatus: c.hiteshApprovalStatus || 'NOT_REQUIRED',
-        hiteshApprovalNotes: c.hiteshApprovalNotes || '',
-        revisionNote: '',
+        dueDate: initialDueDate,
+        version: initialVersion,
+        category: initialCategory,
+        price: initialPrice,
     });
+    const [clientError, setClientError] = useState('');
 
-    const [lineItems, setLineItems] = useState(
-        Array.isArray(c.lineItems) && c.lineItems.length > 0
-            ? c.lineItems
-            : [{ description: 'Main Fabric & Materials', quantity: 1, catalogueCost: c.catalogueCost || '', landedCost: c.landedCost || '', localFabricCost: c.localFabricCost || '', labourCost: c.labourCost || '' }]
-    );
-
-    const history = Array.isArray(c.costingHistory) ? c.costingHistory : [];
-
-    const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
-
-    // Auto-calculate sum of costs per line items if line item tab is used
-    const lineItemCatalogueSum = lineItems.reduce((sum, item) => sum + (Number(item.catalogueCost) || 0), 0);
-    const lineItemLandedSum = lineItems.reduce((sum, item) => sum + (Number(item.landedCost) || 0), 0);
-    const lineItemLocalFabricSum = lineItems.reduce((sum, item) => sum + (Number(item.localFabricCost) || 0), 0);
-    const lineItemLabourSum = lineItems.reduce((sum, item) => sum + (Number(item.labourCost) || 0), 0);
-
-    // Apply line item sums if line item inputs are filled
-    const effectiveCatalogueCost = lineItemCatalogueSum > 0 ? lineItemCatalogueSum : (Number(form.catalogueCost) || 0);
-    const effectiveLandedCost = lineItemLandedSum > 0 ? lineItemLandedSum : (Number(form.landedCost) || 0);
-    const effectiveLocalFabricCost = lineItemLocalFabricSum > 0 ? lineItemLocalFabricSum : (Number(form.localFabricCost) || 0);
-    const effectiveLabourCost = lineItemLabourSum > 0 ? lineItemLabourSum : (Number(form.labourCost) || 0);
-    const effectiveSampleCost = Number(form.sampleCost) || 0;
-
-    // Total Cost = Sum of material, labour and related costs
-    const calculatedSumTotalCost = effectiveCatalogueCost + effectiveLandedCost + effectiveLocalFabricCost + effectiveLabourCost + effectiveSampleCost;
-
-    // Formula Percentage Calculation for Margin % = ((Selling Price - Total Cost) / Selling Price) * 100
-    const sellingPriceVal = Number(form.sellingPrice) || initialSellingPrice;
-    let formulaMarginPercent = undefined;
-    if (sellingPriceVal > 0 && calculatedSumTotalCost > 0) {
-        const m = ((sellingPriceVal - calculatedSumTotalCost) / sellingPriceVal) * 100;
-        formulaMarginPercent = Math.round(m * 10) / 10;
-    }
-    const currentMargin = form.calculatedMargin !== '' ? Number(form.calculatedMargin) : formulaMarginPercent;
-
-    // Threshold logic check:
-    const currentDiscount = form.discount === '' ? 0 : Number(form.discount);
-    const minMarginThresh = Number(form.minMarginThreshold) ?? 25;
-    const maxDiscThresh = Number(form.maxDiscountThreshold) ?? 15;
-
-    const isBelowMargin = currentMargin !== undefined && currentMargin < minMarginThresh;
-    const isAboveDiscount = currentDiscount > maxDiscThresh;
-    const requiresHiteshApproval = isBelowMargin || isAboveDiscount;
-
-    const { execute, pending, error } = useAction(
-        (payload) => leadsApi.update(item._id || item.id, { costing: payload }),
+    const { execute, pending, error: apiError } = useAction(
+        (payload) => leadsApi.update(item._id || item.id, payload),
         {
             onSuccess: () => {
-                onDone();
+                if (onDone) onDone();
                 onClose();
             },
         }
     );
 
-    const handleAddLineItem = () => {
-        setLineItems((prev) => [
-            ...prev,
-            { description: '', quantity: 1, catalogueCost: '', landedCost: '', localFabricCost: '', labourCost: '' }
-        ]);
-    };
-
-    const handleRemoveLineItem = (index) => {
-        setLineItems((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const handleLineItemChange = (index, field, value) => {
-        setLineItems((prev) => {
-            const next = [...prev];
-            next[index] = { ...next[index], [field]: value };
-            return next;
-        });
-    };
-
-    const handleIncrementVersion = () => {
-        const currentVer = form.version || 'v1.0';
-        const match = currentVer.match(/v?(\d+)\.(\d+)/);
-        let nextVer = 'v1.1';
+    const handleBumpVersion = () => {
+        const current = String(form.version || 'v1.0').trim();
+        const match = current.match(/^v?(\d+)(?:\.(\d+))?$/i);
         if (match) {
             const major = parseInt(match[1], 10);
-            const minor = parseInt(match[2], 10) + 1;
-            nextVer = `v${major}.${minor}`;
+            const minor = match[2] !== undefined ? parseInt(match[2], 10) : 0;
+            setForm((p) => ({ ...p, version: `v${major}.${minor + 1}` }));
+        } else {
+            setForm((p) => ({ ...p, version: `${current}-rev` }));
         }
-        setForm((prev) => ({
-            ...prev,
-            version: nextVer,
-            revisionNote: `Version incremented to ${nextVer}`,
-        }));
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+        setClientError('');
 
-        // Create snapshot for history retention
-        const currentSnapshot = {
-            version: form.version || 'v1.0',
-            dueDate: form.dueDate || undefined,
-            catalogueCost: effectiveCatalogueCost,
-            landedCost: effectiveLandedCost,
-            localFabricCost: effectiveLocalFabricCost,
-            labourCost: effectiveLabourCost,
-            sampleCost: effectiveSampleCost,
-            totalCost: calculatedSumTotalCost,
-            sellingPrice: sellingPriceVal,
-            calculatedMargin: currentMargin,
-            marginModel: form.marginModel,
-            savedAt: new Date(),
-            notes: form.revisionNote || 'Costing updated',
-        };
+        if (!form.dueDate) {
+            setClientError('Pricing Due Date is required.');
+            return;
+        }
+        if (!form.version || !form.version.trim()) {
+            setClientError('Costing Version is required (e.g. v1.0).');
+            return;
+        }
+        const trimmedCat = String(form.category || '').trim().toLowerCase();
+        if (!['a', 'b', 'c'].includes(trimmedCat)) {
+            setClientError('Costing Category must be one of: "a", "b", or "c".');
+            return;
+        }
+        const numPrice = Number(form.price);
+        if (isNaN(numPrice) || numPrice < 0) {
+            setClientError('Price must be a valid non-negative number.');
+            return;
+        }
 
-        const updatedHistory = [...history, currentSnapshot];
+        // Archive previous revision snapshot into costingHistory
+        const existingHistory = Array.isArray(c.costingHistory) ? [...c.costingHistory] : [];
+        let updatedHistory = existingHistory;
+
+        if (c.version || c.dueDate || c.category || c.price !== undefined) {
+            const snapshot = {
+                version: c.version || 'v1.0',
+                dueDate: c.dueDate,
+                category: c.category || 'a',
+                price: c.price !== undefined && c.price !== null ? Number(c.price) : 0,
+                savedAt: new Date().toISOString(),
+            };
+            const lastHistory = existingHistory[existingHistory.length - 1];
+            if (!lastHistory || lastHistory.version !== snapshot.version || lastHistory.price !== snapshot.price || lastHistory.category !== snapshot.category) {
+                updatedHistory = [...existingHistory, snapshot];
+            }
+        }
 
         const payload = {
-            dueDate: form.dueDate || undefined,
-            version: form.version || 'v1.0',
-            catalogueCost: effectiveCatalogueCost,
-            landedCost: effectiveLandedCost,
-            localFabricCost: effectiveLocalFabricCost,
-            labourCost: effectiveLabourCost,
-            sampleCost: effectiveSampleCost,
-            totalCost: calculatedSumTotalCost,
-            calculatedMargin: currentMargin,
-            marginModel: form.marginModel,
-            minMarginThreshold: minMarginThresh,
-            maxDiscountThreshold: maxDiscThresh,
-            hiteshApprovalRequired: requiresHiteshApproval,
-            hiteshApprovalStatus: requiresHiteshApproval
-                ? (form.hiteshApprovalStatus === 'NOT_REQUIRED' ? 'PENDING' : form.hiteshApprovalStatus)
-                : form.hiteshApprovalStatus,
-            hiteshApprovalNotes: form.hiteshApprovalNotes || undefined,
-            lineItems: lineItems.map((li) => ({
-                description: li.description,
-                quantity: Number(li.quantity) || 1,
-                catalogueCost: Number(li.catalogueCost) || 0,
-                landedCost: Number(li.landedCost) || 0,
-                localFabricCost: Number(li.localFabricCost) || 0,
-                labourCost: Number(li.labourCost) || 0,
-                totalCost: (Number(li.catalogueCost) || 0) + (Number(li.landedCost) || 0) + (Number(li.localFabricCost) || 0) + (Number(li.labourCost) || 0),
-            })),
-            costingHistory: updatedHistory,
+            costing: {
+                dueDate: form.dueDate,
+                version: form.version.trim(),
+                category: trimmedCat,
+                price: numPrice,
+                costingHistory: updatedHistory,
+            },
         };
 
         execute(payload);
     };
+
+    const displayError = clientError || apiError;
 
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
             title={`Pricing & Material Costing : ${item?.clientName || item?.code}`}
-            subtitle="Configure catalogue, landed, fabric, and labour costs with real-time formula margins and version history retention."
-            size="xl"
+            subtitle="Configure material costing parameters, versioning, category, and base price"
+            size="lg"
             footer={
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Lead: <strong className="text-slate-800 dark:text-slate-200">{item?.code}</strong> • Stage: Material Costing
+                    </span>
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            icon={Plus}
-                            onClick={handleIncrementVersion}
-                            title="Auto-generate next revision version string"
-                        >
-                            Increment Version ({form.version})
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button>
                         <Button onClick={handleSubmit} loading={pending}>Save Costing & Retain Version</Button>
                     </div>
                 </div>
-            }
-        >
-            {/* Modal Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-800 mb-4 gap-2">
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('overview')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition ${activeTab === 'overview'
-                        ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                        }`}
-                >
-                    Costing Parameters & Margins
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('lineItems')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${activeTab === 'lineItems'
-                        ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                        }`}
-                >
-                    <Layers className="w-3.5 h-3.5" /> Line-Item Cost Breakdown ({lineItems.length})
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('history')}
-                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${activeTab === 'history'
-                        ? 'border-brand-600 text-brand-600 dark:border-brand-400 dark:text-brand-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                        }`}
-                >
-                    <History className="w-3.5 h-3.5" /> Retained Version History ({history.length})
-                </button>
-            </div>
+            }>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                    <div className="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-400 rounded-md border border-rose-200 dark:border-rose-800">
-                        {error}
+                {displayError && (
+                    <div className="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-400 rounded-md border border-rose-200 dark:border-rose-800 font-medium">
+                        {displayError}
                     </div>
                 )}
 
-                {/* Hitesh Approval Dynamic Banner */}
-                {requiresHiteshApproval ? (
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-2.5">
-                        <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                        <div>
-                            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                                ⚠️ Hitesh Approval Required
-                            </p>
-                            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                                {isBelowMargin && `Calculated Margin (${currentMargin}%) is below minimum threshold of ${minMarginThresh}%. `}
-                                {isAboveDiscount && `Discount (${currentDiscount}%) exceeds maximum threshold of ${maxDiscThresh}%. `}
-                                Sign-off from Hitesh (Admin) is required before final quotation release.
-                            </p>
-                        </div>
+                {/* Lead Summary Header Card */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">Client / Project</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100">{item?.clientName || '—'}</span>
                     </div>
-                ) : (
-                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-                            ✓ Within Standard Threshold Bounds. Hitesh approval not strictly required.
-                        </p>
+                    <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">Lead Code</span>
+                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{item?.code || '—'}</span>
                     </div>
-                )}
+                    <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">Priority</span>
+                        <Badge tone={item?.priority === 'HIGH' ? 'rose' : item?.priority === 'MEDIUM' ? 'amber' : 'slate'}>
+                            {item?.priority || 'MEDIUM'}
+                        </Badge>
+                    </div>
+                    <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">₹ Advance</span>
+                        <Badge tone={item?.token?.status === 'RECEIVED' ? 'green' : 'blue'}>
+                            {item?.token?.status || 'RECEIVED'}
+                        </Badge>
+                    </div>
+                </div>
 
-                {activeTab === 'overview' && (
-                    <>
-                        {/* Live Calculated Summary Header */}
-                        <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="flex flex-col">
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Calculated Cost</span>
-                                <span className="text-lg   font-bold text-slate-900 dark:text-slate-100">
-                                    {currency(calculatedSumTotalCost)}
-                                </span>
-                                <span className="text-[10px] text-slate-400">Sum of material, labour & sample</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Selling / Quoted Value</span>
-                                <span className="text-lg   font-bold text-brand-600 dark:text-brand-400">
-                                    {sellingPriceVal > 0 ? currency(sellingPriceVal) : 'Not specified'}
-                                </span>
-                                <span className="text-[10px] text-slate-400">Base for margin formula</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Formula Calculated Margin</span>
-                                <span className={`text-lg   font-bold ${formulaMarginPercent !== undefined && formulaMarginPercent >= minMarginThresh
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-amber-600 dark:text-amber-400'
-                                    }`}>
-                                    {formulaMarginPercent !== undefined ? `${formulaMarginPercent}%` : 'N/A'}
-                                </span>
-                                <span className="text-[10px] text-slate-400">Formula: ((Quoted - Cost) / Quoted)*100</span>
-                            </div>
-                        </div>
+                {/* Core Costing Fields Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* 1. Due Date */}
+                    <Field label="Pricing Due Date" required hint="Costing evaluation target completion date">
+                        <Input
+                            type="date"
+                            value={form.dueDate}
+                            onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
+                            required
+                        />
+                    </Field>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Field label="Pricing Due Date" hint="Due date for completing costing">
-                                <Input type="date" value={form.dueDate} onChange={set('dueDate')} />
-                            </Field>
-
-                            <Field label="Costing Version / Revision" hint="System-generated version tag">
-                                <div className="flex gap-2">
-                                    <Input placeholder="e.g. v1.0, v1.1" value={form.version} onChange={set('version')} />
-                                    <Button type="button" variant="secondary" size="sm" onClick={handleIncrementVersion}>+ Rev</Button>
-                                </div>
-                            </Field>
-
-                            <Field label="Catalogue Cost (₹)" hint="Numeric value in ₹ (material base)">
-                                <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.catalogueCost} onChange={set('catalogueCost')} />
-                            </Field>
-
-                            <Field label="Landed Cost (₹)" hint="Numeric value in ₹ (freight, duties)">
-                                <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.landedCost} onChange={set('landedCost')} />
-                            </Field>
-
-                            <Field label="Local Fabric Cost (₹)" hint="Numeric value in ₹ (local fabric additions)">
-                                <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.localFabricCost} onChange={set('localFabricCost')} />
-                            </Field>
-
-                            <Field label="Labour Cost / Custom Cost (₹)" hint="Numeric value in ₹ (stitching, custom tailoring)">
-                                <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.labourCost} onChange={set('labourCost')} />
-                            </Field>
-
-                            <Field label="Sample Cost (₹)" hint="Numeric value in ₹ (sampling expense)">
-                                <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.sampleCost} onChange={set('sampleCost')} />
-                            </Field>
-
-                            <Field label="Total Cost (₹)" hint={`Calculated Sum: ₹${calculatedSumTotalCost.toLocaleString('en-IN')}`}>
-                                <Input
-                                    type="number"
-                                    readOnly
-                                    placeholder={String(calculatedSumTotalCost)}
-                                    value={form.totalCost !== '' ? form.totalCost : calculatedSumTotalCost}
-                                    onChange={set('totalCost')}
-                                    className="bg-slate-100 dark:bg-slate-900   font-bold cursor-not-allowed"
-                                />
-                            </Field>
-
-                            <Field label="Selling / Quoted Price (₹)" hint="Base price used to calculate margin %">
-                                <Input type="number" min="0" placeholder="0.00" value={form.sellingPrice} onChange={set('sellingPrice')} />
-                            </Field>
-
-                            <Field label="Calculated Margin (%)" hint={formulaMarginPercent !== undefined ? `Formula Result: ${formulaMarginPercent}%` : "Calculated from cost & selling price"}>
-                                <Input
-                                    type="number"
-                                    step="0.1"
-                                    placeholder={formulaMarginPercent !== undefined ? String(formulaMarginPercent) : "35.0"}
-                                    value={form.calculatedMargin}
-                                    onChange={set('calculatedMargin')}
-                                    className="  font-semibold"
-                                />
-                            </Field>
-
-                            <Field label="Margin Model" hint="Select from approved margin lookup models" className="sm:col-span-2">
-                                <Select value={form.marginModel} onChange={set('marginModel')}>
-                                    {APPROVED_MARGIN_MODELS.map((model) => (
-                                        <option key={model.value} value={model.value}>
-                                            {model.label}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </Field>
-                        </div>
-
-                        {/* Threshold Rules & Hitesh Approval Settings */}
-                        <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-                            <h4 className="text-xs font-semibold uppercase text-brand-600 dark:text-brand-400 mb-3 tracking-wider flex items-center gap-1.5">
-                                <ShieldAlert className="w-3.5 h-3.5" /> Approval Threshold Controls
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Field label="Min Margin Threshold (%)" hint="Trigger Hitesh sign-off below this margin">
-                                    <Input type="number" step="1" value={form.minMarginThreshold} onChange={set('minMarginThreshold')} />
-                                </Field>
-
-                                <Field label="Max Discount Threshold (%)" hint="Trigger Hitesh sign-off above this discount">
-                                    <Input type="number" step="1" value={form.maxDiscountThreshold} onChange={set('maxDiscountThreshold')} />
-                                </Field>
-
-                                <Field label="Hitesh Approval Status">
-                                    <Select value={form.hiteshApprovalStatus} onChange={set('hiteshApprovalStatus')}>
-                                        <option value="NOT_REQUIRED">NOT REQUIRED</option>
-                                        <option value="PENDING">PENDING</option>
-                                        <option value="APPROVED">APPROVED</option>
-                                        <option value="REJECTED">REJECTED</option>
-                                    </Select>
-                                </Field>
-
-                                <Field label="Revision Log Note" hint="Note retained in version history">
-                                    <Input placeholder="Reason for this costing update..." value={form.revisionNote} onChange={set('revisionNote')} />
-                                </Field>
-                            </div>
-
-                            <div className="mt-3">
-                                <Field label="Hitesh Approval Notes / Overriding Justification">
-                                    <Textarea
-                                        rows={2}
-                                        placeholder="Enter justification notes if submitting for Hitesh approval..."
-                                        value={form.hiteshApprovalNotes}
-                                        onChange={set('hiteshApprovalNotes')}
-                                    />
-                                </Field>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {activeTab === 'lineItems' && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">Per Line Item Cost Breakdown</h4>
-                                <p className="text-[11px] text-slate-500">Break down catalogue, landed, fabric, and labour costs item-by-item.</p>
-                            </div>
-                            <Button type="button" size="sm" icon={Plus} onClick={handleAddLineItem}>
-                                Add Item Row
+                    {/* 2. Version */}
+                    <Field
+                        label="Costing Version / Revision"
+                        required
+                        hint="Current costing revision tag (e.g. v1.0, v1.1)"
+                    >
+                        <div className="flex items-center gap-1.5">
+                            <Input
+                                type="text"
+                                value={form.version}
+                                onChange={(e) => setForm((p) => ({ ...p, version: e.target.value }))}
+                                placeholder="v1.0"
+                                className="flex-1"
+                                required
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleBumpVersion}
+                                title="Auto-increment version (e.g. v1.0 → v1.1)"
+                                className="shrink-0 text-xs px-2.5"
+                            >
+                                +0.1 Rev
                             </Button>
                         </div>
+                    </Field>
 
-                        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg">
-                            <table className="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
-                                        <th className="p-2">Item Description</th>
-                                        <th className="p-2 w-20">Qty</th>
-                                        <th className="p-2 w-28">Catalogue (₹)</th>
-                                        <th className="p-2 w-28">Landed (₹)</th>
-                                        <th className="p-2 w-28">Local Fabric (₹)</th>
-                                        <th className="p-2 w-28">Labour (₹)</th>
-                                        <th className="p-2 w-28 text-right">Line Total</th>
-                                        <th className="p-2 w-12 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                    {lineItems.map((itemRow, idx) => {
-                                        const catVal = Number(itemRow.catalogueCost) || 0;
-                                        const landVal = Number(itemRow.landedCost) || 0;
-                                        const fabVal = Number(itemRow.localFabricCost) || 0;
-                                        const labVal = Number(itemRow.labourCost) || 0;
-                                        const lineSum = catVal + landVal + fabVal + labVal;
+                    {/* 3. Category */}
+                    <Field
+                        label="Costing Category"
+                        required
+                        hint="Material category tier (allowed: a, b, or c)"
+                    >
+                        <Select
+                            value={form.category}
+                            onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                            options={[
+                                { value: 'a', label: 'Category A (Tier A — Standard / High-Volume)' },
+                                { value: 'b', label: 'Category B (Tier B — Premium / Curated)' },
+                                { value: 'c', label: 'Category C (Tier C — Luxury / Bespoke)' },
+                            ]}
+                            required
+                        />
+                    </Field>
 
-                                        return (
-                                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                                                <td className="p-2">
-                                                    <Input
-                                                        size="sm"
-                                                        placeholder="Fabric / Item Name"
-                                                        value={itemRow.description}
-                                                        onChange={(e) => handleLineItemChange(idx, 'description', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        min="1"
-                                                        value={itemRow.quantity}
-                                                        onChange={(e) => handleLineItemChange(idx, 'quantity', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        placeholder="0.00"
-                                                        value={itemRow.catalogueCost}
-                                                        onChange={(e) => handleLineItemChange(idx, 'catalogueCost', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        placeholder="0.00"
-                                                        value={itemRow.landedCost}
-                                                        onChange={(e) => handleLineItemChange(idx, 'landedCost', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        placeholder="0.00"
-                                                        value={itemRow.localFabricCost}
-                                                        onChange={(e) => handleLineItemChange(idx, 'localFabricCost', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        placeholder="0.00"
-                                                        value={itemRow.labourCost}
-                                                        onChange={(e) => handleLineItemChange(idx, 'labourCost', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="p-2 text-right   font-semibold text-slate-800 dark:text-slate-200">
-                                                    {currency(lineSum)}
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveLineItem(idx)}
-                                                        className="text-slate-400 hover:text-rose-500 transition p-1"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="bg-slate-100/70 dark:bg-slate-900/70 font-semibold text-slate-800 dark:text-slate-200 border-t border-slate-300 dark:border-slate-700">
-                                        <td colSpan="2" className="p-2 text-right">Aggregated Sums:</td>
-                                        <td className="p-2  ">{currency(lineItemCatalogueSum)}</td>
-                                        <td className="p-2  ">{currency(lineItemLandedSum)}</td>
-                                        <td className="p-2  ">{currency(lineItemLocalFabricSum)}</td>
-                                        <td className="p-2  ">{currency(lineItemLabourSum)}</td>
-                                        <td className="p-2   text-right text-brand-600 dark:text-brand-400 font-bold">
-                                            {currency(lineItemCatalogueSum + lineItemLandedSum + lineItemLocalFabricSum + lineItemLabourSum)}
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                    {/* 4. Price */}
+                    <Field
+                        label="Material Costing Price (₹)"
+                        required
+                        hint="Base material costing price (numeric, default: 0)"
+                    >
+                        <Input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={form.price}
+                            onChange={(e) => setForm((p) => ({ ...p, price: e.target.value === '' ? '' : e.target.value }))}
+                            placeholder="0"
+                            required
+                        />
+                    </Field>
+                </div>
+
+                {/* Costing Summary Preview Banner */}
+                <div className="p-3 bg-amber-500/5 dark:bg-amber-500/10 rounded-lg border border-amber-500/20 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                        <span className="text-slate-600 dark:text-slate-300 font-medium">Configured Material Costing:</span>
+                        <Badge tone={form.category === 'a' ? 'brand' : form.category === 'b' ? 'blue' : 'violet'}>
+                            Category {String(form.category).toUpperCase()}
+                        </Badge>
+                        <span className="font-mono text-slate-800 dark:text-slate-200 font-bold">
+                            {currency(Number(form.price) || 0)}
+                        </span>
                     </div>
-                )}
+                    <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                        Target: {form.dueDate || '—'} ({form.version || 'v1.0'})
+                    </span>
+                </div>
 
-                {activeTab === 'history' && (
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">Retained Costing Version History</h4>
-                                <p className="text-[11px] text-slate-500">System retains all past revisions and snapshots of costing details.</p>
-                            </div>
-                            <Badge tone="indigo">{history.length} Saved Version(s)</Badge>
-                        </div>
-
-                        {history.length === 0 ? (
-                            <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-dashed border-slate-300 dark:border-slate-800">
-                                <History className="w-8 h-8 mx-auto text-slate-400 mb-2" />
-                                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">No previous versions retained yet.</p>
-                                <p className="text-[11px] text-slate-400 mt-0.5">Subsequent updates will automatically save historical versions here.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
-                                {history.map((rev, idx) => (
-                                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col gap-1.5">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="  text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded border border-brand-200 dark:border-brand-800">
-                                                    {rev.version || `v1.${idx}`}
-                                                </span>
-                                                <span className="text-[11px] text-slate-500">
-                                                    {rev.savedAt ? date(rev.savedAt, { time: true }) : 'Previous Version'}
-                                                </span>
-                                            </div>
-                                            <span className="  text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                                Total: {currency(rev.totalCost || 0)}
+                {/* History of Previous Versions */}
+                {Array.isArray(c.costingHistory) && c.costingHistory.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                            <History className="w-3.5 h-3.5" /> Previous Saved Revisions ({c.costingHistory.length})
+                        </span>
+                        <div className="max-h-28 overflow-y-auto space-y-1 rounded border border-slate-200 dark:border-slate-800 p-1.5 bg-slate-50/50 dark:bg-slate-900/40 text-xs">
+                            {c.costingHistory.map((h, i) => (
+                                <div key={i} className="flex items-center justify-between py-1 px-2 rounded bg-white dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/60">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-700 dark:text-slate-300">{h.version || 'v1.0'}</span>
+                                        {h.category && (
+                                            <Badge tone="slate" className="text-[10px] py-0 px-1">
+                                                Cat {String(h.category).toUpperCase()}
+                                            </Badge>
+                                        )}
+                                        {h.price !== undefined && (
+                                            <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
+                                                {currency(h.price)}
                                             </span>
-                                        </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-950 p-2 rounded border border-slate-200 dark:border-slate-800">
-                                            <div>Catalogue: <span className="  font-medium text-slate-900 dark:text-slate-200">{currency(rev.catalogueCost || 0)}</span></div>
-                                            <div>Landed: <span className="  font-medium text-slate-900 dark:text-slate-200">{currency(rev.landedCost || 0)}</span></div>
-                                            <div>Local Fabric: <span className="  font-medium text-slate-900 dark:text-slate-200">{currency(rev.localFabricCost || 0)}</span></div>
-                                            <div>Labour: <span className="  font-medium text-slate-900 dark:text-slate-200">{currency(rev.labourCost || 0)}</span></div>
-                                        </div>
-                                        {rev.notes && (
-                                            <p className="text-[11px] italic text-slate-500">Note: "{rev.notes}"</p>
                                         )}
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                    <span className="text-[10px] text-slate-400">
+                                        {h.savedAt ? date(h.savedAt, { time: true }) : 'Previous'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </form>
@@ -979,8 +583,9 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
-            const model = String(lead.costing?.marginModel || '').toLowerCase();
-            if (!code.includes(q) && !clientName.includes(q) && !model.includes(q)) {
+            const category = String(lead.costing?.category || '').toLowerCase();
+            const version = String(lead.costing?.version || '').toLowerCase();
+            if (!code.includes(q) && !clientName.includes(q) && !category.includes(q) && !version.includes(q)) {
                 return false;
             }
         }
@@ -988,22 +593,22 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
     });
 
     const totalCount = tokenReceivedLeads.length;
-    const costedCount = tokenReceivedLeads.filter((l) => Boolean(l.costing?.version || l.costing?.landedCost || l.costing?.totalCost)).length;
-    const pendingCosting = tokenReceivedLeads.filter((l) => l.costing?.dueDate && !l.costing?.landedCost && !l.costing?.totalCost).length;
-    const totalLandedCost = tokenReceivedLeads.reduce((acc, l) => acc + Number(getNestedVal(l, 'costing.totalCost') || 0), 0);
+    const costedCount = tokenReceivedLeads.filter((l) => Boolean(l.costing?.category || l.costing?.version || (l.costing?.price !== undefined && l.costing?.price > 0))).length;
+    const pendingCosting = tokenReceivedLeads.filter((l) => l.costing?.dueDate && !(l.costing?.price !== undefined && l.costing?.price > 0)).length;
+    const totalCostValue = tokenReceivedLeads.reduce((acc, l) => acc + Number(l.costing?.price || 0), 0);
 
     return (
         <div>
             <PageHeader
                 title="Pricing / Material Costing"
-                subtitle="Evaluate catalogue costs, landed costs, local fabric & labour expenses, costing versions, formula margins, and margin models"
+                subtitle="Evaluate material costing versions, category tiers (A, B, C), and base prices"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <StatTile label="Costing Projects" value={totalCount} sub="Leads in costing stage" icon={Calculator} tone="slate" />
                 <StatTile label="Costings Completed" value={costedCount} sub="Evaluated costing baseline" icon={CheckCircle2} tone="green" />
                 <StatTile label="Pending Costings" value={pendingCosting} sub="Due for calculation" icon={Calendar} tone="amber" />
-                <StatTile label="Total Evaluated Cost" value={currency(totalLandedCost, { compact: true })} sub="Cumulative cost baseline" icon={DollarSign} tone="blue" />
+                <StatTile label="Total Material Cost" value={currency(totalCostValue, { compact: true })} sub="Cumulative material cost baseline" icon={DollarSign} tone="blue" />
             </div>
 
             <Panel className="mb-4">
@@ -1013,7 +618,7 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
                         <Input
                             value={search}
                             onChange={(e) => updateParam('search', e.target.value, '')}
-                            placeholder="Search code, client, margin model..."
+                            placeholder="Search code, client, category, version..."
                             className="pl-9"
                         />
                     </div>

@@ -38,6 +38,7 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+import { isQuotationCreatedInDb } from '../../utils/salesPipeline';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -1452,21 +1453,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const quotationReadyLeads = rawLeads.filter((lead) => {
-        const q = lead.quotation || {};
-        return Boolean(
-            q.no ||
-            q.finalQuotedValue ||
-            q.date ||
-            q.dueDate ||
-            q.version ||
-            (Array.isArray(q.boq) && q.boq.length > 0) ||
-            q.discountApprovalStatus === 'APPROVED' ||
-            lead.approval?.finalApprovedVersion ||
-            lead.quotationNo ||
-            lead.approval?.clientApprovalStatus
-        );
-    });
+    const quotationReadyLeads = rawLeads.filter((lead) => isQuotationCreatedInDb(lead));
 
     const filteredLeads = quotationReadyLeads.filter((lead) => {
         // Status filter
@@ -1482,9 +1469,10 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
-            const version = String(lead.approval?.finalApprovedVersion || '').toLowerCase();
+            const quotNo = String(lead.quotation?.no || lead.quotationNo || '').toLowerCase();
+            const version = String(lead.approval?.finalApprovedVersion || lead.quotation?.version || '').toLowerCase();
             const status = String(lead.approval?.clientApprovalStatus || '').toLowerCase();
-            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q) && !status.includes(q)) {
+            if (!code.includes(q) && !clientName.includes(q) && !quotNo.includes(q) && !version.includes(q) && !status.includes(q)) {
                 return false;
             }
         }
@@ -1504,7 +1492,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads awaiting sign-off" icon={ShieldCheck} tone="amber" />
+                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads with quotation in DB" icon={ShieldCheck} tone="amber" />
                 <StatTile label="Approved Quotes" value={approvedCount} sub="Client sign-offs secured" icon={CheckCircle2} tone="green" />
                 <StatTile label="Pending Approvals" value={pendingCount} sub="Due for client decision" icon={Calendar} tone="brand" />
                 <StatTile label="Revisions Logged" value={revisionsLoggedCount} sub="Under change control" icon={RotateCcw} tone="blue" />
@@ -1559,7 +1547,13 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={ShieldCheck} title="No Client Approval Records Found" hint="Try adjusting search or status filter parameters." />
+                    <EmptyState
+                        icon={ShieldCheck}
+                        title="No Client Approval Records Found"
+                        hint={search || statusFilter !== 'ALL'
+                            ? "Try adjusting search or status filter parameters."
+                            : "Only leads whose quotation is created in the database appear here."}
+                    />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -1614,4 +1608,5 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
     );
 };
 
+export { isQuotationCreatedInDb };
 export default ClientApproval;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, MapPin, CheckCircle2, Clock, ArrowUpRight, ArrowRight, List } from 'lucide-react';
 import { Badge, Button } from '../ui';
-import { date } from '../../utils/format';
+import { date, currency } from '../../utils/format';
 import { getNextStageUrl } from '../../utils/salesPipeline';
 
 
@@ -12,9 +12,15 @@ const getNestedVal = (obj, path) => {
   return path.split('.').reduce((curr, p) => (curr == null ? undefined : curr[p]), obj);
 };
 
-const renderFieldValue = (val) => {
+const renderFieldValue = (val, field) => {
   if (val === null || val === undefined || val === '') return '—';
   if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+  if (field?.type === 'currency' && typeof val === 'number') {
+    return currency(val);
+  }
+  if ((field?.type === 'category' || field?.key === 'costing.category') && typeof val === 'string') {
+    return `Category ${val.toUpperCase()}`;
+  }
   if (Array.isArray(val)) {
     if (val.length === 0) return '—';
     const rooms = Array.from(new Set(val.map((item) => (typeof item === 'object' ? item?.room : null)).filter(Boolean)));
@@ -155,7 +161,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
                     .filter((f) => f.key !== 'delayStatus') // skip computed-only fields
                     .map((field) => {
                       const raw = getNestedVal(lead, field.key);
-                      const display = renderFieldValue(raw);
+                      const display = renderFieldValue(raw, field);
                       return (
                         <div key={field.key}>
                           <span className="text-slate-400 block text-[11px]">{field.label}</span>

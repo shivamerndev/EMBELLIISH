@@ -44,6 +44,9 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
   } else if (stageKey === 'kyc') {
     dueDate = lead.kycDueDate || lead.dueDate;
     isCompleted = lead.kycStatus === 'VERIFIED' || lead.status === 'CONVERTED';
+  } else if (stageKey === 'pricing' || stageKey === 'pricing-costing') {
+    dueDate = lead.costing?.dueDate || lead.dueDate;
+    isCompleted = Boolean(lead.costing?.category || lead.costing?.version || (lead.costing?.price !== undefined && lead.costing?.price > 0));
   } else if (stageKey === 'ready-size') {
     dueDate = lead.readySize?.dueDate || lead.dueDate;
     isCompleted = Boolean(lead.readySize?.confirmationDate);
@@ -116,6 +119,25 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
               <Badge tone={lead.status === 'CONVERTED' || lead.status === 'APPROVED' ? 'emerald' : lead.status === 'QUALIFIED' ? 'blue' : 'slate'}>
                 {lead.status}
               </Badge>
+            </div>
+          )}
+
+          {(stageKey === 'pricing' || stageKey === 'pricing-costing') && lead.costing && (
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/40 text-[11px]">
+              <span className="text-slate-400">Costing:</span>
+              <div className="flex items-center gap-1.5">
+                {lead.costing.category && (
+                  <Badge tone={lead.costing.category === 'a' ? 'brand' : lead.costing.category === 'b' ? 'blue' : 'violet'} className="text-[10px] py-0 px-1 font-bold">
+                    Cat {String(lead.costing.category).toUpperCase()}
+                  </Badge>
+                )}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {currency(lead.costing.price !== undefined && lead.costing.price !== null ? lead.costing.price : 0)}
+                </span>
+                <span className="text-[10px] px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-slate-600 dark:text-slate-400">
+                  {lead.costing.version || 'v1.0'}
+                </span>
+              </div>
             </div>
           )}
 

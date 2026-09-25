@@ -219,52 +219,43 @@ const advanceSchema = z
   })
   .optional();
 
-const costingLineItemSchema = z.object({
-  description: z.string().optional(),
-  quantity: z.coerce.number().optional(),
-  catalogueCost: z.coerce.number().optional(),
-  landedCost: z.coerce.number().optional(),
-  localFabricCost: z.coerce.number().optional(),
-  labourCost: z.coerce.number().optional(),
-  totalCost: z.coerce.number().optional(),
-});
-
-const costingHistorySchema = z.object({
-  version: z.string().optional(),
-  dueDate: z.coerce.date().optional(),
-  catalogueCost: z.coerce.number().optional(),
-  landedCost: z.coerce.number().optional(),
-  localFabricCost: z.coerce.number().optional(),
-  labourCost: z.coerce.number().optional(),
-  sampleCost: z.coerce.number().optional(),
-  totalCost: z.coerce.number().optional(),
-  sellingPrice: z.coerce.number().optional(),
-  calculatedMargin: z.coerce.number().optional(),
-  marginModel: z.string().optional(),
-  savedAt: z.coerce.date().optional(),
-  notes: z.string().optional(),
-});
+const costingHistorySchema = z
+  .object({
+    version: z.string().optional(),
+    dueDate: coerceOptionalDate,
+    category: z
+      .preprocess((val) => {
+        if (val === '' || val === null || val === undefined) return undefined;
+        return typeof val === 'string' ? val.trim().toLowerCase() : val;
+      }, z.enum(['a', 'b', 'c']).optional().nullable()),
+    price: z
+      .preprocess((val) => {
+        if (val === '' || val === null || val === undefined) return 0;
+        return Number(val);
+      }, z.coerce.number().min(0, 'Price must be greater than or equal to 0').default(0))
+      .optional()
+      .nullable(),
+    savedAt: z.coerce.date().optional(),
+  })
+  .passthrough();
 
 const costingSchema = z
   .object({
-    dueDate: z.coerce.date().optional(),
-    catalogueCost: z.coerce.number().optional(),
+    dueDate: coerceOptionalDate,
     version: z.string().optional(),
-    landedCost: z.coerce.number().optional(),
-    localFabricCost: z.coerce.number().optional(),
-    labourCost: z.coerce.number().optional(),
-    totalCost: z.coerce.number().optional(),
-    calculatedMargin: z.coerce.number().optional(),
-    sampleCost: z.coerce.number().optional(),
-    marginModel: z.string().optional(),
-    minMarginThreshold: z.coerce.number().optional(),
-    maxDiscountThreshold: z.coerce.number().optional(),
-    hiteshApprovalRequired: z.boolean().optional(),
-    hiteshApprovalStatus: z.enum(['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED']).optional(),
-    hiteshApprovalNotes: z.string().optional(),
-    lineItems: z.array(costingLineItemSchema).optional(),
+    category: z
+      .preprocess((val) => {
+        if (val === '' || val === null || val === undefined) return undefined;
+        return typeof val === 'string' ? val.trim().toLowerCase() : val;
+      }, z.enum(['a', 'b', 'c', 'A', 'B', 'C']).transform((val) => String(val).toLowerCase()).pipe(z.enum(['a', 'b', 'c'])).optional().nullable()),
+    price: z
+      .preprocess((val) => {
+        if (val === '' || val === null || val === undefined) return 0;
+        return Number(val);
+      }, z.coerce.number().min(0, 'Price must be greater than or equal to 0').default(0)),
     costingHistory: z.array(costingHistorySchema).optional(),
   })
+  .passthrough()
   .optional();
 
 const fabricItemSchema = z.object({

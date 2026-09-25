@@ -809,21 +809,11 @@ const LeadDetails = () => {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
                         <BadgeDollarSign className="w-3.5 h-3.5" />Pricing / Material Costing
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <InfoTile label="Pricing Due Date" value={lead.costing?.dueDate ? date(lead.costing.dueDate) : null} />
-                        <InfoTile label="Catalogue Cost" value={lead.costing?.catalogueCost ? currency(lead.costing.catalogueCost) : null} />
-                        <InfoTile label="Costing Version / Revision" value={lead.costing?.version} />
-                        <InfoTile label="Landed Cost" value={lead.costing?.landedCost ? currency(lead.costing.landedCost) : null} />
-                        <InfoTile label="Local Fabric Cost" value={lead.costing?.localFabricCost ? currency(lead.costing.localFabricCost) : null} />
-                        <InfoTile label="Labour Cost / Custom Cost" value={lead.costing?.labourCost ? currency(lead.costing.labourCost) : null} />
-                        <InfoTile label="Total Cost" value={lead.costing?.totalCost ? currency(lead.costing.totalCost) : null} />
-                        <InfoTile label="Calculated Margin %" value={lead.costing?.calculatedMargin !== undefined && lead.costing?.calculatedMargin !== null ? `${lead.costing.calculatedMargin}%` : null} />
-                        <InfoTile label="Sample Cost" value={lead.costing?.sampleCost ? currency(lead.costing.sampleCost) : null} />
-                        <InfoTile label="Margin Model" value={lead.costing?.marginModel} />
-                        <InfoTile label="Min Margin Threshold" value={lead.costing?.minMarginThreshold ? `${lead.costing.minMarginThreshold}%` : '25%'} />
-                        <InfoTile label="Max Discount Threshold" value={lead.costing?.maxDiscountThreshold ? `${lead.costing.maxDiscountThreshold}%` : '15%'} />
-                        <InfoTile label="Hitesh Approval Status" value={lead.costing?.hiteshApprovalStatus ? lead.costing.hiteshApprovalStatus.replace(/_/g, ' ') : 'NOT REQUIRED'} />
-                        <InfoTile label="Hitesh Approval Notes" value={lead.costing?.hiteshApprovalNotes} />
+                        <InfoTile label="Costing Version / Revision" value={lead.costing?.version || 'v1.0'} />
+                        <InfoTile label="Costing Category" value={lead.costing?.category ? `Category ${String(lead.costing.category).toUpperCase()}` : null} />
+                        <InfoTile label="Material Costing Price" value={currency(lead.costing?.price !== undefined && lead.costing?.price !== null ? lead.costing.price : 0)} />
                     </div>
                 </div>
             </div>

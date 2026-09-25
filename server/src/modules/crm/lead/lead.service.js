@@ -60,6 +60,21 @@ class LeadService extends BaseService {
       edge = await SalesCommercialModel.findOne({ lead: lead._id || lead.id }).lean();
     }
     if (edge) {
+      if (edge.costing) {
+        edge.costing = {
+          dueDate: edge.costing.dueDate,
+          version: edge.costing.version || 'v1.0',
+          category: edge.costing.category,
+          price: edge.costing.price !== undefined && edge.costing.price !== null ? Number(edge.costing.price) : 0,
+          costingHistory: Array.isArray(edge.costing.costingHistory) ? edge.costing.costingHistory.map((h) => ({
+            version: h.version || 'v1.0',
+            dueDate: h.dueDate,
+            category: h.category,
+            price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+            savedAt: h.savedAt,
+          })) : [],
+        };
+      }
       return {
         ...edge,
         ...lead,
@@ -254,6 +269,21 @@ class LeadService extends BaseService {
     }
 
     if (edgeDoc) {
+      if (edgeDoc.costing) {
+        edgeDoc.costing = {
+          dueDate: edgeDoc.costing.dueDate,
+          version: edgeDoc.costing.version || 'v1.0',
+          category: edgeDoc.costing.category,
+          price: edgeDoc.costing.price !== undefined && edgeDoc.costing.price !== null ? Number(edgeDoc.costing.price) : 0,
+          costingHistory: Array.isArray(edgeDoc.costing.costingHistory) ? edgeDoc.costing.costingHistory.map((h) => ({
+            version: h.version || 'v1.0',
+            dueDate: h.dueDate,
+            category: h.category,
+            price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+            savedAt: h.savedAt,
+          })) : [],
+        };
+      }
       return {
         ...edgeDoc,
         ...updatedLead,
