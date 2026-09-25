@@ -240,7 +240,7 @@ Email: hiteshembellish@gmail.com`}
                     <React.Fragment key={room.id || `room-${rIdx}`}>
                       {/* Room Header Row */}
                       <tr className="bg-slate-100 font-bold">
-                        <td className="text-center font-mono">{room.srNo || rIdx + 1}</td>
+                        <td className="text-center  ">{room.srNo || rIdx + 1}</td>
                         <td colSpan={8} className="font-bold text-slate-900">
                           {room.roomName}
                         </td>
@@ -256,12 +256,12 @@ Email: hiteshembellish@gmail.com`}
                             <td></td>
                             <td className="pl-4 text-slate-900">{item.description}</td>
                             <td className="text-center text-slate-600">{item.unit || '—'}</td>
-                            <td className="text-right font-mono">{item.qty !== undefined ? Number(item.qty).toFixed(2) : '0.00'}</td>
-                            <td className="text-right font-mono">{formatINR(item.price)}</td>
-                            <td className="text-right font-mono">{formatINR(totalVal)}</td>
-                            <td className="text-center font-mono">{item.gstRate ?? 5}%</td>
-                            <td className="text-right font-mono">{formatINR(gstVal)}</td>
-                            <td className="text-right font-mono font-medium">{formatINR(rowTotal)}</td>
+                            <td className="text-right  ">{item.qty !== undefined ? Number(item.qty).toFixed(2) : '0.00'}</td>
+                            <td className="text-right  ">{formatINR(item.price)}</td>
+                            <td className="text-right  ">{formatINR(totalVal)}</td>
+                            <td className="text-center  ">{item.gstRate ?? 5}%</td>
+                            <td className="text-right  ">{formatINR(gstVal)}</td>
+                            <td className="text-right   font-medium">{formatINR(rowTotal)}</td>
                           </tr>
                         );
                       })}
@@ -283,12 +283,12 @@ Email: hiteshembellish@gmail.com`}
                             <td></td>
                             <td className="font-semibold text-slate-900">{srv.description}</td>
                             <td className="text-center text-slate-600">{srv.unit || '—'}</td>
-                            <td className="text-right font-mono">{srv.unit ? Number(srv.qty || 1).toFixed(2) : ''}</td>
-                            <td className="text-right font-mono">{srv.price ? formatINR(srv.price) : ''}</td>
-                            <td className="text-right font-mono">{formatINR(totalVal)}</td>
-                            <td className="text-center font-mono">{srv.gstRate ?? 18}%</td>
-                            <td className="text-right font-mono">{formatINR(gstVal)}</td>
-                            <td className="text-right font-mono font-medium">{formatINR(rowTotal)}</td>
+                            <td className="text-right  ">{srv.unit ? Number(srv.qty || 1).toFixed(2) : ''}</td>
+                            <td className="text-right  ">{srv.price ? formatINR(srv.price) : ''}</td>
+                            <td className="text-right  ">{formatINR(totalVal)}</td>
+                            <td className="text-center  ">{srv.gstRate ?? 18}%</td>
+                            <td className="text-right  ">{formatINR(gstVal)}</td>
+                            <td className="text-right   font-medium">{formatINR(rowTotal)}</td>
                           </tr>
                         );
                       })}
@@ -309,14 +309,14 @@ Email: hiteshembellish@gmail.com`}
                     <td colSpan={5} className="text-left px-3 text-xs uppercase tracking-wider font-bold">
                       Total
                     </td>
-                    <td className="text-right font-mono font-bold text-xs">
+                    <td className="text-right   font-bold text-xs">
                       {formatINR(totals.grandTotalValue)}
                     </td>
                     <td></td>
-                    <td className="text-right font-mono font-bold text-xs">
+                    <td className="text-right   font-bold text-xs">
                       {formatINR(totals.grandGstValue)}
                     </td>
-                    <td className="text-right font-mono font-bold text-xs text-slate-950">
+                    <td className="text-right   font-bold text-xs text-slate-950">
                       {formatINR(totals.grandTotal)}
                     </td>
                   </tr>
@@ -326,7 +326,7 @@ Email: hiteshembellish@gmail.com`}
                     <td colSpan={8} className="text-right pr-4 text-xs font-semibold">
                       Round Off
                     </td>
-                    <td className="text-right font-mono font-bold text-xs text-slate-950">
+                    <td className="text-right   font-bold text-xs text-slate-950">
                       {formatINR(totals.roundOff || totals.grandTotal)}
                     </td>
                   </tr>
@@ -374,11 +374,11 @@ Email: hiteshembellish@gmail.com`}
               <p className="font-bold text-slate-950 text-sm">{termsBanking.favourOf || 'Embellish'}</p>
               <p className="font-bold text-slate-900 mt-1">{termsBanking.bankName || 'KOTAK MAHINDRA BANK'}</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] pt-1">
-                <p><span className="font-semibold text-slate-700">Account No :</span> <span className="font-bold font-mono">{termsBanking.accountNo || '7648054150'}</span></p>
-                <p><span className="font-semibold text-slate-700">IFS Code :</span> <span className="font-bold font-mono">{termsBanking.ifscCode || 'KKBK0000642'}</span></p>
-                <p><span className="font-semibold text-slate-700">MICR No :</span> <span className="font-mono">{termsBanking.micrNo || '400485006'}</span></p>
+                <p><span className="font-semibold text-slate-700">Account No :</span> <span className="font-bold  ">{termsBanking.accountNo || '7648054150'}</span></p>
+                <p><span className="font-semibold text-slate-700">IFS Code :</span> <span className="font-bold  ">{termsBanking.ifscCode || 'KKBK0000642'}</span></p>
+                <p><span className="font-semibold text-slate-700">MICR No :</span> <span className=" ">{termsBanking.micrNo || '400485006'}</span></p>
                 <p><span className="font-semibold text-slate-700">Branch :</span> {termsBanking.branch || 'Mulund West'}</p>
-                <p className="col-span-2 pt-1"><span className="font-semibold text-slate-700">GST NO :</span> <span className="font-bold font-mono">{termsBanking.gstNo || '27AIFPB1400Q1ZH'}</span></p>
+                <p className="col-span-2 pt-1"><span className="font-semibold text-slate-700">GST NO :</span> <span className="font-bold  ">{termsBanking.gstNo || '27AIFPB1400Q1ZH'}</span></p>
               </div>
             </div>
 

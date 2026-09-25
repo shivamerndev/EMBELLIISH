@@ -40,7 +40,7 @@ export const FollowUpCard = ({ item, onEdit, onView }) => {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              <span className="  text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {item.code || 'LD'}
               </span>
               <OverallStatusBadge value={item.overallLeadStatus || item.overallStatus || item.status} />
@@ -52,7 +52,7 @@ export const FollowUpCard = ({ item, onEdit, onView }) => {
           <DelayBadge
             dueDate={followUpDateVal}
             isCompleted={isDone}
-            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+            fallback={<span className="text-slate-400 text-xs  ">—</span>}
           />
         </div>
 
@@ -64,7 +64,7 @@ export const FollowUpCard = ({ item, onEdit, onView }) => {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Follow-up Date:</span>
-            <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">
+            <span className="  text-amber-600 dark:text-amber-400 font-semibold">
               {followUpDateVal ? new Date(followUpDateVal).toLocaleDateString('en-GB') : '—'}
             </span>
           </div>
@@ -84,7 +84,7 @@ export const FollowUpCard = ({ item, onEdit, onView }) => {
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
-        <span className="text-[10px] text-slate-400 font-mono">
+        <span className="text-[10px] text-slate-400  ">
           Last updated: {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('en-GB') : '—'}
         </span>
 

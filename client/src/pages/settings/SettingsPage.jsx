@@ -386,7 +386,7 @@ const PricingTab = () => {
   const missing = (coverage || []).filter((row) => !row.published);
 
   const columns = [
-    { key: 'key', header: 'Key', render: (r) => <span className="font-mono text-xs">{r.key}</span> },
+    { key: 'key', header: 'Key', render: (r) => <span className="  text-xs">{r.key}</span> },
     { key: 'particular', header: 'Particular' },
     { key: 'category', header: 'Category', render: (r) => <Badge tone="slate">{r.category}</Badge> },
     { key: 'unit', header: 'Unit', render: (r) => <span className="text-slate-500 text-xs">{r.unit}</span> },

@@ -194,9 +194,9 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
       footer={
         <div className="flex items-center justify-between w-full gap-3">
           <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
-            <span className="hidden sm:inline">Total ex-tax: <strong className="font-mono text-slate-900 dark:text-slate-100">₹{formatINR(totals.grandTotalValue)}</strong></span>
-            <span className="hidden sm:inline">GST: <strong className="font-mono text-amber-600 dark:text-amber-400">₹{formatINR(totals.grandGstValue)}</strong></span>
-            <span>Final Quoted: <strong className="font-mono text-brand-600 dark:text-brand-400 text-sm">₹{formatINR(totals.roundOff || totals.grandTotal)}</strong></span>
+            <span className="hidden sm:inline">Total ex-tax: <strong className="  text-slate-900 dark:text-slate-100">₹{formatINR(totals.grandTotalValue)}</strong></span>
+            <span className="hidden sm:inline">GST: <strong className="  text-amber-600 dark:text-amber-400">₹{formatINR(totals.grandGstValue)}</strong></span>
+            <span>Final Quoted: <strong className="  text-brand-600 dark:text-brand-400 text-sm">₹{formatINR(totals.roundOff || totals.grandTotal)}</strong></span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
                   <div className="flex items-center gap-1.5">
                     <span>{tab.label}</span>
                     {tab.badge && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full   bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                         {tab.badge}
                       </span>
                     )}

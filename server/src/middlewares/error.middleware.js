@@ -24,7 +24,15 @@ const errorMiddleware = (err, req, res, next) => {
     }));
   } else if (err.name === 'CastError') {
     statusCode = 400;
-    message = `Invalid value for ${err.path}: ${err.value}`;
+    let valStr = err.value;
+    if (typeof err.value === 'object' && err.value !== null) {
+      try {
+        valStr = JSON.stringify(err.value);
+      } catch {
+        valStr = String(err.value);
+      }
+    }
+    message = `Invalid value for ${err.path}: ${valStr}`;
   } else if (err.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyValue || {})[0] || 'value';

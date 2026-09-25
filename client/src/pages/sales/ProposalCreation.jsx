@@ -40,6 +40,7 @@ const SPREADSHEET_SECTIONS = [
         tableCols: [
             { key: 'proposal.dueDate', label: 'Due Date' },
             { key: 'delayStatus', label: 'SLA Status' },
+            { key: 'proposal.consumptionSheet', label: 'BOQ / Consumption' },
             { key: 'proposal.noVersion', label: 'Proposal No.' },
             { key: 'proposal.approvalStatus', label: 'Approval Status' },
             { key: 'proposal.pricingRange', label: 'Pricing Range' },
@@ -89,6 +90,70 @@ const parseAttachmentsOrLinks = (raw) => {
         }));
     }
     return [];
+};
+
+export const parseSubformArray = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'object' && raw !== null) return [raw];
+    if (typeof raw === 'string') {
+        let current = raw.trim();
+        let depth = 0;
+        while (typeof current === 'string' && depth < 5) {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    current = JSON.parse(trimmed);
+                    depth++;
+                } catch {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        if (Array.isArray(current)) return current;
+        if (typeof current === 'object' && current !== null) return [current];
+    }
+    return [];
+};
+
+/**
+ * Validates whether a lead has an actual Consumption Sheet / BOQ created in the database.
+ * Pure due dates or completed studio meetings / ready-sizes do NOT count as a created consumption sheet.
+ */
+export const isConsumptionSheetCreatedInDb = (lead) => {
+    if (!lead) return false;
+    const c = lead.consumption || lead.salesCommercial?.consumption;
+    const p = lead.proposal || lead.salesCommercial?.proposal;
+
+    // 1. Explicit BOQ / Consumption Sheet Version exists and is non-empty
+    if (c?.boqVersion && String(c.boqVersion).trim()) return true;
+
+    // 2. BOQ Prepared Date or BOQ Prepared By exists
+    if (c?.boqPreparedDate || (c?.boqPreparedBy && String(c.boqPreparedBy).trim())) return true;
+
+    // 3. Consumption measurements array has rows
+    const rawMeasurements = parseSubformArray(c?.measurements);
+    if (rawMeasurements.length > 0) return true;
+
+    // 4. Consumption Quantity or Panel Count entered (> 0)
+    if (c?.quantity !== undefined && c?.quantity !== null && c?.quantity !== '' && Number(c.quantity) > 0) return true;
+    if (c?.panelCount !== undefined && c?.panelCount !== null && c?.panelCount !== '' && Number(c.panelCount) > 0) return true;
+
+    // 5. Fabric Design Selection entered in consumption
+    const rawFabrics = parseSubformArray(c?.fabricDesignSelection);
+    if (rawFabrics.length > 0) return true;
+    if (typeof c?.fabricDesignSelection === 'string' && c.fabricDesignSelection.trim().length > 0 && c.fabricDesignSelection.trim() !== '[]') return true;
+
+    // 6. Physical/digital Consumption Sheet files attached or selected in proposal / consumption
+    const consumptionFiles = parseAttachmentsOrLinks(c?.consumptionSheet);
+    if (consumptionFiles.length > 0) return true;
+    const proposalConsumptionFiles = parseAttachmentsOrLinks(p?.consumptionSheet);
+    if (proposalConsumptionFiles.length > 0) return true;
+    if (p?.selectedBoqVersion && String(p.selectedBoqVersion).trim()) return true;
+
+    return false;
 };
 
 /* ------------------------------------------------------------- File & Link Uploader Component */
@@ -250,12 +315,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(['Approved', 'Completed', 'Submitted', 'Sent'].includes(lead.proposal?.approvalStatus || lead.proposal?.status) || lead.proposal?.date || lead.proposal?.actualDate)}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -266,7 +331,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = !lead.proposal?.date && !lead.proposal?.actualDate && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Proposal Preparation Overdue" />}
@@ -279,11 +344,11 @@ const SPREADSHEET_CELL_RENDERERS = {
         if (!noVer) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
             <div className="flex flex-col items-center justify-center gap-0.5">
-                <span className="font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20 whitespace-nowrap">
+                <span className="  text-[11px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded border border-brand-500/20 whitespace-nowrap">
                     {noVer}
                 </span>
                 {revCount > 0 && (
-                    <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
+                    <span className="text-[9px]   text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
                         <History className="w-2.5 h-2.5" /> {revCount} rev(s)
                     </span>
                 )}
@@ -294,7 +359,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.proposal?.date;
         if (!val) return <Badge tone="slate" className="text-[10px]">UNISSUED</Badge>;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                 {date(val)}
             </span>
@@ -329,7 +394,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         return (
             <div className="flex flex-col items-center gap-0.5 justify-center">
                 {boqVer && (
-                    <Badge tone="purple" className="text-[10px] font-mono">
+                    <Badge tone="purple" className="text-[10px]  ">
                         <Layers className="w-2.5 h-2.5 mr-1" /> {boqVer}
                     </Badge>
                 )}
@@ -365,7 +430,7 @@ const SPREADSHEET_CELL_RENDERERS = {
             const minStr = minP ? formatCurrencyINR(minP) : '₹0';
             const maxStr = maxP ? formatCurrencyINR(maxP) : '—';
             return (
-                <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+                <span className="  text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                     {minStr} - {maxStr}
                 </span>
             );
@@ -373,7 +438,7 @@ const SPREADSHEET_CELL_RENDERERS = {
 
         if (rawRange) {
             return (
-                <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+                <span className="  text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                     {rawRange}
                 </span>
             );
@@ -485,7 +550,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
@@ -550,23 +615,64 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
     const prop = item?.proposal || {};
     const initialLetter = prop.letterData || {};
 
-    const [dueDate, setDueDate] = useState(formatDateForInput(initialLetter.dueDate || prop.dueDate));
-    const [actualDate, setActualDate] = useState(formatDateForInput(initialLetter.actualDate || prop.actualDate || prop.date));
-    const [dateVal, setDateVal] = useState(initialLetter.date || '10.11.2025');
-    const [clientName, setClientName] = useState(initialLetter.clientName || item?.clientName || 'Mr. Rakesh Jain');
+    const defaultDate = useMemo(() => {
+        if (initialLetter.date) return initialLetter.date;
+        if (prop.date) {
+            try {
+                const d = new Date(prop.date);
+                if (!isNaN(d.getTime())) {
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const yyyy = d.getFullYear();
+                    return `${dd}.${mm}.${yyyy}`;
+                }
+            } catch { }
+        }
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+    }, [initialLetter.date, prop.date]);
 
-    const [rooms, setRooms] = useState(initialLetter.rooms || [
-        { srNo: '1.', area: 'Living Area' },
-        { srNo: '2.', area: 'Mandir Area' },
-        { srNo: '3.', area: 'Guest Room' },
-        { srNo: '4.', area: 'Rakesh Room' },
-        { srNo: '5.', area: 'Rishabh Room' },
-        { srNo: '6.', area: 'Rishabh Walking Room' },
-        { srNo: '7.', area: 'Servant Room' },
-        { srNo: '8.', area: 'Kitchen' },
-        { srNo: '9.', area: 'Abhit Room' },
-        { srNo: '10.', area: 'Kids Room' },
-    ]);
+    const defaultRooms = useMemo(() => {
+        if (Array.isArray(initialLetter.rooms) && initialLetter.rooms.length > 0) {
+            return initialLetter.rooms;
+        }
+        const consumptionRooms = new Set();
+        const rawMeasurements = parseSubformArray(item?.consumption?.measurements);
+        if (rawMeasurements.length > 0) {
+            rawMeasurements.forEach((r) => {
+                const roomName = r.room || r.roomName || r.area;
+                if (roomName && String(roomName).trim()) {
+                    consumptionRooms.add(String(roomName).trim());
+                }
+            });
+        }
+        if (item?.consumption?.roomList) {
+            String(item.consumption.roomList)
+                .split(',')
+                .map((r) => r.trim())
+                .filter(Boolean)
+                .forEach((r) => consumptionRooms.add(r));
+        }
+        if (consumptionRooms.size > 0) {
+            return Array.from(consumptionRooms).map((area, idx) => ({
+                srNo: `${idx + 1}.`,
+                area
+            }));
+        }
+        return [
+            { srNo: '1.', area: 'Living Area' },
+            { srNo: '2.', area: 'Mandir Area' },
+            { srNo: '3.', area: 'Guest Room' },
+            { srNo: '4.', area: 'Master Bedroom' },
+        ];
+    }, [initialLetter.rooms, item?.consumption]);
+
+    const [dateVal, setDateVal] = useState(defaultDate);
+    const [clientName, setClientName] = useState(initialLetter.clientName || item?.clientName || 'Valued Client');
+    const [rooms, setRooms] = useState(defaultRooms);
 
     const [opt1, setOpt1] = useState(() => {
         const base = initialLetter.opt1 || {
@@ -654,22 +760,9 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
     };
 
     const handleReset = () => {
-        setDueDate(getLocalDate());
-        setActualDate(getLocalDate());
-        setDateVal('10.11.2025');
-        setClientName(item?.clientName || 'Mr. Rakesh Jain');
-        setRooms([
-            { srNo: '1.', area: 'Living Area' },
-            { srNo: '2.', area: 'Mandir Area' },
-            { srNo: '3.', area: 'Guest Room' },
-            { srNo: '4.', area: 'Rakesh Room' },
-            { srNo: '5.', area: 'Rishabh Room' },
-            { srNo: '6.', area: 'Rishabh Walking Room' },
-            { srNo: '7.', area: 'Servant Room' },
-            { srNo: '8.', area: 'Kitchen' },
-            { srNo: '9.', area: 'Abhit Room' },
-            { srNo: '10.', area: 'Kids Room' },
-        ]);
+        setDateVal(defaultDate);
+        setClientName(item?.clientName || 'Valued Client');
+        setRooms(defaultRooms);
         setOpt1({
             curtainQty: '748',
             curtainRate: '3000.00',
@@ -1079,8 +1172,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                 <div
                                     key={idx}
                                     className={`flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg border transition-all duration-300 ${newlyAddedIdx === idx
-                                            ? 'border-purple-500 ring-2 ring-purple-500/30 dark:ring-purple-400/40 bg-purple-50/40 dark:bg-purple-950/20'
-                                            : 'border-slate-200/60 dark:border-slate-700/60'
+                                        ? 'border-purple-500 ring-2 ring-purple-500/30 dark:ring-purple-400/40 bg-purple-50/40 dark:bg-purple-950/20'
+                                        : 'border-slate-200/60 dark:border-slate-700/60'
                                         }`}
                                 >
                                     <input
@@ -1717,40 +1810,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const eligibleProposalLeads = rawLeads.filter((lead) => {
-        const p = lead.proposal;
-        const hasProposalData = Boolean(
-            p?.noVersion ||
-            p?.date ||
-            p?.dueDate ||
-            (p?.approvalStatus && p?.approvalStatus !== 'PENDING') ||
-            p?.selectedBoqVersion ||
-            (Array.isArray(p?.consumptionSheet) && p.consumptionSheet.length > 0) ||
-            p?.clientBrief ||
-            p?.minPricing ||
-            p?.maxPricing
-        );
-        if (hasProposalData) return true;
-
-        const hasStudioCompleted = Boolean(
-            lead.studioMeeting?.date ||
-            lead.studioMeeting?.feedback ||
-            lead.studioMeeting?.nextAction ||
-            lead.studioMeeting?.attendees ||
-            lead.studioMeeting?.pricingRange
-        );
-
-        const hasBoqOrReadySize = Boolean(
-            lead.consumption?.boqVersion ||
-            lead.consumption?.fabricDesignSelection ||
-            lead.readySize?.confirmationDate ||
-            lead.readySize?.confirmedBy ||
-            lead.readySize?.readyHeight ||
-            lead.readySize?.status === 'Confirmed'
-        );
-
-        return hasStudioCompleted || hasBoqOrReadySize;
-    });
+    const eligibleProposalLeads = rawLeads.filter((lead) => isConsumptionSheetCreatedInDb(lead));
 
     const filteredLeads = eligibleProposalLeads.filter((lead) => {
         if (search) {
@@ -1824,7 +1884,11 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={FileText} title="No Proposal Records Found" hint="Try adjusting search parameters." />
+                    <EmptyState
+                        icon={FileText}
+                        title="No Proposal Records Found"
+                        hint={search ? "Try adjusting search parameters." : "Only leads whose consumption sheet has been created in the database appear here. Please complete the Consumption Sheet / BOQ stage first."}
+                    />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -1840,7 +1904,11 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                     )}
                     empty={
                         <Panel className="p-8 text-center">
-                            <EmptyState icon={FileText} title="No Proposal Records Found" hint="Try adjusting search parameters." />
+                            <EmptyState
+                                icon={FileText}
+                                title="No Proposal Records Found"
+                                hint={search ? "Try adjusting search parameters." : "Only leads whose consumption sheet has been created in the database appear here. Please complete the Consumption Sheet / BOQ stage first."}
+                            />
                         </Panel>
                     }
                 />

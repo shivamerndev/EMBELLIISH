@@ -83,12 +83,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.siteVisitCompleted || lead.siteVisitRequired === false)}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onView(lead); }}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -180,9 +180,9 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit) => {
     if (typeof raw === 'number') {
         const kLower = key.toLowerCase();
         if (kLower.includes('cost') || kLower.includes('budget') || kLower.includes('price') || kLower.includes('value') || kLower.includes('amount') || kLower.includes('taxes') || kLower.includes('subtotal') || kLower.includes('discount')) {
-            return <span className="font-mono text-slate-900 dark:text-slate-200 text-xs font-semibold">{currency(raw)}</span>;
+            return <span className="  text-slate-900 dark:text-slate-200 text-xs font-semibold">{currency(raw)}</span>;
         }
-        return <span className="font-mono text-slate-900 dark:text-slate-200 text-xs">{raw}</span>;
+        return <span className="  text-slate-900 dark:text-slate-200 text-xs">{raw}</span>;
     }
 
     if (typeof raw === 'boolean') {
@@ -328,7 +328,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onSiteVisit, onRowClick, s
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {paginatedItems.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>

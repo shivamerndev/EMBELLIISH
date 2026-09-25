@@ -44,6 +44,9 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
   } else if (stageKey === 'kyc') {
     dueDate = lead.kycDueDate || lead.dueDate;
     isCompleted = lead.kycStatus === 'VERIFIED' || lead.status === 'CONVERTED';
+  } else if (stageKey === 'pricing' || stageKey === 'pricing-costing') {
+    dueDate = lead.costing?.dueDate || lead.dueDate;
+    isCompleted = Boolean(lead.costing?.category || lead.costing?.version || (lead.costing?.price !== undefined && lead.costing?.price > 0));
   } else if (stageKey === 'ready-size') {
     dueDate = lead.readySize?.dueDate || lead.dueDate;
     isCompleted = Boolean(lead.readySize?.confirmationDate);
@@ -77,7 +80,7 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              <span className="  text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {code}
               </span>
               <Badge tone={priority === 'HIGH' ? 'rose' : priority === 'MEDIUM' ? 'amber' : 'slate'}>
@@ -92,7 +95,7 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
           <DelayBadge
             dueDate={dueDate}
             isCompleted={isCompleted}
-            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+            fallback={<span className="text-slate-400 text-xs  ">—</span>}
           />
         </div>
 
@@ -119,9 +122,28 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
             </div>
           )}
 
+          {(stageKey === 'pricing' || stageKey === 'pricing-costing') && lead.costing && (
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/40 text-[11px]">
+              <span className="text-slate-400">Costing:</span>
+              <div className="flex items-center gap-1.5">
+                {lead.costing.category && (
+                  <Badge tone={lead.costing.category === 'a' ? 'brand' : lead.costing.category === 'b' ? 'blue' : 'violet'} className="text-[10px] py-0 px-1 font-bold">
+                    Cat {String(lead.costing.category).toUpperCase()}
+                  </Badge>
+                )}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {currency(lead.costing.price !== undefined && lead.costing.price !== null ? lead.costing.price : 0)}
+                </span>
+                <span className="text-[10px] px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-slate-600 dark:text-slate-400">
+                  {lead.costing.version || 'v1.0'}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-xs pt-1">
             <span className="text-slate-400">Value / Budget:</span>
-            <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+            <span className="  font-bold text-slate-900 dark:text-slate-100">
               {currency(estValue)}
             </span>
           </div>
@@ -130,7 +152,7 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
 
       {/* Card Footer Actions */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto gap-1" onClick={(e) => e.stopPropagation()}>
-        <span className="text-[10px] text-slate-400 font-mono">
+        <span className="text-[10px] text-slate-400  ">
           {dueDate ? date(dueDate) : '—'}
         </span>
 
@@ -157,11 +179,10 @@ export const SalesStageCard = ({ lead, stageKey, onView, onEdit, onRowClick }) =
             size="sm"
             variant="outline"
             icon={stageKey === 'ready-size' ? CheckCircle2 : ArrowRight}
-            className={`text-[11px] h-7 px-2 ${
-              stageKey === 'ready-size'
+            className={`text-[11px] h-7 px-2 ${stageKey === 'ready-size'
                 ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                 : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
-            }`}
+              }`}
             onClick={handleNextStepRedirect}
             title={stageKey === 'ready-size' ? 'Production Dossier' : 'Move & Redirect to Next Step'}
           >

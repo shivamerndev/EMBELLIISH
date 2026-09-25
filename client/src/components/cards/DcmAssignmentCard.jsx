@@ -46,7 +46,7 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              <span className="  text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                 {item.code || 'LD'}
               </span>
               <LeadPriorityBadge value={item.priority} />
@@ -58,7 +58,7 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
           <DelayBadge
             dueDate={dueDateVal}
             isCompleted={Boolean(item.assignedDcmName && item.assignedDcmName !== 'NA' && !item.reassignmentRequired)}
-            fallback={<span className="text-slate-400 text-xs font-mono">—</span>}
+            fallback={<span className="text-slate-400 text-xs  ">—</span>}
           />
         </div>
 
@@ -69,7 +69,7 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
             <span className="font-medium text-slate-800 dark:text-slate-200">{contactPersonVal}</span>
           </div>
           {item.phone && (
-            <div className="flex items-center justify-between font-mono">
+            <div className="flex items-center justify-between  ">
               <span className="text-slate-400">Phone:</span>
               <span>{item.phone}</span>
             </div>
@@ -81,7 +81,7 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-slate-400">DCM Load:</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-slate-700 dark:text-slate-300">{item.dcmActiveProjectCount || 0} active</span>
+              <span className="  text-slate-700 dark:text-slate-300">{item.dcmActiveProjectCount || 0} active</span>
               <DcmCapacityBadge value={item.dcmCapacityStatus} />
             </div>
           </div>
@@ -97,7 +97,7 @@ export const DcmAssignmentCard = ({ item, onAssign, onRowClick }) => {
 
       {/* Card Footer Actions */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
-        <span className="text-[10px] text-slate-400 font-mono">
+        <span className="text-[10px] text-slate-400  ">
           Due: {item.assignmentDueDate ? new Date(item.assignmentDueDate).toLocaleDateString('en-GB') : '—'}
         </span>
 

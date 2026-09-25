@@ -25,7 +25,7 @@ const getCalcType = (particular) => {
 const ResultRow = ({ label, value, unit = '', highlight = false, warn = false }) => (
     <div className={`flex items-center justify-between px-2 py-1.5 rounded-md ${highlight ? 'bg-emerald-500/10 border border-emerald-500/20' : warn ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-slate-100/60 dark:bg-slate-800/40'}`}>
         <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>
-        <span className={`font-mono font-bold text-[12px] ${highlight ? 'text-emerald-700 dark:text-emerald-300' : warn ? 'text-amber-700 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>
+        <span className={`  font-bold text-[12px] ${highlight ? 'text-emerald-700 dark:text-emerald-300' : warn ? 'text-amber-700 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>
             {value}{unit ? <span className="ml-0.5 font-normal text-[10px] text-slate-400">{unit}</span> : null}
         </span>
     </div>
@@ -225,7 +225,7 @@ const CurtainResults = ({ r }) => {
             <ResultRow label="Order Metres" value={r.orderMetres} unit=" m" highlight />
             <ResultRow label="Railroad Check" value={r.railroadCheck} warn={cannotRailroad} />
             {r.cuttingInstruction && (
-                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300 font-mono">
+                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300  ">
                     ✂ {r.cuttingInstruction}
                 </div>
             )}
@@ -242,7 +242,12 @@ const RomanResults = ({ r }) => {
             <ResultRow label="Required Cut Width" value={r.requiredCutWidth} unit=" in" />
             <ResultRow label="Raw Cut Drop" value={r.rawCutDrop} unit=" in" />
             <ResultRow label="Repeat Cut Drop" value={r.repeatCutDrop} unit=" in" />
-            <ResultRow label="No. of Widths" value={r.numWidths} unit=" widths" />
+            {r.railroadRunningWidth > 0 && (
+                <ResultRow label="Railroad Running Width" value={r.railroadRunningWidth} unit=" in" />
+            )}
+            {r.numWidths > 0 && (
+                <ResultRow label="No. of Widths" value={r.numWidths} unit=" widths" />
+            )}
             <ResultRow label="Raw Metres" value={r.rawMetres} unit=" m" />
             <ResultRow label="Net Metres (+ wastage)" value={r.netMetres} unit=" m" />
             <ResultRow label="Order Metres" value={r.orderMetres} unit=" m" highlight />
@@ -250,7 +255,7 @@ const RomanResults = ({ r }) => {
                 <ResultRow label="Railroad Check" value={r.railroadCheck} warn={cannotRailroad} />
             )}
             {r.cuttingInstruction && (
-                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300 font-mono">
+                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300  ">
                     ✂ {r.cuttingInstruction}
                 </div>
             )}
@@ -278,7 +283,7 @@ const WallpaperResults = ({ r }) => {
             )}
             <ResultRow label="Order Check" value={r.orderCheck} warn={shortRoll || r.orderCheck?.includes('Minimum')} />
             {r.cuttingInstruction && (
-                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300 font-mono">
+                <div className="p-2 mt-1 bg-slate-100 dark:bg-slate-800/60 rounded-md text-[11px] text-slate-700 dark:text-slate-300  ">
                     ✂ {r.cuttingInstruction}
                 </div>
             )}
@@ -327,8 +332,8 @@ const MeasurementDetailsDrawer = ({
         pleatByDesign: row?.pleatByDesign || 'No',
         fabricDirection: row?.fabricDirection || 'Normal',
         // Roman Blind
-        blindWidth: row?.blindWidth || '',
-        blindDrop: row?.blindDrop || '',
+        blindWidth: row?.finishedBlindWidth || row?.blindWidth || '',
+        blindDrop: row?.finishedBlindDrop || row?.blindDrop || '',
         leftAllowance: row?.leftAllowance || '',
         rightAllowance: row?.rightAllowance || '',
         bottomAllowance: row?.bottomAllowance || '',
@@ -377,8 +382,8 @@ const MeasurementDetailsDrawer = ({
                 orderIncrement: row.orderIncrement ?? prev.orderIncrement,
                 pleatByDesign: row.pleatByDesign ?? prev.pleatByDesign,
                 fabricDirection: row.fabricDirection ?? prev.fabricDirection,
-                blindWidth: row.blindWidth ?? prev.blindWidth,
-                blindDrop: row.blindDrop ?? prev.blindDrop,
+                blindWidth: row.finishedBlindWidth ?? row.blindWidth ?? prev.blindWidth,
+                blindDrop: row.finishedBlindDrop ?? row.blindDrop ?? prev.blindDrop,
                 leftAllowance: row.leftAllowance ?? prev.leftAllowance,
                 rightAllowance: row.rightAllowance ?? prev.rightAllowance,
                 bottomAllowance: row.bottomAllowance ?? prev.bottomAllowance,
@@ -501,7 +506,7 @@ const MeasurementDetailsDrawer = ({
                     <div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                             <span>Measurement Specifications</span>
-                            <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/20">
+                            <span className="px-2 py-0.5 rounded text-xs   font-bold bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/20">
                                 {form.windowId || form.label || 'W-01'}
                             </span>
                         </h3>
@@ -520,7 +525,7 @@ const MeasurementDetailsDrawer = ({
                             <button key={tab.id} type="button" onClick={() => setActiveSection(tab.id)} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${activeSection === tab.id
                                 ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-950'
                                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                                    }`}
+                                }`}
                             >
                                 <Icon className="w-3.5 h-3.5" />
                                 {tab.label}

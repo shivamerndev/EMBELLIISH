@@ -143,12 +143,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.measurement?.date || lead.measurementCompleted || lead.measurement?.status === 'Final' || lead.measurement?.status === 'FINAL')}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -170,12 +170,12 @@ const SPREADSHEET_CELL_RENDERERS = {
     'measurement.dueDate': (lead) => {
         const val = lead.measurement?.dueDate;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="text-slate-700 dark:text-slate-300 text-[11px] font-mono whitespace-nowrap">{date(val)}</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-[11px]   whitespace-nowrap">{date(val)}</span>;
     },
     'measurement.date': (lead) => {
         const val = lead.measurement?.date || lead.measurement?.header?.date || lead.actualSiteVisitDateTime;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="text-slate-700 dark:text-slate-300 text-[11px] font-mono whitespace-nowrap">{date(val)}</span>;
+        return <span className="text-slate-700 dark:text-slate-300 text-[11px]   whitespace-nowrap">{date(val)}</span>;
     },
     'measurement.measuredBy': (lead, { users = [] } = {}) => {
         const mb = lead.measurement?.measuredBy || lead.measurement?.header?.siteVisitedBy;
@@ -223,10 +223,10 @@ const SPREADSHEET_CELL_RENDERERS = {
         const completed = keys.filter((k) => Boolean(cl[k])).length;
         return (
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap ${completed === 5
-                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                    : completed > 0
-                        ? 'bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                : completed > 0
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                 }`}>
                 <CheckCircle2 className="w-3 h-3 shrink-0" /> {completed}/5 Checked
             </span>
@@ -277,7 +277,7 @@ const SPREADSHEET_CELL_RENDERERS = {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 hover:underline shrink-0"
                     >
-                        <span className="px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-950 font-mono font-bold text-[9px]">
+                        <span className="px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-950   font-bold text-[9px]">
                             {dwg.version ? `v${dwg.version}` : `v${i + 1}`}
                         </span>
                         <span className="truncate max-w-[80px]">{dwg.filename || 'Drawing'}</span>
@@ -552,7 +552,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {drawings.map((dwg, idx) => (
                                         <div key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded text-xs">
-                                            <span className="font-mono text-[10px] font-bold text-purple-700">v{dwg.version || idx + 1}</span>
+                                            <span className="  text-[10px] font-bold text-purple-700">v{dwg.version || idx + 1}</span>
                                             <a href={getMediaUrl(dwg.url)} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline truncate max-w-[120px]">
                                                 {dwg.filename || `Drawing ${idx + 1}`}
                                             </a>
@@ -634,7 +634,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>

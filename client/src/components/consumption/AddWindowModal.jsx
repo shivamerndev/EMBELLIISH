@@ -157,16 +157,16 @@ const AddWindowMeasurementModal = ({
                 {/* ROOM SELECTION (DYNAMIC) */}
                 <Field label="Target Room" required error={validationError && !selectedRoom ? 'Please select a room' : undefined}>
                     <Select value={selectedRoom} onChange={(e) => {
-                            setSelectedRoom(e.target.value);
-                            if (validationError) setValidationError('');
-                        }}
+                        setSelectedRoom(e.target.value);
+                        if (validationError) setValidationError('');
+                    }}
                         options={[
                             { value: '', label: 'Select Room...' },
                             ...normalizedRooms.map((r, i) => ({
                                 value: r,
                                 label: `${String(i + 1).padStart(2, '0')} : ${r}`
                             }))
-                        ]}                        className={!selectedRoom && validationError ? 'border-rose-500 focus:ring-rose-500' : ''}
+                        ]} className={!selectedRoom && validationError ? 'border-rose-500 focus:ring-rose-500' : ''}
                     />
                 </Field>
 
@@ -176,7 +176,7 @@ const AddWindowMeasurementModal = ({
                         value={windowId}
                         onChange={(e) => setWindowId(e.target.value)}
                         placeholder="e.g. W-05"
-                        className="font-mono text-xs"
+                        className="  text-xs"
                     />
                 </Field>
 

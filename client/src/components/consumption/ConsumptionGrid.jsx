@@ -70,13 +70,16 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
     const visibleColsCount = useMemo(() => {
         let count = 3; // SR, Area, Particular
         const isRoman = typeFilter === 'ROMAN_BLIND' || typeFilter === 'ROLLER_BLIND' || typeFilter === 'WOODEN_BLIND';
-        const isCurtain = !isRoman && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
+        const isWallpaper = typeFilter === 'WALLPAPER';
+        const isCurtain = !isRoman && !isWallpaper && (typeFilter === 'MAIN_CURTAIN' || typeFilter === 'SHEER_CURTAIN' || typeFilter === 'MOTORISED_CURTAIN' || typeFilter === 'ALL');
         const isColVisible = (key) => columnVisibility[key] !== false;
 
-        if (isColVisible('windowSize')) count += 4;
-        if (isColVisible('pelmetSize')) count += 4;
-        if (isColVisible('wire')) count += 2;
-        if (isColVisible('measurements')) count += 4;
+        if (!isWallpaper) {
+            if (isColVisible('windowSize')) count += 4;
+            if (isColVisible('pelmetSize')) count += 4;
+            if (isColVisible('wire')) count += 2;
+            if (isColVisible('measurements')) count += 4;
+        }
 
         if (isCurtain) {
             if (isColVisible('trackDrop')) count += 2;
@@ -96,6 +99,14 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
             if (isColVisible('rb_flags')) count += 3;
         }
 
+        if (isWallpaper) {
+            if (isColVisible('wp_wallInfo')) count += 4;
+            if (isColVisible('wp_rollSpecs')) count += 4;
+            if (isColVisible('wp_allowances')) count += 3;
+            if (isColVisible('wp_calculations')) count += 8;
+            if (isColVisible('wp_flags')) count += 5;
+        }
+
         count += 1; // Actions
         return count;
     }, [columnVisibility, typeFilter]);
@@ -108,14 +119,26 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
         let rawMetres = 0;
         let netMetres = 0;
         let orderMetres = 0;
+        let baseRolls = 0;
+        let finalOrderRolls = 0;
+        let totalDropsRequired = 0;
+        let wastageAdjustedRolls = 0;
+        let orderRolls = 0;
+        let approxCoverageArea = 0;
 
         filteredRowsWithIndex.forEach(({ row }) => {
             const calc = calculateRowConsumption(row);
             totalQty += Number(row.qty ?? 1) || 1;
-            totalWidths += (calc.numWidths ?? calc.roundedParts) || 0;
+            totalWidths += (calc.numWidths ?? calc.dropsPerWall ?? calc.stripsPerWall ?? calc.roundedParts) || 0;
             rawMetres += calc.rawMetres || 0;
-            netMetres += calc.netMetres || 0;
-            orderMetres += calc.orderMetres || calc.fabricMeters || 0;
+            netMetres += calc.netMetres || calc.requiredMetres || 0;
+            orderMetres += calc.orderMetres || calc.finalOrderMetres || calc.fabricMeters || 0;
+            baseRolls += calc.baseRollsRequired || calc.baseRolls || 0;
+            finalOrderRolls += calc.finalRollsToOrder || calc.finalOrderRolls || 0;
+            totalDropsRequired += calc.totalDropsRequired || 0;
+            wastageAdjustedRolls += calc.wastageAdjustedRolls || 0;
+            orderRolls += Number(row.orderRolls ?? calc.orderRolls ?? calc.finalRollsToOrder ?? 0) || 0;
+            approxCoverageArea += calc.approxCoverageArea || 0;
         });
 
         return {
@@ -125,6 +148,12 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
             rawMetres: Math.round(rawMetres * 100) / 100,
             netMetres: Math.round(netMetres * 100) / 100,
             orderMetres: Math.round(orderMetres * 100) / 100,
+            baseRolls,
+            finalOrderRolls,
+            totalDropsRequired,
+            wastageAdjustedRolls,
+            orderRolls,
+            approxCoverageArea: Math.round(approxCoverageArea * 100) / 100,
             // backward-compat aliases kept so nothing else breaks
             totalParts: Math.round(totalWidths),
             fabricMeters: Math.round(orderMetres * 100) / 100,

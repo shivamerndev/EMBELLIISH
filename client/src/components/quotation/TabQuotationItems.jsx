@@ -150,13 +150,13 @@ export const TabQuotationItems = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Value (ex-tax)</p>
-          <p className="text-base sm:text-lg font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+          <p className="text-base sm:text-lg   font-bold text-slate-900 dark:text-slate-100 mt-1">
             ₹{formatINR(totals.grandTotalValue)}
           </p>
         </div>
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total GST Amount</p>
-          <p className="text-base sm:text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-1">
+          <p className="text-base sm:text-lg   font-bold text-amber-600 dark:text-amber-400 mt-1">
             ₹{formatINR(totals.grandGstValue)}
           </p>
         </div>
@@ -164,7 +164,7 @@ export const TabQuotationItems = ({
           <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
             Grand Total (inc. GST)
           </p>
-          <p className="text-base sm:text-lg font-mono font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+          <p className="text-base sm:text-lg   font-bold text-emerald-700 dark:text-emerald-300 mt-1">
             ₹{formatINR(totals.grandTotal)}
           </p>
         </div>
@@ -172,7 +172,7 @@ export const TabQuotationItems = ({
           <p className="text-[11px] font-semibold text-brand-700 dark:text-brand-300 uppercase tracking-wider">
             Round Off Total
           </p>
-          <p className="text-base sm:text-lg font-mono font-bold text-brand-700 dark:text-brand-300 mt-1">
+          <p className="text-base sm:text-lg   font-bold text-brand-700 dark:text-brand-300 mt-1">
             ₹{formatINR(totals.roundOff || totals.grandTotal)}
           </p>
         </div>
@@ -223,7 +223,7 @@ export const TabQuotationItems = ({
                         value={room.srNo || ''}
                         onChange={(e) => handleRoomChange(rIdx, 'srNo', e.target.value)}
                         placeholder="Sr."
-                        className="text-center font-mono font-bold"
+                        className="text-center   font-bold"
                       />
                     </div>
                     <div className="flex-1">
@@ -238,7 +238,7 @@ export const TabQuotationItems = ({
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300">
+                    <span className="text-xs   font-semibold text-slate-600 dark:text-slate-300">
                       Room Subtotal: ₹{formatINR(roomTotalVal)}
                     </span>
                     <Button
@@ -310,7 +310,7 @@ export const TabQuotationItems = ({
                                   step="0.01"
                                   value={item.qty ?? ''}
                                   onChange={(e) => handleItemChange(rIdx, iIdx, 'qty', e.target.value)}
-                                  className="text-right font-mono"
+                                  className="text-right  "
                                   placeholder="0.00"
                                 />
                               </td>
@@ -321,11 +321,11 @@ export const TabQuotationItems = ({
                                   step="0.01"
                                   value={item.price ?? ''}
                                   onChange={(e) => handleItemChange(rIdx, iIdx, 'price', e.target.value)}
-                                  className="text-right font-mono"
+                                  className="text-right  "
                                   placeholder="0.00"
                                 />
                               </td>
-                              <td className="py-1.5 px-1 text-right font-mono font-medium text-slate-700 dark:text-slate-300">
+                              <td className="py-1.5 px-1 text-right   font-medium text-slate-700 dark:text-slate-300">
                                 {formatINR(totalVal)}
                               </td>
                               <td className="py-1.5 px-1">
@@ -336,10 +336,10 @@ export const TabQuotationItems = ({
                                   options={GST_OPTIONS}
                                 />
                               </td>
-                              <td className="py-1.5 px-1 text-right font-mono text-slate-500">
+                              <td className="py-1.5 px-1 text-right   text-slate-500">
                                 {formatINR(gstVal)}
                               </td>
-                              <td className="py-1.5 px-1 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                              <td className="py-1.5 px-1 text-right   font-bold text-slate-900 dark:text-slate-100">
                                 {formatINR(rowTotal)}
                               </td>
                               <td className="py-1.5 px-1 text-center">
@@ -370,9 +370,9 @@ export const TabQuotationItems = ({
         <Button type="button" size="sm" icon={Plus} onClick={handleAddRoom} >
           Add New Room
         </Button>
-<h1 className='font-semibold text-sm'>
-        Total Rooms : {rooms.length}
-</h1>
+        <h1 className='font-semibold text-sm'>
+          Total Rooms : {rooms.length}
+        </h1>
       </div>
 
 
@@ -447,7 +447,7 @@ export const TabQuotationItems = ({
                           step="0.01"
                           value={srv.qty ?? ''}
                           onChange={(e) => handleServiceItemChange(sIdx, 'qty', e.target.value)}
-                          className="text-right font-mono"
+                          className="text-right  "
                           placeholder="1"
                         />
                       </td>
@@ -458,11 +458,11 @@ export const TabQuotationItems = ({
                           step="0.01"
                           value={srv.price ?? ''}
                           onChange={(e) => handleServiceItemChange(sIdx, 'price', e.target.value)}
-                          className="text-right font-mono"
+                          className="text-right  "
                           placeholder="0.00"
                         />
                       </td>
-                      <td className="py-1.5 px-1 text-right font-mono font-medium text-slate-700 dark:text-slate-300">
+                      <td className="py-1.5 px-1 text-right   font-medium text-slate-700 dark:text-slate-300">
                         {formatINR(totalVal)}
                       </td>
                       <td className="py-1.5 px-1">
@@ -473,10 +473,10 @@ export const TabQuotationItems = ({
                           options={GST_OPTIONS}
                         />
                       </td>
-                      <td className="py-1.5 px-1 text-right font-mono text-slate-500">
+                      <td className="py-1.5 px-1 text-right   text-slate-500">
                         {formatINR(gstVal)}
                       </td>
-                      <td className="py-1.5 px-1 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-1.5 px-1 text-right   font-bold text-slate-900 dark:text-slate-100">
                         {formatINR(rowTotal)}
                       </td>
                       <td className="py-1.5 px-1 text-center">

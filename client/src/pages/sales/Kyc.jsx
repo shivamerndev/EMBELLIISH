@@ -157,13 +157,13 @@ const SPREADSHEET_CELL_RENDERERS = {
     />
   ),
   sno: (lead, { sno }) => (
-    <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>
+    <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>
   ),
   code: (lead, { onView }) => (
     <button
       type="button"
       onClick={() => onView(lead)}
-      className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+      className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
     >
       {lead.code}
     </button>
@@ -199,15 +199,15 @@ const SPREADSHEET_CELL_RENDERERS = {
     const isRegistered = lead.kyc?.gstRegistered === 'Yes';
     const gstin = lead.kyc?.gstin;
     if (!isRegistered) {
-      return <span className="text-slate-400 dark:text-slate-500 text-[11px] font-mono">No (Not Reg.)</span>;
+      return <span className="text-slate-400 dark:text-slate-500 text-[11px]  ">No (Not Reg.)</span>;
     }
-    return <span className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">{gstin || '—'}</span>;
+    return <span className="  text-xs font-bold text-brand-600 dark:text-brand-400">{gstin || '—'}</span>;
   },
   'kyc.verificationDate': (lead) => {
     const d = lead.kyc?.verificationDate || lead.kyc?.actualDate;
     if (!d) return <span className="text-slate-400 dark:text-slate-600 text-[11px] italic">Not Verified</span>;
     return (
-      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+      <span className="inline-flex items-center gap-1   text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
         <Clock className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
         {dateTime(d)}
       </span>
@@ -670,7 +670,7 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
       size="2xl"
       footer={
         <div className="flex items-center justify-between w-full">
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+          <span className="text-xs text-slate-500 dark:text-slate-400  ">
             Lead: <strong className="text-slate-700 dark:text-slate-200">{item?.code}</strong>
           </span>
           <div className="flex items-center gap-2">
@@ -690,8 +690,8 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
           type="button"
           onClick={() => setActiveTab('identity')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'identity'
-              ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
             }`}
         >
           <User className="w-3.5 h-3.5" />
@@ -702,8 +702,8 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
           type="button"
           onClick={() => setActiveTab('address')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'address'
-              ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
             }`}
         >
           <MapPin className="w-3.5 h-3.5" />
@@ -714,8 +714,8 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
           type="button"
           onClick={() => setActiveTab('tax')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'tax'
-              ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
             }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -726,16 +726,16 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
           type="button"
           onClick={() => setActiveTab('documents')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'documents'
-              ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
             }`}
         >
           <FileCheck className="w-3.5 h-3.5" />
           <span>Document Checklist</span>
           {totalCount > 0 && (
             <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${verifiedCount === totalCount
-                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
-                : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+              ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+              : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
               }`}>
               {verifiedCount}/{totalCount}
             </span>
@@ -865,7 +865,7 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
                 </Field>
 
                 <Field label="Verification Date (System Generated)">
-                  <div className="p-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-mono font-medium text-slate-700 dark:text-slate-300 truncate">
+                  <div className="p-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs   font-medium text-slate-700 dark:text-slate-300 truncate">
                     {form.verificationDate ? dateTime(form.verificationDate) : (form.status === 'Verified' ? 'Auto-recorded on save' : 'Not Verified')}
                   </div>
                 </Field>
@@ -1089,8 +1089,8 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border shadow-2xs ${verifiedCount === totalCount && totalCount > 0
-                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700/60'
-                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700/60'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                     }`}>
                     {verifiedCount} / {totalCount} Verified
                   </span>
@@ -1189,7 +1189,7 @@ export const KycEditModal = ({ item, onClose, onDone }) => {
                                 href={doc.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline font-mono text-[11px] truncate max-w-[220px]"
+                                className="hover:underline   text-[11px] truncate max-w-[220px]"
                                 title={doc.filename}
                               >
                                 {doc.filename || 'Attached File'}
@@ -1286,7 +1286,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
           <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
             {items.map((lead, idx) => (
               <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer">
-                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-bold p-2.5">
+                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-bold p-2.5">
                   <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                     {lead.code}
                   </button>

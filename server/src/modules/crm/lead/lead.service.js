@@ -3,6 +3,7 @@ import BaseRepository from '../../../core/BaseRepository.js';
 import ApiError from '../../../core/ApiError.js';
 import { nextCode } from '../../../core/sequence.js';
 import LeadModel from './lead.model.js';
+import SalesCommercialModel from '../../sales/sales.model.js';
 import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
 
 const leadRepository = new BaseRepository(LeadModel, {
@@ -11,8 +12,35 @@ const leadRepository = new BaseRepository(LeadModel, {
   populate: [
     { path: 'architect', select: 'name firm phone' },
     { path: 'assignedDCM', select: 'name email role' },
+    { path: 'salesCommercial' },
   ],
 });
+
+const SALES_COMMERCIAL_KEYS = new Set([
+  'siteVisitRequired',
+  'siteVisitDueDate',
+  'actualSiteVisitDateTime',
+  'siteAddress',
+  'assignedInstaller',
+  'installerName',
+  'installerPhone',
+  'clientArchitectAvailability',
+  'scope',
+  'rooms',
+  'drawingsRenders',
+  'installerAvailability',
+  'measurement',
+  'studioMeeting',
+  'readySize',
+  'consumption',
+  'proposal',
+  'advance',
+  'costing',
+  'quotation',
+  'approval',
+  'presentation',
+  'kyc',
+]);
 
 /**
  * Steps 1–3 : the call, the qualification conversation, and handing the project
@@ -23,13 +51,63 @@ class LeadService extends BaseService {
     super(leadRepository, 'Lead');
   }
 
+  async getById(id) {
+    const lead = await super.getById(id);
+    if (!lead) return lead;
+
+    let edge = lead.salesCommercial;
+    if (!edge || typeof edge !== 'object' || !edge._id) {
+      edge = await SalesCommercialModel.findOne({ lead: lead._id || lead.id }).lean();
+    }
+    if (edge) {
+      if (edge.costing) {
+        edge.costing = {
+          dueDate: edge.costing.dueDate,
+          version: edge.costing.version || 'v1.0',
+          category: edge.costing.category,
+          price: edge.costing.price !== undefined && edge.costing.price !== null ? Number(edge.costing.price) : 0,
+          costingHistory: Array.isArray(edge.costing.costingHistory) ? edge.costing.costingHistory.map((h) => ({
+            version: h.version || 'v1.0',
+            dueDate: h.dueDate,
+            category: h.category,
+            price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+            savedAt: h.savedAt,
+          })) : [],
+        };
+      }
+      return {
+        ...edge,
+        ...lead,
+        _id: lead._id || lead.id,
+        id: lead._id || lead.id,
+        salesCommercial: edge,
+      };
+    }
+    return lead;
+  }
+
   async create(data, user) {
-    return this.repository.create({
+    const lead = await this.repository.create({
       ...data,
       code: await nextCode('LEAD'),
       createdBy: user?.id,
       history: [{ action: 'CREATED', to: LEAD_STATUS.NEW, by: user?.id }],
     });
+
+    // Initialize the SalesCommercial edge collection document
+    try {
+      const edge = await SalesCommercialModel.create({
+        from: lead._id,
+        lead: lead._id,
+        createdBy: user?.id,
+      });
+      await LeadModel.findByIdAndUpdate(lead._id, { salesCommercial: edge._id });
+      lead.salesCommercial = edge;
+    } catch {
+      // Continue even if initial edge creation fails; it will be upserted on first update
+    }
+
+    return lead;
   }
 
   /**
@@ -156,7 +234,66 @@ class LeadService extends BaseService {
       }
     }
 
-    return this.repository.update(id, updateData);
+    // Separate SalesCommercial Edge properties from core Lead properties
+    const salesData = {};
+    const leadData = {};
+
+    Object.entries(updateData).forEach(([k, v]) => {
+      if (SALES_COMMERCIAL_KEYS.has(k)) {
+        salesData[k] = v;
+      } else {
+        leadData[k] = v;
+      }
+    });
+
+    let edgeDoc = null;
+    if (Object.keys(salesData).length > 0) {
+      edgeDoc = await SalesCommercialModel.findOneAndUpdate(
+        { lead: id },
+        {
+          $set: salesData,
+          $setOnInsert: { from: id, lead: id, createdBy: user?.id },
+        },
+        { new: true, upsert: true }
+      ).lean();
+      leadData.salesCommercial = edgeDoc._id;
+    }
+
+    let updatedLead = existing;
+    if (Object.keys(leadData).length > 0) {
+      updatedLead = await this.repository.update(id, leadData);
+    }
+
+    if (!edgeDoc) {
+      edgeDoc = await SalesCommercialModel.findOne({ lead: id }).lean();
+    }
+
+    if (edgeDoc) {
+      if (edgeDoc.costing) {
+        edgeDoc.costing = {
+          dueDate: edgeDoc.costing.dueDate,
+          version: edgeDoc.costing.version || 'v1.0',
+          category: edgeDoc.costing.category,
+          price: edgeDoc.costing.price !== undefined && edgeDoc.costing.price !== null ? Number(edgeDoc.costing.price) : 0,
+          costingHistory: Array.isArray(edgeDoc.costing.costingHistory) ? edgeDoc.costing.costingHistory.map((h) => ({
+            version: h.version || 'v1.0',
+            dueDate: h.dueDate,
+            category: h.category,
+            price: h.price !== undefined && h.price !== null ? Number(h.price) : 0,
+            savedAt: h.savedAt,
+          })) : [],
+        };
+      }
+      return {
+        ...edgeDoc,
+        ...updatedLead,
+        _id: updatedLead._id || updatedLead.id,
+        id: updatedLead._id || updatedLead.id,
+        salesCommercial: edgeDoc,
+      };
+    }
+
+    return updatedLead;
   }
 
   /** Marks a qualified lead as converted (KYC route handles the full customer conversion flow). */
@@ -174,6 +311,10 @@ class LeadService extends BaseService {
     lead.convertedAt = new Date();
     lead.history.push({ action: 'CONVERTED', to: LEAD_STATUS.CONVERTED, by: user?.id });
     await lead.save();
+
+    if (lead.convertedProject) {
+      await SalesCommercialModel.updateOne({ lead: id }, { to: lead.convertedProject });
+    }
 
     return lead.toJSON();
   }

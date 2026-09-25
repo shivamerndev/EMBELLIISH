@@ -280,7 +280,7 @@ export const SiteDetailSheetEditor = ({
               {/* Row Top Header */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center font-mono">
+                  <span className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center  ">
                     {item.srNo || idx + 1}
                   </span>
                   <input

@@ -427,14 +427,14 @@ const LeadDetails = () => {
                         <div className="p-3.5 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800/80 rounded-lg space-y-2">
                             <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">Contact & Capture</p>
                             <div className="space-y-1.5 text-xs">
-                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Lead ID:</strong> <span className="font-mono text-brand-600 dark:text-brand-300 font-semibold">{lead.code}</span></p>
+                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Lead ID:</strong> <span className="  text-brand-600 dark:text-brand-300 font-semibold">{lead.code}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Capture Date & Time:</strong> <span className="text-slate-800 dark:text-slate-200">{date(lead.captureDateTime || lead.createdAt, { time: true })}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Client Name:</strong> <span className="text-slate-900 dark:text-slate-100 font-medium">{lead.clientName}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Contact Person:</strong> <span className="text-slate-800 dark:text-slate-200">{lead.contactPerson || '—'}</span></p>
-                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Mobile Number:</strong> <span className="text-slate-900 dark:text-slate-200 font-mono">{lead.phone}</span></p>
+                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Mobile Number:</strong> <span className="text-slate-900 dark:text-slate-200  ">{lead.phone}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Email:</strong> <span className="text-slate-800 dark:text-slate-200">{lead.email || '—'}</span></p>
                                 <p><strong className="text-slate-500 dark:text-slate-400 font-medium">Location:</strong> <span className="text-slate-800 dark:text-slate-200">{lead.location || '—'}</span></p>
-                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">PIN Code:</strong> <span className="text-slate-800 dark:text-slate-200 font-mono">{lead.pincode || lead.pinCode || lead.address?.pincode || '—'}</span></p>
+                                <p><strong className="text-slate-500 dark:text-slate-400 font-medium">PIN Code:</strong> <span className="text-slate-800 dark:text-slate-200  ">{lead.pincode || lead.pinCode || lead.address?.pincode || '—'}</span></p>
                             </div>
                         </div>
 
@@ -582,11 +582,10 @@ const LeadDetails = () => {
                                     return (
                                         <span
                                             key={key}
-                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${
-                                                checked
+                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${checked
                                                     ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
                                                     : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800'
-                                            }`}
+                                                }`}
                                         >
                                             <CheckCircle2 className={`w-3.5 h-3.5 ${checked ? 'text-emerald-600' : 'text-slate-300'}`} />
                                             {label}: {checked ? 'Done' : 'Pending'}
@@ -619,19 +618,19 @@ const LeadDetails = () => {
                                         <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/60">
                                             {rowsList.map((row, idx) => (
                                                 <tr key={row.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                                                    <td className="p-2 text-center text-slate-500 font-mono border-r border-slate-200 dark:border-slate-800">{row.srNo || idx + 1}</td>
+                                                    <td className="p-2 text-center text-slate-500   border-r border-slate-200 dark:border-slate-800">{row.srNo || idx + 1}</td>
                                                     <td className="p-2 font-medium text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">{row.area || row.room || '—'}</td>
-                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">{row.lWindowDetail || row.windowId || '—'}</td>
-                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                    <td className="p-2 text-center   border-r border-slate-200 dark:border-slate-800">{row.lWindowDetail || row.windowId || '—'}</td>
+                                                    <td className="p-2 text-center   border-r border-slate-200 dark:border-slate-800">
                                                         {row.outToOutWidth || row.o2oWidth || row.width || '—'} × {row.outToOutHeight || row.o2oHeight || row.height || '—'}
                                                     </td>
-                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                    <td className="p-2 text-center   border-r border-slate-200 dark:border-slate-800">
                                                         {row.frameToFrameWidth || row.f2fWidth || '—'} × {row.frameToFrameHeight || row.f2fHeight || '—'}
                                                     </td>
-                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                    <td className="p-2 text-center   border-r border-slate-200 dark:border-slate-800">
                                                         {row.pelmetOutOutWidth || row.pelmetO2oWidth || '—'} × {row.pelmetOutOutDrop || row.pelmetO2oDrop || '—'}
                                                     </td>
-                                                    <td className="p-2 text-center font-mono border-r border-slate-200 dark:border-slate-800">
+                                                    <td className="p-2 text-center   border-r border-slate-200 dark:border-slate-800">
                                                         {row.pelmetFrameFrameWidth || row.pelmetF2fWidth || '—'} × {row.pelmetFrameFrameDrop || row.pelmetF2fDrop || '—'}
                                                     </td>
                                                     <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800">{row.ceilingSupport || '—'}</td>
@@ -818,21 +817,11 @@ const LeadDetails = () => {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-1.5">
                         <BadgeDollarSign className="w-3.5 h-3.5" />Pricing / Material Costing
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <InfoTile label="Pricing Due Date" value={lead.costing?.dueDate ? date(lead.costing.dueDate) : null} />
-                        <InfoTile label="Catalogue Cost" value={lead.costing?.catalogueCost ? currency(lead.costing.catalogueCost) : null} />
-                        <InfoTile label="Costing Version / Revision" value={lead.costing?.version} />
-                        <InfoTile label="Landed Cost" value={lead.costing?.landedCost ? currency(lead.costing.landedCost) : null} />
-                        <InfoTile label="Local Fabric Cost" value={lead.costing?.localFabricCost ? currency(lead.costing.localFabricCost) : null} />
-                        <InfoTile label="Labour Cost / Custom Cost" value={lead.costing?.labourCost ? currency(lead.costing.labourCost) : null} />
-                        <InfoTile label="Total Cost" value={lead.costing?.totalCost ? currency(lead.costing.totalCost) : null} />
-                        <InfoTile label="Calculated Margin %" value={lead.costing?.calculatedMargin !== undefined && lead.costing?.calculatedMargin !== null ? `${lead.costing.calculatedMargin}%` : null} />
-                        <InfoTile label="Sample Cost" value={lead.costing?.sampleCost ? currency(lead.costing.sampleCost) : null} />
-                        <InfoTile label="Margin Model" value={lead.costing?.marginModel} />
-                        <InfoTile label="Min Margin Threshold" value={lead.costing?.minMarginThreshold ? `${lead.costing.minMarginThreshold}%` : '25%'} />
-                        <InfoTile label="Max Discount Threshold" value={lead.costing?.maxDiscountThreshold ? `${lead.costing.maxDiscountThreshold}%` : '15%'} />
-                        <InfoTile label="Hitesh Approval Status" value={lead.costing?.hiteshApprovalStatus ? lead.costing.hiteshApprovalStatus.replace(/_/g, ' ') : 'NOT REQUIRED'} />
-                        <InfoTile label="Hitesh Approval Notes" value={lead.costing?.hiteshApprovalNotes} />
+                        <InfoTile label="Costing Version / Revision" value={lead.costing?.version || 'v1.0'} />
+                        <InfoTile label="Costing Category" value={lead.costing?.category ? `Category ${String(lead.costing.category).toUpperCase()}` : null} />
+                        <InfoTile label="Material Costing Price" value={currency(lead.costing?.price !== undefined && lead.costing?.price !== null ? lead.costing.price : 0)} />
                     </div>
                 </div>
             </div>

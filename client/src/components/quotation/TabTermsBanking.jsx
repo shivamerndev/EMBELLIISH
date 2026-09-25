@@ -84,7 +84,7 @@ export const TabTermsBanking = ({ data, onChange }) => {
                 value={data.accountNo || ''}
                 onChange={set('accountNo')}
                 placeholder="7648054150"
-                className="font-mono font-bold"
+                className="  font-bold"
               />
             </Field>
             <Field label="IFS Code">
@@ -92,7 +92,7 @@ export const TabTermsBanking = ({ data, onChange }) => {
                 value={data.ifscCode || ''}
                 onChange={set('ifscCode')}
                 placeholder="KKBK0000642"
-                className="font-mono font-bold"
+                className="  font-bold"
               />
             </Field>
           </div>
@@ -103,7 +103,7 @@ export const TabTermsBanking = ({ data, onChange }) => {
                 value={data.micrNo || ''}
                 onChange={set('micrNo')}
                 placeholder="400485006"
-                className="font-mono"
+                className=" "
               />
             </Field>
             <Field label="Branch">
@@ -120,7 +120,7 @@ export const TabTermsBanking = ({ data, onChange }) => {
               value={data.gstNo || ''}
               onChange={set('gstNo')}
               placeholder="27AIFPB1400Q1ZH"
-              className="font-mono font-bold text-slate-900 dark:text-slate-100"
+              className="  font-bold text-slate-900 dark:text-slate-100"
             />
           </Field>
         </div>

@@ -38,6 +38,7 @@ import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
+import { isQuotationCreatedInDb } from '../../utils/salesPipeline';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -157,12 +158,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(['Approved', 'Completed'].includes(lead.approval?.clientApprovalStatus || lead.clientApproval?.status) || lead.approval?.clientApprovalDate)}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -241,9 +242,9 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isApproved = lead.approval?.clientApprovalStatus === 'APPROVED';
         if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${isApproved
-                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px]   font-semibold ${isApproved
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                : 'bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                 }`}>
                 {isApproved && <Lock className="w-2.5 h-2.5 shrink-0 text-emerald-600 dark:text-emerald-400" />}
                 {ver}
@@ -420,7 +421,7 @@ const SearchableFabricSelector = ({ value, onChange, fabricCatalog = [] }) => {
                                         )}
                                     </div>
                                     {fab.code && (
-                                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                        <span className="  text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                                             {fab.code}
                                         </span>
                                     )}
@@ -753,7 +754,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
             size="xl"
             footer={
                 <div className="flex items-center justify-between w-full">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    <span className="text-xs text-slate-500 dark:text-slate-400  ">
                         Lead: <strong className="text-slate-700 dark:text-slate-200">{item?.code}</strong>
                     </span>
                     <div className="flex items-center gap-2">
@@ -774,8 +775,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                     type="button"
                     onClick={() => setActiveTab('approval')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'approval'
-                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                         }`}
                 >
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -786,8 +787,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                     type="button"
                     onClick={() => setActiveTab('attachments')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'attachments'
-                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                         }`}
                 >
                     <Paperclip className="w-3.5 h-3.5" />
@@ -803,8 +804,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                     type="button"
                     onClick={() => setActiveTab('selections')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'selections'
-                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                         }`}
                 >
                     <Layers className="w-3.5 h-3.5" />
@@ -820,8 +821,8 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                     type="button"
                     onClick={() => setActiveTab('notes')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeTab === 'notes'
-                            ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                         }`}
                 >
                     <History className="w-3.5 h-3.5" />
@@ -955,7 +956,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                             value={form.finalApprovedVersion}
                                             onChange={set('finalApprovedVersion')}
                                             placeholder="Or type version tag..."
-                                            className="w-1/2 text-xs font-mono"
+                                            className="w-1/2 text-xs  "
                                         />
                                     </div>
                                 </Field>
@@ -1307,7 +1308,7 @@ const ClientApprovalEditModal = ({ item, onClose, onDone }) => {
                                                             <Clock className="w-3 h-3" /> {formatDateTime(rev.revisedAt)}
                                                         </span>
                                                     </div>
-                                                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                                    <span className="text-[10px]   text-slate-500 dark:text-slate-400">
                                                         {rev.finalApprovedVersion ? `Version: ${rev.finalApprovedVersion}` : 'No version tag'}
                                                     </span>
                                                 </div>
@@ -1379,7 +1380,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-bold p-2.5">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-bold p-2.5">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
@@ -1452,21 +1453,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const quotationReadyLeads = rawLeads.filter((lead) => {
-        const q = lead.quotation || {};
-        return Boolean(
-            q.no ||
-            q.finalQuotedValue ||
-            q.date ||
-            q.dueDate ||
-            q.version ||
-            (Array.isArray(q.boq) && q.boq.length > 0) ||
-            q.discountApprovalStatus === 'APPROVED' ||
-            lead.approval?.finalApprovedVersion ||
-            lead.quotationNo ||
-            lead.approval?.clientApprovalStatus
-        );
-    });
+    const quotationReadyLeads = rawLeads.filter((lead) => isQuotationCreatedInDb(lead));
 
     const filteredLeads = quotationReadyLeads.filter((lead) => {
         // Status filter
@@ -1482,9 +1469,10 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
             const clientName = String(lead.clientName || '').toLowerCase();
-            const version = String(lead.approval?.finalApprovedVersion || '').toLowerCase();
+            const quotNo = String(lead.quotation?.no || lead.quotationNo || '').toLowerCase();
+            const version = String(lead.approval?.finalApprovedVersion || lead.quotation?.version || '').toLowerCase();
             const status = String(lead.approval?.clientApprovalStatus || '').toLowerCase();
-            if (!code.includes(q) && !clientName.includes(q) && !version.includes(q) && !status.includes(q)) {
+            if (!code.includes(q) && !clientName.includes(q) && !quotNo.includes(q) && !version.includes(q) && !status.includes(q)) {
                 return false;
             }
         }
@@ -1504,7 +1492,7 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads awaiting sign-off" icon={ShieldCheck} tone="amber" />
+                <StatTile label="Approval Pipeline" value={totalCount} sub="Leads with quotation in DB" icon={ShieldCheck} tone="amber" />
                 <StatTile label="Approved Quotes" value={approvedCount} sub="Client sign-offs secured" icon={CheckCircle2} tone="green" />
                 <StatTile label="Pending Approvals" value={pendingCount} sub="Due for client decision" icon={Calendar} tone="brand" />
                 <StatTile label="Revisions Logged" value={revisionsLoggedCount} sub="Under change control" icon={RotateCcw} tone="blue" />
@@ -1559,7 +1547,13 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
                 <ErrorState error={error} onRetry={reload} />
             ) : filteredLeads.length === 0 ? (
                 <Panel className="p-8 text-center">
-                    <EmptyState icon={ShieldCheck} title="No Client Approval Records Found" hint="Try adjusting search or status filter parameters." />
+                    <EmptyState
+                        icon={ShieldCheck}
+                        title="No Client Approval Records Found"
+                        hint={search || statusFilter !== 'ALL'
+                            ? "Try adjusting search or status filter parameters."
+                            : "Only leads whose quotation is created in the database appear here."}
+                    />
                 </Panel>
             ) : viewMode === 'cards' ? (
                 <CardGridView
@@ -1614,4 +1608,5 @@ const ClientApproval = ({ items: itemsProp = [] }) => {
     );
 };
 
+export { isQuotationCreatedInDb };
 export default ClientApproval;

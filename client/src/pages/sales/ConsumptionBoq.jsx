@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Search, Eye, FileSpreadsheet, Calendar, CheckCircle2, Paperclip, Layers, Pencil,
-    Ruler, Sparkles, RefreshCw, Tag, Check, Plus, Percent, UserCheck, Clock, AlertTriangle, FileText, X,
-    Grid, ClipboardList, Loader2
+    Ruler, Percent, UserCheck, Clock, AlertTriangle, Loader2,
+    Printer
 } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Loading, ErrorState, EmptyState, StatTile, Modal, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
@@ -19,8 +19,10 @@ import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import HeaderTools from '../../components/consumption/HeaderTools';
 import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
 import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
+import consumptionPrintService, { printConsumptionSheet } from '../../services/consumptionPrintService';
 import { calculateRowConsumption } from '../../utils/consumptionCalc';
 import TypesTab from '@/components/consumption/TypesTab';
+
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -54,31 +56,6 @@ const SPREADSHEET_SECTIONS = [
     }
 ];
 
-const APPROVED_UNITS = [
-    'Metre',
-    'Square Metre',
-    'Piece',
-    'Set',
-    'Yard',
-    'Feet',
-    'Square Feet',
-    'Inches',
-    'Roll'
-];
-
-const LINING_ACCESSORY_MASTER = [
-    'Blackout Lining',
-    'Satin / Soft Lining',
-    'Thermal Interlining',
-    'Sheer Fabric Lining',
-    'Motorized Track System',
-    'Heavy Duty Manual Track',
-    'Decorative Rods & Rings',
-    'Tiebacks & Holdbacks',
-    'Pelmet / Valance Board',
-    'Lead Tape Bottom Weighting',
-    'Side Hooks & Brackets'
-];
 
 const getNestedVal = (obj, path) => {
     if (!obj || !path) return undefined;
@@ -115,27 +92,6 @@ const parseSubformArray = (raw) => {
         if (typeof current === 'object' && current !== null) return [current];
     }
     return [];
-};
-
-const calculateVariance = (prevW, prevH, confW, confH, unit) => {
-    const pw = parseFloat(prevW) || 0;
-    const ph = parseFloat(prevH) || 0;
-    const cw = parseFloat(confW) || 0;
-    const ch = parseFloat(confH) || 0;
-
-    const diffW = cw - pw;
-    const diffH = ch - ph;
-
-    if (diffW === 0 && diffH === 0) return <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Exact Match (0)</span>;
-
-    const signW = diffW > 0 ? `+${diffW}` : `${diffW}`;
-    const signH = diffH > 0 ? `+${diffH}` : `${diffH}`;
-
-    return (
-        <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold text-[11px]">
-            W: {signW}{unit} / H: {signH}{unit}
-        </span>
-    );
 };
 
 const parseGridInitial = (item) => {
@@ -424,12 +380,12 @@ const SPREADSHEET_CELL_RENDERERS = {
             isCompleted={Boolean(lead.consumption?.boqPreparedDate || lead.boq?.status === 'Completed')}
         />
     ),
-    sno: (lead, { sno }) => <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
+    sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
     code: (lead, { onView }) => (
         <button
             type="button"
             onClick={() => onView(lead)}
-            className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+            className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
         </button>
@@ -450,7 +406,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const isOverdue = !lead.consumption?.boqVersion && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
-                <span className={`text-[11px] font-mono whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     {date(val)}
                 </span>
                 {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Overdue for Consumption BOQ" />}
@@ -485,7 +441,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const unit = lead.consumption?.unit || '';
         if (qty === undefined || qty === null || qty === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <span className="  text-xs font-semibold text-slate-800 dark:text-slate-200">
                 {Number(qty).toLocaleString('en-US', { maximumFractionDigits: 2 })} {unit ? <span className="text-[10px] text-slate-500 font-normal">{unit}</span> : ''}
             </span>
         );
@@ -493,14 +449,14 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.unit': (lead) => {
         const unit = lead.consumption?.unit;
         if (!unit) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <Badge tone="slate" className="text-[10px] font-mono">{unit}</Badge>;
+        return <Badge tone="slate" className="text-[10px]  ">{unit}</Badge>;
     },
     'consumption.wastageAllowance': (lead) => {
         const raw = lead.consumption?.wastageAllowance;
         if (!raw && raw !== 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         const formatted = String(raw).includes('%') ? raw : `${raw}%`;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300/60 dark:border-amber-700/60">
+            <span className="inline-flex items-center gap-1 text-[11px]   font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300/60 dark:border-amber-700/60">
                 <Percent className="w-3 h-3 text-amber-500" />
                 {formatted}
             </span>
@@ -509,7 +465,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.boqVersion': (lead) => {
         const ver = lead.consumption?.boqVersion;
         if (!ver) return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <Badge tone="purple" className="font-mono text-[10px] font-bold">{ver}</Badge>;
+        return <Badge tone="purple" className="  text-[10px] font-bold">{ver}</Badge>;
     },
     'consumption.roomList': (lead) => {
         const rooms = lead.consumption?.roomList || autoFetchRooms(lead);
@@ -542,7 +498,7 @@ const SPREADSHEET_CELL_RENDERERS = {
         const val = lead.consumption?.boqPreparedDate;
         if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap justify-center">
+            <span className="inline-flex items-center gap-1 text-[11px]   text-slate-600 dark:text-slate-400 whitespace-nowrap justify-center">
                 <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                 {date(val, { time: true })}
             </span>
@@ -569,7 +525,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'consumption.panelCount': (lead) => {
         const count = lead.consumption?.panelCount;
         if (count === undefined || count === null || count === '') return <span className="text-slate-400 dark:text-slate-600">—</span>;
-        return <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{count} panel(s)</span>;
+        return <span className="  text-xs font-bold text-slate-800 dark:text-slate-200">{count} panel(s)</span>;
     },
     'consumption.liningAccessoryAssumptions': (lead) => {
         const raw = lead.consumption?.liningAccessoryAssumptions;
@@ -662,14 +618,11 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
     const [finalMeasurementsGrid, setFinalMeasurementsGrid] = useState(() => parseGridInitial(item));
     const [selectedFabrics, setSelectedFabrics] = useState(initialFabrics);
-    const [customFabricInput, setCustomFabricInput] = useState('');
     const [selectedLinings, setSelectedLinings] = useState(initialLining.selected);
     const [liningNotes, setLiningNotes] = useState(initialLining.notes);
     const [autoIncrementVersion, setAutoIncrementVersion] = useState(false);
     const [validationError, setValidationError] = useState('');
 
-    // Tab state: 'grid' (Measurements Grid) | 'spec' (BOQ Specification & Details : current tab)
-    const [activeTab, setActiveTab] = useState('grid');
 
     // ExcelMeasurementGrid workspace states inside modal
     const [workspaceSearch, setWorkspaceSearch] = useState('');
@@ -692,6 +645,13 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         rb_calculations: true,
         rb_fabricOrder: true,
         rb_flags: true,
+        wp_wallInfo: true,
+        wp_rollSpecs: true,
+        wp_allowances: true,
+        wp_orderSettings: true,
+        wp_calculations: true,
+        wp_orderOutput: true,
+        wp_flags: true,
     });
     const [lastAddedRoom, setLastAddedRoom] = useState('');
     const [inspectorRowIndex, setInspectorRowIndex] = useState(null);
@@ -757,14 +717,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
 
     // Fetch system users for user selection
     const { data: usersData } = useAsync(() => usersApi.list().catch(() => ({ data: [] })), []);
-    const systemUsers = useMemo(() => {
-        const rawList = Array.isArray(usersData?.data)
-            ? usersData.data
-            : Array.isArray(usersData)
-                ? usersData
-                : [];
-        return rawList.map((u) => u.name || u.email).filter(Boolean);
-    }, [usersData]);
+
 
     const { execute, pending, error } = useAction(
         (payload) => leadsApi.update(item.id || item._id, { consumption: payload }),
@@ -777,61 +730,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         }
     );
 
-    const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-
-    const handleGridChange = (id, field, value) => {
-        setFinalMeasurementsGrid((prev) => prev.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
-    };
-
-    const handleSyncMeasurements = () => {
-        const reFetched = parseGridInitial(item);
-        setFinalMeasurementsGrid(reFetched);
-        const fetchedText = autoFetchMeasurements(item);
-        setForm((prev) => ({ ...prev, measurements: fetchedText }));
-    };
-
-    const handleSyncRooms = () => {
-        const fetched = autoFetchRooms(item);
-        setForm((prev) => ({ ...prev, roomList: fetched }));
-    };
-
-    const handleIncrementVersion = () => {
-        setForm((prev) => ({ ...prev, boqVersion: getNextVersion(prev.boqVersion) }));
-    };
-
-    const toggleFabric = (fabricName) => {
-        setSelectedFabrics((prev) =>
-            prev.includes(fabricName) ? prev.filter((f) => f !== fabricName) : [...prev, fabricName]
-        );
-    };
-
-    const addCustomFabric = () => {
-        if (customFabricInput.trim() && !selectedFabrics.includes(customFabricInput.trim())) {
-            setSelectedFabrics((prev) => [...prev, customFabricInput.trim()]);
-            setCustomFabricInput('');
-        }
-    };
-
-    const toggleLining = (item) => {
-        setSelectedLinings((prev) =>
-            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-        );
-    };
-
-    const handleSyncFromGrid = () => {
-        let totalOrderMetres = 0;
-        let totalWidths = 0;
-        (finalMeasurementsGrid || []).forEach((row) => {
-            const c = calculateRowConsumption(row);
-            totalOrderMetres += c.orderMetres || c.fabricMeters || 0;
-            totalWidths += (c.numWidths ?? c.roundedParts) || 0;
-        });
-        setForm((prev) => ({
-            ...prev,
-            quantity: totalOrderMetres > 0 ? String(Math.round(totalOrderMetres * 100) / 100) : prev.quantity,
-            panelCount: totalWidths > 0 ? String(Math.round(totalWidths)) : prev.panelCount,
-        }));
-    };
 
     const submit = (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -843,7 +741,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             qtyNum = Number(form.quantity);
             if (isNaN(qtyNum) || qtyNum < 0) {
                 setValidationError('Consumption Quantity must be a valid positive decimal number.');
-                setActiveTab('spec');
                 return;
             }
         } else if (finalMeasurementsGrid.length > 0) {
@@ -862,7 +759,6 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             panelInt = Number(form.panelCount);
             if (!Number.isInteger(panelInt) || panelInt < 0) {
                 setValidationError('Panel Count must be a whole positive integer (0, 1, 2...).');
-                setActiveTab('spec');
                 return;
             }
         } else if (finalMeasurementsGrid.length > 0) {
@@ -881,7 +777,7 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
             const numWastage = Number(wastageVal.replace('%', ''));
             if (isNaN(numWastage) || numWastage < 0 || numWastage > 100) {
                 setValidationError('Wastage Allowance percentage must be a valid number between 0% and 100%.');
-                setActiveTab('spec');
+
                 return;
             }
             wastageVal = `${numWastage}%`;
@@ -907,11 +803,45 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
         });
     };
 
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handlePrint = async () => {
+        try {
+            setIsPrinting(true);
+            const clientName = item?.clientName || item?.name || '';
+            const architectName = item?.architectName || item?.architect?.name || (typeof item?.architect === 'string' ? item.architect : '') || '';
+            const siteAddress = item?.siteAddress || (item?.address ? (typeof item.address === 'string' ? item.address : [item.address.street, item.address.city, item.address.state, item.address.pincode || item.address.pinCode].filter(Boolean).join(', ')) : '') || item?.location || '';
+            const preparedDate = form.boqPreparedDate || item?.consumption?.boqPreparedDate || item?.createdAt || new Date().toISOString();
+            const preparedBy = form.boqPreparedBy || item?.consumption?.boqPreparedBy || currentUser?.name || currentUser?.email || 'System User';
+            const remarks = liningNotes || (typeof form.liningAccessoryAssumptions === 'string' ? form.liningAccessoryAssumptions : form.liningAccessoryAssumptions?.notes) || item?.consumption?.liningAccessoryAssumptions?.notes || item?.measurement?.remarks || '';
+            const floorHeader = form.roomList || (finalMeasurementsGrid.length > 0 && finalMeasurementsGrid[0]?.room ? finalMeasurementsGrid[0].room : 'Ground & Upper Floors');
+
+            await consumptionPrintService({
+                header: {
+                    clientName,
+                    architect: architectName,
+                    siteAddress,
+                    date: preparedDate,
+                    siteVisitedBy: preparedBy,
+                    floor: floorHeader,
+                },
+                rows: finalMeasurementsGrid,
+                remarks,
+                preparedBy,
+                checkedBy: '',
+            });
+        } catch (err) {
+            console.error('Failed to print consumption sheet:', err);
+        } finally {
+            setIsPrinting(false);
+        }
+    };
+
     return (
         <Modal
             open={Boolean(item)}
             onClose={onClose}
-            title={`Consumption & BOQ Specification : ${item?.clientName || ''}`}
+            title={`Consumption & BOQ Sheet : ${item?.clientName || ''}`}
             size="full"
             footer={
                 <div className="flex items-center justify-between w-full">
@@ -923,45 +853,27 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending}>
+                        <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending || isPrinting}>
                             Close
                         </Button>
-                        <Button type="button" variant="primary" size="sm" onClick={submit} disabled={pending} icon={pending ? Loader2 : CheckCircle2}>
-                            {pending ? 'Saving…' : 'Save Consumption / BOQ'}
+                        <Button
+                            type="button"
+                            icon={isPrinting ? Loader2 : Printer}
+                            variant="ghost"
+                            size="sm"
+                            onClick={handlePrint}
+                            disabled={pending || isPrinting}
+                        >
+                            {isPrinting ? 'Printing…' : 'Print'}
+                        </Button>
+                        <Button type="button" variant="primary" size="sm" onClick={submit} disabled={pending || isPrinting} icon={pending ? Loader2 : CheckCircle2}>
+                            {pending ? 'Saving…' : 'Save Consumption Sheet'}
                         </Button>
                     </div>
                 </div>
             }
         >
             <div className="space-y-4">
-                {/* Navigation Tabs */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('grid')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'grid'
-                                ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <Grid className="w-3.5 h-3.5" />
-                            <span>Measurements Grid ({finalMeasurementsGrid.length})</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('spec')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'spec'
-                                ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <ClipboardList className="w-3.5 h-3.5" />
-                            <span>BOQ Specification & Details</span>
-                        </button>
-                    </div>
-                </div>
                 {(error || validationError) && (
                     <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -969,439 +881,46 @@ const EditConsumptionModal = ({ item, onClose, onDone }) => {
                     </div>
                 )}
 
-                {/* TAB 1: Measurements Grid Workspace */}
-                {activeTab === 'grid' && (
-                    <div className="space-y-3">
-                        <HeaderTools
-                            searchQuery={workspaceSearch}
-                            onSearchChange={setWorkspaceSearch}
-                            roomFilter={workspaceRoomFilter}
-                            onRoomFilterChange={setWorkspaceRoomFilter}
-                            typeFilter={workspaceTypeFilter}
-                            onTypeFilterChange={setWorkspaceTypeFilter}
-                            roomOptions={modalAvailableRooms}
-                            columnVisibility={columnVisibility}
-                            onToggleColumnGroup={handleToggleColumnGroup}
-                            saveState={pending ? 'saving' : saveState}
-                            onSaveChanges={submit}
+
+                <div className="space-y-3">
+                    <HeaderTools
+                        searchQuery={workspaceSearch}
+                        onSearchChange={setWorkspaceSearch}
+                        roomFilter={workspaceRoomFilter}
+                        onRoomFilterChange={setWorkspaceRoomFilter}
+                        typeFilter={workspaceTypeFilter}
+                        onTypeFilterChange={setWorkspaceTypeFilter}
+                        roomOptions={modalAvailableRooms}
+                        columnVisibility={columnVisibility}
+                        onToggleColumnGroup={handleToggleColumnGroup}
+                        onAddMeasurement={() => setIsAddModalOpen(true)}
+                        isSaving={pending}
+                    />
+
+                    {/* Chrome Window Container: Tabs + Grid */}
+                    <div className="flex flex-col">
+                        <TypesTab
+                            setWorkspaceTypeFilter={setWorkspaceTypeFilter}
+                            workspaceTypeFilter={workspaceTypeFilter}
+                            rows={finalMeasurementsGrid}
                             onAddMeasurement={() => setIsAddModalOpen(true)}
-                            isSaving={pending}
                         />
 
-                        {/* Chrome Window Container: Tabs + Grid */}
-                        <div className="flex flex-col">
-                            <TypesTab
-                                setWorkspaceTypeFilter={setWorkspaceTypeFilter}
-                                workspaceTypeFilter={workspaceTypeFilter}
-                                rows={finalMeasurementsGrid}
-                                onAddMeasurement={() => setIsAddModalOpen(true)}
-                            />
-
-                            <ConsumptionGrid
-                                rows={finalMeasurementsGrid}
-                                onUpdateRows={handleGridRowsUpdate}
-                                searchQuery={workspaceSearch}
-                                roomFilter={workspaceRoomFilter}
-                                typeFilter={workspaceTypeFilter}
-                                columnVisibility={columnVisibility}
-                                onOpenDetails={handleOpenRowDetails}
-                                lastAddedRoom={lastAddedRoom}
-                            />
-                        </div>
+                        <ConsumptionGrid
+                            rows={finalMeasurementsGrid}
+                            onUpdateRows={handleGridRowsUpdate}
+                            searchQuery={workspaceSearch}
+                            roomFilter={workspaceRoomFilter}
+                            typeFilter={workspaceTypeFilter}
+                            columnVisibility={columnVisibility}
+                            onOpenDetails={handleOpenRowDetails}
+                            lastAddedRoom={lastAddedRoom}
+                        />
                     </div>
-                )}
+                </div>
 
-                {/* TAB 2: BOQ Specification & Details (Current Tab) */}
-                {activeTab === 'spec' && (
-                    <form onSubmit={submit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* 1. Consumption Sheet Due */}
-                            <Field label="Consumption Sheet Due" hint="Target deadline date for sheet completion">
-                                <Input
-                                    type="date"
-                                    value={form.sheetDueDate}
-                                    onChange={set('sheetDueDate')}
-                                />
-                            </Field>
 
-                            {/* 6. BOQ / Consumption Sheet Version */}
-                            <Field label="BOQ / Consumption Sheet Version" hint="System-generated versioning">
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        value={form.boqVersion}
-                                        onChange={set('boqVersion')}
-                                        placeholder="e.g. v1.0"
-                                        className="font-mono"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={handleIncrementVersion}
-                                        title="Increment Version (e.g. v1.0 -> v1.1)"
-                                        icon={RefreshCw}
-                                        className="shrink-0"
-                                    >
-                                        Revise
-                                    </Button>
-                                </div>
-                            </Field>
 
-                            {/* 2. Measurements (Versioned Final Measurement Grid) */}
-                            <div className="md:col-span-2">
-                                <Panel className="p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 space-y-3">
-                                    <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
-                                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <FileText className="w-4 h-4 text-emerald-500" />
-                                            Linked Final Measurements Record
-                                        </h4>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleSyncMeasurements}
-                                            icon={Ruler}
-                                            className="shrink-0 text-xs"
-                                        >
-                                            Auto-fetch Final
-                                        </Button>
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs border-collapse">
-                                            <thead>
-                                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
-                                                    <th className="p-2">Room & Window</th>
-                                                    <th className="p-2">Previous Measurement</th>
-                                                    <th className="p-2">Confirmed Width</th>
-                                                    <th className="p-2">Confirmed Height</th>
-                                                    <th className="p-2">Variance / Deviation</th>
-                                                    <th className="p-2">Version</th>
-                                                    <th className="p-2">Notes & Adjustments</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                                {finalMeasurementsGrid.map((gridRow) => (
-                                                    <tr key={gridRow.id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                                                        <td className="p-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                                                            {gridRow.room} ({gridRow.windowId})
-                                                        </td>
-                                                        <td className="p-1.5 font-mono text-slate-500">
-                                                            {gridRow.previousWidth} x {gridRow.previousHeight} {gridRow.unit || 'mm'}
-                                                        </td>
-                                                        <td className="p-1.5 w-[110px]">
-                                                            <Input
-                                                                type="number"
-                                                                value={gridRow.confirmedWidth}
-                                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedWidth', e.target.value)}
-                                                            />
-                                                        </td>
-                                                        <td className="p-1.5 w-[110px]">
-                                                            <Input
-                                                                type="number"
-                                                                value={gridRow.confirmedHeight}
-                                                                onChange={(e) => handleGridChange(gridRow.id, 'confirmedHeight', e.target.value)}
-                                                            />
-                                                        </td>
-                                                        <td className="p-1.5">
-                                                            {calculateVariance(gridRow.previousWidth, gridRow.previousHeight, gridRow.confirmedWidth, gridRow.confirmedHeight, gridRow.unit || 'mm')}
-                                                        </td>
-                                                        <td className="p-1.5">
-                                                            <Badge tone="emerald">{gridRow.version || 'v2.0'}</Badge>
-                                                        </td>
-                                                        <td className="p-1.5 min-w-[160px]">
-                                                            <Input
-                                                                value={gridRow.notes || ''}
-                                                                onChange={(e) => handleGridChange(gridRow.id, 'notes', e.target.value)}
-                                                                placeholder="Confirmation notes..."
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1">
-                                        <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
-                                        <span>Confirmed measurement source: <strong>{autoFetchMeasurements(item)}</strong></span>
-                                    </div>
-                                </Panel>
-                            </div>
-
-                            {/* 7. Room List (Auto-fetched linked room list) */}
-                            <div className="md:col-span-2">
-                                <Field label="Linked Room List" hint="Auto-fetched room list from final measurements">
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <Textarea
-                                                rows={2}
-                                                value={form.roomList}
-                                                onChange={set('roomList')}
-                                                placeholder="Master Bedroom, Living Room, Dining..."
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleSyncRooms}
-                                                icon={RefreshCw}
-                                                className="shrink-0 text-xs self-start"
-                                            >
-                                                Sync Rooms
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Field>
-                            </div>
-
-                            {/* 3. Consumption Quantity */}
-                            <Field label="Consumption Quantity" hint="Decimal quantity for BOQ line">
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        type="number"
-                                        step="any"
-                                        min="0"
-                                        value={form.quantity}
-                                        onChange={set('quantity')}
-                                        placeholder="e.g. 150.5"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleSyncFromGrid}
-                                        icon={Sparkles}
-                                        title="Auto-fill total Order Metres and Panel Count from Measurements Grid"
-                                        className="shrink-0 text-xs"
-                                    >
-                                        Auto-fill from Grid
-                                    </Button>
-                                </div>
-                            </Field>
-
-                            {/* 4. Unit (Dropdown from approved unit master) */}
-                            <Field label="Unit Master" hint="Select approved measurement unit">
-                                <Select value={form.unit} onChange={set('unit')}>
-                                    {APPROVED_UNITS.map((unit) => (
-                                        <option key={unit} value={unit}>
-                                            {unit}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </Field>
-
-                            {/* 5. Wastage Allowance */}
-                            <Field label="Wastage Allowance (%)" hint="Numeric percentage allowance (e.g. 10)">
-                                <div className="relative">
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.1"
-                                        value={form.wastageAllowance}
-                                        onChange={set('wastageAllowance')}
-                                        placeholder="e.g. 10"
-                                        className="pr-8"
-                                    />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
-                                </div>
-                            </Field>
-
-                            {/* 11. Panel Count */}
-                            <Field label="Panel Count" hint="Positive whole integers only">
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={form.panelCount}
-                                    onChange={set('panelCount')}
-                                    placeholder="e.g. 12"
-                                />
-                            </Field>
-
-                            {/* 8. BOQ Prepared By (System-generated user field) */}
-                            <Field label="BOQ Prepared By" hint="Captures user preparing the BOQ">
-                                {systemUsers.length > 0 ? (
-                                    <Select value={form.boqPreparedBy} onChange={set('boqPreparedBy')}>
-                                        <option value={currentUser?.name || currentUser?.email || ''}>
-                                            Current User ({currentUser?.name || currentUser?.email || 'Logged In User'})
-                                        </option>
-                                        {systemUsers.map((usr) => (
-                                            <option key={usr} value={usr}>
-                                                {usr}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                ) : (
-                                    <Input
-                                        value={form.boqPreparedBy}
-                                        onChange={set('boqPreparedBy')}
-                                        placeholder="User name..."
-                                    />
-                                )}
-                            </Field>
-
-                            {/* 9. BOQ Prepared Date (System-generated read-only) */}
-                            <Field label="BOQ Prepared Date & Time" hint="System-generated read-only timestamp">
-                                <Input
-                                    type="datetime-local"
-                                    value={form.boqPreparedDate}
-                                    disabled
-                                    className="bg-slate-100 dark:bg-slate-900 cursor-not-allowed opacity-80"
-                                />
-                            </Field>
-
-                            {/* 10. Fabric / Design Selection (Searchable lookup with multi-select) */}
-                            <div className="md:col-span-2 space-y-2">
-                                <Field label="Fabric / Design Selection" hint="Select from approved fabric master or enter multiple items">
-                                    <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
-                                        {/* Selected fabric chips */}
-                                        <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
-                                            {selectedFabrics.length === 0 ? (
-                                                <span className="text-xs text-slate-400 italic">No fabrics selected yet. Click options below or type to add.</span>
-                                            ) : (
-                                                selectedFabrics.map((fab) => (
-                                                    <span
-                                                        key={fab}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-300"
-                                                    >
-                                                        <Tag className="w-3 h-3 text-brand-500 shrink-0" />
-                                                        {fab}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => toggleFabric(fab)}
-                                                            className="ml-1 text-slate-400 hover:text-rose-500 transition-colors"
-                                                        >
-                                                            <X className="w-3 h-3" />
-                                                        </button>
-                                                    </span>
-                                                ))
-                                            )}
-                                        </div>
-
-                                        {/* Custom fabric adder */}
-                                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
-                                            <Input
-                                                value={customFabricInput}
-                                                onChange={(e) => setCustomFabricInput(e.target.value)}
-                                                placeholder="Add custom fabric or design name..."
-                                                className="text-xs"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        addCustomFabric();
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={addCustomFabric}
-                                                icon={Plus}
-                                                className="shrink-0 text-xs"
-                                            >
-                                                Add Item
-                                            </Button>
-                                        </div>
-
-                                        {/* Fabric master quick picker */}
-                                        {fabricOptions.length > 0 && (
-                                            <div className="pt-2">
-                                                <span className="text-[11px] font-semibold text-slate-500 block mb-1 uppercase tracking-wider">
-                                                    Fabric Catalog Master Quick Select:
-                                                </span>
-                                                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                                                    {fabricOptions.map((option) => {
-                                                        const selected = selectedFabrics.includes(option);
-                                                        return (
-                                                            <button
-                                                                key={option}
-                                                                type="button"
-                                                                onClick={() => toggleFabric(option)}
-                                                                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${selected
-                                                                    ? 'bg-brand-600 text-white font-semibold shadow-xs'
-                                                                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-100 dark:hover:bg-slate-700'
-                                                                    }`}
-                                                            >
-                                                                {selected && <Check className="w-3 h-3 inline mr-1" />}
-                                                                {option}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </Field>
-                            </div>
-
-                            {/* 12. Lining / Accessory Assumptions (Multi-select plus notes) */}
-                            <div className="md:col-span-2 space-y-2">
-                                <Field label="Lining / Accessory Assumptions" hint="Select approved master items and include explanatory notes">
-                                    <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800">
-                                        <div>
-                                            <span className="text-[11px] font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
-                                                Approved Lining & Accessory Master Options:
-                                            </span>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                                {LINING_ACCESSORY_MASTER.map((item) => {
-                                                    const checked = selectedLinings.includes(item);
-                                                    return (
-                                                        <label
-                                                            key={item}
-                                                            className={`flex items-center gap-2 p-2 rounded-md border text-xs font-medium cursor-pointer transition-all ${checked
-                                                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                                                : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                                                                }`}
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={checked}
-                                                                onChange={() => toggleLining(item)}
-                                                                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
-                                                            />
-                                                            <span>{item}</span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                                            <Field label="Explanatory Notes & Special Assumptions">
-                                                <Textarea
-                                                    rows={2}
-                                                    value={liningNotes}
-                                                    onChange={(e) => setLiningNotes(e.target.value)}
-                                                    placeholder="Provide explanatory notes on blackout lining, motorized track configurations, custom pelmet details..."
-                                                />
-                                            </Field>
-                                        </div>
-                                    </div>
-                                </Field>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-                            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={autoIncrementVersion}
-                                    onChange={(e) => setAutoIncrementVersion(e.target.checked)}
-                                    className="rounded text-purple-600 focus:ring-purple-500 w-3.5 h-3.5"
-                                />
-                                <span>Auto-increment revision version on save ({form.boqVersion} → {getNextVersion(form.boqVersion)})</span>
-                            </label>
-
-                            <div className="flex justify-end gap-2">
-                                <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                                <Button type="submit" loading={pending}>Save Consumption / BOQ</Button>
-                            </div>
-                        </div>
-                    </form>
-                )}
             </div>
 
 
@@ -1463,7 +982,7 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                     <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
                         {items.map((lead, idx) => (
                             <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10 font-mono text-brand-600 dark:text-brand-400 font-semibold">
+                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
                                         {lead.code}
                                     </button>
@@ -1567,8 +1086,7 @@ const ConsumptionBoq = ({ items: itemsProp = [] }) => {
 
     return (
         <div>
-            <PageHeader
-                title="Consumption Sheet / BOQ Dashboard"
+            <PageHeader title="Consumption Sheet / BOQ Dashboard"
                 subtitle="Calculate fabric requirements, quantities, wastage allowances, BOQ versions, room lists, panel counts, and lining accessories"
             />
 
