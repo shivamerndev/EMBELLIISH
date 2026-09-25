@@ -185,9 +185,10 @@ const consumptionSchema = z
 
 const proposalSchema = z
   .object({
-    dueDate: z.coerce.date().optional(),
-    noVersion: z.string().optional(),
-    date: z.coerce.date().optional(),
+    dueDate: z.coerce.date().optional().nullable(),
+    actualDate: z.coerce.date().optional().nullable(),
+    noVersion: z.string().optional().nullable(),
+    date: z.coerce.date().optional().nullable(),
     clientBrief: z.string().optional(),
     consumptionSheet: z.array(attachmentItemSchema).optional(),
     designDirection: z.string().optional(),

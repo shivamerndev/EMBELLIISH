@@ -94,50 +94,116 @@ const parseSubformArray = (raw) => {
     return [];
 };
 
+const isMeasurementRowValid = (row) => {
+    if (!row) return false;
+    const hasArea = Boolean((row.area && String(row.area).trim()) || (row.room && String(row.room).trim()));
+    const hasDims = Boolean(
+        (row.outToOutWidth !== '' && row.outToOutWidth != null) ||
+        (row.outToOutHeight !== '' && row.outToOutHeight != null) ||
+        (row.frameToFrameWidth !== '' && row.frameToFrameWidth != null) ||
+        (row.frameToFrameHeight !== '' && row.frameToFrameHeight != null) ||
+        (row.pelmetOutOutWidth !== '' && row.pelmetOutOutWidth != null) ||
+        (row.pelmetOutOutDrop !== '' && row.pelmetOutOutDrop != null) ||
+        (row.pelmetFrameFrameWidth !== '' && row.pelmetFrameFrameWidth != null) ||
+        (row.pelmetFrameFrameDrop !== '' && row.pelmetFrameFrameDrop != null) ||
+        (row.width !== '' && row.width != null) ||
+        (row.height !== '' && row.height != null)
+    );
+    const hasDetail = Boolean(
+        (row.lWindowDetail && String(row.lWindowDetail).trim()) ||
+        (row.remarks && String(row.remarks).trim()) ||
+        (row.notes && String(row.notes).trim()) ||
+        (row.sidesOfRoman && String(row.sidesOfRoman).trim()) ||
+        (row.ceilingSupport && String(row.ceilingSupport).trim()) ||
+        row.wire || row.wireLeft || row.wireRight
+    );
+    return hasArea || hasDims || hasDetail;
+};
+
 const parseGridInitial = (item) => {
+    const rawNotes = item?.measurement?.rows || item?.measurement?.notes;
+    const parsedNotes = parseSubformArray(rawNotes);
+    const validNotes = parsedNotes.filter(isMeasurementRowValid);
+
     const existing = item?.consumption?.measurements;
     const parsedExisting = parseSubformArray(existing);
     if (parsedExisting.length > 0 && typeof parsedExisting[0] === 'object' && (parsedExisting[0].room || parsedExisting[0].confirmedWidth || parsedExisting[0].width || parsedExisting[0].frameToFrameWidth)) {
-        return parsedExisting.map((row, idx) => ({
-            id: row.id || `win-${Date.now()}-${idx}`,
-            room: row.room || row.roomName || 'Living Room',
-            windowId: row.windowId || row.label || `W-0${idx + 1}`,
-            previousWidth: row.previousWidth || row.width || row.frameToFrameWidth || '1200',
-            previousHeight: row.previousHeight || row.height || row.frameToFrameHeight || '2100',
-            confirmedWidth: row.confirmedWidth || row.width || row.frameToFrameWidth || '1200',
-            confirmedHeight: row.confirmedHeight || row.height || row.frameToFrameHeight || '2100',
-            frameToFrameWidth: row.frameToFrameWidth ?? row.confirmedWidth ?? row.width ?? '',
-            frameToFrameHeight: row.frameToFrameHeight ?? row.confirmedHeight ?? row.height ?? '',
-            outToOutWidth: row.outToOutWidth ?? '',
-            outToOutHeight: row.outToOutHeight ?? '',
-            curtainReturnLeft: row.curtainReturnLeft ?? '',
-            curtainReturnRight: row.curtainReturnRight ?? '',
-            pelmetO2oWidth: row.pelmetO2oWidth ?? '',
-            pelmetO2oDrop: row.pelmetO2oDrop ?? '',
-            pelmetF2fWidth: row.pelmetF2fWidth ?? '',
-            pelmetF2fDrop: row.pelmetF2fDrop ?? '',
-            sidesOfRoman: row.sidesOfRoman ?? '',
-            ceilingSupport: row.ceilingSupport ?? '',
-            wireLeft: row.wireLeft ?? false,
-            wireRight: row.wireRight ?? false,
-            particular: row.particular || row.windowType || 'MAIN_CURTAIN',
-            unit: row.unit || 'mm',
-            status: row.status || 'Confirmed',
-            notes: row.notes || '',
-            version: row.version || 'v2.0',
-            pelmetDetails: row.pelmetDetails || [],
-            channelDetails: row.channelDetails || [],
-            motorDetails: row.motorDetails || [],
-            wiringDetails: row.wiringDetails || [],
-        }));
+        const validExisting = parsedExisting.filter((row, idx) => {
+            if (!row) return false;
+            const hasRoom = Boolean((row.room && String(row.room).trim()) || (row.area && String(row.area).trim()));
+            const hasDims = Boolean(
+                (row.frameToFrameWidth !== '' && row.frameToFrameWidth != null) ||
+                (row.frameToFrameHeight !== '' && row.frameToFrameHeight != null) ||
+                (row.outToOutWidth !== '' && row.outToOutWidth != null) ||
+                (row.outToOutHeight !== '' && row.outToOutHeight != null) ||
+                (row.width !== '' && row.width != null) ||
+                (row.height !== '' && row.height != null) ||
+                (row.pelmetO2oWidth !== '' && row.pelmetO2oWidth != null) ||
+                (row.pelmetF2fWidth !== '' && row.pelmetF2fWidth != null)
+            );
+            const hasNotes = Boolean((row.notes && String(row.notes).trim()) || (row.remarks && String(row.remarks).trim()));
+            const hasAccessories = Boolean(
+                (row.pelmetDetails && row.pelmetDetails.length > 0) ||
+                (row.channelDetails && row.channelDetails.length > 0) ||
+                (row.motorDetails && row.motorDetails.length > 0) ||
+                (row.wiringDetails && row.wiringDetails.length > 0)
+            );
+
+            if (!hasRoom && !hasDims && !hasNotes && !hasAccessories) return false;
+
+            // Detect and filter out template ghost rows if measurement rows had fewer items
+            if (validNotes.length > 0 && idx >= validNotes.length) {
+                if (!hasDims && !hasNotes && !hasAccessories) return false;
+                if (!row.frameToFrameWidth && !row.outToOutWidth && !row.width && !hasNotes && !hasAccessories &&
+                    (row.confirmedWidth === '1200' || row.confirmedWidth === 1200) &&
+                    (row.confirmedHeight === '2100' || row.confirmedHeight === 2100)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        if (validExisting.length > 0) {
+            return validExisting.map((row, idx) => ({
+                id: row.id || `win-${Date.now()}-${idx}`,
+                room: (row.room && String(row.room).trim()) || (row.roomName && String(row.roomName).trim()) || 'General',
+                windowId: row.windowId || row.label || `W-0${idx + 1}`,
+                previousWidth: row.previousWidth || row.width || row.frameToFrameWidth || '1200',
+                previousHeight: row.previousHeight || row.height || row.frameToFrameHeight || '2100',
+                confirmedWidth: row.confirmedWidth || row.width || row.frameToFrameWidth || '1200',
+                confirmedHeight: row.confirmedHeight || row.height || row.frameToFrameHeight || '2100',
+                frameToFrameWidth: row.frameToFrameWidth ?? row.confirmedWidth ?? row.width ?? '',
+                frameToFrameHeight: row.frameToFrameHeight ?? row.confirmedHeight ?? row.height ?? '',
+                outToOutWidth: row.outToOutWidth ?? '',
+                outToOutHeight: row.outToOutHeight ?? '',
+                curtainReturnLeft: row.curtainReturnLeft ?? '',
+                curtainReturnRight: row.curtainReturnRight ?? '',
+                pelmetO2oWidth: row.pelmetO2oWidth ?? '',
+                pelmetO2oDrop: row.pelmetO2oDrop ?? '',
+                pelmetF2fWidth: row.pelmetF2fWidth ?? '',
+                pelmetF2fDrop: row.pelmetF2fDrop ?? '',
+                sidesOfRoman: row.sidesOfRoman ?? '',
+                ceilingSupport: row.ceilingSupport ?? '',
+                wireLeft: row.wireLeft ?? false,
+                wireRight: row.wireRight ?? false,
+                particular: row.particular || row.windowType || 'MAIN_CURTAIN',
+                unit: row.unit || 'mm',
+                status: row.status || 'Confirmed',
+                notes: row.notes || '',
+                version: row.version || 'v2.0',
+                pelmetDetails: row.pelmetDetails || [],
+                channelDetails: row.channelDetails || [],
+                motorDetails: row.motorDetails || [],
+                wiringDetails: row.wiringDetails || [],
+            }));
+        }
     }
 
-    const rawNotes = item?.measurement?.rows || item?.measurement?.notes;
-    const parsedNotes = parseSubformArray(rawNotes);
-    if (parsedNotes.length > 0 && typeof parsedNotes[0] === 'object') {
-        return parsedNotes.map((row, idx) => ({
+    if (validNotes.length > 0) {
+        return validNotes.map((row, idx) => ({
             id: row.id || `win-${Date.now()}-${idx}`,
-            room: row.area || row.room || 'Living Room',
+            room: (row.area && String(row.area).trim()) || (row.room && String(row.room).trim()) || 'General',
             windowId: row.lWindowDetail || row.windowId || row.label || `W-0${idx + 1}`,
             previousWidth: row.frameToFrameWidth || row.outToOutWidth || row.width || '1200',
             previousHeight: row.frameToFrameHeight || row.outToOutHeight || row.height || '2100',
@@ -171,10 +237,11 @@ const parseGridInitial = (item) => {
 
     const rawFinal = item?.readySize?.finalMeasurements || item?.readySize?.finalMeasurementGrid;
     const parsedFinal = parseSubformArray(rawFinal);
-    if (parsedFinal.length > 0 && typeof parsedFinal[0] === 'object') {
-        return parsedFinal.map((row, idx) => ({
+    const validFinal = parsedFinal.filter((row) => Boolean((row.room && String(row.room).trim()) || row.confirmedWidth || row.width));
+    if (validFinal.length > 0) {
+        return validFinal.map((row, idx) => ({
             id: row.id || `win-${Date.now()}-${idx}`,
-            room: row.room || row.roomName || 'Room',
+            room: (row.room && String(row.room).trim()) || (row.roomName && String(row.roomName).trim()) || 'General',
             windowId: row.windowId || `W-0${idx + 1}`,
             previousWidth: row.previousWidth || row.width || '1200',
             previousHeight: row.previousHeight || row.height || '2100',
@@ -196,10 +263,11 @@ const parseGridInitial = (item) => {
 
     const rawWindows = item?.readySize?.windowSizes || item?.readySize?.windowSize || item?.measurement?.windowSizes;
     const parsedWindows = parseSubformArray(rawWindows);
-    if (parsedWindows.length > 0 && typeof parsedWindows[0] === 'object') {
-        return parsedWindows.map((w, idx) => ({
+    const validWindows = parsedWindows.filter((w) => Boolean((w.room && String(w.room).trim()) || (w.roomName && String(w.roomName).trim()) || w.width));
+    if (validWindows.length > 0) {
+        return validWindows.map((w, idx) => ({
             id: `win-${Date.now()}-${idx}`,
-            room: w.room || w.roomName || 'Room',
+            room: (w.room && String(w.room).trim()) || (w.roomName && String(w.roomName).trim()) || 'General',
             windowId: w.windowId || `W-0${idx + 1}`,
             previousWidth: w.width || '1200',
             previousHeight: w.height || '2100',
@@ -262,7 +330,8 @@ const autoFetchMeasurements = (item) => {
     }
     if (item.measurement?.rows) {
         const parsed = parseSubformArray(item.measurement.rows);
-        if (parsed.length > 0) return `Site Measurement Sheet (${parsed.length} window(s) recorded)`;
+        const valid = parsed.filter(isMeasurementRowValid);
+        if (valid.length > 0) return `Site Measurement Sheet (${valid.length} window(s) recorded)`;
     }
     if (item.measurement?.roomList) return `Measurement Record (${typeof item.measurement.roomList === 'object' ? JSON.stringify(item.measurement.roomList) : item.measurement.roomList})`;
     if (item.measurement?.status) return `Measurement Record - ${typeof item.measurement.status === 'object' ? JSON.stringify(item.measurement.status) : item.measurement.status}`;
@@ -273,13 +342,14 @@ const autoFetchRooms = (item) => {
     if (!item) return '';
     if (item.readySize?.windowSizes) {
         if (Array.isArray(item.readySize.windowSizes)) {
-            const rooms = item.readySize.windowSizes.map((w) => w.roomName || w.room).filter(Boolean);
+            const rooms = item.readySize.windowSizes.map((w) => (w.roomName || w.room)?.trim()).filter(Boolean);
             if (rooms.length > 0) return Array.from(new Set(rooms)).join(', ');
         }
     }
     if (item.measurement?.rows) {
         const parsed = parseSubformArray(item.measurement.rows);
-        const rooms = parsed.map((r) => r.area || r.room).filter(Boolean);
+        const valid = parsed.filter(isMeasurementRowValid);
+        const rooms = valid.map((r) => (r.area || r.room)?.trim()).filter(Boolean);
         if (rooms.length > 0) return Array.from(new Set(rooms)).join(', ');
     }
     if (item.measurement?.roomList) return String(item.measurement.roomList);

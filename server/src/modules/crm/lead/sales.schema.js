@@ -131,6 +131,8 @@ export const consumptionSchema = new mongoose.Schema(
 export const proposalSchema = new mongoose.Schema(
   {
     dueDate: Date,
+    actualDate: Date,
+    letterData: { type: mongoose.Schema.Types.Mixed },
     noVersion: String,
     date: Date,
     clientBrief: String,

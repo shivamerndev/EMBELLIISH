@@ -199,7 +199,15 @@ const SPREADSHEET_CELL_RENDERERS = {
         return <Badge tone={tone}>{label}</Badge>;
     },
     windowsCount: (lead) => {
-        const rows = safeParseArray(lead.measurement?.rows || lead.measurement?.notes);
+        const rows = safeParseArray(lead.measurement?.rows || lead.measurement?.notes).filter((r) => {
+            return Boolean(
+                (r.area && String(r.area).trim()) ||
+                (r.room && String(r.room).trim()) ||
+                r.outToOutWidth || r.outToOutHeight ||
+                r.frameToFrameWidth || r.frameToFrameHeight ||
+                r.width || r.height
+            );
+        });
         if (!rows.length) return <span className="text-slate-400 dark:text-slate-600">—</span>;
         return (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
@@ -427,9 +435,22 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             measuredById = measuredById.trim();
         }
 
+        const validRows = (sheetData.rows || []).filter((r) => {
+            return Boolean(
+                (r.area && String(r.area).trim()) ||
+                (r.room && String(r.room).trim()) ||
+                r.outToOutWidth || r.outToOutHeight ||
+                r.frameToFrameWidth || r.frameToFrameHeight ||
+                r.pelmetOutOutWidth || r.pelmetFrameFrameWidth ||
+                (r.lWindowDetail && String(r.lWindowDetail).trim()) ||
+                (r.remarks && String(r.remarks).trim()) ||
+                r.width || r.height
+            );
+        });
+
         const payload = {
             header: sheetData.header,
-            rows: sheetData.rows,
+            rows: validRows,
             checklist: sheetData.checklist,
             remarks: sheetData.remarks,
             dueDate: form.dueDate || undefined,
@@ -439,7 +460,7 @@ const EditMeasurementModal = ({ item, onClose, onDone, users = [] }) => {
             siteAccess: form.siteAccess || 'Available',
             attachments,
             drawings,
-            notes: sheetData.rows, // Backward compatibility for downstream stages
+            notes: validRows, // Backward compatibility for downstream stages
         };
 
         execute(payload);

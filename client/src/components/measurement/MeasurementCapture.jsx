@@ -160,8 +160,33 @@ const createEmptyRow = (index) => ({
     wireLeft: false,
     wireRight: false,
     sideWall: '',
-    remarks: '',
 });
+
+export const isMeasurementRowEmpty = (item) => {
+    if (!item) return true;
+    const hasArea = Boolean((item.area && String(item.area).trim()) || (item.room && String(item.room).trim()));
+    const hasDetail = Boolean((item.lWindowDetail && String(item.lWindowDetail).trim()) || (item.windowId && String(item.windowId).trim()));
+    const hasDims = Boolean(
+        (item.outToOutWidth !== '' && item.outToOutWidth != null) ||
+        (item.outToOutHeight !== '' && item.outToOutHeight != null) ||
+        (item.frameToFrameWidth !== '' && item.frameToFrameWidth != null) ||
+        (item.frameToFrameHeight !== '' && item.frameToFrameHeight != null) ||
+        (item.pelmetOutOutWidth !== '' && item.pelmetOutOutWidth != null) ||
+        (item.pelmetOutOutDrop !== '' && item.pelmetOutOutDrop != null) ||
+        (item.pelmetFrameFrameWidth !== '' && item.pelmetFrameFrameWidth != null) ||
+        (item.pelmetFrameFrameDrop !== '' && item.pelmetFrameFrameDrop != null) ||
+        (item.width !== '' && item.width != null) ||
+        (item.height !== '' && item.height != null)
+    );
+    const hasOther = Boolean(
+        (item.sidesOfRoman && String(item.sidesOfRoman).trim()) ||
+        (item.ceilingSupport && String(item.ceilingSupport).trim()) ||
+        (item.sideWall && String(item.sideWall).trim()) ||
+        (item.remarks && String(item.remarks).trim()) ||
+        item.wire || item.wireLeft || item.wireRight
+    );
+    return !hasArea && !hasDetail && !hasDims && !hasOther;
+};
 
 const DEFAULT_ROOM_SUGGESTIONS = [
     'Living Room',
@@ -269,41 +294,49 @@ const MeasurementCapture = ({
 
     // Helper to extract rows
     const extractRows = (sourceData, sourceLead) => {
+        let rawCandidates = [];
         if (sourceData?.rows && sourceData.rows.length > 0) {
-            return sourceData.rows.map((r, i) => ({ ...r, srNo: i + 1 }));
-        }
-        const candidateRows = sourceLead?.measurement?.rows || sourceLead?.measurement?.notes;
-        if (candidateRows) {
-            try {
-                const notes = typeof candidateRows === 'string' ? JSON.parse(candidateRows) : candidateRows;
-                if (Array.isArray(notes) && notes.length > 0) {
-                    return notes.map((item, idx) => ({
-                        id: item.id || `row-${idx}`,
-                        srNo: idx + 1,
-                        area: item.area || item.room || '',
-                        lWindowDetail: item.lWindowDetail || item.windowId || item.particular || '',
-                        outToOutWidth: item.outToOutWidth ?? item.o2oWidth ?? item.width ?? '',
-                        outToOutHeight: item.outToOutHeight ?? item.o2oHeight ?? item.height ?? '',
-                        frameToFrameWidth: item.frameToFrameWidth ?? item.f2fWidth ?? '',
-                        frameToFrameHeight: item.frameToFrameHeight ?? item.f2fHeight ?? '',
-                        pelmetOutOutWidth: item.pelmetOutOutWidth ?? item.pelmetO2oWidth ?? '',
-                        pelmetOutOutDrop: item.pelmetOutOutDrop ?? item.pelmetO2oDrop ?? '',
-                        pelmetFrameFrameWidth: item.pelmetFrameFrameWidth ?? item.pelmetF2fWidth ?? '',
-                        pelmetFrameFrameDrop: item.pelmetFrameFrameDrop ?? item.pelmetF2fDrop ?? '',
-                        sidesOfRoman: item.sidesOfRoman ?? '',
-                        ceilingSupport: item.ceilingSupport ?? '',
-                        wire: Boolean(item.wire || item.wireLeft || item.wireRight),
-                        wireLeft: Boolean(item.wireLeft),
-                        wireRight: Boolean(item.wireRight ?? item.wire),
-                        sideWall: item.sideWall || (item.curtainReturnLeft ? 'L' : item.curtainReturnRight ? 'R' : ''),
-                        remarks: item.remarks || '',
-                    }));
+            rawCandidates = sourceData.rows;
+        } else {
+            const candidateRows = sourceLead?.measurement?.rows || sourceLead?.measurement?.notes;
+            if (candidateRows) {
+                try {
+                    const notes = typeof candidateRows === 'string' ? JSON.parse(candidateRows) : candidateRows;
+                    if (Array.isArray(notes) && notes.length > 0) {
+                        rawCandidates = notes;
+                    }
+                } catch {
+                    // fall through
                 }
-            } catch {
-                // fall through
             }
         }
-        return Array.from({ length: 6 }, (_, i) => createEmptyRow(i + 1));
+
+        const validCandidates = rawCandidates.filter((r) => !isMeasurementRowEmpty(r));
+        if (validCandidates.length > 0) {
+            const mapped = validCandidates.map((item, idx) => ({
+                id: item.id || `row-${idx}`,
+                srNo: idx + 1,
+                area: item.area || item.room || '',
+                lWindowDetail: item.lWindowDetail || item.windowId || item.particular || '',
+                outToOutWidth: item.outToOutWidth ?? item.o2oWidth ?? item.width ?? '',
+                outToOutHeight: item.outToOutHeight ?? item.o2oHeight ?? item.height ?? '',
+                frameToFrameWidth: item.frameToFrameWidth ?? item.f2fWidth ?? '',
+                frameToFrameHeight: item.frameToFrameHeight ?? item.f2fHeight ?? '',
+                pelmetOutOutWidth: item.pelmetOutOutWidth ?? item.pelmetO2oWidth ?? '',
+                pelmetOutOutDrop: item.pelmetOutOutDrop ?? item.pelmetO2oDrop ?? '',
+                pelmetFrameFrameWidth: item.pelmetFrameFrameWidth ?? item.pelmetF2fWidth ?? '',
+                pelmetFrameFrameDrop: item.pelmetFrameFrameDrop ?? item.pelmetF2fDrop ?? '',
+                sidesOfRoman: item.sidesOfRoman ?? '',
+                ceilingSupport: item.ceilingSupport ?? '',
+                wire: Boolean(item.wire || item.wireLeft || item.wireRight),
+                wireLeft: Boolean(item.wireLeft),
+                wireRight: Boolean(item.wireRight ?? item.wire),
+                sideWall: item.sideWall || (item.curtainReturnLeft ? 'L' : item.curtainReturnRight ? 'R' : ''),
+                remarks: item.remarks || '',
+            }));
+            return mapped;
+        }
+        return [createEmptyRow(1)];
     };
 
     const extractHeader = (sourceData, sourceLead) => {
@@ -432,7 +465,7 @@ const MeasurementCapture = ({
                 siteVisitedBy: '',
                 srNo: '',
             });
-            setRows(Array.from({ length: 6 }, (_, i) => createEmptyRow(i + 1)));
+            setRows([createEmptyRow(1)]);
             setRemarks('');
             setChecklist({ photo: false, video: false, flooring: false, ceiling: false, height: false });
             setSaveStatus(null);
@@ -441,9 +474,10 @@ const MeasurementCapture = ({
 
     // Save action
     const handleSave = () => {
+        const validRows = rows.filter((r) => !isMeasurementRowEmpty(r));
         const payload = {
             header,
-            rows,
+            rows: validRows,
             remarks,
             checklist,
             updatedAt: new Date().toISOString(),

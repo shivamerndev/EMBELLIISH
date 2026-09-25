@@ -1,9 +1,24 @@
+import { calculateRowConsumption } from '../../utils/consumptionCalc.js';
+
+export const PARTICULAR_MAP = {
+  MAIN_CURTAIN: 'Main Curtain',
+  SHEER_CURTAIN: 'Sheer Curtain',
+  MOTORISED_CURTAIN: 'Motorised Curtain',
+  ROMAN_BLIND: 'Roman Blind',
+  WOODEN_BLIND: 'Wooden Blind',
+  ROLLER_BLIND: 'Roller Blind',
+  WALLPAPER: 'Wallpaper',
+};
+
 export const DEFAULT_COVER_LETTER = {
   companyName: 'embellish',
   companyTagline: 'Punctuating Spaces •',
   documentTitle: 'Estimate',
-  date: '15/04/2026',
-  quotationNo: 'EMBRAG 520-A / 2025 -26',
+  date: (() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  })(),
+  quotationNo: 'EMB-QTN',
   companyAddress: `Unit No : 1, 1st Floor,
 Raghuvanshi Mansion,
 Raghuvanshi Mill Compound,
@@ -12,7 +27,7 @@ Lower Parel (West).
 Mumbai - 400013.
 Email: hiteshembellish@gmail.com`,
   clientSalutation: 'To,',
-  clientName: 'Mr.Rakesh Jain',
+  clientName: 'Client',
   subject: 'PROFORMA INVOICE',
   greeting: 'Respected Sir,',
   bodyText: `Please find enclosed estimate for Curtain.
@@ -243,3 +258,399 @@ export const formatINR = (val, decimals = 2) => {
     maximumFractionDigits: decimals,
   });
 };
+
+/**
+ * Recursively parses JSON / subform arrays from MongoDB / lead payload fields.
+ */
+export const parseSubformArray = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object' && raw !== null) return [raw];
+  if (typeof raw === 'string') {
+    let current = raw.trim();
+    let depth = 0;
+    while (typeof current === 'string' && depth < 5) {
+      const trimmed = current.trim();
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        try {
+          current = JSON.parse(trimmed);
+          depth++;
+        } catch {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    if (Array.isArray(current)) return current;
+    if (typeof current === 'object' && current !== null) return [current];
+  }
+  return [];
+};
+
+/**
+ * Validates if a measurement row has usable room/window/dimensional data.
+ */
+export const isMeasurementRowValid = (row) => {
+  if (!row) return false;
+  const hasArea = Boolean(
+    (row.area && String(row.area).trim()) ||
+    (row.room && String(row.room).trim()) ||
+    (row.roomName && String(row.roomName).trim())
+  );
+  const hasDims = Boolean(
+    (row.outToOutWidth !== '' && row.outToOutWidth != null) ||
+    (row.outToOutHeight !== '' && row.outToOutHeight != null) ||
+    (row.frameToFrameWidth !== '' && row.frameToFrameWidth != null) ||
+    (row.frameToFrameHeight !== '' && row.frameToFrameHeight != null) ||
+    (row.pelmetOutOutWidth !== '' && row.pelmetOutOutWidth != null) ||
+    (row.pelmetOutOutDrop !== '' && row.pelmetOutOutDrop != null) ||
+    (row.pelmetFrameFrameWidth !== '' && row.pelmetFrameFrameWidth != null) ||
+    (row.pelmetFrameFrameDrop !== '' && row.pelmetFrameFrameDrop != null) ||
+    (row.width !== '' && row.width != null) ||
+    (row.height !== '' && row.height != null) ||
+    (row.confirmedWidth !== '' && row.confirmedWidth != null) ||
+    (row.confirmedHeight !== '' && row.confirmedHeight != null)
+  );
+  const hasDetail = Boolean(
+    (row.lWindowDetail && String(row.lWindowDetail).trim()) ||
+    (row.windowId && String(row.windowId).trim()) ||
+    (row.label && String(row.label).trim()) ||
+    (row.remarks && String(row.remarks).trim()) ||
+    (row.notes && String(row.notes).trim()) ||
+    (row.sidesOfRoman && String(row.sidesOfRoman).trim()) ||
+    (row.ceilingSupport && String(row.ceilingSupport).trim()) ||
+    row.wire || row.wireLeft || row.wireRight ||
+    row.fabric || row.fabricName || row.particular || row.windowType
+  );
+  return hasArea || hasDims || hasDetail;
+};
+
+/**
+ * Traverses the sidebar pipeline backwards to collect measurement rows:
+ * Stage 3 (Consumption Sheet) -> Stage 1 (Measurement Capture) -> Stage 4 (Ready Size).
+ */
+export const getConsumptionMeasurements = (item) => {
+  if (!item) return [];
+
+  // 1. Consumption Sheet measurements (Stage 3 in sidebar)
+  const existingConsumption = item?.consumption?.measurements;
+  const parsedExisting = parseSubformArray(existingConsumption);
+  if (parsedExisting.length > 0 && typeof parsedExisting[0] === 'object') {
+    const validExisting = parsedExisting.filter(isMeasurementRowValid);
+    if (validExisting.length > 0) {
+      return validExisting;
+    }
+  }
+
+  // 2. Measurement Capture rows or notes (Stage 1 in sidebar)
+  const rawNotes = item?.measurement?.rows || item?.measurement?.notes;
+  const parsedNotes = parseSubformArray(rawNotes);
+  const validNotes = parsedNotes.filter(isMeasurementRowValid);
+  if (validNotes.length > 0) {
+    return validNotes;
+  }
+
+  // 3. Ready Size final measurements
+  const rawFinal = item?.readySize?.finalMeasurements || item?.readySize?.finalMeasurementGrid;
+  const parsedFinal = parseSubformArray(rawFinal);
+  const validFinal = parsedFinal.filter(isMeasurementRowValid);
+  if (validFinal.length > 0) {
+    return validFinal;
+  }
+
+  // 4. Ready Size window sizes or measurement window sizes
+  const rawWindows = item?.readySize?.windowSizes || item?.readySize?.windowSize || item?.measurement?.windowSizes;
+  const parsedWindows = parseSubformArray(rawWindows);
+  const validWindows = parsedWindows.filter(isMeasurementRowValid);
+  if (validWindows.length > 0) {
+    return validWindows;
+  }
+
+  return [];
+};
+
+/**
+ * Checks if the rooms array is the hardcoded Rakesh Jain dummy sample.
+ */
+export const isSampleRakeshJainRooms = (rooms, clientName = '') => {
+  if (!Array.isArray(rooms) || rooms.length === 0) return false;
+  if (clientName && String(clientName).toLowerCase().includes('rakesh jain')) return false;
+  const hasTellTaleRoom = rooms.some(
+    (r) =>
+      r.roomName &&
+      (r.roomName.toLowerCase().includes('rakesh & sangita') ||
+        r.roomName.toLowerCase().includes('rishabh and priyal') ||
+        r.roomName.toLowerCase().includes('avik room'))
+  );
+  return hasTellTaleRoom;
+};
+
+/**
+ * Checks if the service items array is the hardcoded Rakesh Jain dummy sample.
+ */
+export const isSampleRakeshJainServices = (services, clientName = '') => {
+  if (!Array.isArray(services) || services.length === 0) return false;
+  if (clientName && String(clientName).toLowerCase().includes('rakesh jain')) return false;
+  const hasTellTaleService = services.some(
+    (s) =>
+      (s.description?.includes('Mock Stitching') && s.qty === 28) ||
+      (s.description?.includes('Curtain stitching') && s.qty === 173) ||
+      (s.description?.includes('Installation') && s.price === 28000)
+  );
+  return hasTellTaleService;
+};
+
+/**
+ * Builds quotation rooms and window items following the sidebar flow:
+ * Takes whichever rooms and windows exist in the consumption sheet / measurement capture,
+ * calculates fabric / blind quantities, and organizes them room-by-room.
+ */
+export const buildQuotationRoomsFromLead = (item) => {
+  const measurementRows = getConsumptionMeasurements(item);
+  const rawRoomList = item?.consumption?.roomList || item?.rooms || item?.measurement?.roomList;
+  const parsedRoomList = typeof rawRoomList === 'string'
+    ? rawRoomList.split(',').map((s) => s.trim()).filter(Boolean)
+    : Array.isArray(rawRoomList)
+      ? rawRoomList.map((s) => String(s).trim()).filter(Boolean)
+      : [];
+
+  if (measurementRows.length > 0) {
+    const roomMap = new Map();
+
+    measurementRows.forEach((row, idx) => {
+      const rawRoomName = (row.room && String(row.room).trim()) ||
+                          (row.area && String(row.area).trim()) ||
+                          (row.roomName && String(row.roomName).trim()) ||
+                          'General';
+      const key = rawRoomName.toLowerCase();
+      if (!roomMap.has(key)) {
+        roomMap.set(key, { roomName: rawRoomName, rows: [] });
+      }
+      roomMap.get(key).rows.push({ row, idx });
+    });
+
+    const quotationRooms = [];
+    let roomCounter = 1;
+
+    for (const { roomName, rows } of roomMap.values()) {
+      const items = [];
+      let itemCounter = 1;
+
+      rows.forEach(({ row }) => {
+        const calc = calculateRowConsumption(row);
+        const rawParticular = String(row.particular || row.windowType || 'MAIN_CURTAIN').toUpperCase();
+        const particularLabel = PARTICULAR_MAP[rawParticular] || row.particular || row.windowType || 'Main Curtain';
+        const windowLabel = (row.windowId || row.lWindowDetail || row.label || '').trim();
+
+        let description = '';
+        if (windowLabel) {
+          if (particularLabel.toLowerCase().includes(windowLabel.toLowerCase())) {
+            description = particularLabel;
+          } else {
+            description = `${windowLabel} ${particularLabel}`;
+          }
+        } else {
+          description = particularLabel;
+        }
+
+        if (row.fabricName && !description.toLowerCase().includes(String(row.fabricName).toLowerCase())) {
+          description += ` - ${row.fabricName}`;
+        }
+
+        const isBlind = rawParticular.includes('ROMAN') || rawParticular.includes('ROLLER') || rawParticular.includes('WOODEN');
+        const isWallpaper = rawParticular.includes('WALLPAPER');
+
+        let unit = 'mtr';
+        let qty = 1;
+        let gstRate = 5;
+
+        if (isBlind) {
+          unit = 'Sq.ft';
+          const sqftVal = Number(calc.romanSqft ?? row.romanSqft ?? 0);
+          qty = sqftVal > 0 ? Math.round(sqftVal * 100) / 100 : 1;
+          gstRate = 18;
+        } else if (isWallpaper) {
+          unit = 'Sq.ft';
+          const wpQty = Number(calc.stripsPerWall ?? calc.orderRolls ?? 0);
+          qty = wpQty > 0 ? Math.round(wpQty * 100) / 100 : 1;
+          gstRate = 18;
+        } else {
+          unit = 'mtr';
+          const fabricQty = Number(calc.orderMetres ?? calc.fabricMeters ?? calc.mtrsDrapesRoundOff ?? row.fabricMeters ?? row.quantity ?? 0);
+          qty = fabricQty > 0 ? Math.round(fabricQty * 100) / 100 : 1;
+          gstRate = 5;
+        }
+
+        const itemPrice = Number(row.price ?? row.rate ?? 0);
+
+        items.push({
+          id: `item-${roomCounter}-${itemCounter++}`,
+          description,
+          unit,
+          qty,
+          price: itemPrice,
+          gstRate,
+        });
+
+        // Add blackout item if needed
+        const blackoutMtr = Number(calc.blackoutMeters ?? row.blackoutMeters ?? (row.blackout ? qty : 0));
+        if (blackoutMtr > 0) {
+          items.push({
+            id: `item-${roomCounter}-${itemCounter++}`,
+            description: `${windowLabel ? windowLabel + ' ' : ''}Fabric blackout`.trim(),
+            unit: 'mtr',
+            qty: Math.round(blackoutMtr * 100) / 100,
+            price: 395,
+            gstRate: 5,
+          });
+        }
+      });
+
+      quotationRooms.push({
+        id: `room-${roomCounter}`,
+        srNo: String(roomCounter),
+        roomName,
+        items,
+      });
+
+      roomCounter++;
+    }
+
+    // Add any remaining rooms from roomList
+    parsedRoomList.forEach((rName) => {
+      const alreadyIncluded = quotationRooms.some((qr) => qr.roomName.toLowerCase() === rName.toLowerCase());
+      if (!alreadyIncluded) {
+        quotationRooms.push({
+          id: `room-${roomCounter}`,
+          srNo: String(roomCounter),
+          roomName: rName,
+          items: [
+            {
+              id: `item-${roomCounter}-1`,
+              description: 'Main Curtain',
+              unit: 'mtr',
+              qty: 1,
+              price: 0,
+              gstRate: 5,
+            },
+          ],
+        });
+        roomCounter++;
+      }
+    });
+
+    return quotationRooms;
+  }
+
+  // Fallback to parsedRoomList if measurements not present
+  if (parsedRoomList.length > 0) {
+    return parsedRoomList.map((roomName, idx) => ({
+      id: `room-${idx + 1}`,
+      srNo: String(idx + 1),
+      roomName,
+      items: [
+        {
+          id: `item-${idx + 1}-1`,
+          description: 'Main Curtain',
+          unit: 'mtr',
+          qty: 1,
+          price: 0,
+          gstRate: 5,
+        },
+      ],
+    }));
+  }
+
+  // Clean default if no lead rooms are available
+  return [
+    {
+      id: 'room-1',
+      srNo: '1',
+      roomName: 'Living Room',
+      items: [
+        {
+          id: 'item-1-1',
+          description: 'Main Curtain',
+          unit: 'mtr',
+          qty: 1,
+          price: 0,
+          gstRate: 5,
+        },
+      ],
+    },
+  ];
+};
+
+/**
+ * Builds quotation service items based on consumption totals (stitching, lead band, transport, installation).
+ */
+export const buildQuotationServicesFromLead = (item) => {
+  const measurementRows = getConsumptionMeasurements(item);
+  let totalCurtainRnft = 0;
+  let totalRomanSqft = 0;
+
+  measurementRows.forEach((row) => {
+    const calc = calculateRowConsumption(row);
+    const particular = String(row.particular || row.windowType || 'MAIN_CURTAIN').toUpperCase();
+    if (particular.includes('ROMAN') || particular.includes('ROLLER') || particular.includes('WOODEN')) {
+      totalRomanSqft += Number(calc.romanSqft ?? row.romanSqft ?? 0);
+    } else {
+      totalCurtainRnft += Number(calc.rnft ?? row.rnft ?? 0);
+    }
+  });
+
+  const services = [];
+  let srvIdx = 1;
+
+  if (totalCurtainRnft > 0) {
+    services.push({
+      id: `srv-${srvIdx++}`,
+      description: 'Curtain stitching',
+      unit: 'rnft',
+      qty: Math.round(totalCurtainRnft * 100) / 100,
+      price: 950,
+      gstRate: 5,
+    });
+    services.push({
+      id: `srv-${srvIdx++}`,
+      description: 'Lead Band',
+      unit: 'rnft',
+      qty: Math.round(totalCurtainRnft * 100) / 100,
+      price: 125,
+      gstRate: 5,
+    });
+  }
+
+  if (totalRomanSqft > 0) {
+    services.push({
+      id: `srv-${srvIdx++}`,
+      description: 'Roman Stitching',
+      unit: 'rnft',
+      qty: Math.round(totalRomanSqft * 100) / 100,
+      price: 500,
+      gstRate: 18,
+    });
+  }
+
+  services.push({
+    id: `srv-${srvIdx++}`,
+    description: 'Transportation Charges',
+    unit: '',
+    qty: 1,
+    price: 0,
+    gstRate: 18,
+  });
+
+  services.push({
+    id: `srv-${srvIdx++}`,
+    description: 'Installation charges',
+    unit: '',
+    qty: 1,
+    price: 0,
+    gstRate: 18,
+  });
+
+  return services;
+};
+

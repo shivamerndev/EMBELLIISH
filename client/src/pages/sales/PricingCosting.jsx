@@ -11,6 +11,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import { isAdvanceReceived } from '../../utils/salesPipeline';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -325,8 +326,8 @@ const EditCostingModal = ({ item, onClose, onDone }) => {
                     </div>
                     <div>
                         <span className="text-slate-400 block text-[10px] uppercase font-semibold">₹ Advance</span>
-                        <Badge tone={item?.token?.status === 'RECEIVED' ? 'green' : 'blue'}>
-                            {item?.token?.status || 'RECEIVED'}
+                        <Badge tone={isAdvanceReceived(item) ? 'green' : 'blue'}>
+                            {item?.advance?.status || item?.token?.status || 'Received'}
                         </Badge>
                     </div>
                 </div>
@@ -574,11 +575,9 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
 
     const rawLeads = (itemsProp && itemsProp.length > 0) ? itemsProp : (Array.isArray(salesLeads) ? salesLeads : []);
 
-    const tokenReceivedLeads = rawLeads.filter(
-        (lead) => lead.token?.status === 'RECEIVED' || lead.token?.status === 'PAID' || Boolean(lead.token?.receivedDate)
-    );
+    const advanceReceivedLeads = rawLeads.filter((lead) => isAdvanceReceived(lead));
 
-    const filteredLeads = tokenReceivedLeads.filter((lead) => {
+    const filteredLeads = advanceReceivedLeads.filter((lead) => {
         if (search) {
             const q = search.toLowerCase();
             const code = String(lead.code || '').toLowerCase();
@@ -592,10 +591,10 @@ const PricingCosting = ({ items: itemsProp = [] }) => {
         return true;
     });
 
-    const totalCount = tokenReceivedLeads.length;
-    const costedCount = tokenReceivedLeads.filter((l) => Boolean(l.costing?.category || l.costing?.version || (l.costing?.price !== undefined && l.costing?.price > 0))).length;
-    const pendingCosting = tokenReceivedLeads.filter((l) => l.costing?.dueDate && !(l.costing?.price !== undefined && l.costing?.price > 0)).length;
-    const totalCostValue = tokenReceivedLeads.reduce((acc, l) => acc + Number(l.costing?.price || 0), 0);
+    const totalCount = advanceReceivedLeads.length;
+    const costedCount = advanceReceivedLeads.filter((l) => Boolean(l.costing?.category || l.costing?.version || (l.costing?.price !== undefined && l.costing?.price > 0))).length;
+    const pendingCosting = advanceReceivedLeads.filter((l) => l.costing?.dueDate && !(l.costing?.price !== undefined && l.costing?.price > 0)).length;
+    const totalCostValue = advanceReceivedLeads.reduce((acc, l) => acc + Number(l.costing?.price || 0), 0);
 
     return (
         <div>

@@ -113,8 +113,8 @@ export const QuotationPrintView = React.forwardRef(({
             <div className="flex justify-end mb-6 text-xs leading-relaxed">
               <div className="text-left w-64 space-y-2">
                 <div>
-                  <p><span className="font-semibold">Date</span> {dateStr || coverLetter.date || '15/04/2026'}</p>
-                  <p className="font-medium text-slate-800">{quotationNo || coverLetter.quotationNo || 'EMBRAG 520-A / 2025 -26'}</p>
+                  <p><span className="font-semibold">Date</span> {dateStr || coverLetter.date || ''}</p>
+                  <p className="font-medium text-slate-800">{quotationNo || coverLetter.quotationNo || 'EMB-QTN'}</p>
                 </div>
                 <div>
                   <p className="font-bold underline mb-1">Address</p>
@@ -134,7 +134,7 @@ Email: hiteshembellish@gmail.com`}
             {/* Recipient Details */}
             <div className="text-xs mb-6 space-y-1">
               <p className="font-semibold">{coverLetter.clientSalutation || 'To,'}</p>
-              <p className="font-bold text-sm text-slate-950">{clientName || coverLetter.clientName || 'Mr. Rakesh Jain'},</p>
+              <p className="font-bold text-sm text-slate-950">{clientName || coverLetter.clientName || 'Client'},</p>
             </div>
 
             {/* Subject */}
@@ -199,11 +199,11 @@ Email: hiteshembellish@gmail.com`}
               <div className="space-y-0.5">
                 <div className="flex">
                   <span className="w-14 font-semibold text-slate-700">Client</span>
-                  <span className="font-bold text-slate-950">{clientName || 'Mr. Rakesh Jain'}</span>
+                  <span className="font-bold text-slate-950">{clientName || 'Client'}</span>
                 </div>
                 <div className="flex">
                   <span className="w-14 font-semibold text-slate-700">Ref</span>
-                  <span className="font-bold text-slate-800">{refArchitect || 'ADID Atelier LLP.'}</span>
+                  <span className="font-bold text-slate-800">{refArchitect || '—'}</span>
                 </div>
                 <div className="font-semibold text-slate-900 pt-0.5">{scopeTitle || 'Curtain fabric'}</div>
               </div>
@@ -211,10 +211,10 @@ Email: hiteshembellish@gmail.com`}
               <div className="space-y-0.5 text-right font-sans">
                 <div className="font-medium">
                   <span className="font-semibold text-slate-700 mr-1">Date</span>
-                  {dateStr || '15/04/2026'}
+                  {dateStr || coverLetter.date || ''}
                 </div>
                 <div className="font-bold text-slate-900">
-                  {quotationNo || 'EMBRAG 520-A / 2025 -26'}
+                  {quotationNo || coverLetter.quotationNo || 'EMB-QTN'}
                 </div>
               </div>
             </div>
