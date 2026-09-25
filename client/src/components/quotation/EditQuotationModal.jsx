@@ -19,6 +19,10 @@ import {
   SAMPLE_RAKESH_JAIN_ROOMS,
   SAMPLE_SERVICE_ITEMS,
   calculateQuotationSheetTotals,
+  buildQuotationRoomsFromLead,
+  buildQuotationServicesFromLead,
+  isSampleRakeshJainRooms,
+  isSampleRakeshJainServices,
   formatINR,
 } from './quotationDefaults';
 import TabCoverLetter from './TabCoverLetter';
@@ -37,8 +41,14 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
   const existingSheet = item?.quotation?.quotationSheet || {};
   const existingCover = item?.quotation?.coverLetter || existingSheet.coverLetter || {};
   const existingTerms = item?.quotation?.termsAndBanking || existingSheet.termsBanking || {};
-  const existingRooms = existingSheet.rooms || item?.quotation?.itemsTable?.rooms;
-  const existingServices = existingSheet.services || item?.quotation?.itemsTable?.services;
+
+  const rawExistingRooms = existingSheet.rooms || item?.quotation?.itemsTable?.rooms;
+  const isExistingDummy = isSampleRakeshJainRooms(rawExistingRooms, item?.clientName);
+  const existingRooms = (rawExistingRooms && rawExistingRooms.length > 0 && !isExistingDummy) ? rawExistingRooms : null;
+
+  const rawExistingServices = existingSheet.services || item?.quotation?.itemsTable?.services;
+  const isServicesDummy = isSampleRakeshJainServices(rawExistingServices, item?.clientName);
+  const existingServices = (rawExistingServices && rawExistingServices.length > 0 && !isServicesDummy) ? rawExistingServices : null;
 
   // Format initial date
   const initialDateStr = (() => {
@@ -49,7 +59,8 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
       } catch (e) { }
     }
-    return DEFAULT_COVER_LETTER.date;
+    const today = new Date();
+    return `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
   })();
 
   // 1. Cover Letter State (Page 1)
@@ -71,20 +82,28 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
     ...DEFAULT_COVER_LETTER,
     ...existingCover,
     bodyText: initialCoverLetterBody,
-    clientName: existingCover.clientName || item?.clientName || DEFAULT_COVER_LETTER.clientName,
-    quotationNo: existingCover.quotationNo || item?.quotation?.no || item?.code || DEFAULT_COVER_LETTER.quotationNo,
+    clientName: existingCover.clientName || item?.clientName || item?.name || 'Client',
+    quotationNo: existingCover.quotationNo || item?.quotation?.no || item?.code || 'EMB-QTN',
     date: initialDateStr,
   });
 
-  // 2. Quotation Items & Rooms State (Page 2)
-  const [rooms, setRooms] = useState(existingRooms || SAMPLE_RAKESH_JAIN_ROOMS);
-  const [serviceItems, setServiceItems] = useState(existingServices || SAMPLE_SERVICE_ITEMS);
+  // 2. Quotation Items & Rooms State (Page 2) - Follow sidebar flow from Consumption Sheet
+  const [rooms, setRooms] = useState(() => existingRooms || buildQuotationRoomsFromLead(item));
+  const [serviceItems, setServiceItems] = useState(() => existingServices || buildQuotationServicesFromLead(item));
   const [meta, setMeta] = useState({
     scopeTitle: existingSheet.scopeTitle || 'Curtain fabric',
-    refArchitect: existingSheet.refArchitect || item?.architect || item?.designer || 'ADID Atelier LLP.',
-    specialNotes: existingSheet.specialNotes || 'Note: Servant Room Not by us and Living Room W4 is Cancelled',
-    closedAtText: existingSheet.closedAtText || 'Closed at 15,50,000/- + GST',
+    refArchitect: existingSheet.refArchitect || item?.architect || item?.architectName || item?.designer || '',
+    specialNotes: (existingSheet.specialNotes && !existingSheet.specialNotes.includes('Servant Room Not by us')) ? existingSheet.specialNotes : '',
+    closedAtText: (existingSheet.closedAtText && !existingSheet.closedAtText.includes('Closed at 15,50,000')) ? existingSheet.closedAtText : '',
   });
+
+  // Handler to manually sync latest rooms & windows from Consumption Sheet
+  const handleSyncFromConsumption = () => {
+    const freshRooms = buildQuotationRoomsFromLead(item);
+    const freshServices = buildQuotationServicesFromLead(item);
+    setRooms(freshRooms);
+    setServiceItems(freshServices);
+  };
 
   // 3. Terms & Banking State (Page 3)
   const [termsBanking, setTermsBanking] = useState({
@@ -287,6 +306,7 @@ export const EditQuotationModal = ({ item, onClose, onDone }) => {
               onUpdateRooms={setRooms}
               onUpdateServiceItems={setServiceItems}
               onUpdateMeta={handleUpdateMeta}
+              onSyncFromConsumption={handleSyncFromConsumption}
             />
           )}
 

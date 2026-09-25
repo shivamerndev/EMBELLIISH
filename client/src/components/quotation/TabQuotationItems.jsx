@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Field, Input, Select, Button } from '../ui';
-import { Plus, Trash2, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Sparkles, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { UNIT_OPTIONS, GST_OPTIONS, SAMPLE_RAKESH_JAIN_ROOMS, SAMPLE_SERVICE_ITEMS, formatINR, } from './quotationDefaults';
-
 
 export const TabQuotationItems = ({
   rooms = [],
@@ -15,6 +14,7 @@ export const TabQuotationItems = ({
   onUpdateRooms,
   onUpdateServiceItems,
   onUpdateMeta,
+  onSyncFromConsumption,
 }) => {
   const [collapsedRooms, setCollapsedRooms] = useState({});
 
@@ -22,7 +22,20 @@ export const TabQuotationItems = ({
     setCollapsedRooms((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Load sample items matching PDF
+  // Sync from Consumption Sheet (follows sidebar flow)
+  const handleSyncFromConsumption = () => {
+    if (
+      rooms.length > 0 &&
+      !window.confirm('Reload rooms and windows from the Consumption Sheet? This will refresh all rooms and items with the latest BOQ measurements.')
+    ) {
+      return;
+    }
+    if (onSyncFromConsumption) {
+      onSyncFromConsumption();
+    }
+  };
+
+  // Load sample items matching PDF (optional reference template)
   const handleLoadSamplePdfItems = () => {
     if (
       rooms.length > 0 &&
@@ -141,7 +154,7 @@ export const TabQuotationItems = ({
           <Input
             value={refArchitect}
             onChange={(e) => onUpdateMeta({ refArchitect: e.target.value })}
-            placeholder="e.g. ADID Atelier LLP."
+            placeholder="e.g. Architect / Designer Name"
           />
         </Field>
       </div>
@@ -178,6 +191,40 @@ export const TabQuotationItems = ({
         </div>
       </div>
 
+      {/* Rooms Header & Action Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-1">
+        <div>
+          <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+            Quotation Rooms & Windows ({rooms.length} {rooms.length === 1 ? 'Room' : 'Rooms'})
+          </h3>
+          <p className="text-[11px] text-slate-500">
+            Rooms and windows synced from the Consumption Sheet / BOQ
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {onSyncFromConsumption && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={RefreshCw}
+              onClick={handleSyncFromConsumption}
+              title="Reload all rooms & windows from the Consumption Sheet / BOQ"
+            >
+              Sync from Consumption
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            icon={Plus}
+            onClick={handleAddRoom}
+          >
+            Add Room
+          </Button>
+        </div>
+      </div>
+
       {/* Room-wise Sections */}
       <div className="space-y-4">
         {rooms.length === 0 ? (
@@ -186,9 +233,11 @@ export const TabQuotationItems = ({
               No rooms added to this quotation yet.
             </p>
             <div className="flex justify-center gap-3">
-              <Button size="sm" icon={Sparkles} onClick={handleLoadSamplePdfItems}>
-                Load Sample Estimate
-              </Button>
+              {onSyncFromConsumption && (
+                <Button size="sm" icon={RefreshCw} onClick={handleSyncFromConsumption}>
+                  Load from Consumption Sheet
+                </Button>
+              )}
               <Button size="sm" variant="outline" icon={Plus} onClick={handleAddRoom}>
                 Add First Room
               </Button>
