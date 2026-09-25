@@ -34,7 +34,20 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
     // Filter rows based on search, room, and type filters
     const filteredRowsWithIndex = useMemo(() => {
         return rows.map((row, originalIndex) => ({ row, originalIndex })).filter(({ row }) => {
-            const roomMatch = roomFilter === 'ALL' || (row.room || 'Living Room') === roomFilter;
+            // Ignore completely blank ghost rows (no room, no dimensions, no identifier)
+            const hasRoom = Boolean((row.room && String(row.room).trim()) || (row.area && String(row.area).trim()));
+            const hasDims = Boolean(
+                row.frameToFrameWidth || row.frameToFrameHeight ||
+                row.outToOutWidth || row.outToOutHeight ||
+                row.width || row.height ||
+                row.confirmedWidth || row.confirmedHeight
+            );
+            if (!hasRoom && !hasDims && !row.windowId && !row.label) {
+                return false;
+            }
+
+            const currentRoom = (row.room && String(row.room).trim()) || (row.area && String(row.area).trim()) || 'General';
+            const roomMatch = roomFilter === 'ALL' || currentRoom === roomFilter;
             const typeMatch = typeFilter === 'ALL' || (row.particular || row.windowType || 'MAIN_CURTAIN') === typeFilter;
 
             if (!roomMatch || !typeMatch) return false;
@@ -57,7 +70,7 @@ const ConsumptionGrid = ({ rows = [], onUpdateRows, searchQuery = '', roomFilter
     const roomGroups = useMemo(() => {
         const groups = {};
         filteredRowsWithIndex.forEach(({ row, originalIndex }, seqIdx) => {
-            const roomName = row.room || 'Living Room';
+            const roomName = (row.room && String(row.room).trim()) || (row.area && String(row.area).trim()) || 'General';
             if (!groups[roomName]) {
                 groups[roomName] = [];
             }

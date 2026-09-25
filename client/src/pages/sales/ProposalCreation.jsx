@@ -1859,9 +1859,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                     <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
 
                     <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-500/10 border border-sky-500/30 text-sky-700 dark:text-sky-400">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Commercial Proposal Records ({filteredLeads.length})
-                        </span>
+                     
                         {(search || selectedSection !== 's8') && (
                             <Button
                                 variant="ghost"
