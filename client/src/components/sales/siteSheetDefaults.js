@@ -1,6 +1,13 @@
+import {
+  parseSubformArray,
+  getConsumptionMeasurements,
+  isSampleRakeshJainRooms,
+  buildQuotationRoomsFromLead,
+} from '../quotation/quotationDefaults';
+
 /**
  * Default sample rooms extracted directly from Master Excel "Site Detail Sheet. R5.xls"
- * Used when a lead has not yet configured custom site detail sheet rooms.
+ * Used as an optional reference only.
  */
 export const SAMPLE_SITE_DETAIL_ROOMS = [
   {
@@ -1272,3 +1279,294 @@ export const SAMPLE_SITE_DETAIL_ROOMS = [
     ]
   }
 ];
+
+/**
+ * Checks if the site detail rooms array is the hardcoded Rakesh Jain dummy sample.
+ */
+export const isSampleSiteDetailRooms = (rooms, clientName = '') => {
+  if (!Array.isArray(rooms) || rooms.length === 0) return false;
+  if (clientName && String(clientName).toLowerCase().includes('rakesh jain')) return false;
+
+  const hasTellTaleRoom = rooms.some((r) => {
+    const title = (r.roomTitle || r.sheetName || '').toLowerCase();
+    return (
+      title.includes('living room w1') ||
+      title.includes('living room - w1') ||
+      title.includes('rakesh & sangita') ||
+      title.includes('rishabh and priyal') ||
+      title.includes('avik room') ||
+      title.includes('future kids room') ||
+      title.includes('walking wardrobe')
+    );
+  });
+
+  const hasTellTaleItem = rooms.some((r) =>
+    Array.isArray(r.items) &&
+    r.items.some((it) =>
+      it.type === 'W1 Reverse Mock' ||
+      it.fabricName === 'H0692-17' ||
+      (it.brand && String(it.brand).includes('Olake')) ||
+      (it.brand && String(it.brand).includes('D Décor Aura'))
+    )
+  );
+
+  return hasTellTaleRoom || hasTellTaleItem;
+};
+
+/**
+ * Traverses the quotation sheet and earlier sidebar pipeline stages to retrieve rooms for a lead.
+ */
+export const getQuotationRoomsFromLead = (item) => {
+  if (!item) return [];
+
+  // 1. Direct quotation sheet rooms
+  const rawQSheetRooms = item?.quotation?.quotationSheet?.rooms;
+  const parsedQSheetRooms = parseSubformArray(rawQSheetRooms);
+  if (parsedQSheetRooms.length > 0 && !isSampleRakeshJainRooms(parsedQSheetRooms, item?.clientName)) {
+    return parsedQSheetRooms;
+  }
+
+  // 2. Direct itemsTable rooms from quotation
+  const rawItemsTableRooms = item?.quotation?.itemsTable?.rooms;
+  const parsedItemsTableRooms = parseSubformArray(rawItemsTableRooms);
+  if (parsedItemsTableRooms.length > 0 && !isSampleRakeshJainRooms(parsedItemsTableRooms, item?.clientName)) {
+    return parsedItemsTableRooms;
+  }
+
+  // 3. Fallback quotation.rooms
+  const rawQuotationRooms = item?.quotation?.rooms;
+  const parsedQuotationRooms = parseSubformArray(rawQuotationRooms);
+  if (parsedQuotationRooms.length > 0 && !isSampleRakeshJainRooms(parsedQuotationRooms, item?.clientName)) {
+    return parsedQuotationRooms;
+  }
+
+  // 4. If quotation sheet has not been saved yet, follow sidebar flow:
+  // buildQuotationRoomsFromLead inspects Consumption Sheet (measurements, roomList), Measurement Capture (rows, notes), etc.
+  const builtRooms = buildQuotationRoomsFromLead(item);
+  if (builtRooms.length > 0 && !isSampleRakeshJainRooms(builtRooms, item?.clientName)) {
+    return builtRooms;
+  }
+
+  return [];
+};
+
+/**
+ * Builds Site Detail Sheet rooms and window treatments dynamically from the Quotation Sheet
+ * following the sidebar flow (Quotation Preparation -> Site Detail Sheet).
+ */
+export const buildSiteDetailRoomsFromLead = (item, users = []) => {
+  const quotationRooms = getQuotationRoomsFromLead(item);
+  const measurementRows = getConsumptionMeasurements(item);
+
+  const clientName = item?.clientName || item?.name || '';
+  const architect = item?.architectName || item?.architect || item?.designer || '';
+  
+  // Resolve incharge from confirmedBy or lead fields
+  let siteIncharge = '';
+  if (item?.readySize?.confirmedBy) {
+    let ids = [];
+    const cb = item.readySize.confirmedBy;
+    if (Array.isArray(cb)) ids = cb;
+    else if (typeof cb === 'string') ids = cb.split(',').map((s) => s.trim()).filter(Boolean);
+    else if (typeof cb === 'object' && cb !== null) ids = [cb._id || cb.id || cb.name || cb];
+
+    const names = ids.map((idOrObj) => {
+      if (!idOrObj) return null;
+      if (typeof idOrObj === 'object' && idOrObj.name) return idOrObj.name;
+      if (typeof idOrObj === 'string' && users.length > 0) {
+        const found = users.find((u) => u._id === idOrObj || u.id === idOrObj);
+        if (found?.name) return found.name;
+      }
+      return typeof idOrObj === 'string' ? idOrObj : (idOrObj?.name || null);
+    }).filter(Boolean);
+
+    if (names.length > 0) {
+      siteIncharge = names.join(' / ');
+    }
+  }
+  if (!siteIncharge) {
+    siteIncharge = item?.siteIncharge || item?.assignedTo?.name || '';
+  }
+
+  // Clean empty single room fallback if lead has no rooms anywhere
+  if (quotationRooms.length === 0) {
+    return [
+      {
+        id: 'room-1',
+        sheetName: 'Room 1',
+        roomTitle: 'Room 1',
+        sheetNo: 1,
+        clientName,
+        architect,
+        siteIncharge,
+        notes: [],
+        items: [
+          {
+            id: 'item-1-1',
+            srNo: 1,
+            look: '',
+            type: 'Main Curtain',
+            windowWidth: '',
+            windowHeight: '',
+            pelmetWidth: '',
+            pelmetDrop: '',
+            pelmetReturn: '',
+            catalogueImages: [],
+            design: 'Ready',
+            brand: '',
+            fabricName: '',
+            fabricWidth: '',
+            repeatV: '',
+            repeatH: '',
+            fullness: 2.5,
+            qtyMtrs: '',
+            stitchingStyle: 'Ripple',
+            parts: 1,
+            opening: 'Center Open',
+            readyWidth: '',
+            readyHeight: '',
+            liningType: '',
+            liningQty: '',
+            tieback: '',
+            position: '',
+            electricalPoint: '',
+            installationType: '',
+          },
+        ],
+      },
+    ];
+  }
+
+  return quotationRooms.map((qRoom, roomIdx) => {
+    const qRoomName = qRoom.roomName || `Room ${roomIdx + 1}`;
+    
+    // Find all measurement rows belonging to this room
+    const roomMeasurementRows = measurementRows.filter((mr) => {
+      const mrRoom = (mr.room || mr.area || mr.roomName || '').toLowerCase().trim();
+      const targetName = qRoomName.toLowerCase().trim();
+      return mrRoom && targetName && (mrRoom === targetName || targetName.includes(mrRoom) || mrRoom.includes(targetName));
+    });
+
+    const qItems = Array.isArray(qRoom.items) ? qRoom.items : [];
+
+    const mappedItems = qItems.map((qItem, itemIdx) => {
+      // Find matching measurement row for this item by window identifier or description
+      let matchingRow = roomMeasurementRows.find((mr) => {
+        const winId = (mr.windowId || mr.lWindowDetail || mr.label || '').trim().toLowerCase();
+        return winId && qItem.description && qItem.description.toLowerCase().includes(winId);
+      });
+
+      // If only 1 measurement row exists in this room and there's 1-2 items, or if no windowId matched
+      if (!matchingRow && roomMeasurementRows.length === 1) {
+        matchingRow = roomMeasurementRows[0];
+      } else if (!matchingRow && roomMeasurementRows.length > itemIdx) {
+        matchingRow = roomMeasurementRows[itemIdx];
+      }
+
+      const windowWidth = matchingRow
+        ? (matchingRow.frameToFrameWidth || matchingRow.outToOutWidth || matchingRow.width || matchingRow.confirmedWidth || '')
+        : '';
+      const windowHeight = matchingRow
+        ? (matchingRow.frameToFrameHeight || matchingRow.outToOutHeight || matchingRow.height || matchingRow.confirmedHeight || '')
+        : '';
+      const pelmetWidth = matchingRow
+        ? (matchingRow.pelmetO2oWidth || matchingRow.pelmetOutOutWidth || matchingRow.pelmetF2fWidth || matchingRow.pelmetFrameFrameWidth || '')
+        : '';
+      const pelmetDrop = matchingRow
+        ? (matchingRow.pelmetO2oDrop || matchingRow.pelmetOutOutDrop || matchingRow.pelmetF2fDrop || matchingRow.pelmetFrameFrameDrop || '')
+        : '';
+      const pelmetReturn = matchingRow
+        ? (matchingRow.curtainReturnLeft || matchingRow.curtainReturnRight || '')
+        : '';
+      const fabricName = matchingRow?.fabricName || matchingRow?.fabric || '';
+      const brand = matchingRow?.brand || '';
+      const stitchingStyle = matchingRow?.stitchingStyle || 'Ripple';
+      const fullness = matchingRow?.fullness || 2.5;
+      const parts = matchingRow?.parts || 1;
+      const opening = matchingRow?.opening || 'Center Open';
+
+      const treatmentType = qItem.description || matchingRow?.particular || matchingRow?.windowType || 'Main Curtain';
+      const qtyMtrs = qItem.qty !== undefined && qItem.qty !== null && qItem.qty !== '' ? qItem.qty : '';
+
+      return {
+        id: qItem.id || `item-${roomIdx + 1}-${itemIdx + 1}`,
+        srNo: itemIdx + 1,
+        look: '',
+        type: treatmentType,
+        windowWidth,
+        windowHeight,
+        pelmetWidth,
+        pelmetDrop,
+        pelmetReturn,
+        catalogueImages: [],
+        design: 'Ready',
+        brand,
+        fabricName,
+        fabricWidth: '',
+        repeatV: '',
+        repeatH: '',
+        fullness,
+        qtyMtrs,
+        stitchingStyle,
+        parts,
+        opening,
+        readyWidth: '',
+        readyHeight: '',
+        liningType: '',
+        liningQty: '',
+        tieback: '',
+        position: '',
+        electricalPoint: '',
+        installationType: '',
+      };
+    });
+
+    // If quotation room has no items, supply one clean treatment row
+    const itemsList = mappedItems.length > 0 ? mappedItems : [
+      {
+        id: `item-${roomIdx + 1}-1`,
+        srNo: 1,
+        look: '',
+        type: 'Main Curtain',
+        windowWidth: '',
+        windowHeight: '',
+        pelmetWidth: '',
+        pelmetDrop: '',
+        pelmetReturn: '',
+        catalogueImages: [],
+        design: 'Ready',
+        brand: '',
+        fabricName: '',
+        fabricWidth: '',
+        repeatV: '',
+        repeatH: '',
+        fullness: 2.5,
+        qtyMtrs: '',
+        stitchingStyle: 'Ripple',
+        parts: 1,
+        opening: 'Center Open',
+        readyWidth: '',
+        readyHeight: '',
+        liningType: '',
+        liningQty: '',
+        tieback: '',
+        position: '',
+        electricalPoint: '',
+        installationType: '',
+      }
+    ];
+
+    return {
+      id: qRoom.id || `room-${roomIdx + 1}`,
+      sheetName: qRoomName,
+      roomTitle: qRoomName,
+      sheetNo: roomIdx + 1,
+      clientName,
+      architect,
+      siteIncharge,
+      notes: [],
+      items: itemsList,
+    };
+  });
+};
+

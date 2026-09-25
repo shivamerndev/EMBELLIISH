@@ -57,10 +57,10 @@ export const buildSingleRoomPageHtml = ({
 }) => {
     if (!room) return '';
 
-    const displayClient = escapeHtml(room.clientName || clientName || 'Client');
-    const displayArch = escapeHtml(room.architect || architect || 'ADID Atelier LLP.');
-    const displayAddress = escapeHtml(address || 'A/3-D Amitesh LLP');
-    const displayIncharge = escapeHtml(room.siteIncharge || siteIncharge || 'Amit / Ashish / Sachin / Hemant');
+    const displayClient = escapeHtml(room.clientName || clientName || '—');
+    const displayArch = escapeHtml(room.architect || architect || '—');
+    const displayAddress = escapeHtml(address || '—');
+    const displayIncharge = escapeHtml(room.siteIncharge || siteIncharge || '—');
     const displayRoomTitle = escapeHtml(room.roomTitle || room.sheetName || `Room ${sheetNo}`);
     const displayDate = escapeHtml(formatDate(date));
     const displayDocNo = escapeHtml(leadCode ? `SDS-${leadCode}-${sheetNo}` : `SDS-${sheetNo}`);

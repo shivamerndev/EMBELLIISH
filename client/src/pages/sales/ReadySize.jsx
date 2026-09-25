@@ -17,7 +17,12 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
 import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
-import { SAMPLE_SITE_DETAIL_ROOMS } from '../../components/sales/siteSheetDefaults';
+import {
+    SAMPLE_SITE_DETAIL_ROOMS,
+    isSampleSiteDetailRooms,
+    getQuotationRoomsFromLead,
+    buildSiteDetailRoomsFromLead
+} from '../../components/sales/siteSheetDefaults';
 import { printSiteDetailSheet, printAllSiteDetailSheets } from '../../components/sales/siteSheetPrintService';
 
 const SPREADSHEET_SECTIONS = [
@@ -277,7 +282,16 @@ const SPREADSHEET_CELL_RENDERERS = {
         const link = lead.readySize?.siteDetailSheetGoogleLink;
         const atts = Array.isArray(lead.readySize?.siteDetailSheetAttachments) ? lead.readySize.siteDetailSheetAttachments : [];
         const customRooms = lead.readySize?.siteDetailRooms;
-        const roomCount = Array.isArray(customRooms) ? customRooms.length : 10;
+        const isDummy = isSampleSiteDetailRooms(customRooms, lead?.clientName);
+        const validCustomRooms = (Array.isArray(customRooms) && customRooms.length > 0 && !isDummy) ? customRooms : null;
+
+        let roomCount = 0;
+        if (validCustomRooms) {
+            roomCount = validCustomRooms.length;
+        } else {
+            const quotationRooms = getQuotationRoomsFromLead(lead);
+            roomCount = quotationRooms.length;
+        }
 
         return (
             <div className="flex items-center gap-1.5 justify-center flex-wrap max-w-[220px]" onClick={(e) => e.stopPropagation()}>
@@ -288,7 +302,7 @@ const SPREADSHEET_CELL_RENDERERS = {
                     title="Open Room-wise Site Detail Sheet Preview & Editor"
                 >
                     <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
-                    <span>Site Sheet ({roomCount})</span>
+                    <span>Site Sheet {roomCount > 0 ? `(${roomCount})` : ''}</span>
                 </button>
                 {link && (
                     <a
@@ -436,28 +450,28 @@ const renderSpreadsheetCell = (lead, key, sno, onView, onEdit, users = []) => {
 
 const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
 
-
     const initialRooms = useMemo(() => {
-        const existing = item?.readySize?.siteDetailRooms;
-        if (Array.isArray(existing) && existing.length > 0) {
+        const rawExisting = item?.readySize?.siteDetailRooms;
+        const parsedExisting = parseSubformArray(rawExisting);
+        const isDummy = isSampleSiteDetailRooms(parsedExisting, item?.clientName);
+        const existing = (parsedExisting && parsedExisting.length > 0 && !isDummy) ? parsedExisting : null;
+        if (existing) {
             return existing;
         }
-        return SAMPLE_SITE_DETAIL_ROOMS.map((r) => ({
-            ...r,
-            clientName: item?.clientName || r.clientName,
-            architect: item?.architectName || item?.architect || r.architect,
-        }));
-    }, [item]);
+        return buildSiteDetailRoomsFromLead(item, users);
+    }, [item, users]);
 
     const [rooms, setRooms] = useState(initialRooms);
 
-    // Default to Guest Room if present, or first room
+    // Default to first room
     const [activeRoomId, setActiveRoomId] = useState(() => {
-        const guestRoom = initialRooms.find((r) =>
-            (r.roomTitle || r.sheetName || '').toLowerCase().includes('guest')
-        );
-        return guestRoom ? guestRoom.id : (initialRooms[0]?.id || 'room-1');
+        return initialRooms[0]?.id || 'room-1';
     });
+
+    useEffect(() => {
+        setRooms(initialRooms);
+        setActiveRoomId(initialRooms[0]?.id || 'room-1');
+    }, [initialRooms]);
 
     const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'edit' | 'all-rooms'
     const [savedSuccess, setSavedSuccess] = useState(false);
@@ -502,6 +516,20 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
         setRooms((prev) => prev.map((r) => (r.id === updatedRoom.id ? updatedRoom : r)));
     };
 
+    const handleSyncFromQuotation = () => {
+        if (
+            rooms.length > 0 &&
+            !window.confirm('Reload rooms and windows from the Quotation Sheet? This will refresh all room sheets with the latest items from the quotation.')
+        ) {
+            return;
+        }
+        const freshRooms = buildSiteDetailRoomsFromLead(item, users);
+        setRooms(freshRooms);
+        if (freshRooms.length > 0) {
+            setActiveRoomId(freshRooms[0].id);
+        }
+    };
+
     const handleAddRoom = () => {
         const newSheetNo = rooms.length + 1;
         const newRoom = {
@@ -509,38 +537,38 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             sheetName: `Room ${newSheetNo}`,
             roomTitle: `Room ${newSheetNo}`,
             sheetNo: newSheetNo,
-            clientName: item?.clientName || 'Mr. Rakesh Jain',
-            architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
-            siteIncharge: 'Amit / Ashish / Sachin / Hemant',
-            notes: ['Width of the Fabric as height of the Window (Vertical Lines Want) adjust in stitching'],
+            clientName: item?.clientName || '',
+            architect: item?.architectName || item?.architect || '',
+            siteIncharge: activeRoom?.siteIncharge || '',
+            notes: [],
             items: [
                 {
                     id: `item-${Date.now()}-1`,
                     srNo: 1,
                     look: '',
                     type: 'Main Curtain',
-                    windowWidth: '124',
-                    windowHeight: '113',
-                    pelmetWidth: '12',
-                    pelmetDrop: '6',
+                    windowWidth: '',
+                    windowHeight: '',
+                    pelmetWidth: '',
+                    pelmetDrop: '',
                     pelmetReturn: '',
                     catalogueImages: [],
                     design: 'Ready',
-                    brand: 'Deco Dome / Linia /',
-                    fabricName: 'Linia One / Alora - 1',
-                    fabricWidth: '54"',
+                    brand: '',
+                    fabricName: '',
+                    fabricWidth: '',
                     repeatV: '',
                     repeatH: '',
                     fullness: 2.5,
-                    qtyMtrs: 15,
+                    qtyMtrs: '',
                     stitchingStyle: 'Ripple',
                     parts: 1,
                     opening: 'Center Open',
                     readyWidth: '',
                     readyHeight: '',
-                    liningType: 'in house 301 blackout',
+                    liningType: '',
                     liningQty: '',
-                    tieback: 'Custom',
+                    tieback: '',
                     position: '',
                     electricalPoint: '',
                     installationType: '',
@@ -583,9 +611,9 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             await printSiteDetailSheet({
                 room: activeRoom,
                 clientName: item?.clientName,
-                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || 'A/3-D Amitesh LLP'),
-                architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
-                siteIncharge: activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant',
+                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || item?.billingAddress || ''),
+                architect: item?.architectName || item?.architect || '',
+                siteIncharge: activeRoom?.siteIncharge || '',
                 sheetNo: activeRoom?.sheetNo || activeRoomIndex + 1,
                 totalSheets: rooms.length,
                 leadCode: item?.code || item?.leadNumber,
@@ -605,9 +633,9 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
             await printAllSiteDetailSheets({
                 rooms: rooms,
                 clientName: item?.clientName,
-                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || 'A/3-D Amitesh LLP'),
-                architect: item?.architectName || item?.architect || 'ADID Atelier LLP.',
-                siteIncharge: activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant',
+                address: item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || item?.billingAddress || ''),
+                architect: item?.architectName || item?.architect || '',
+                siteIncharge: activeRoom?.siteIncharge || '',
                 leadCode: item?.code || item?.leadNumber,
                 company: 'embellish',
             });
@@ -768,19 +796,32 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                         </button>
                     </div>
 
-                    {rooms.length > 1 && (
+                    <div className="flex items-center gap-2">
                         <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            icon={Trash2}
-                            onClick={(e) => handleDeleteRoom(activeRoomId, e)}
-                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs"
-                            title={`Delete ${activeRoom?.roomTitle || activeRoom?.sheetName || 'Current Room Sheet'}`}
+                            icon={RefreshCw}
+                            onClick={handleSyncFromQuotation}
+                            className="text-xs"
+                            title="Re-sync rooms & windows from Quotation Sheet"
                         >
-                            Delete Room Sheet
+                            Sync from Quotation
                         </Button>
-                    )}
+                        {rooms.length > 1 && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                icon={Trash2}
+                                onClick={(e) => handleDeleteRoom(activeRoomId, e)}
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs"
+                                title={`Delete ${activeRoom?.roomTitle || activeRoom?.sheetName || 'Current Room Sheet'}`}
+                            >
+                                Delete Room Sheet
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Dedicated Room Selector Pill Navigation Bar */}
@@ -837,9 +878,9 @@ const EditReadySizeModal = ({ item, onClose, onDone, users = [] }) => {
                     <SiteDetailSheetView
                         room={activeRoom}
                         clientName={item?.clientName}
-                        address={item?.address ? `${item.address.street || ''} ${item.address.city || ''}` : 'A/3-D Amitesh LLP'}
-                        architect={item?.architectName || item?.architect || 'ADID Atelier LLP.'}
-                        siteIncharge={activeRoom?.siteIncharge || 'Amit / Ashish / Sachin / Hemant'}
+                        address={item?.address ? `${item.address.street || ''} ${item.address.city || ''}`.trim() : (item?.siteAddress || item?.billingAddress || '')}
+                        architect={item?.architectName || item?.architect || ''}
+                        siteIncharge={activeRoom?.siteIncharge || ''}
                         sheetNo={activeRoom?.sheetNo || activeRoomIndex + 1}
                         totalSheets={rooms.length}
                         onPrint={handlePrintCurrentRoom}

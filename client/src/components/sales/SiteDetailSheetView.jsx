@@ -8,10 +8,10 @@ import { Button } from '../ui';
  */
 export const SiteDetailSheetView = ({
   room,
-  clientName = 'Mr. Rakesh Jain',
-  address = 'A/3-D Amitesh LLP',
-  architect = 'ADID Atelier LLP.',
-  siteIncharge = 'Amit / Ashish / Sachin / Hemant',
+  clientName = '',
+  address = '',
+  architect = '',
+  siteIncharge = '',
   sheetNo = 1,
   onPrint,
   onEditRoom,
