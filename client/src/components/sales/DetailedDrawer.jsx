@@ -186,7 +186,7 @@ const DetailedDrawer = ({ open, lead, onClose, onViewFull, onSiteVisit, pageFiel
               { name: 'Pricing & Costing', key: 'costing', data: lead.costing, desc: 'Cost estimation & rate breakdown' },
               { name: 'Quotation Preparation', key: 'quotation', data: lead.quotation, desc: 'Formal quote draft & pricing terms' },
               { name: 'Proposal Creation', key: 'proposal', data: lead.proposal, desc: 'Design proposal & client presentation' },
-              { name: 'Token Advance', key: 'token', data: lead.token, desc: 'Booking deposit & token confirmation' },
+              { name: 'Advance Receiving', key: 'token', data: lead.advance || lead.token, desc: 'Booking deposit & token confirmation' },
               { name: 'KYC Document Verification', key: 'kyc', data: lead.kyc, desc: 'Client identification & document check' },
               { name: 'Site Detail Sheet', key: 'readySize', data: lead.readySize, desc: 'Site details, Design PPT & Selection PPT for production' },
             ];

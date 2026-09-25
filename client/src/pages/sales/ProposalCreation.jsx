@@ -338,6 +338,16 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
+    'proposal.actualDate': (lead) => {
+        const val = lead.proposal?.actualDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px]   text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val)}
+            </span>
+        );
+    },
     'proposal.noVersion': (lead) => {
         const noVer = lead.proposal?.noVersion;
         const revCount = Array.isArray(lead.proposal?.revisionHistory) ? lead.proposal.revisionHistory.length : 0;
@@ -670,6 +680,11 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
         ];
     }, [initialLetter.rooms, item?.consumption]);
 
+    const [dueDate, setDueDate] = useState(() => formatDateForInput(prop.dueDate || initialLetter.dueDate));
+    const [actualDate, setActualDate] = useState(() => {
+        const val = prop.actualDate || initialLetter.actualDate;
+        return val ? formatDateForInput(val) : '';
+    });
     const [dateVal, setDateVal] = useState(defaultDate);
     const [clientName, setClientName] = useState(initialLetter.clientName || item?.clientName || 'Valued Client');
     const [rooms, setRooms] = useState(defaultRooms);
@@ -760,6 +775,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
     };
 
     const handleReset = () => {
+        setDueDate(formatDateForInput(prop.dueDate || initialLetter.dueDate));
+        setActualDate(prop.actualDate || initialLetter.actualDate ? formatDateForInput(prop.actualDate || initialLetter.actualDate) : '');
         setDateVal(defaultDate);
         setClientName(item?.clientName || 'Valued Client');
         setRooms(defaultRooms);
@@ -977,8 +994,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
 
     const handleSave = () => {
         const letterData = {
-            dueDate,
-            actualDate,
+            dueDate: dueDate || undefined,
+            actualDate: actualDate || undefined,
             date: dateVal,
             clientName,
             rooms,
@@ -986,11 +1003,27 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
             opt2,
             depositAmount
         };
+
+        let parsedDate = undefined;
+        if (dateVal) {
+            if (/^\d{2}\.\d{2}\.\d{4}$/.test(dateVal)) {
+                const [dd, mm, yyyy] = dateVal.split('.');
+                const d = new Date(`${yyyy}-${mm}-${dd}`);
+                if (!isNaN(d.getTime())) parsedDate = d.toISOString();
+            } else {
+                const d = new Date(dateVal);
+                if (!isNaN(d.getTime())) parsedDate = d.toISOString();
+            }
+        }
+        if (!parsedDate && actualDate) {
+            parsedDate = new Date(actualDate).toISOString();
+        }
+
         execute({
             ...prop,
-            dueDate,
-            actualDate,
-            date: dateVal,
+            dueDate: dueDate || undefined,
+            actualDate: actualDate || undefined,
+            date: parsedDate || prop.date || undefined,
             clientName,
             pricingRange: `₹${opt1.total} - ₹${opt2.total}`,
             letterData

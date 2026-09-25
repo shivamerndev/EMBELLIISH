@@ -174,4 +174,24 @@ export const isQuotationCreatedInDb = (lead) => {
   return false;
 };
 
+/**
+ * Validates whether a lead's advance status is received / recieved.
+ * Accommodates case-insensitivity, spacing, underscores, and common spelling variations.
+ */
+export const isAdvanceReceived = (lead) => {
+  if (!lead) return false;
+  const rawStatus = lead.advance?.status || lead.token?.status || lead.advanceStatus;
+  if (!rawStatus) return false;
+  const s = String(rawStatus).trim().toLowerCase().replace(/[_\s-]+/g, ' ');
+  if (s.includes('not')) return false;
+  return (
+    s === 'received' ||
+    s === 'recieved' ||
+    s === 'advance received' ||
+    s === 'advance recieved' ||
+    s.endsWith('received') ||
+    s.endsWith('recieved')
+  );
+};
+
 
