@@ -10,6 +10,7 @@
 import '../modules/user/user.model.js';
 import '../modules/crm/architect/architect.model.js';
 import '../modules/crm/lead/lead.model.js';
+import '../modules/sales/sales.model.js';
 import '../modules/inventory/fabric/fabric.model.js';
 import '../modules/notification/notification.model.js';
 import '../modules/pricing/pricing.model.js';
