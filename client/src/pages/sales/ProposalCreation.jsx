@@ -24,6 +24,7 @@ const SPREADSHEET_SECTIONS = [
         // All fields : shown in DetailedDrawer
         cols: [
             { key: 'proposal.dueDate', label: 'Proposal Due Date' },
+            { key: 'proposal.actualDate', label: 'Proposal Actual Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'proposal.noVersion', label: 'Proposal No. / Version' },
             { key: 'proposal.date', label: 'Proposal Date' },
@@ -311,7 +312,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     delayStatus: (lead) => (
         <DelayBadge
             dueDate={lead.proposal?.dueDate}
-            isCompleted={Boolean(['Approved', 'Completed', 'Submitted', 'Sent'].includes(lead.proposal?.approvalStatus || lead.proposal?.status) || lead.proposal?.date)}
+            isCompleted={Boolean(['Approved', 'Completed', 'Submitted', 'Sent'].includes(lead.proposal?.approvalStatus || lead.proposal?.status) || lead.proposal?.date || lead.proposal?.actualDate)}
         />
     ),
     sno: (lead, { sno }) => <span className="  text-slate-500 dark:text-slate-400 font-medium">{sno}</span>,
@@ -327,7 +328,7 @@ const SPREADSHEET_CELL_RENDERERS = {
     'proposal.dueDate': (lead) => {
         const val = lead.proposal?.dueDate;
         if (!val) return <span className="text-rose-500 dark:text-rose-400 font-medium text-[11px]">Required *</span>;
-        const isOverdue = !lead.proposal?.date && new Date(val) < new Date();
+        const isOverdue = !lead.proposal?.date && !lead.proposal?.actualDate && new Date(val) < new Date();
         return (
             <div className="flex items-center gap-1 justify-center">
                 <span className={`text-[11px]   whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -597,6 +598,19 @@ const formatIndianNumber = (num) => {
     return integerPart + decimalPart;
 };
 
+const formatDateForInput = (rawVal) => {
+    if (!rawVal) return getLocalDate();
+    if (typeof rawVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawVal)) {
+        return rawVal.slice(0, 10);
+    }
+    const d = new Date(rawVal);
+    if (isNaN(d.getTime())) return getLocalDate();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const ProposalLetterModal = ({ item, onClose, onDone }) => {
     const prop = item?.proposal || {};
     const initialLetter = prop.letterData || {};
@@ -660,36 +674,42 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
     const [clientName, setClientName] = useState(initialLetter.clientName || item?.clientName || 'Valued Client');
     const [rooms, setRooms] = useState(defaultRooms);
 
-    const [opt1, setOpt1] = useState(initialLetter.opt1 || {
-        curtainQty: '748',
-        curtainRate: '3000.00',
-        curtainAmount: '22,44,000/-',
-        blackoutQty: '368',
-        blackoutRate: '395.00',
-        blackoutAmount: '1,45,360/-',
-        stitchingCurtainMft: '370',
-        stitchingLeadMft: '370',
-        stitchingRateCurtain: '850.00',
-        stitchingRateLead: '125.00',
-        stitchingAmountCurtain: '3,14,500/-',
-        stitchingAmountLead: '46,250/-',
-        total: '27,50,110/-'
+    const [opt1, setOpt1] = useState(() => {
+        const base = initialLetter.opt1 || {
+            curtainQty: '748',
+            curtainRate: '3000.00',
+            curtainAmount: '22,44,000/-',
+            blackoutQty: '368',
+            blackoutRate: '395.00',
+            blackoutAmount: '1,45,360/-',
+            stitchingCurtainMft: '370',
+            stitchingLeadMft: '370',
+            stitchingRateCurtain: '850.00',
+            stitchingRateLead: '125.00',
+            stitchingAmountCurtain: '3,14,500/-',
+            stitchingAmountLead: '46,250/-',
+            total: '27,50,110/-'
+        };
+        return { ...base, customItems: base.customItems || [] };
     });
 
-    const [opt2, setOpt2] = useState(initialLetter.opt2 || {
-        curtainQty: '748',
-        curtainRate: '4000.00',
-        curtainAmount: '29,92,000/-',
-        blackoutQty: '368',
-        blackoutRate: '395.00',
-        blackoutAmount: '1,45,360/-',
-        stitchingCurtainMft: '370',
-        stitchingLeadMft: '370',
-        stitchingRateCurtain: '850.00',
-        stitchingRateLead: '125.00',
-        stitchingAmountCurtain: '3,14,500/-',
-        stitchingAmountLead: '46,250/-',
-        total: '34,98,110/-'
+    const [opt2, setOpt2] = useState(() => {
+        const base = initialLetter.opt2 || {
+            curtainQty: '748',
+            curtainRate: '4000.00',
+            curtainAmount: '29,92,000/-',
+            blackoutQty: '368',
+            blackoutRate: '395.00',
+            blackoutAmount: '1,45,360/-',
+            stitchingCurtainMft: '370',
+            stitchingLeadMft: '370',
+            stitchingRateCurtain: '850.00',
+            stitchingRateLead: '125.00',
+            stitchingAmountCurtain: '3,14,500/-',
+            stitchingAmountLead: '46,250/-',
+            total: '34,98,110/-'
+        };
+        return { ...base, customItems: base.customItems || [] };
     });
 
     const [depositAmount, setDepositAmount] = useState(initialLetter.depositAmount || '4,00,000');
@@ -756,6 +776,7 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
             stitchingRateLead: '125.00',
             stitchingAmountCurtain: '3,14,500/-',
             stitchingAmountLead: '46,250/-',
+            customItems: [],
             total: '27,50,110/-'
         });
         setOpt2({
@@ -771,9 +792,19 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
             stitchingRateLead: '125.00',
             stitchingAmountCurtain: '3,14,500/-',
             stitchingAmountLead: '46,250/-',
+            customItems: [],
             total: '34,98,110/-'
         });
         setDepositAmount('4,00,000');
+    };
+
+    const calcOptTotal = (optObj) => {
+        const amt1 = parseNumber(optObj.curtainAmount);
+        const amt2 = parseNumber(optObj.blackoutAmount);
+        const amt3 = parseNumber(optObj.stitchingAmountCurtain);
+        const amt4 = parseNumber(optObj.stitchingAmountLead);
+        const customAmt = (optObj.customItems || []).reduce((sum, item) => sum + parseNumber(item.amount), 0);
+        return amt1 + amt2 + amt3 + amt4 + customAmt;
     };
 
     const updateOpt1 = (field, val) => {
@@ -808,14 +839,49 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                 }
             }
 
-            const amt1 = parseNumber(next.curtainAmount);
-            const amt2 = parseNumber(next.blackoutAmount);
-            const amt3 = parseNumber(next.stitchingAmountCurtain);
-            const amt4 = parseNumber(next.stitchingAmountLead);
-            const calcTotal = amt1 + amt2 + amt3 + amt4;
+            const calcTotal = calcOptTotal(next);
             if (calcTotal > 0 && field !== 'total') {
                 next.total = `${formatIndianNumber(calcTotal)}/-`;
             }
+            return next;
+        });
+    };
+
+    const handleAddOpt1CustomItem = () => {
+        setOpt1((prev) => {
+            const newItems = [...(prev.customItems || []), { type: '', mtr: 'Mtrs', qty: '', rate: '', amount: '' }];
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
+            return next;
+        });
+    };
+
+    const handleUpdateOpt1CustomItem = (idx, field, val) => {
+        setOpt1((prev) => {
+            const newItems = [...(prev.customItems || [])];
+            const item = { ...newItems[idx], [field]: val };
+            if (field === 'qty' || field === 'rate') {
+                const q = parseNumber(field === 'qty' ? val : item.qty);
+                const r = parseNumber(field === 'rate' ? val : item.rate);
+                if (q && r) {
+                    item.amount = `${formatIndianNumber(q * r)}/-`;
+                }
+            }
+            newItems[idx] = item;
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
+            return next;
+        });
+    };
+
+    const handleRemoveOpt1CustomItem = (idx) => {
+        setOpt1((prev) => {
+            const newItems = (prev.customItems || []).filter((_, i) => i !== idx);
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
             return next;
         });
     };
@@ -852,14 +918,49 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                 }
             }
 
-            const amt1 = parseNumber(next.curtainAmount);
-            const amt2 = parseNumber(next.blackoutAmount);
-            const amt3 = parseNumber(next.stitchingAmountCurtain);
-            const amt4 = parseNumber(next.stitchingAmountLead);
-            const calcTotal = amt1 + amt2 + amt3 + amt4;
+            const calcTotal = calcOptTotal(next);
             if (calcTotal > 0 && field !== 'total') {
                 next.total = `${formatIndianNumber(calcTotal)}/-`;
             }
+            return next;
+        });
+    };
+
+    const handleAddOpt2CustomItem = () => {
+        setOpt2((prev) => {
+            const newItems = [...(prev.customItems || []), { type: '', mtr: 'Mtrs', qty: '', rate: '', amount: '' }];
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
+            return next;
+        });
+    };
+
+    const handleUpdateOpt2CustomItem = (idx, field, val) => {
+        setOpt2((prev) => {
+            const newItems = [...(prev.customItems || [])];
+            const item = { ...newItems[idx], [field]: val };
+            if (field === 'qty' || field === 'rate') {
+                const q = parseNumber(field === 'qty' ? val : item.qty);
+                const r = parseNumber(field === 'rate' ? val : item.rate);
+                if (q && r) {
+                    item.amount = `${formatIndianNumber(q * r)}/-`;
+                }
+            }
+            newItems[idx] = item;
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
+            return next;
+        });
+    };
+
+    const handleRemoveOpt2CustomItem = (idx) => {
+        setOpt2((prev) => {
+            const newItems = (prev.customItems || []).filter((_, i) => i !== idx);
+            const next = { ...prev, customItems: newItems };
+            const calcTotal = calcOptTotal(next);
+            if (calcTotal > 0) next.total = `${formatIndianNumber(calcTotal)}/-`;
             return next;
         });
     };
@@ -876,6 +977,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
 
     const handleSave = () => {
         const letterData = {
+            dueDate,
+            actualDate,
             date: dateVal,
             clientName,
             rooms,
@@ -885,6 +988,8 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
         };
         execute({
             ...prop,
+            dueDate,
+            actualDate,
             date: dateVal,
             clientName,
             pricingRange: `₹${opt1.total} - ₹${opt2.total}`,
@@ -1024,6 +1129,24 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                     placeholder="e.g. Mr. Rakesh Jain"
                                 />
                             </Field>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Field label="Due Date">
+                                    <Input
+                                        type="date"
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
+                                        className="text-xs"
+                                    />
+                                </Field>
+                                <Field label="Actual Date">
+                                    <Input
+                                        type="date"
+                                        value={actualDate}
+                                        onChange={(e) => setActualDate(e.target.value)}
+                                        className="text-xs"
+                                    />
+                                </Field>
+                            </div>
                             <Field label="Proposal Date">
                                 <Input
                                     value={dateVal}
@@ -1082,9 +1205,14 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
 
                     {/* Option 1 Commercials */}
                     <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                            <Tag className="w-4 h-4" /> Option - 1 Commercials
-                        </h4>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                                <Tag className="w-4 h-4" /> Option - 1 Commercials
+                            </h4>
+                            <Button size="sm" variant="ghost" icon={Plus} onClick={handleAddOpt1CustomItem} className="text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
+                                Add Item
+                            </Button>
+                        </div>
                         <div className="space-y-2.5 text-xs">
                             <div className="grid grid-cols-2 gap-2">
                                 <Field label="Curtain Main Qty">
@@ -1110,6 +1238,77 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                     <Input value={opt1.stitchingRateLead} onChange={(e) => updateOpt1('stitchingRateLead', e.target.value)} className="text-xs" />
                                 </Field>
                             </div>
+
+                            {/* Custom Added Items */}
+                            {opt1.customItems?.length > 0 && (
+                                <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">Additional Items</span>
+                                    {opt1.customItems.map((cItem, cIdx) => (
+                                        <div key={cIdx} className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Item Description / Type (e.g. Tracks)"
+                                                    value={cItem.type}
+                                                    onChange={(e) => handleUpdateOpt1CustomItem(cIdx, 'type', e.target.value)}
+                                                    className="flex-1 text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveOpt1CustomItem(cIdx)}
+                                                    className="p-1 text-slate-400 hover:text-rose-500 rounded transition"
+                                                    title="Remove Item"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-1.5 text-[11px]">
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Unit</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Mtrs/pcs"
+                                                        value={cItem.mtr}
+                                                        onChange={(e) => handleUpdateOpt1CustomItem(cIdx, 'mtr', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Qty</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Qty"
+                                                        value={cItem.qty}
+                                                        onChange={(e) => handleUpdateOpt1CustomItem(cIdx, 'qty', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Rate</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Rate"
+                                                        value={cItem.rate}
+                                                        onChange={(e) => handleUpdateOpt1CustomItem(cIdx, 'rate', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Amount</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Amount"
+                                                        value={cItem.amount}
+                                                        onChange={(e) => handleUpdateOpt1CustomItem(cIdx, 'amount', e.target.value)}
+                                                        className="w-full text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <Field label="Option 1 Total (Rs.)">
                                 <Input value={opt1.total} onChange={(e) => updateOpt1('total', e.target.value)} className="text-xs font-bold" />
                             </Field>
@@ -1118,9 +1317,14 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
 
                     {/* Option 2 Commercials */}
                     <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                            <Tag className="w-4 h-4" /> Option - 2 Commercials
-                        </h4>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                                <Tag className="w-4 h-4" /> Option - 2 Commercials
+                            </h4>
+                            <Button size="sm" variant="ghost" icon={Plus} onClick={handleAddOpt2CustomItem} className="text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
+                                Add Item
+                            </Button>
+                        </div>
                         <div className="space-y-2.5 text-xs">
                             <div className="grid grid-cols-2 gap-2">
                                 <Field label="Curtain Main Qty">
@@ -1146,6 +1350,77 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                     <Input value={opt2.stitchingRateLead} onChange={(e) => updateOpt2('stitchingRateLead', e.target.value)} className="text-xs" />
                                 </Field>
                             </div>
+
+                            {/* Custom Added Items */}
+                            {opt2.customItems?.length > 0 && (
+                                <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">Additional Items</span>
+                                    {opt2.customItems.map((cItem, cIdx) => (
+                                        <div key={cIdx} className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Item Description / Type (e.g. Tracks)"
+                                                    value={cItem.type}
+                                                    onChange={(e) => handleUpdateOpt2CustomItem(cIdx, 'type', e.target.value)}
+                                                    className="flex-1 text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveOpt2CustomItem(cIdx)}
+                                                    className="p-1 text-slate-400 hover:text-rose-500 rounded transition"
+                                                    title="Remove Item"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-1.5 text-[11px]">
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Unit</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Mtrs/pcs"
+                                                        value={cItem.mtr}
+                                                        onChange={(e) => handleUpdateOpt2CustomItem(cIdx, 'mtr', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Qty</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Qty"
+                                                        value={cItem.qty}
+                                                        onChange={(e) => handleUpdateOpt2CustomItem(cIdx, 'qty', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Rate</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Rate"
+                                                        value={cItem.rate}
+                                                        onChange={(e) => handleUpdateOpt2CustomItem(cIdx, 'rate', e.target.value)}
+                                                        className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] text-slate-500 block">Amount</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Amount"
+                                                        value={cItem.amount}
+                                                        onChange={(e) => handleUpdateOpt2CustomItem(cIdx, 'amount', e.target.value)}
+                                                        className="w-full text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <Field label="Option 2 Total (Rs.)">
                                 <Input value={opt2.total} onChange={(e) => updateOpt2('total', e.target.value)} className="text-xs font-bold" />
                             </Field>
@@ -1339,6 +1614,16 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                             </td>
                                         </tr>
 
+                                        {opt1.customItems?.map((cItem, cIdx) => (
+                                            <tr key={cIdx} className="border-b border-black">
+                                                <td className="border-r border-black p-1 font-semibold">{cItem.type || 'Additional Item'}</td>
+                                                <td className="border-r border-black p-1 text-center font-semibold">{cItem.mtr || 'Mtrs'}</td>
+                                                <td className="border-r border-black p-1 text-center font-bold">{cItem.qty || '-'}</td>
+                                                <td className="border-r border-black p-1 text-right font-bold">{cItem.rate || '-'}</td>
+                                                <td className="p-1 text-right font-bold">{cItem.amount || '-'}</td>
+                                            </tr>
+                                        ))}
+
                                         <tr className="border-b border-black h-4">
                                             <td className="border-r border-black"></td>
                                             <td className="border-r border-black"></td>
@@ -1412,6 +1697,16 @@ const ProposalLetterModal = ({ item, onClose, onDone }) => {
                                                 <div>{opt2.stitchingAmountLead}</div>
                                             </td>
                                         </tr>
+
+                                        {opt2.customItems?.map((cItem, cIdx) => (
+                                            <tr key={cIdx} className="border-b border-black">
+                                                <td className="border-r border-black p-1 font-semibold">{cItem.type || 'Additional Item'}</td>
+                                                <td className="border-r border-black p-1 text-center font-semibold">{cItem.mtr || 'Mtrs'}</td>
+                                                <td className="border-r border-black p-1 text-center font-bold">{cItem.qty || '-'}</td>
+                                                <td className="border-r border-black p-1 text-right font-bold">{cItem.rate || '-'}</td>
+                                                <td className="p-1 text-right font-bold">{cItem.amount || '-'}</td>
+                                            </tr>
+                                        ))}
 
                                         <tr className="border-b border-black h-4">
                                             <td className="border-r border-black"></td>

@@ -393,7 +393,7 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${form.architectInvolved === 'Yes' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -420,14 +420,16 @@ const NewLeadModal = ({ open, onClose, onCreated, architects, onReloadArchitects
             />
           </Field>
 
-          <Field label="Architect / Designer Name">
-            <SearchableArchitectSelect
-              value={form.architectName}
-              onChange={(val) => setForm((prev) => ({ ...prev, architectName: val }))}
-              architects={architects}
-              onArchitectCreated={onReloadArchitects}
-            />
-          </Field>
+          {form.architectInvolved === 'Yes' && (
+            <Field label="Architect / Designer Name">
+              <SearchableArchitectSelect
+                value={form.architectName}
+                onChange={(val) => setForm((prev) => ({ ...prev, architectName: val }))}
+                architects={architects}
+                onArchitectCreated={onReloadArchitects}
+              />
+            </Field>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -713,7 +715,7 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${form.architectInvolved === 'Yes' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
           <Field label="Lead Source">
             <Select
               value={form.source}
@@ -740,14 +742,16 @@ const EditLeadModal = ({ lead, onClose, onDone, architects, onReloadArchitects }
             />
           </Field>
 
-          <Field label="Architect / Designer Name">
-            <SearchableArchitectSelect
-              value={form.architectName}
-              onChange={(val) => setForm((prev) => ({ ...prev, architectName: val }))}
-              architects={architects}
-              onArchitectCreated={onReloadArchitects}
-            />
-          </Field>
+          {form.architectInvolved === 'Yes' && (
+            <Field label="Architect / Designer Name">
+              <SearchableArchitectSelect
+                value={form.architectName}
+                onChange={(val) => setForm((prev) => ({ ...prev, architectName: val }))}
+                architects={architects}
+                onArchitectCreated={onReloadArchitects}
+              />
+            </Field>
+          )}
         </div>
 
 

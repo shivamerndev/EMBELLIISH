@@ -506,6 +506,13 @@ const LeadDetails = () => {
                                 {Array.isArray(lead.rooms) ? (lead.rooms.length > 0 ? lead.rooms.join(', ') : '—') : lead.rooms || '—'}
                             </span>
                         </div>
+
+                        {lead.siteVisitNotes && (
+                            <div className="p-2.5 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-lg md:col-span-2">
+                                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold mb-0.5">Site Visit / Key Person Notes</span>
+                                <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{lead.siteVisitNotes}</p>
+                            </div>
+                        )}
                     </div>
 
                     {lead.siteAddress && (
@@ -744,6 +751,7 @@ const LeadDetails = () => {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <InfoTile label="Proposal Due Date" value={lead.proposal?.dueDate ? date(lead.proposal.dueDate) : null} />
+                        <InfoTile label="Proposal Actual Date" value={lead.proposal?.actualDate ? date(lead.proposal.actualDate) : null} />
                         <InfoTile label="Proposal No. / Version" value={lead.proposal?.noVersion} />
                         <InfoTile label="Proposal Date" value={lead.proposal?.date ? date(lead.proposal.date) : null} />
                         <InfoTile label="Design Direction" value={lead.proposal?.designDirection} />

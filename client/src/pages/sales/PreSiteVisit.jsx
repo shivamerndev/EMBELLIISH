@@ -27,6 +27,7 @@ const SPREADSHEET_SECTIONS = [
             { key: 'siteAddress', label: 'Site Address' },
             { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
             { key: 'assignedInstaller', label: 'Assigned Installer / Measurement Person' },
+            { key: 'siteVisitNotes', label: 'Site Visit Notes' },
             { key: 'clientArchitectAvailability', label: 'Client / Architect Availability' },
             { key: 'scope', label: 'Scope' },
             { key: 'rooms', label: 'Rooms' },
@@ -257,6 +258,15 @@ const SPREADSHEET_CELL_RENDERERS = {
             </div>
         );
     },
+    siteVisitNotes: (lead) => {
+        const val = lead.siteVisitNotes;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="text-slate-700 dark:text-slate-300 text-xs line-clamp-2 max-w-[200px] mx-auto block text-left" title={val}>
+                {val}
+            </span>
+        );
+    },
     clientArchitectAvailability: (lead) => {
         const slots = parseAvailabilitySlots(lead.clientArchitectAvailability);
         if (slots.length === 0) return <span className="text-slate-400 dark:text-slate-600">—</span>;
@@ -419,6 +429,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
         actualSiteVisitDateTime: item?.actualSiteVisitDateTime ? new Date(item.actualSiteVisitDateTime).toISOString().slice(0, 16) : '',
         installerName: item?.installerName || '',
         installerPhone: item?.installerPhone || item?.installerNumber || '',
+        siteVisitNotes: item?.siteVisitNotes || '',
         addressLine1: initialAddress.addressLine1,
         postalCode: initialAddress.postalCode,
         state: initialAddress.state,
@@ -629,6 +640,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
             assignedInstallers: form.assignedInstallers,
             installerName: form.installerName?.trim() || undefined,
             installerPhone: form.installerPhone?.trim() || undefined,
+            siteVisitNotes: form.siteVisitNotes?.trim() || undefined,
             clientArchitectAvailability: availabilityString || undefined,
             scope: scopeParts,
             rooms: form.roomsSelected,
@@ -711,7 +723,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
-                        <Field label="INSTALLER NAME">
+                        <Field label="Key Person Name">
                             <Input
                                 placeholder="Write name of the installer..."
                                 value={form.installerName}
@@ -719,7 +731,7 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                             />
                         </Field>
 
-                        <Field label="INSTALLER NUMBER" hint="Country code + 10 digit mobile number required">
+                        <Field label="Key Person Mobile" hint="Country code + 10 digit mobile number required">
                             <PhoneInput
                                 name="installerPhone"
                                 placeholder="9876543210"
@@ -728,49 +740,62 @@ const EditSiteVisitModal = ({ item, onClose, onDone, installers = [] }) => {
                                 defaultCountry="+91"
                             />
                         </Field>
+
+                        <div className="md:col-span-2">
+                            <Field label="Key Person / Site Visit Notes">
+                                <Textarea
+                                    rows={4}
+                                    placeholder="Write site visit notes or details..."
+                                    value={form.siteVisitNotes}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, siteVisitNotes: e.target.value }))}
+                                />
+                            </Field>
+                        </div>
+                    </div>
+
+                    {/* Key Person Availability Slots */}
+                    <div className="border-t border-slate-200/80 dark:border-slate-800/80 pt-3">
+                        <Field label="KEY PERSON AVAILABILITY">
+                            <div className="space-y-2 mt-1">
+                                {form.availabilitySlots.map((slot, index) => (
+                                    <div key={slot.id || index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 min-w-0 overflow-hidden">
+                                        <div className="w-full min-w-0">
+                                            <Input
+                                                type="date"
+                                                size="sm"
+                                                value={slot.date}
+                                                onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
+                                                placeholder="Availability Date"
+                                            />
+                                        </div>
+                                        <div className="w-full min-w-0">
+                                            <Input
+                                                size="sm"
+                                                value={slot.timeSlot}
+                                                onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
+                                                placeholder="e.g. 10:00 AM - 01:00 PM"
+                                            />
+                                        </div>
+                                        {form.availabilitySlots.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleRemoveSlot(slot.id)}
+                                                className="text-rose-500 hover:text-rose-700 shrink-0 self-center justify-self-end"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
+                                    Add Availability Slot
+                                </Button>
+                            </div>
+                        </Field>
                     </div>
                 </div>
-
-                {/* Responsible Person Availability Slots */}
-                <Field label="RESPONSIBLE PERSON AVAILABILITY">
-                    <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        {form.availabilitySlots.map((slot, index) => (
-                            <div key={slot.id || index} className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
-                                <div className="flex-1 min-w-[140px]">
-                                    <Input
-                                        type="date"
-                                        size="sm"
-                                        value={slot.date}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'date', e.target.value)}
-                                        placeholder="Availability Date"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-[160px]">
-                                    <Input
-                                        size="sm"
-                                        value={slot.timeSlot}
-                                        onChange={(e) => handleUpdateSlot(slot.id, 'timeSlot', e.target.value)}
-                                        placeholder="e.g. 00 AM - 01"
-                                    />
-                                </div>
-                                {form.availabilitySlots.length > 1 && (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleRemoveSlot(slot.id)}
-                                        className="text-rose-500 hover:text-rose-700"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                )}
-                            </div>
-                        ))}
-                        <Button type="button" size="sm" variant="outline" icon={Plus} onClick={handleAddSlot}>
-                            Add Availability Slot
-                        </Button>
-                    </div>
-                </Field>
 
                 {/* Grid Section 2: Site Address Inputs */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">

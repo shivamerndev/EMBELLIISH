@@ -197,6 +197,7 @@ const proposalSchema = z
     approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'REVISION_REQUESTED']).optional(),
     approvedBy: z.string().optional(),
   })
+  .passthrough()
   .optional();
 
 const advanceSchema = z
@@ -520,6 +521,7 @@ const rawCreateLeadSchema = z.object({
   assignedInstaller: objectId.optional().nullable(),
   installerName: z.string().optional().nullable(),
   installerPhone: z.string().optional().nullable(),
+  siteVisitNotes: z.string().optional().nullable(),
   clientArchitectAvailability: z.string().optional(),
   scope: z.union([z.array(z.string()), z.string()]).optional().nullable(),
   rooms: z.union([z.array(z.string()), z.string()]).optional().nullable(),
