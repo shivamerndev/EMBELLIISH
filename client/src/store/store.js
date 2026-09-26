@@ -3,6 +3,7 @@ import authReducer from '../features/auth/authSlice';
 import metaReducer from '../features/meta/metaSlice';
 import themeReducer from '../features/theme/themeSlice';
 import salesReducer from "../features/sales/sales.slice.js"
+import pmsReducer from '../features/pms/pms.slice.js';
 
 
 
@@ -16,7 +17,8 @@ export const store = configureStore({
     auth: authReducer,
     meta: metaReducer,
     theme: themeReducer,
-    sales: salesReducer
+    sales: salesReducer,
+    pms: pmsReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }),
 });
