@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, AlertTriangle } from 'lucide-react';
+import { Pencil, AlertTriangle, CheckCircle, Clock, PenTool } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
@@ -7,9 +7,21 @@ import { pmsApi } from '../../api/pms.api';
 
 const STAGE = 'executionDrawingPreparation';
 
+const formatDateInput = (val) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+};
+
+const formatDate = (val) => {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
 const EditModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
-    dueDate: item?.dueDate ? new Date(item.dueDate).toISOString().slice(0, 10) : '',
+    dueDate: formatDateInput(item?.dueDate),
     structuredRequest: item?.structuredRequest || '',
     designBrief: item?.designBrief || '',
     siteDetail: item?.siteDetail || '',
@@ -24,7 +36,10 @@ const EditModal = ({ item, onClose, onDone }) => {
 
   const { execute, pending } = useAction(
     (payload) => pmsApi.executionDrawingPreparation.update(item._id || item.id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => { onDone(); onClose(); },
+      onError: (err) => setError(err?.message || 'Failed to update drawing preparation'),
+    }
   );
 
   const handleSubmit = (e) => {
@@ -36,7 +51,12 @@ const EditModal = ({ item, onClose, onDone }) => {
   return (
     <Modal open={Boolean(item)} onClose={onClose} title={`Execution Drawing Preparation: ${item?.code || 'New'}`} size="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs"><AlertTriangle className="w-4 h-4" /><span>{error}</span></div>}
+        {error && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{typeof error === 'string' ? error : error?.message || 'Update failed'}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Execution Drawing Preparation Due Date">
@@ -101,7 +121,7 @@ const ExecutionDrawingPreparationPage = () => {
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  const stageItems = pmsState?.items?.[STAGE] || [];
+  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
 
   const handleLoad = async () => {
     setLoading(true);
@@ -123,19 +143,19 @@ const ExecutionDrawingPreparationPage = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Execution Drawing Preparation" subtitle="Prepare and finalize execution drawings for production" />
+      <PageHeader title="Execution Drawing Preparation" subtitle="Prepare detailed execution drawings, technical sheets, and production specifications" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatTile label="Total Drawings" value={stageItems.length} sub="Being prepared" icon={Pencil} tone="blue" />
-        <StatTile label="Completed" value={completedCount} sub="Drawings ready" icon={Pencil} tone="green" />
-        <StatTile label="In Progress" value={stageItems.filter(i => i.status === 'In Progress').length} sub="Being worked on" icon={Pencil} tone="amber" />
-        <StatTile label="On Hold" value={stageItems.filter(i => i.status === 'On Hold').length} sub="Waiting for input" icon={Pencil} tone="orange" />
+        <StatTile label="Total Drawings" value={stageItems.length} sub="In preparation" icon={PenTool} tone="blue" />
+        <StatTile label="Completed" value={completedCount} sub="Drawings ready" icon={CheckCircle} tone="green" />
+        <StatTile label="In Progress" value={stageItems.filter(i => i.status === 'In Progress').length} sub="Being worked on" icon={Clock} tone="amber" />
+        <StatTile label="On Hold" value={stageItems.filter(i => i.status === 'On Hold').length} sub="Waiting for input" icon={AlertTriangle} tone="orange" />
       </div>
 
       {loading ? (
         <Panel className="p-12 text-center"><Loading text="Loading..." /></Panel>
       ) : error ? (
-        <ErrorState error={error} onRetry={handleLoad} />
+        <ErrorState error={typeof error === 'string' ? { message: error } : error} onRetry={handleLoad} />
       ) : stageItems.length === 0 ? (
         <Panel className="p-8 text-center"><EmptyState icon={Pencil} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
@@ -144,8 +164,12 @@ const ExecutionDrawingPreparationPage = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Structured Request</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Sizes</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Pelmet / Channel / Motor</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Feasibility Input</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
@@ -155,11 +179,15 @@ const ExecutionDrawingPreparationPage = () => {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {stageItems.map((item, idx) => (
                   <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium">{item.code || `Drawing ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-3 text-xs">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.status === 'Completed' ? 'green' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'On Time'}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Drawing ${idx + 1}`}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.structuredRequest}>{item.structuredRequest || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.sizes || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.pelmetChannelMotorDetails}>{item.pelmetChannelMotorDetails || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.technicalFeasibilityInput}>{item.technicalFeasibilityInput || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
                     <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
                   </tr>
                 ))}

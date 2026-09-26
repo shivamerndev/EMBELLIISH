@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Palette, Pencil, AlertTriangle } from 'lucide-react';
+import { Palette, Pencil, AlertTriangle, CheckCircle, Clock, Sparkles } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
@@ -7,12 +7,24 @@ import { pmsApi } from '../../api/pms.api';
 
 const STAGE = 'designFinalisation';
 
+const formatDateInput = (val) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+};
+
+const formatDate = (val) => {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
 const DesignFinalisationEditModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
-    dueDate: item?.dueDate ? new Date(item.dueDate).toISOString().slice(0, 10) : '',
+    dueDate: formatDateInput(item?.dueDate),
     finalDesignStatus: item?.finalDesignStatus || 'In Progress',
     designVersion: item?.designVersion || 'v1',
-    designApprovalDate: item?.designApprovalDate ? new Date(item.designApprovalDate).toISOString().slice(0, 10) : '',
+    designApprovalDate: formatDateInput(item?.designApprovalDate),
     pendingDesignDecisions: item?.pendingDesignDecisions || '',
     clientBrief: item?.clientBrief || '',
     approvedProposalQuote: item?.approvedProposalQuote || '',
@@ -27,7 +39,10 @@ const DesignFinalisationEditModal = ({ item, onClose, onDone }) => {
 
   const { execute, pending } = useAction(
     (payload) => pmsApi.designFinalisation.update(item._id || item.id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => { onDone(); onClose(); },
+      onError: (err) => setError(err?.message || 'Failed to update design finalisation'),
+    }
   );
 
   const handleSubmit = (e) => {
@@ -43,7 +58,12 @@ const DesignFinalisationEditModal = ({ item, onClose, onDone }) => {
   return (
     <Modal open={Boolean(item)} onClose={onClose} title={`Design Finalisation: ${item?.code || 'New'}`} size="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs"><AlertTriangle className="w-4 h-4" /><span>{error}</span></div>}
+        {error && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{typeof error === 'string' ? error : error?.message || 'Update failed'}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Design Finalisation Due Date *">
@@ -122,7 +142,7 @@ const DesignFinalisationPage = () => {
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  const stageItems = pmsState?.items?.[STAGE] || [];
+  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
 
   const handleLoad = async () => {
     setLoading(true);
@@ -149,15 +169,15 @@ const DesignFinalisationPage = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Designs" value={stageItems.length} sub="In finalization" icon={Palette} tone="blue" />
-        <StatTile label="Approved" value={approvedCount} sub="Design approved" icon={Palette} tone="green" />
-        <StatTile label="Completed" value={completedCount} sub="Stage completed" icon={Palette} tone="amber" />
-        <StatTile label="In Review" value={stageItems.filter(i => i.finalDesignStatus === 'Client Review').length} sub="Awaiting client feedback" icon={Palette} tone="orange" />
+        <StatTile label="Approved" value={approvedCount} sub="Design approved" icon={CheckCircle} tone="green" />
+        <StatTile label="Completed" value={completedCount} sub="Stage completed" icon={Sparkles} tone="amber" />
+        <StatTile label="In Review" value={stageItems.filter(i => i.finalDesignStatus === 'Client Review').length} sub="Awaiting client feedback" icon={Clock} tone="orange" />
       </div>
 
       {loading ? (
         <Panel className="p-12 text-center"><Loading text="Loading..." /></Panel>
       ) : error ? (
-        <ErrorState error={error} onRetry={handleLoad} />
+        <ErrorState error={typeof error === 'string' ? { message: error } : error} onRetry={handleLoad} />
       ) : stageItems.length === 0 ? (
         <Panel className="p-8 text-center"><EmptyState icon={Palette} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
@@ -166,24 +186,32 @@ const DesignFinalisationPage = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Design Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Final Design Status</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Version</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approval Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved Proposal / Quote</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Fabrics</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Current Owner</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
                   <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {stageItems.map((item, idx) => (
                   <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium">{item.code || `Design ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.finalDesignStatus === 'Approved' ? 'green' : 'slate'}>{item.finalDesignStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-xs">{item.designVersion || '—'}</td>
-                    <td className="px-4 py-3 text-xs">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.status === 'Completed' ? 'green' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Design ${idx + 1}`}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.finalDesignStatus === 'Approved' ? 'green' : item.finalDesignStatus === 'Client Review' ? 'amber' : 'slate'}>{item.finalDesignStatus || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.designVersion || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.designApprovalDate)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.approvedProposalQuote || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.fabrics}>{item.fabrics || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
                     <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
                   </tr>
                 ))}

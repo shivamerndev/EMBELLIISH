@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Pencil, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Pencil, AlertTriangle, CheckSquare, XCircle, Clock } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
@@ -7,11 +7,23 @@ import { pmsApi } from '../../api/pms.api';
 
 const STAGE = 'approvals';
 
+const formatDateInput = (val) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+};
+
+const formatDate = (val) => {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
 const ApprovalsEditModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
-    dueDate: item?.dueDate ? new Date(item.dueDate).toISOString().slice(0, 10) : '',
+    dueDate: formatDateInput(item?.dueDate),
     approvedBy: item?.approvedBy || '',
-    approvalDate: item?.approvalDate ? new Date(item.approvalDate).toISOString().slice(0, 10) : '',
+    approvalDate: formatDateInput(item?.approvalDate),
     status: item?.status || 'Pending',
     revisionReason: item?.revisionReason || '',
     approvedDesign: item?.approvedDesign || '',
@@ -21,12 +33,16 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
     measurementStatus: item?.measurementStatus || 'Pending',
     customSamplingNeeds: item?.customSamplingNeeds || '',
     currentOwner: item?.currentOwner || '',
+    delay: item?.delay || 'No',
   });
   const [error, setError] = useState('');
 
   const { execute, pending } = useAction(
     (payload) => pmsApi.approvals.update(item._id || item.id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => { onDone(); onClose(); },
+      onError: (err) => setError(err?.message || 'Failed to update approval'),
+    }
   );
 
   const handleSubmit = (e) => {
@@ -38,7 +54,12 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
   return (
     <Modal open={Boolean(item)} onClose={onClose} title={`Approvals: ${item?.code || 'New'}`} size="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs"><AlertTriangle className="w-4 h-4" /><span>{error}</span></div>}
+        {error && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{typeof error === 'string' ? error : error?.message || 'Update failed'}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Approvals Due Date">
@@ -75,14 +96,21 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
               { value: 'Approved', label: 'Approved' },
             ]} />
           </Field>
-          <Field label="Current Owner">
-            <Input value={form.currentOwner} onChange={(e) => setForm({...form, currentOwner: e.target.value})} placeholder="Owner name" />
-          </Field>
           <Field label="Approved Design">
             <Input value={form.approvedDesign} onChange={(e) => setForm({...form, approvedDesign: e.target.value})} placeholder="Design reference" />
           </Field>
           <Field label="Order Sheet">
             <Input value={form.orderSheet} onChange={(e) => setForm({...form, orderSheet: e.target.value})} placeholder="Order sheet reference" />
+          </Field>
+          <Field label="Current Owner">
+            <Input value={form.currentOwner} onChange={(e) => setForm({...form, currentOwner: e.target.value})} placeholder="Owner name" />
+          </Field>
+          <Field label="Delay Status">
+            <Select value={form.delay} onChange={(e) => setForm({...form, delay: e.target.value})} options={[
+              { value: 'No', label: 'No Delay' },
+              { value: 'Yes', label: 'Delayed' },
+              { value: 'At Risk', label: 'At Risk' },
+            ]} />
           </Field>
         </div>
 
@@ -113,7 +141,7 @@ const ApprovalsPage = () => {
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  const stageItems = pmsState?.items?.[STAGE] || [];
+  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
 
   const handleLoad = async () => {
     setLoading(true);
@@ -140,15 +168,15 @@ const ApprovalsPage = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Approvals" value={stageItems.length} sub="Awaiting/completed approvals" icon={CheckCircle} tone="blue" />
-        <StatTile label="Approved" value={approvedCount} sub="Successfully approved" icon={CheckCircle} tone="green" />
-        <StatTile label="Rejected" value={rejectedCount} sub="Rejected items" icon={CheckCircle} tone="rose" />
-        <StatTile label="In Review" value={stageItems.filter(i => i.status === 'In Review').length} sub="Being reviewed" icon={CheckCircle} tone="amber" />
+        <StatTile label="Approved" value={approvedCount} sub="Successfully approved" icon={CheckSquare} tone="green" />
+        <StatTile label="Rejected" value={rejectedCount} sub="Rejected items" icon={XCircle} tone="rose" />
+        <StatTile label="In Review" value={stageItems.filter(i => i.status === 'In Review').length} sub="Being reviewed" icon={Clock} tone="amber" />
       </div>
 
       {loading ? (
         <Panel className="p-12 text-center"><Loading text="Loading..." /></Panel>
       ) : error ? (
-        <ErrorState error={error} onRetry={handleLoad} />
+        <ErrorState error={typeof error === 'string' ? { message: error } : error} onRetry={handleLoad} />
       ) : stageItems.length === 0 ? (
         <Panel className="p-8 text-center"><EmptyState icon={CheckCircle} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
@@ -157,22 +185,34 @@ const ApprovalsPage = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved By</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approval Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved Design</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Drawing Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Order Sheet</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Measurements</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
                   <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {stageItems.map((item, idx) => (
                   <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium">{item.code || `Approval ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-3 text-xs">{item.approvedBy || '—'}</td>
-                    <td className="px-4 py-3 text-xs">{item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.status === 'Approved' ? 'green' : item.status === 'Rejected' ? 'rose' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Approval ${idx + 1}`}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.approvedBy || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.approvalDate)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Approved' ? 'green' : item.status === 'Rejected' ? 'rose' : item.status === 'In Review' ? 'amber' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.approvedDesign || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.executionDrawingStatus === 'Approved' ? 'green' : 'slate'}>{item.executionDrawingStatus || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.orderSheet || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.measurementStatus === 'Approved' || item.measurementStatus === 'Complete' ? 'green' : 'amber'}>{item.measurementStatus || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
                     <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
                   </tr>
                 ))}

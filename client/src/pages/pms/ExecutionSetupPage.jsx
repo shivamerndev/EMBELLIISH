@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings, Pencil, AlertTriangle } from 'lucide-react';
+import { Settings, Pencil, AlertTriangle, CheckCircle, CreditCard } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
@@ -7,9 +7,21 @@ import { pmsApi } from '../../api/pms.api';
 
 const STAGE = 'executionSetup';
 
+const formatDateInput = (val) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+};
+
+const formatDate = (val) => {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
 const ExecutionSetupEditModal = ({ item, onClose, onDone }) => {
   const [form, setForm] = useState({
-    dueDate: item?.dueDate ? new Date(item.dueDate).toISOString().slice(0, 10) : '',
+    dueDate: formatDateInput(item?.dueDate),
     approvedDesign: item?.approvedDesign || '',
     approvedQuote: item?.approvedQuote || '',
     clientContext: item?.clientContext || '',
@@ -26,7 +38,10 @@ const ExecutionSetupEditModal = ({ item, onClose, onDone }) => {
 
   const { execute, pending } = useAction(
     (payload) => pmsApi.executionSetup.update(item._id || item.id, payload),
-    { onSuccess: () => { onDone(); onClose(); } }
+    {
+      onSuccess: () => { onDone(); onClose(); },
+      onError: (err) => setError(err?.message || 'Failed to update execution setup'),
+    }
   );
 
   const handleSubmit = (e) => {
@@ -42,7 +57,12 @@ const ExecutionSetupEditModal = ({ item, onClose, onDone }) => {
   return (
     <Modal open={Boolean(item)} onClose={onClose} title={`Execution Setup: ${item?.code || 'New'}`} size="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs"><AlertTriangle className="w-4 h-4" /><span>{error}</span></div>}
+        {error && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{typeof error === 'string' ? error : error?.message || 'Update failed'}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Execution Setup Due Date *">
@@ -116,7 +136,7 @@ const ExecutionSetupPage = () => {
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  const stageItems = pmsState?.items?.[STAGE] || [];
+  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
 
   const handleLoad = async () => {
     setLoading(true);
@@ -143,15 +163,15 @@ const ExecutionSetupPage = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Projects" value={stageItems.length} sub="In execution setup" icon={Settings} tone="blue" />
-        <StatTile label="Completed" value={completedCount} sub="Setup completed" icon={Settings} tone="green" />
-        <StatTile label="Delayed" value={delayedCount} sub="Behind schedule" icon={Settings} tone="rose" />
-        <StatTile label="Payment Complete" value={stageItems.filter(i => i.paymentStatus === 'Complete').length} sub="Full payment received" icon={Settings} tone="amber" />
+        <StatTile label="Completed" value={completedCount} sub="Setup completed" icon={CheckCircle} tone="green" />
+        <StatTile label="Delayed" value={delayedCount} sub="Behind schedule" icon={AlertTriangle} tone="rose" />
+        <StatTile label="Payment Complete" value={stageItems.filter(i => i.paymentStatus === 'Complete').length} sub="Full payment received" icon={CreditCard} tone="amber" />
       </div>
 
       {loading ? (
         <Panel className="p-12 text-center"><Loading text="Loading..." /></Panel>
       ) : error ? (
-        <ErrorState error={error} onRetry={handleLoad} />
+        <ErrorState error={typeof error === 'string' ? { message: error } : error} onRetry={handleLoad} />
       ) : stageItems.length === 0 ? (
         <Panel className="p-8 text-center"><EmptyState icon={Settings} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
@@ -160,10 +180,14 @@ const ExecutionSetupPage = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved Design</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved Quote</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Payment Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Execution Owner / PC</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Current Owner</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Open Actions / Risks</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
                   <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
@@ -172,12 +196,18 @@ const ExecutionSetupPage = () => {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {stageItems.map((item, idx) => (
                   <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium">{item.code || `Project ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.paymentStatus === 'Complete' ? 'green' : 'slate'}>{item.paymentStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-xs">{item.executionOwnerPc || '—'}</td>
-                    <td className="px-4 py-3"><Badge tone={item.status === 'Completed' ? 'green' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'On Time'}</Badge></td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Project ${idx + 1}`}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.approvedDesign || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">{item.approvedQuote || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.paymentStatus === 'Complete' ? 'green' : item.paymentStatus === 'Partial' ? 'amber' : 'slate'}>{item.paymentStatus || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.executionOwnerPc || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || item.executionOwnerPc || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={`Actions: ${item.openActions || 'None'} | Risks: ${item.openRisks || 'None'}`}>
+                      {item.openActions || item.openRisks || '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
+                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
                     <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
                   </tr>
                 ))}

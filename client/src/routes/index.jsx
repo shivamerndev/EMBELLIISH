@@ -99,7 +99,7 @@ export const AppRoutes = () => (
         <Route path="/pms/motors-accessories-control" element={<MotorsAccessoriesControlPage />} />
         <Route path="/pms/qc-status" element={<QcStatusPage />} />
         <Route path="/pms/packing-dispatch-readiness" element={<PackingDispatchReadinessPage />} />
-        <Route path="/pms/installation" element={<InstallationPage />} />
+        <Route path="/pms/installation" element={<Navigate to="/pms/installation-scheduling" replace />} />
         <Route path="/pms/final-payment" element={<FinalPaymentPage />} />
         <Route path="/pms/installation-scheduling" element={<InstallationSchedulingPage />} />
         <Route path="/pms/installation-brief-dispatch" element={<InstallationBriefDispatchPage />} />
