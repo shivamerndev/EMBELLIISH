@@ -23,27 +23,31 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'quotation.dueDate', label: 'Quotation Due Date' },
+            { key: 'quotation.date', label: 'Quotation Actual Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'quotation.no', label: 'Quotation No.' },
             { key: 'quotation.version', label: 'Quotation Version' },
-            { key: 'quotation.date', label: 'Quotation Date' },
+            { key: 'quotation.finalQuotedValue', label: 'Final Quoted Value' },
+            { key: 'quotation.discount', label: 'Discount (%)' },
+            { key: 'quotation.discountApprovalStatus', label: 'Discount Approval' },
+            { key: 'quotation.taxes', label: 'Taxes (GST Rate)' },
+            { key: 'quotation.addSubtotal', label: 'Add Subtotal' },
             { key: 'quotation.cataloguePrice', label: 'Catalogue Price' },
             { key: 'quotation.labourPrice', label: 'Labour Price' },
             { key: 'quotation.samplePrice', label: 'Sample Price' },
-            { key: 'quotation.discount', label: 'Discount (%)' },
-            { key: 'quotation.taxes', label: 'Taxes (GST Rate)' },
-            { key: 'quotation.finalQuotedValue', label: 'Final Quoted Value' },
-            { key: 'quotation.addSubtotal', label: 'Add Subtotal' },
             { key: 'quotation.validity', label: 'Quotation Validity' },
-            { key: 'quotation.discountApprovalStatus', label: 'Discount Approval' },
             { key: 'quotation.boq', label: 'BOQ Record' },
             { key: 'quotation.fabricSelection', label: 'Fabric Selection' },
             { key: 'quotation.marginRules', label: 'Margin Rules' },
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'quotation.dueDate', label: 'Due Date' },
+            { key: 'quotation.date', label: 'Actual Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'quotation.no', label: 'Quotation No.' },
             { key: 'quotation.finalQuotedValue', label: 'Final Value' },
@@ -90,6 +94,29 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
+    'quotation.dueDate': (lead) => {
+        const val = lead.quotation?.dueDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const isOverdue = !lead.quotation?.date && new Date(val) < new Date();
+        return (
+            <div className="flex items-center gap-1 justify-center">
+                <span className={`text-[11px] whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {date(val)}
+                </span>
+                {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Quotation Overdue" />}
+            </div>
+        );
+    },
+    'quotation.date': (lead) => {
+        const val = lead.quotation?.date;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val)}
+            </span>
+        );
+    },
     'quotation.no': (lead) => (
         <span className="  text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700">
             {lead.quotation?.no || 'Pending Gen'}

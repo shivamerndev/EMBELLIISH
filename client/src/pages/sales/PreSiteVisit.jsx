@@ -22,10 +22,12 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
+            { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'siteAddress', label: 'Site Address' },
-            { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
             { key: 'assignedInstaller', label: 'Assigned Installer / Measurement Person' },
             { key: 'siteVisitNotes', label: 'Site Visit Notes' },
             { key: 'clientArchitectAvailability', label: 'Client / Architect Availability' },
@@ -36,9 +38,10 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'siteVisitDueDate', label: 'Due Date' },
-            { key: 'delayStatus', label: 'SLA Status' },
             { key: 'actualSiteVisitDateTime', label: 'Actual Visit' },
+            { key: 'delayStatus', label: 'SLA Status' },
             { key: 'assignedInstaller', label: 'Installer' },
             { key: 'scope', label: 'Scope' },
         ]

@@ -50,8 +50,8 @@ const SPREADSHEET_SECTIONS = [
             { key: 'code', label: 'Lead Code' },
             { key: 'clientName', label: 'Client Name' },
             { key: 'approval.planned', label: 'Approval Due Date' },
-            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'approval.clientApprovalDate', label: 'Client Approval Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'approval.clientApprovalStatus', label: 'Client Approval Status' },
             { key: 'approval.proofAttachment', label: 'Approval Proof / Attachment' },
             { key: 'approval.finalApprovedVersion', label: 'Final Approved Version' },
@@ -67,9 +67,9 @@ const SPREADSHEET_SECTIONS = [
         tableCols: [
             { key: 'clientName', label: 'Client Name' },
             { key: 'approval.planned', label: 'Due Date' },
+            { key: 'approval.clientApprovalDate', label: 'Approval Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'approval.clientApprovalStatus', label: 'Approval Status' },
-            { key: 'approval.clientApprovalDate', label: 'Approval Date' },
             { key: 'approval.finalApprovedVersion', label: 'Approved Version' },
         ]
     }

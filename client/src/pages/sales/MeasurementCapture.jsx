@@ -54,12 +54,12 @@ const SPREADSHEET_SECTIONS = [
         cols: [
             { key: 'code', label: 'Lead ID' },
             { key: 'clientName', label: 'Client Name' },
-            { key: 'siteAddress', label: 'Site Address' },
-            { key: 'measurement.date', label: 'Measurement Date' },
             { key: 'measurement.dueDate', label: 'Measurement Due Date' },
+            { key: 'measurement.date', label: 'Measurement Actual Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'measurement.measuredBy', label: 'Measured By / Visited By' },
             { key: 'measurement.status', label: 'Measurement Status' },
+            { key: 'measurement.measuredBy', label: 'Measured By / Visited By' },
+            { key: 'siteAddress', label: 'Site Address' },
             { key: 'windowsCount', label: 'Windows Measured' },
             { key: 'motorizedCount', label: 'Motorized Windows' },
             { key: 'checklistStatus', label: 'Site Checklist' },
@@ -70,8 +70,9 @@ const SPREADSHEET_SECTIONS = [
         // Subset of cols shown in the table (prevents horizontal scrolling)
         tableCols: [
             { key: 'clientName', label: 'Client Name' },
-            { key: 'siteAddress', label: 'Site Address' },
-            { key: 'measurement.date', label: 'Measurement Date' },
+            { key: 'measurement.dueDate', label: 'Due Date' },
+            { key: 'measurement.date', label: 'Actual Date' },
+            { key: 'delayStatus', label: 'SLA Status' },
             { key: 'measurement.measuredBy', label: 'Measured By' },
             { key: 'windowsCount', label: 'Windows' },
             { key: 'measurement.status', label: 'Status' },

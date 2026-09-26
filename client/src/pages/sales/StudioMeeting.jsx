@@ -23,9 +23,11 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'studioMeeting.dueDate', label: 'Studio Meeting Due Date' },
-            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'studioMeeting.date', label: 'Actual Meeting Date & Time' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'studioMeeting.attendees', label: 'Meeting Attendees' },
             { key: 'studioMeeting.clientDrawings', label: 'Client Drawings' },
             { key: 'studioMeeting.feedback', label: 'Internal Notes' },
@@ -35,12 +37,13 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'studioMeeting.dueDate', label: 'Due Date' },
+            { key: 'studioMeeting.date', label: 'Meeting Date' },
             { key: 'delayStatus', label: 'SLA Status' },
-            // { key: 'studioMeeting.date', label: 'Meeting Date' },
             { key: 'studioMeeting.attendees', label: 'Meeting Attendees' },
             { key: 'studioMeeting.feedback', label: 'Internal Notes' },
-            { key: 'studioMeeting.architectBrief', label: 'External Notes' },
+            { key: 'studioMeeting.architectBrief', label: 'Architect Brief' },
         ]
     }
 ];

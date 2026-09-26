@@ -23,6 +23,8 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/90 dark:text-sky-200 dark:border-sky-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'proposal.dueDate', label: 'Proposal Due Date' },
             { key: 'proposal.actualDate', label: 'Proposal Actual Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
@@ -38,9 +40,10 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'proposal.dueDate', label: 'Due Date' },
+            { key: 'proposal.actualDate', label: 'Actual Date' },
             { key: 'delayStatus', label: 'SLA Status' },
-            { key: 'proposal.consumptionSheet', label: 'BOQ / Consumption' },
             { key: 'proposal.noVersion', label: 'Proposal No.' },
             { key: 'proposal.approvalStatus', label: 'Approval Status' },
             { key: 'proposal.pricingRange', label: 'Pricing Range' },
@@ -323,6 +326,16 @@ const SPREADSHEET_CELL_RENDERERS = {
             className="  text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
         >
             {lead.code}
+        </button>
+    ),
+    clientName: (lead, { onView }) => (
+        <button
+            type="button"
+            onClick={() => onView(lead)}
+            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-300 text-left truncate block max-w-[160px]"
+            title={lead.clientName}
+        >
+            {lead.clientName}
         </button>
     ),
     'proposal.dueDate': (lead) => {

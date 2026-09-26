@@ -20,7 +20,10 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'costing.dueDate', label: 'Pricing Due Date', type: 'date' },
+            { key: 'costing.actualDate', label: 'Pricing Actual Date', type: 'date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'costing.version', label: 'Costing Version / Revision', type: 'version' },
             { key: 'costing.category', label: 'Costing Category', type: 'category' },
@@ -28,7 +31,9 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'costing.dueDate', label: 'Due Date' },
+            { key: 'costing.actualDate', label: 'Actual Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'costing.version', label: 'Version' },
             { key: 'costing.category', label: 'Category' },
@@ -95,6 +100,16 @@ const SPREADSHEET_CELL_RENDERERS = {
                     <span className="text-[9px] text-slate-400 dark:text-slate-500">Target Due</span>
                 )}
             </div>
+        );
+    },
+    'costing.actualDate': (lead) => {
+        const val = lead.costing?.actualDate || lead.costing?.savedAt || (lead.costing?.costingHistory?.length ? lead.costing.costingHistory[lead.costing.costingHistory.length - 1]?.savedAt : null);
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val)}
+            </span>
         );
     },
     'costing.version': (lead) => {

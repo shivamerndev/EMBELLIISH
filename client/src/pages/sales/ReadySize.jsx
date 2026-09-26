@@ -32,15 +32,17 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
+            { key: 'readySize.dueDate', label: 'Site Detail Sheet Due' },
+            { key: 'readySize.confirmationDate', label: 'Actual Confirmation Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
+            { key: 'readySize.confirmedBy', label: 'Site Confirmed By' },
+            { key: 'readySize.siteCondition', label: 'Site Condition' },
             { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet (Google / XLS)' },
             { key: 'readySize.designPpt', label: 'Design PPT' },
             { key: 'readySize.selectionPpt', label: 'Selection PPT' },
-            { key: 'readySize.dueDate', label: 'Site Detail Sheet Due' },
-            { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'readySize.confirmedBy', label: 'Site Confirmed By' },
-            { key: 'readySize.confirmationDate', label: 'Confirmation Date' },
             { key: 'readySize.windowSizes', label: 'Window Size' },
-            { key: 'readySize.siteCondition', label: 'Site Condition' },
             { key: 'readySize.pelmetDetails', label: 'Pelmet Details' },
             { key: 'readySize.channelDetails', label: 'Channel Details' },
             { key: 'readySize.readyHeight', label: 'Ready Height' },
@@ -48,14 +50,13 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
-            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet' },
-            { key: 'readySize.designPpt', label: 'Design PPT' },
-            { key: 'readySize.selectionPpt', label: 'Selection PPT' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'readySize.dueDate', label: 'Due Date' },
+            { key: 'readySize.confirmationDate', label: 'Actual Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'readySize.confirmedBy', label: 'Confirmed By' },
             { key: 'readySize.siteCondition', label: 'Site Condition' },
-            { key: 'readySize.windowSizes', label: 'Window Sizes' },
+            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet' },
         ]
     }
 ];

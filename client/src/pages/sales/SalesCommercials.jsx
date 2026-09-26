@@ -44,23 +44,27 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/90 dark:text-purple-200 dark:border-purple-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
-            { key: 'sno', label: 'S.No.' },
             { key: 'code', label: 'Lead ID' },
             { key: 'clientName', label: 'Client Name' },
+            { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
+            { key: 'actualSiteVisitDateTime', label: 'Actual Site Visit Date & Time' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'architectName', label: 'Architect / Designer Name' },
             { key: 'location', label: 'Project Location' },
             { key: 'assignedDCM', label: 'Assigned DCM / Manager' },
             { key: 'siteVisitRequired', label: 'Site Visit Required' },
-            { key: 'siteVisitDueDate', label: 'Site Visit Due Date' },
-            { key: 'delayStatus', label: 'Delay / SLA Status' },
+            { key: 'captureDateTime', label: 'Lead Capture Date' },
+            { key: 'source', label: 'Lead Source' },
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
             { key: 'clientName', label: 'Client Name' },
+            { key: 'siteVisitDueDate', label: 'Due Date' },
+            { key: 'actualSiteVisitDateTime', label: 'Actual Visit' },
+            { key: 'delayStatus', label: 'SLA Status' },
             { key: 'location', label: 'Location' },
             { key: 'assignedDCM', label: 'DCM / Manager' },
             { key: 'siteVisitRequired', label: 'Site Visit' },
-            { key: 'delayStatus', label: 'SLA Status' },
         ]
     }
 ];
@@ -103,6 +107,29 @@ const SPREADSHEET_CELL_RENDERERS = {
             {lead.clientName}
         </button>
     ),
+    siteVisitDueDate: (lead) => {
+        const val = lead.siteVisitDueDate;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        const isOverdue = lead.siteVisitRequired && !lead.actualSiteVisitDateTime && new Date(val) < new Date();
+        return (
+            <div className="flex items-center gap-1 justify-center">
+                <span className={`text-[11px] whitespace-nowrap ${isOverdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {date(val)}
+                </span>
+                {isOverdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" title="Site Visit Overdue" />}
+            </div>
+        );
+    },
+    actualSiteVisitDateTime: (lead) => {
+        const val = lead.actualSiteVisitDateTime;
+        if (!val) return <span className="text-slate-400 dark:text-slate-600">—</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap justify-center">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                {date(val, { time: true })}
+            </span>
+        );
+    },
     budgetClassification: (lead) => {
         const val = lead.budgetClassification || 'MID_RANGE';
         return <Badge tone={BUDGET_TONES[val] || 'blue'}>{val}</Badge>;

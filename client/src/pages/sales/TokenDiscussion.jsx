@@ -24,11 +24,13 @@ const SPREADSHEET_SECTIONS = [
         color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700/80',
         // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'advance.discussionDueDate', label: 'Advance Discussion Due' },
+            { key: 'advance.receivedDate', label: 'Advance Received Date' },
             { key: 'delayStatus', label: 'Delay / SLA Status' },
             { key: 'advance.amount', label: 'Advance Amount (₹)' },
             { key: 'advance.status', label: 'Advance Status' },
-            { key: 'advance.receivedDate', label: 'Advance Received Date' },
             { key: 'advance.clientBudgetResponse', label: 'Client Budget Response' },
             { key: 'advance.proposal', label: 'Proposal' },
             { key: 'advance.budgetEstimate', label: 'Budget Estimate (₹)' },
@@ -38,7 +40,9 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
+            { key: 'clientName', label: 'Client Name' },
             { key: 'advance.discussionDueDate', label: 'Due Date' },
+            { key: 'advance.receivedDate', label: 'Received Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'advance.amount', label: 'Advance Amount' },
             { key: 'advance.status', label: 'Status' },
