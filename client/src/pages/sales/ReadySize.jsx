@@ -1,12 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-    Search, Eye, CheckSquare, Calendar, CheckCircle2, Paperclip, Home, Pencil,
-    Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText,
-    FileSpreadsheet, Download, ExternalLink, UploadCloud, Presentation, FileUp, Printer, Save, ChevronDown
-} from 'lucide-react';
+import { Search, Eye, CheckSquare, CheckCircle2, Paperclip, Home, Pencil, Plus, Trash2, AlertTriangle, Layers, RefreshCw, Ruler, FileSpreadsheet, Download, ExternalLink, Presentation, Printer, Save, ChevronDown } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Loading, ErrorState, EmptyState, StatTile, Modal, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
@@ -17,12 +13,7 @@ import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
 import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
 import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
-import {
-    SAMPLE_SITE_DETAIL_ROOMS,
-    isSampleSiteDetailRooms,
-    getQuotationRoomsFromLead,
-    buildSiteDetailRoomsFromLead
-} from '../../components/sales/siteSheetDefaults';
+import { isSampleSiteDetailRooms, getQuotationRoomsFromLead, buildSiteDetailRoomsFromLead } from '../../components/sales/siteSheetDefaults';
 import { printSiteDetailSheet, printAllSiteDetailSheets } from '../../components/sales/siteSheetPrintService';
 
 const SPREADSHEET_SECTIONS = [
@@ -30,7 +21,6 @@ const SPREADSHEET_SECTIONS = [
         id: 's6',
         title: 'Site Detail Sheet',
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
-        // All fields : shown in DetailedDrawer
         cols: [
             { key: 'code', label: 'Lead ID' },
             { key: 'clientName', label: 'Client Name' },
