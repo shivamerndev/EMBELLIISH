@@ -55,7 +55,18 @@ const PackingDispatchEditModal = ({ item, onClose, onDone }) => {
   };
 
   return (
-    <Modal open={Boolean(item)} onClose={onClose} title={`Packing & Dispatch: ${item?.code || 'New'}`} size="2xl">
+    <Modal
+      open={Boolean(item)}
+      footer={
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Packing Status</Button>
+        </div>
+      }
+      onClose={onClose}
+      title={`Packing & Dispatch: ${item?.code || 'New'}`}
+      size="2xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
@@ -125,10 +136,6 @@ const PackingDispatchEditModal = ({ item, onClose, onDone }) => {
           <Textarea rows={2} value={form.roomWiseScope} onChange={(e) => setForm({...form, roomWiseScope: e.target.value})} placeholder="Breakdown of packages per room..." />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" loading={pending}>Save Packing Status</Button>
-        </div>
       </form>
     </Modal>
   );

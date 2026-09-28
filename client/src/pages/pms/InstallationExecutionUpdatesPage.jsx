@@ -55,7 +55,18 @@ const InstallationExecutionEditModal = ({ item, onClose, onDone }) => {
   };
 
   return (
-    <Modal open={Boolean(item)} onClose={onClose} title={`Installation Execution / Daily Update: ${item?.code || 'New'}`} size="2xl">
+    <Modal
+      open={Boolean(item)}
+      footer={
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Daily Update</Button>
+        </div>
+      }
+      onClose={onClose}
+      title={`Installation Execution / Daily Update: ${item?.code || 'New'}`}
+      size="2xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
@@ -120,10 +131,6 @@ const InstallationExecutionEditModal = ({ item, onClose, onDone }) => {
           <Textarea rows={2} value={form.tools} onChange={(e) => setForm({...form, tools: e.target.value})} placeholder="Laser levels, specialized drills, scaffolding, power adapters..." />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" loading={pending}>Save Daily Update</Button>
-        </div>
       </form>
     </Modal>
   );

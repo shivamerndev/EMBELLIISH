@@ -53,7 +53,18 @@ const EditModal = ({ item, onClose, onDone }) => {
   };
 
   return (
-    <Modal open={Boolean(item)} onClose={onClose} title={`Execution Drawing Preparation: ${item?.code || 'New'}`} size="2xl">
+    <Modal
+      open={Boolean(item)}
+      footer={
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save</Button>
+        </div>
+      }
+      onClose={onClose}
+      title={`Execution Drawing Preparation: ${item?.code || 'New'}`}
+      size="2xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
@@ -110,10 +121,6 @@ const EditModal = ({ item, onClose, onDone }) => {
           <Textarea rows={2} value={form.technicalFeasibilityInput} onChange={(e) => setForm({...form, technicalFeasibilityInput: e.target.value})} placeholder="Feasibility assessment..." />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" loading={pending}>Save</Button>
-        </div>
       </form>
     </Modal>
   );

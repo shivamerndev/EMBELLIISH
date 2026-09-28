@@ -56,7 +56,12 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
   };
 
   return (
-    <Modal open={Boolean(item)} onClose={onClose} title={`Approvals: ${item?.code || 'New'}`} size="2xl">
+    <Modal open={Boolean(item)}
+     footer={<div className="flex justify-end gap-2 pt-4 border-t">
+      <Button variant="ghost" onClick={onClose}>Cancel</Button>
+      <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Approvals</Button>
+    </div>}
+     onClose={onClose} title={`Approvals: ${item?.code || 'New'}`} size="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
@@ -67,16 +72,16 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Approvals Due Date">
-            <Input type="date" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />
+            <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           </Field>
           <Field label="Approved By">
-            <Input value={form.approvedBy} onChange={(e) => setForm({...form, approvedBy: e.target.value})} placeholder="Approver name" />
+            <Input value={form.approvedBy} onChange={(e) => setForm({ ...form, approvedBy: e.target.value })} placeholder="Approver name" />
           </Field>
           <Field label="Approval Date">
-            <Input type="date" value={form.approvalDate} onChange={(e) => setForm({...form, approvalDate: e.target.value})} />
+            <Input type="date" value={form.approvalDate} onChange={(e) => setForm({ ...form, approvalDate: e.target.value })} />
           </Field>
           <Field label="Status">
-            <Select value={form.status} onChange={(e) => setForm({...form, status: e.target.value})} options={[
+            <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={[
               { value: 'Pending', label: 'Pending' },
               { value: 'In Review', label: 'In Review' },
               { value: 'Approved', label: 'Approved' },
@@ -85,7 +90,7 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
             ]} />
           </Field>
           <Field label="Execution Drawing Status">
-            <Select value={form.executionDrawingStatus} onChange={(e) => setForm({...form, executionDrawingStatus: e.target.value})} options={[
+            <Select value={form.executionDrawingStatus} onChange={(e) => setForm({ ...form, executionDrawingStatus: e.target.value })} options={[
               { value: 'Pending', label: 'Pending' },
               { value: 'In Progress', label: 'In Progress' },
               { value: 'Approved', label: 'Approved' },
@@ -93,7 +98,7 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
             ]} />
           </Field>
           <Field label="Measurement Status">
-            <Select value={form.measurementStatus} onChange={(e) => setForm({...form, measurementStatus: e.target.value})} options={[
+            <Select value={form.measurementStatus} onChange={(e) => setForm({ ...form, measurementStatus: e.target.value })} options={[
               { value: 'Pending', label: 'Pending' },
               { value: 'Complete', label: 'Complete' },
               { value: 'Incomplete', label: 'Incomplete' },
@@ -101,16 +106,16 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
             ]} />
           </Field>
           <Field label="Approved Design">
-            <Input value={form.approvedDesign} onChange={(e) => setForm({...form, approvedDesign: e.target.value})} placeholder="Design reference" />
+            <Input value={form.approvedDesign} onChange={(e) => setForm({ ...form, approvedDesign: e.target.value })} placeholder="Design reference" />
           </Field>
           <Field label="Order Sheet">
-            <Input value={form.orderSheet} onChange={(e) => setForm({...form, orderSheet: e.target.value})} placeholder="Order sheet reference" />
+            <Input value={form.orderSheet} onChange={(e) => setForm({ ...form, orderSheet: e.target.value })} placeholder="Order sheet reference" />
           </Field>
           <Field label="Current Owner">
-            <Input value={form.currentOwner} onChange={(e) => setForm({...form, currentOwner: e.target.value})} placeholder="Owner name" />
+            <Input value={form.currentOwner} onChange={(e) => setForm({ ...form, currentOwner: e.target.value })} placeholder="Owner name" />
           </Field>
           <Field label="Delay Status">
-            <Select value={form.delay} onChange={(e) => setForm({...form, delay: e.target.value})} options={[
+            <Select value={form.delay} onChange={(e) => setForm({ ...form, delay: e.target.value })} options={[
               { value: 'No', label: 'No Delay' },
               { value: 'Yes', label: 'Delayed' },
               { value: 'At Risk', label: 'At Risk' },
@@ -119,21 +124,18 @@ const ApprovalsEditModal = ({ item, onClose, onDone }) => {
         </div>
 
         <Field label="Revision Reason">
-          <Textarea rows={2} value={form.revisionReason} onChange={(e) => setForm({...form, revisionReason: e.target.value})} placeholder="If revision required, explain why..." />
+          <Textarea rows={2} value={form.revisionReason} onChange={(e) => setForm({ ...form, revisionReason: e.target.value })} placeholder="If revision required, explain why..." />
         </Field>
 
         <Field label="Site Details">
-          <Textarea rows={2} value={form.siteDetails} onChange={(e) => setForm({...form, siteDetails: e.target.value})} placeholder="Site information..." />
+          <Textarea rows={2} value={form.siteDetails} onChange={(e) => setForm({ ...form, siteDetails: e.target.value })} placeholder="Site information..." />
         </Field>
 
         <Field label="Custom / Sampling Needs">
-          <Textarea rows={2} value={form.customSamplingNeeds} onChange={(e) => setForm({...form, customSamplingNeeds: e.target.value})} placeholder="Any custom or sampling requirements..." />
+          <Textarea rows={2} value={form.customSamplingNeeds} onChange={(e) => setForm({ ...form, customSamplingNeeds: e.target.value })} placeholder="Any custom or sampling requirements..." />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" loading={pending}>Save Approvals</Button>
-        </div>
+
       </form>
     </Modal>
   );
@@ -152,11 +154,11 @@ const ApprovalsPage = () => {
   const rawStageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
   const stageItems = search
     ? rawStageItems.filter((i) =>
-        (i.code || '').toLowerCase().includes(search) ||
-        (i.clientName || '').toLowerCase().includes(search) ||
-        (i.approvedBy || '').toLowerCase().includes(search) ||
-        (i.orderSheet || '').toLowerCase().includes(search)
-      )
+      (i.code || '').toLowerCase().includes(search) ||
+      (i.clientName || '').toLowerCase().includes(search) ||
+      (i.approvedBy || '').toLowerCase().includes(search) ||
+      (i.orderSheet || '').toLowerCase().includes(search)
+    )
     : rawStageItems;
 
   const handleLoad = async () => {

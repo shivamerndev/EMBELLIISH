@@ -50,7 +50,18 @@ const QcStatusEditModal = ({ item, onClose, onDone }) => {
   };
 
   return (
-    <Modal open={Boolean(item)} onClose={onClose} title={`Production / QC Status: ${item?.code || 'New'}`} size="xl">
+    <Modal
+      open={Boolean(item)}
+      footer={
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Production / QC</Button>
+        </div>
+      }
+      onClose={onClose}
+      title={`Production / QC Status: ${item?.code || 'New'}`}
+      size="xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 rounded-lg flex items-center gap-2 text-xs">
@@ -98,10 +109,6 @@ const QcStatusEditModal = ({ item, onClose, onDone }) => {
           </Field>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" loading={pending}>Save Production / QC</Button>
-        </div>
       </form>
     </Modal>
   );
