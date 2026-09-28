@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { date, getErrorMessage, getLocalDate } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import Table from '../../components/sales/Table';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
@@ -1358,51 +1359,16 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                 ))}
             </div>
 
-            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto select-none relative">
-                <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr className="sticky top-0 z-20 text-center shadow-xs bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-slate-800">
-                            <th className="bg-slate-200/80 dark:bg-slate-950 border-b border-r border-slate-200 dark:border-slate-800 p-3.5 text-[10px] uppercase text-center font-bold text-slate-700 dark:text-slate-300 z-30 min-w-[100px]">
-                                Code
-                            </th>
-                            {visibleSections.map((sec) =>
-                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                    <th key={col.key} className="border-b border-r border-slate-200 dark:border-slate-800/80 p-3 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[140px]">
-                                        {col.label}
-                                    </th>
-                                ))
-                            )}
-                            <th className="bg-slate-200/80 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-2 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 text-center sticky right-0 z-30 min-w-[80px]">
-                                Manage
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
-                        {items.map((lead, idx) => (
-                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-bold p-2.5">
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
-                                        {lead.code}
-                                    </button>
-                                </td>
-                                {visibleSections.map((sec) =>
-                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                        <td key={col.key} className="p-3 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
-                                            {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit)}
-                                        </td>
-                                    ))
-                                )}
-                                <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Details" />
-                                        <Button size="sm" variant="ghost" icon={Pencil} onClick={(e) => { e.stopPropagation(); onEdit(lead); }} title="Edit Approval & Presentation" />
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <Table
+                items={items}
+                visibleSections={visibleSections}
+                renderSpreadsheetCell={renderSpreadsheetCell}
+                onRowClick={onRowClick}
+                onView={onView}
+                onEdit={onEdit}
+                theme="slate"
+                editButtonTitle="Edit Approval & Presentation"
+            />
         </Panel>
     );
 };
