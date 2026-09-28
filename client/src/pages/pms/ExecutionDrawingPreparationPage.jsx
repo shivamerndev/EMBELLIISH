@@ -213,7 +213,6 @@ const ExecutionDrawingPreparationPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Drawing ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

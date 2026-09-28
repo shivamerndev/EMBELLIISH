@@ -195,7 +195,6 @@ const ChangeRevisionControlPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Change ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

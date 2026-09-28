@@ -268,7 +268,6 @@ const ProjectClosurePage = () => {
             idColumnLabel="Code / Project"
             idColumnRender={(item, idx) => item.code || item.project || `PC-${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

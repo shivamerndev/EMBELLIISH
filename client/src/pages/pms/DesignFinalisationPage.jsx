@@ -228,7 +228,6 @@ const DesignFinalisationPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Design ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

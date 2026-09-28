@@ -23,7 +23,7 @@ const Table = ({
     showEditAction = true,
     viewButtonTitle = 'View Details',
     editButtonTitle = 'Edit',
-    theme = 'amber', // 'amber' | 'slate'
+    theme = 'amber',
     align, // 'left' | 'center'
     containerClassName,
     tableClassName = 'w-full text-left border-collapse text-xs',
@@ -33,7 +33,6 @@ const Table = ({
     cellRendererArgs = [],
 }) => {
     const data = paginatedItems || items || [];
-    const isSlate = theme === 'slate';
 
     const activeColumns = useMemo(() => {
         if (columns && columns.length > 0) {
@@ -48,28 +47,18 @@ const Table = ({
     const cellRenderer = renderSpreadsheetCell || renderCell;
     const totalCols = activeColumns.length + (showIdColumn ? 1 : 0) + (showActions ? 1 : 0);
 
-    const defaultContainerClass = isSlate
-        ? 'overflow-x-auto max-h-[60vh] overflow-y-auto select-none relative'
-        : 'overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative';
+    const defaultContainerClass = 'overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative';
 
-    const finalHeaderRowClass = headerBgClassName || (isSlate
-        ? 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-slate-800'
-        : 'bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30');
+    const finalHeaderRowClass = headerBgClassName || 'bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30';
 
-    const finalPinnedThClass = pinnedHeaderClassName || (isSlate
-        ? 'bg-slate-200/80 dark:bg-slate-950 border-b border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-        : 'bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 text-amber-100 dark:text-slate-400');
+    const finalPinnedThClass = pinnedHeaderClassName || 'bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 text-amber-100 dark:text-slate-400';
 
-    const colThClass = isSlate
-        ? 'border-b border-r border-slate-200 dark:border-slate-800/80 p-3 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[130px]'
-        : 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90';
+    const colThClass = 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90';
 
-    const finalActionLabel = actionColumnLabel || (isSlate ? 'Actions' : 'Manage');
-    const manageThClass = isSlate
-        ? 'bg-slate-200/80 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-2 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 text-center sticky right-0 z-30 min-w-[80px]'
-        : 'bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30 border-l border-amber-300/40 dark:border-slate-800';
+    const finalActionLabel = actionColumnLabel || 'Manage';
+    const manageThClass = 'bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30 border-l border-amber-300/40 dark:border-slate-800';
 
-    const defaultAlign = align || ((columns && columns.length > 0) || isSlate ? 'left' : 'center');
+    const defaultAlign = align || ((columns && columns.length > 0) ? 'left' : 'center');
     const alignClass = defaultAlign === 'left' ? 'text-left' : 'text-center';
 
     const handleRowClick = (lead) => {
@@ -123,9 +112,7 @@ const Table = ({
                             <tr
                                 onClick={() => handleRowClick(lead)}
                                 key={lead.id || lead._id || idx}
-                                className={isSlate
-                                    ? 'hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer'
-                                    : 'hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer'}
+                                className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer"
                             >
                                 {showIdColumn && (
                                     <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 text-brand-600 dark:text-brand-400 font-semibold p-2.5 sm:p-3">

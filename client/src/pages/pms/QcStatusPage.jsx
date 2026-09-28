@@ -155,7 +155,6 @@ const QcStatusPage = () => {
             idColumnKey="code"
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
-            theme="slate"
             onEdit={setEditingItem}
             columns={[
               {

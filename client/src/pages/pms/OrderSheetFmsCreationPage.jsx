@@ -235,7 +235,6 @@ const OrderSheetFmsCreationPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Order ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

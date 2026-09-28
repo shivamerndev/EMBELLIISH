@@ -219,7 +219,6 @@ const ClientExecutionUpdatesPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Client ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

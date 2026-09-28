@@ -220,7 +220,6 @@ const ApprovalsPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Approval ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

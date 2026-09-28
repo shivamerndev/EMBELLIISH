@@ -246,7 +246,6 @@ const ExecutionDrawingRequestPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Request ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

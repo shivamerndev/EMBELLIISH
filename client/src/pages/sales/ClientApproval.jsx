@@ -1366,7 +1366,6 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                 onRowClick={onRowClick}
                 onView={onView}
                 onEdit={onEdit}
-                theme="slate"
                 editButtonTitle="Edit Approval & Presentation"
             />
         </Panel>

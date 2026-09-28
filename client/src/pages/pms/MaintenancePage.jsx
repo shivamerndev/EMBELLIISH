@@ -234,7 +234,6 @@ const MaintenancePage = () => {
             idColumnLabel="Ticket ID"
             idColumnRender={(item, idx) => item.ticketId || item.code || `MNT-${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}

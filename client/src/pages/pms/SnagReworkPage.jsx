@@ -190,7 +190,6 @@ const SnagReworkPage = () => {
             idColumnKey="snagId"
             idColumnLabel="Snag ID"
             idColumnRender={(item, idx) => item.snagId || item.code || `SNG-${idx + 1}`}
-            theme="slate"
             onEdit={setEditingItem}
             columns={[
               {

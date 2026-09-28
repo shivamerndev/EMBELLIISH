@@ -222,7 +222,6 @@ const ExecutionSetupPage = () => {
             idColumnLabel="Code / Client"
             idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
             onEdit={setEditingItem}
-            theme="slate"
           />
         </Panel>
       )}
