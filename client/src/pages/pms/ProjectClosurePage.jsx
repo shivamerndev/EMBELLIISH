@@ -6,6 +6,9 @@ import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
 
+import { useSearchParams } from 'react-router-dom';
+import PmsDetailedDrawer from '../../components/pms/PmsDetailedDrawer';
+
 const STAGE = 'projectClosure';
 
 const formatDateInput = (val) => {
@@ -157,11 +160,23 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
 
 const ProjectClosurePage = () => {
   const { handleFetchStage, pmsState } = usePms();
+  const [searchParams] = useSearchParams();
+  const search = (searchParams.get('search') || '').toLowerCase().trim();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [drawerItem, setDrawerItem] = useState(null);
 
-  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
+  const rawStageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
+  const stageItems = search
+    ? rawStageItems.filter((i) =>
+        (i.code || '').toLowerCase().includes(search) ||
+        (i.clientName || '').toLowerCase().includes(search) ||
+        (i.project || '').toLowerCase().includes(search) ||
+        (i.approvedBy || '').toLowerCase().includes(search)
+      )
+    : rawStageItems;
 
   const handleLoad = async () => {
     setLoading(true);
@@ -267,12 +282,26 @@ const ProjectClosurePage = () => {
             idColumnKey="code"
             idColumnLabel="Code / Project"
             idColumnRender={(item, idx) => item.code || item.project || `PC-${idx + 1}`}
+            onRowClick={setDrawerItem}
+            onView={setDrawerItem}
             onEdit={setEditingItem}
           />
         </Panel>
       )}
 
       {editingItem && <ProjectClosureEditModal item={editingItem} onClose={() => setEditingItem(null)} onDone={handleLoad} />}
+
+      <PmsDetailedDrawer
+        open={Boolean(drawerItem)}
+        item={drawerItem}
+        onClose={() => setDrawerItem(null)}
+        onEdit={(item) => {
+          setDrawerItem(null);
+          setEditingItem(item);
+        }}
+        pageName="Project Closure"
+        currentStageKey={STAGE}
+      />
     </div>
   );
 };

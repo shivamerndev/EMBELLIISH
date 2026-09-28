@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Eye, Pencil } from 'lucide-react';
 import { Button } from '../ui';
 
@@ -23,7 +23,6 @@ const Table = ({
     showEditAction = true,
     viewButtonTitle = 'View Details',
     editButtonTitle = 'Edit',
-    theme = 'amber',
     align, // 'left' | 'center'
     containerClassName,
     tableClassName = 'w-full text-left border-collapse text-xs',
@@ -109,37 +108,20 @@ const Table = ({
                         </tr>
                     ) : (
                         data.map((lead, idx) => (
-                            <tr
-                                onClick={() => handleRowClick(lead)}
-                                key={lead.id || lead._id || idx}
-                                className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer"
-                            >
-                                {showIdColumn && (
-                                    <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 text-brand-600 dark:text-brand-400 font-semibold p-2.5 sm:p-3">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => handleIdClick(e, lead)}
-                                            className="hover:underline truncate px-1 text-left font-medium"
-                                        >
-                                            {idColumnRender
-                                                ? idColumnRender(lead, idx)
-                                                : (lead[idColumnKey] || lead.code || lead.ticketId || lead.snagId || lead.id || lead._id || '-')}
-                                        </button>
-                                    </td>
-                                )}
+                            <tr onClick={() => handleRowClick(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
+
+                                {showIdColumn && (<td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 text-brand-600 dark:text-brand-400 font-semibold p-2.5 sm:p-3">
+                                    <button type="button" onClick={(e) => handleIdClick(e, lead)} className="hover:underline truncate px-1 text-left font-medium">
+                                        {idColumnRender ? idColumnRender(lead, idx) : (lead[idColumnKey] || lead.code || lead.ticketId || lead.snagId || lead.id || lead._id || '-')}
+                                    </button>
+                                </td>)}
 
                                 {activeColumns.map((col) => {
                                     const colAlign = col.align ? (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left') : '';
                                     return (
-                                        <td
-                                            key={col.key}
-                                            className={`p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap ${colAlign} ${col.className || ''}`}
-                                        >
-                                            {col.render
-                                                ? col.render(lead[col.key], lead, idx)
-                                                : cellRenderer
-                                                    ? cellRenderer(lead, col.key, idx + 1, onView, onEdit, ...cellRendererArgs)
-                                                    : (lead[col.key] ?? '—')}
+
+                                        <td key={col.key} className={`p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap ${colAlign} ${col.className || ''}`}>
+                                            {col.render ? col.render(lead[col.key], lead, idx) : cellRenderer ? cellRenderer(lead, col.key, idx + 1, onView, onEdit, ...cellRendererArgs) : (lead[col.key] ?? '—')}
                                         </td>
                                     );
                                 })}
@@ -150,41 +132,22 @@ const Table = ({
                                             renderActions(lead, idx, { onView, onEdit, onSiteVisit })
                                         ) : (
                                             <div className="flex items-center justify-center gap-1">
-                                                {onView && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        icon={Eye}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onView(lead);
-                                                        }}
-                                                        title={viewButtonTitle}
-                                                    />
-                                                )}
-                                                {onEdit && showEditAction && !onSiteVisit && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        icon={Pencil}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onEdit(lead);
-                                                        }}
-                                                        title={editButtonTitle}
-                                                    />
-                                                )}
-                                                {onSiteVisit && (
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-emerald-700 whitespace-nowrap hover:bg-emerald-600 text-white px-3 py-1 text-xs"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onSiteVisit(lead);
-                                                        }}
-                                                    >
-                                                        Site Visit
-                                                    </Button>
+
+                                                {onView && (<Button size="sm" variant="ghost" icon={Eye} title={viewButtonTitle}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onView(lead);
+                                                    }} />)}
+
+                                                {onEdit && showEditAction && !onSiteVisit &&
+                                                    (<Button size="sm" variant="ghost" icon={Pencil} title={editButtonTitle}
+                                                        onClick={(e) => { e.stopPropagation(); onEdit(lead); }} />
+                                                    )}
+
+                                                {onSiteVisit && (<Button size="sm" className="bg-emerald-700 whitespace-nowrap hover:bg-emerald-600 text-white px-3 py-1 text-xs"
+                                                    onClick={(e) => { e.stopPropagation(); onSiteVisit(lead); }}>
+                                                    Site Visit
+                                                </Button>
                                                 )}
                                             </div>
                                         )}

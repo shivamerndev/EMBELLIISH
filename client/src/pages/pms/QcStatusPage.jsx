@@ -6,6 +6,9 @@ import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
 
+import { useSearchParams } from 'react-router-dom';
+import PmsDetailedDrawer from '../../components/pms/PmsDetailedDrawer';
+
 const STAGE = 'qcStatus';
 
 const formatDateInput = (val) => {
@@ -106,11 +109,23 @@ const QcStatusEditModal = ({ item, onClose, onDone }) => {
 
 const QcStatusPage = () => {
   const { handleFetchStage, pmsState } = usePms();
+  const [searchParams] = useSearchParams();
+  const search = (searchParams.get('search') || '').toLowerCase().trim();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [drawerItem, setDrawerItem] = useState(null);
 
-  const stageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
+  const rawStageItems = Array.isArray(pmsState?.items?.[STAGE]) ? pmsState.items[STAGE] : [];
+  const stageItems = search
+    ? rawStageItems.filter((i) =>
+        (i.code || '').toLowerCase().includes(search) ||
+        (i.clientName || '').toLowerCase().includes(search) ||
+        (i.qcDoneBy || '').toLowerCase().includes(search) ||
+        (i.qcStatus || '').toLowerCase().includes(search)
+      )
+    : rawStageItems;
 
   const handleLoad = async () => {
     setLoading(true);
@@ -205,11 +220,25 @@ const QcStatusPage = () => {
                 ),
               },
             ]}
+            onRowClick={setDrawerItem}
+            onView={setDrawerItem}
           />
         </Panel>
       )}
 
       {editingItem && <QcStatusEditModal item={editingItem} onClose={() => setEditingItem(null)} onDone={handleLoad} />}
+
+      <PmsDetailedDrawer
+        open={Boolean(drawerItem)}
+        item={drawerItem}
+        onClose={() => setDrawerItem(null)}
+        onEdit={(item) => {
+          setDrawerItem(null);
+          setEditingItem(item);
+        }}
+        pageName="Production / QC Status"
+        currentStageKey={STAGE}
+      />
     </div>
   );
 };
