@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, Pencil, AlertTriangle, CheckCircle, Clock, TrendingUp, Camera } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -171,48 +172,58 @@ const InstallationExecutionUpdatesPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={Activity} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Installation Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Start Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Site Issue / Blocker</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Photos / Proof</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Readiness & Access</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Project ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.installationStartDate || item.reportDate)}</td>
-                    <td className="px-4 py-3 text-xs whitespace-nowrap">
-                      {item.siteIssueBlocker && item.siteIssueBlocker !== 'None' ? (
-                        <span className="text-rose-600 dark:text-rose-400 font-semibold">{item.siteIssueBlocker}</span>
-                      ) : (
-                        <span className="text-emerald-600 dark:text-emerald-400">None (Smooth)</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.installationPhotosProof}>
-                      {item.installationPhotosProof || 'Photos verified on drive'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.siteReadiness || 'Ready'} ({item.siteAccess || 'Full Access'})</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || item.installerName || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'rose'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'dueDate', label: 'Installation Due Date', render: (val) => formatDate(val) },
+              { key: 'installationStartDate', label: 'Start Date', render: (val, item) => formatDate(val || item.reportDate) },
+              {
+                key: 'siteIssueBlocker',
+                label: 'Site Issue / Blocker',
+                render: (val) => (
+                  val && val !== 'None' ? (
+                    <span className="text-rose-600 dark:text-rose-400 font-semibold">{val}</span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400">None (Smooth)</span>
+                  )
+                ),
+              },
+              {
+                key: 'installationPhotosProof',
+                label: 'Photos / Proof',
+                render: (val) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
+                    {val || 'Photos verified on drive'}
+                  </span>
+                ),
+              },
+              {
+                key: 'siteReadiness',
+                label: 'Readiness & Access',
+                render: (val, item) => `${val || 'Ready'} (${item.siteAccess || 'Full Access'})`,
+              },
+              { key: 'currentOwner', label: 'Owner', render: (val, item) => val || item.installerName || '—' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'rose'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

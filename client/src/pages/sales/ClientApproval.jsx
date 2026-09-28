@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { date, getErrorMessage, getLocalDate } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';

@@ -11,7 +11,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 import { isAdvanceReceived } from '../../utils/salesPipeline';
 
 const SPREADSHEET_SECTIONS = [

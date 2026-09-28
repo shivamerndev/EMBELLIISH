@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Pencil, AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -196,50 +197,56 @@ const InstallationSchedulingPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={Calendar} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Confirmed Date & Time</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Installer / Team</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Client Confirmation</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Pre-Install Gates (Pay/QC/Pack)</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Site Readiness</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Challan</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Schedule ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
-                    <td className="px-4 py-3 text-xs font-semibold text-brand-600 dark:text-brand-400 whitespace-nowrap">{item.confirmedInstallationDateTime || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.assignedInstallerTeam || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.clientConfirmationStatus?.includes('Confirmed') ? 'green' : 'amber'}>{item.clientConfirmationStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1 text-[11px]">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.finalPaymentStatus === 'Cleared' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>Pay: {item.finalPaymentStatus || 'N/A'}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.qcStatus === 'Passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>QC: {item.qcStatus || 'N/A'}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.packingStatus === 'Completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-600'}`}>Pack: {item.packingStatus || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.siteReadiness?.includes('Ready') ? 'green' : 'amber'}>{item.siteReadiness || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.challan || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'Scheduled' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
+              { key: 'confirmedInstallationDateTime', label: 'Confirmed Date & Time', className: 'font-semibold text-brand-600 dark:text-brand-400' },
+              { key: 'assignedInstallerTeam', label: 'Installer / Team' },
+              {
+                key: 'clientConfirmationStatus',
+                label: 'Client Confirmation',
+                render: (val) => <Badge tone={val?.includes('Confirmed') ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
+              },
+              {
+                key: 'gates',
+                label: 'Pre-Install Gates (Pay/QC/Pack)',
+                render: (_, item) => (
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.finalPaymentStatus === 'Cleared' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>Pay: {item.finalPaymentStatus || 'N/A'}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.qcStatus === 'Passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>QC: {item.qcStatus || 'N/A'}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.packingStatus === 'Completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-600'}`}>Pack: {item.packingStatus || 'N/A'}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'siteReadiness',
+                label: 'Site Readiness',
+                render: (val) => <Badge tone={val?.includes('Ready') ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
+              },
+              { key: 'challan', label: 'Challan', className: 'font-mono' },
+              { key: 'currentOwner', label: 'Owner' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'Scheduled' ? 'blue' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Schedule ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

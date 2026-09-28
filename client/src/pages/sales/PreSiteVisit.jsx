@@ -14,7 +14,7 @@ import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 
 const SPREADSHEET_SECTIONS = [
     {

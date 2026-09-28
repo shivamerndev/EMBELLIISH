@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ShoppingCart, Pencil, AlertTriangle, CheckCircle, Clock, FileSpreadsheet, ArrowRight, Sparkles } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -182,50 +183,60 @@ const OrderSheetFmsCreationPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={ShoppingCart} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Order Sheet / FMS No</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Version & Creator</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Creation Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Production Release</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Design & Fabric</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Motor / Needs</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Stage Dates</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Order ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate || item.createdAt)}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-brand-600 dark:text-brand-400 font-semibold whitespace-nowrap">{item.orderSheetFmsNo || item.orderSheetNumber || item.fmsNumber || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.versionCreatedBy || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.creationDate || item.createdAt)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.productionReleaseStatusDate || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={`Design: ${item.design || '—'} | Fabric: ${item.fabric || item.fabricDetails || '—'}`}>
-                      {item.design ? `${item.design}: ` : ''}{item.fabric || item.fabricDetails || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.motorAccessoryNeeds || item.motorDetails}>
-                      {item.motorAccessoryNeeds || item.motorDetails || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.stageDates || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' || item.status === 'In Production' ? 'green' : item.status === 'Approved' ? 'blue' : 'slate'}>{item.status || 'Draft'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'dueDate', label: 'Due Date', render: (val, item) => formatDate(val || item.createdAt) },
+              {
+                key: 'orderSheetFmsNo',
+                label: 'Order Sheet / FMS No',
+                className: 'font-mono text-brand-600 dark:text-brand-400 font-semibold',
+                render: (val, item) => val || item.orderSheetNumber || item.fmsNumber || '—',
+              },
+              { key: 'versionCreatedBy', label: 'Version & Creator' },
+              { key: 'creationDate', label: 'Creation Date', render: (val, item) => formatDate(val || item.createdAt) },
+              { key: 'productionReleaseStatusDate', label: 'Production Release' },
+              {
+                key: 'design',
+                label: 'Design & Fabric',
+                render: (_, item) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={`Design: ${item.design || '—'} | Fabric: ${item.fabric || item.fabricDetails || '—'}`}>
+                    {item.design ? `${item.design}: ` : ''}{item.fabric || item.fabricDetails || '—'}
+                  </span>
+                ),
+              },
+              {
+                key: 'motorAccessoryNeeds',
+                label: 'Motor / Needs',
+                render: (val, item) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val || item.motorDetails}>
+                    {val || item.motorDetails || '—'}
+                  </span>
+                ),
+              },
+              { key: 'stageDates', label: 'Stage Dates' },
+              { key: 'currentOwner', label: 'Owner' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' || val === 'In Production' ? 'green' : val === 'Approved' ? 'blue' : 'slate'}>
+                    {val || 'Draft'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Order ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

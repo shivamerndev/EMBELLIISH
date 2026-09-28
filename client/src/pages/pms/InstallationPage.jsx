@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Wrench, Pencil, AlertTriangle, CheckCircle, Clock, Home } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -157,34 +158,42 @@ const InstallationPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={Wrench} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Installation Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Lead Installer</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Rooms Done</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Client Sign-off</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium">{item.code || `Project ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{formatDate(item.installationDate || item.createdAt)}</td>
-                    <td className="px-4 py-3 text-xs">{item.leadInstaller || '—'}</td>
-                    <td className="px-4 py-3 text-xs font-semibold">{item.roomsCompleted || 0} / {item.totalRooms || 1}</td>
-                    <td className="px-4 py-3"><Badge tone={item.clientSignoffStatus === 'Signed' ? 'green' : item.clientSignoffStatus === 'Conditional' ? 'amber' : 'slate'}>{item.clientSignoffStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Scheduled'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'installationDate', label: 'Installation Date', render: (val, item) => formatDate(val || item.createdAt) },
+              { key: 'leadInstaller', label: 'Lead Installer' },
+              {
+                key: 'roomsCompleted',
+                label: 'Rooms Done',
+                className: 'font-semibold',
+                render: (val, item) => `${val || 0} / ${item.totalRooms || 1}`,
+              },
+              {
+                key: 'clientSignoffStatus',
+                label: 'Client Sign-off',
+                render: (val) => (
+                  <Badge tone={val === 'Signed' ? 'green' : val === 'Conditional' ? 'amber' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'slate'}>
+                    {val || 'Scheduled'}
+                  </Badge>
+                ),
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code"
+            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

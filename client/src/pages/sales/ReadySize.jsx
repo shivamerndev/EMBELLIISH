@@ -11,7 +11,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
 import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
 import { isSampleSiteDetailRooms, getQuotationRoomsFromLead, buildSiteDetailRoomsFromLead } from '../../components/sales/siteSheetDefaults';

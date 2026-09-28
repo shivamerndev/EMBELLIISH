@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Eye, ShieldCheck, Paperclip, Pencil, FileCheck, CheckCircle2, Clock, UploadCloud, Plus, Trash2, ExternalLink, User, MapPin, FileText, AlertTriangle, Filter } from 'lucide-react';
 import { date, dateTime } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher, PhoneInput, validatePhoneNumber } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';

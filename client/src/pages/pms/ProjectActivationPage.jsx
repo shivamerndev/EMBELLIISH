@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Briefcase, Pencil, AlertTriangle, CheckCircle, Clock, ShieldAlert } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -164,47 +165,53 @@ const ProjectActivationPage = () => {
         </Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs whitespace-nowrap">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved Quote</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Payment Receipt</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Activation Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Client Approval</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Assigned PC / Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">KYC / Billing Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Site Details</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">{item.code || `Project ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">{item.approvedQuote || '—'}</td>
-                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 font-mono text-xs whitespace-nowrap">{item.paymentReceipt || '—'}</td>
-                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.projectActivationDate)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.clientApproval === 'Approved' ? 'green' : item.clientApproval === 'Rejected' ? 'rose' : 'slate'}>{item.clientApproval || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap">{item.assignedPcExecutionOwner || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex flex-col gap-0.5">
-                        <Badge tone={item.kycBillingStatus === 'Verified' ? 'green' : 'amber'}>{item.kycBillingStatus || 'Pending'}</Badge>
-                        <span className="text-[10px] text-slate-400">Customer Conversion</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs max-w-xs truncate" title={item.siteDetails}>{item.siteDetails || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-center flex items-center justify-center gap-1">
-                      <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'approvedQuote', label: 'Approved Quote', className: 'text-emerald-600 dark:text-emerald-400 font-semibold' },
+              { key: 'paymentReceipt', label: 'Payment Receipt', className: 'font-mono' },
+              { key: 'projectActivationDate', label: 'Activation Date', render: (val) => formatDate(val) },
+              {
+                key: 'clientApproval',
+                label: 'Client Approval',
+                render: (val) => <Badge tone={val === 'Approved' ? 'green' : val === 'Rejected' ? 'rose' : 'slate'}>{val || 'Pending'}</Badge>,
+              },
+              { key: 'assignedPcExecutionOwner', label: 'Assigned PC / Owner' },
+              {
+                key: 'kycBillingStatus',
+                label: 'KYC / Billing Status',
+                render: (val) => (
+                  <div className="flex flex-col gap-0.5">
+                    <Badge tone={val === 'Verified' ? 'green' : 'amber'}>{val || 'Pending'}</Badge>
+                    <span className="text-[10px] text-slate-400">Customer Conversion</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'siteDetails',
+                label: 'Site Details',
+                render: (val) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
+                    {val || '—'}
+                  </span>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

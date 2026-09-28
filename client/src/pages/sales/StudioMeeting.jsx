@@ -15,7 +15,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, uploadApi, fabricsApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 
 const SPREADSHEET_SECTIONS = [
     {

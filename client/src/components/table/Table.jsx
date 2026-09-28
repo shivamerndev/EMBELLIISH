@@ -16,13 +16,15 @@ const Table = ({
     renderActions,
     idColumnKey = 'code',
     idColumnLabel = 'Code',
-    actionColumnLabel = 'Manage',
+    idColumnRender,
+    actionColumnLabel,
     showIdColumn = true,
     showActions = true,
     showEditAction = true,
     viewButtonTitle = 'View Details',
-    editButtonTitle = 'Edit Details',
+    editButtonTitle = 'Edit',
     theme = 'amber', // 'amber' | 'slate'
+    align, // 'left' | 'center'
     containerClassName,
     tableClassName = 'w-full text-left border-collapse text-xs',
     emptyMessage = 'No data available',
@@ -31,21 +33,20 @@ const Table = ({
     cellRendererArgs = [],
 }) => {
     const data = paginatedItems || items || [];
+    const isSlate = theme === 'slate';
 
     const activeColumns = useMemo(() => {
         if (columns && columns.length > 0) {
-            return columns.filter((c) => c.key !== 'sno' && c.key !== idColumnKey);
+            return columns.filter((c) => c.key !== 'sno' && (showIdColumn ? c.key !== idColumnKey : true));
         }
         if (!visibleSections || visibleSections.length === 0) return [];
         return visibleSections.flatMap((sec) =>
-            (sec.tableCols || sec.cols || []).filter((c) => c.key !== 'sno' && c.key !== idColumnKey)
+            (sec.tableCols || sec.cols || []).filter((c) => c.key !== 'sno' && (showIdColumn ? c.key !== idColumnKey : true))
         );
-    }, [columns, visibleSections, idColumnKey]);
+    }, [columns, visibleSections, idColumnKey, showIdColumn]);
 
     const cellRenderer = renderSpreadsheetCell || renderCell;
     const totalCols = activeColumns.length + (showIdColumn ? 1 : 0) + (showActions ? 1 : 0);
-
-    const isSlate = theme === 'slate';
 
     const defaultContainerClass = isSlate
         ? 'overflow-x-auto max-h-[60vh] overflow-y-auto select-none relative'
@@ -60,37 +61,57 @@ const Table = ({
         : 'bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 text-amber-100 dark:text-slate-400');
 
     const colThClass = isSlate
-        ? 'border-b border-r border-slate-200 dark:border-slate-800/80 p-3 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[140px]'
+        ? 'border-b border-r border-slate-200 dark:border-slate-800/80 p-3 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[130px]'
         : 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90';
 
+    const finalActionLabel = actionColumnLabel || (isSlate ? 'Actions' : 'Manage');
     const manageThClass = isSlate
         ? 'bg-slate-200/80 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-2 text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 text-center sticky right-0 z-30 min-w-[80px]'
         : 'bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30 border-l border-amber-300/40 dark:border-slate-800';
+
+    const defaultAlign = align || ((columns && columns.length > 0) || isSlate ? 'left' : 'center');
+    const alignClass = defaultAlign === 'left' ? 'text-left' : 'text-center';
+
+    const handleRowClick = (lead) => {
+        if (onRowClick) onRowClick(lead);
+        else if (onView) onView(lead);
+        else if (onEdit) onEdit(lead);
+    };
+
+    const handleIdClick = (e, lead) => {
+        e.stopPropagation();
+        if (onView) onView(lead);
+        else if (onEdit) onEdit(lead);
+        else if (onRowClick) onRowClick(lead);
+    };
 
     return (
         <div className={containerClassName || defaultContainerClass}>
             <table className={tableClassName}>
                 <thead>
-                    <tr className={`sticky top-0 z-20 text-center shadow-sm ${finalHeaderRowClass}`}>
+                    <tr className={`sticky top-0 z-20 shadow-sm ${finalHeaderRowClass} ${alignClass}`}>
                         {showIdColumn && (
-                            <th className={`${finalPinnedThClass} p-4 text-[10px] uppercase text-center font-semibold sticky left-0 z-30`}>
+                            <th className={`${finalPinnedThClass} p-3 sm:p-4 text-[10px] uppercase font-bold sticky left-0 z-30 ${alignClass}`}>
                                 {idColumnLabel}
                             </th>
                         )}
-                        {activeColumns.map((col) => (
-                            <th key={col.key} className={colThClass}>
-                                {col.label}
-                            </th>
-                        ))}
+                        {activeColumns.map((col) => {
+                            const colAlign = col.align ? (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left') : alignClass;
+                            return (
+                                <th key={col.key} className={`${colThClass} ${colAlign} ${col.thClassName || ''}`}>
+                                    {col.label}
+                                </th>
+                            );
+                        })}
                         {showActions && (
                             <th className={manageThClass}>
-                                {actionColumnLabel}
+                                {finalActionLabel}
                             </th>
                         )}
                     </tr>
                 </thead>
 
-                <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
+                <tbody className={`divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 ${alignClass}`}>
                     {data.length === 0 ? (
                         <tr>
                             <td colSpan={totalCols} className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
@@ -100,41 +121,48 @@ const Table = ({
                     ) : (
                         data.map((lead, idx) => (
                             <tr
-                                onClick={() => (onRowClick ? onRowClick(lead) : onView && onView(lead))}
+                                onClick={() => handleRowClick(lead)}
                                 key={lead.id || lead._id || idx}
                                 className={isSlate
                                     ? 'hover:bg-brand-500/5 dark:hover:bg-slate-900/80 transition-colors group cursor-pointer'
                                     : 'hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer'}
                             >
                                 {showIdColumn && (
-                                    <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 text-brand-600 dark:text-brand-400 font-semibold p-2.5">
+                                    <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 sticky left-0 z-10 text-brand-600 dark:text-brand-400 font-semibold p-2.5 sm:p-3">
                                         <button
                                             type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onView && onView(lead);
-                                            }}
-                                            className="hover:underline truncate px-2"
+                                            onClick={(e) => handleIdClick(e, lead)}
+                                            className="hover:underline truncate px-1 text-left font-medium"
                                         >
-                                            {lead[idColumnKey] || lead.code || lead.id || '-'}
+                                            {idColumnRender
+                                                ? idColumnRender(lead, idx)
+                                                : (lead[idColumnKey] || lead.code || lead.ticketId || lead.snagId || lead.id || lead._id || '-')}
                                         </button>
                                     </td>
                                 )}
 
-                                {activeColumns.map((col) => (
-                                    <td key={col.key} className="p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
-                                        {cellRenderer
-                                            ? cellRenderer(lead, col.key, idx + 1, onView, onEdit, ...cellRendererArgs)
-                                            : (lead[col.key] ?? '-')}
-                                    </td>
-                                ))}
+                                {activeColumns.map((col) => {
+                                    const colAlign = col.align ? (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left') : '';
+                                    return (
+                                        <td
+                                            key={col.key}
+                                            className={`p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap ${colAlign} ${col.className || ''}`}
+                                        >
+                                            {col.render
+                                                ? col.render(lead[col.key], lead, idx)
+                                                : cellRenderer
+                                                    ? cellRenderer(lead, col.key, idx + 1, onView, onEdit, ...cellRendererArgs)
+                                                    : (lead[col.key] ?? '—')}
+                                        </td>
+                                    );
+                                })}
 
                                 {showActions && (
-                                    <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
+                                    <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
                                         {renderActions ? (
                                             renderActions(lead, idx, { onView, onEdit, onSiteVisit })
                                         ) : (
-                                            <div className="flex items-center justify-end gap-1">
+                                            <div className="flex items-center justify-center gap-1">
                                                 {onView && (
                                                     <Button
                                                         size="sm"

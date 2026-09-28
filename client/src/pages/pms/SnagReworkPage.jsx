@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Pencil, AlertTriangle, CheckCircle, Clock, Wrench } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, Clock, Wrench } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -183,47 +184,75 @@ const SnagReworkPage = () => {
       ) : stageItems.length === 0 ? (
         <Panel className="p-8 text-center"><EmptyState icon={AlertCircle} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
-        <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Snag ID</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Site / Item</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Issue Report</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Snag Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Target Closure</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Snag Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Current Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{item.snagId || item.code || `SNG-${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs">{formatDate(item.dueDate)}</td>
-                    <td className="px-4 py-3 text-xs max-w-[150px] truncate">{item.siteItem || '—'}</td>
-                    <td className="px-4 py-3 text-xs max-w-xs truncate" title={item.issueReport}>{item.issueReport || item.clientComplaint || '—'}</td>
-                    <td className="px-4 py-3 text-xs">{item.snagOwner || '—'}</td>
-                    <td className="px-4 py-3 text-xs">{formatDate(item.targetClosureDate)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={item.snagStatus === 'Closed' ? 'green' : item.snagStatus === 'Rectified' ? 'blue' : item.snagStatus === 'In Progress' ? 'amber' : 'rose'}>
-                        {item.snagStatus || item.status || 'Open'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-xs">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3 text-xs font-mono">{item.delay || '0 days'}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <Panel className="p-0 overflow-hidden">
+          <Table
+            items={stageItems}
+            idColumnKey="snagId"
+            idColumnLabel="Snag ID"
+            idColumnRender={(item, idx) => item.snagId || item.code || `SNG-${idx + 1}`}
+            theme="slate"
+            onEdit={setEditingItem}
+            columns={[
+              {
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
+              {
+                key: 'siteItem',
+                label: 'Site / Item',
+                render: (val) => <span className="max-w-[150px] truncate block">{val || '—'}</span>,
+              },
+              {
+                key: 'issueReport',
+                label: 'Issue Report',
+                render: (val, item) => (
+                  <span className="max-w-xs truncate block" title={val || item.clientComplaint}>
+                    {val || item.clientComplaint || '—'}
+                  </span>
+                ),
+              },
+              {
+                key: 'snagOwner',
+                label: 'Snag Owner',
+                render: (val) => val || '—',
+              },
+              {
+                key: 'targetClosureDate',
+                label: 'Target Closure',
+                render: (val) => formatDate(val),
+              },
+              {
+                key: 'snagStatus',
+                label: 'Snag Status',
+                render: (val, item) => (
+                  <Badge
+                    tone={
+                      val === 'Closed'
+                        ? 'green'
+                        : val === 'Rectified'
+                        ? 'blue'
+                        : val === 'In Progress'
+                        ? 'amber'
+                        : 'rose'
+                    }
+                  >
+                    {val || item.status || 'Open'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'currentOwner',
+                label: 'Current Owner',
+                render: (val) => val || '—',
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <span className="font-mono text-xs">{val || '0 days'}</span>,
+              },
+            ]}
+          />
         </Panel>
       )}
 

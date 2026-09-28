@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitBranch, Pencil, AlertTriangle, CheckCircle, CheckSquare, Clock } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -149,42 +150,53 @@ const ChangeRevisionControlPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={GitBranch} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Change Requested</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Change Details</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Cost Impact</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Timeline Impact</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approval Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Revised Version</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Current Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Change ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">{item.changeRequested || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.changeDetails}>{item.changeDetails || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.costImpact || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.timelineImpact || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.approvalStatus === 'Approved' ? 'green' : item.approvalStatus === 'Rejected' ? 'rose' : 'slate'}>{item.approvalStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.revisedVersion || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'changeRequested', label: 'Change Requested', className: 'font-semibold text-slate-800 dark:text-slate-200' },
+              {
+                key: 'changeDetails',
+                label: 'Change Details',
+                render: (val) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
+                    {val || '—'}
+                  </span>
+                ),
+              },
+              { key: 'costImpact', label: 'Cost Impact' },
+              { key: 'timelineImpact', label: 'Timeline Impact' },
+              {
+                key: 'approvalStatus',
+                label: 'Approval Status',
+                render: (val) => (
+                  <Badge tone={val === 'Approved' ? 'green' : val === 'Rejected' ? 'rose' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              { key: 'revisedVersion', label: 'Revised Version', className: 'font-mono' },
+              { key: 'currentOwner', label: 'Current Owner' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Change ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

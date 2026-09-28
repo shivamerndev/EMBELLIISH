@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Paperclip, Eye,  UserCheck, Building2, BadgeDollarSign,CheckCircle2 , Sparkles, ClipboardList, Users } from 'lucide-react';
+import { Plus, Search, Paperclip, Eye, UserCheck, Building2, BadgeDollarSign, CheckCircle2, Sparkles, ClipboardList, Users } from 'lucide-react';
 import { leadsApi } from '../../api';
 import { useAsync } from '../../hooks/useAsync';
 import { currency, date, getLocalDate } from '../../utils/format';
@@ -11,7 +11,7 @@ import SalesStageCard from '../../components/cards/SalesStageCard';
 import { useSelector } from 'react-redux';
 import useSales from '../../hooks/useSales';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 
 
 const BUDGET_CLASSIFICATIONS = [

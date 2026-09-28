@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Truck, Pencil, AlertTriangle, CheckCircle, Clock, Boxes, Calendar } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -176,44 +177,61 @@ const PackingDispatchReadinessPage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={Boxes} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Packing Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Dispatch Readiness</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Target Dispatch</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Installation Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Challan</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Room Scope</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Delay</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">{item.code || `Project ${idx + 1}`}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.dueDate)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.packingStatus === 'Completed' ? 'green' : 'amber'}>{item.packingStatus || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.dispatchReadinessStatus === 'Ready for Dispatch' || item.dispatchReadiness === 'Ready' ? 'green' : item.dispatchReadinessStatus?.startsWith('Hold') ? 'rose' : 'blue'}>{item.dispatchReadinessStatus || item.dispatchReadiness || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.targetDispatchDate)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(item.installationDate)}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.challan || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate" title={item.roomWiseScope}>{item.roomWiseScope || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.currentOwner || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.status === 'Completed' ? 'green' : item.status === 'In Progress' ? 'blue' : 'slate'}>{item.status || 'Pending'}</Badge></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><Badge tone={item.delay === 'Yes' ? 'rose' : 'green'}>{item.delay === 'Yes' ? 'Delayed' : 'No Delay'}</Badge></td>
-                    <td className="px-4 py-3 text-center"><Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
+              {
+                key: 'packingStatus',
+                label: 'Packing Status',
+                render: (val) => <Badge tone={val === 'Completed' ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
+              },
+              {
+                key: 'dispatchReadinessStatus',
+                label: 'Dispatch Readiness',
+                render: (val, item) => {
+                  const status = val || item.dispatchReadiness || 'Pending';
+                  return (
+                    <Badge tone={status === 'Ready for Dispatch' || status === 'Ready' ? 'green' : status.startsWith('Hold') ? 'rose' : 'blue'}>
+                      {status}
+                    </Badge>
+                  );
+                },
+              },
+              { key: 'targetDispatchDate', label: 'Target Dispatch', render: (val) => formatDate(val) },
+              { key: 'installationDate', label: 'Installation Date', render: (val) => formatDate(val) },
+              { key: 'challan', label: 'Challan', className: 'font-mono' },
+              {
+                key: 'roomWiseScope',
+                label: 'Room Scope',
+                render: (val) => (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
+                    {val || '—'}
+                  </span>
+                ),
+              },
+              { key: 'currentOwner', label: 'Owner' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'slate'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'delay',
+                label: 'Delay',
+                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Client"
+            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

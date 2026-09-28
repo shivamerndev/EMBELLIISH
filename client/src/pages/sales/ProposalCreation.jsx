@@ -15,7 +15,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, settingsApi, uploadApi } from '../../api';
 import { useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 
 const SPREADSHEET_SECTIONS = [
     {
@@ -1870,7 +1870,7 @@ const ProposalCreation = ({ items: itemsProp = [] }) => {
                     <ViewSwitcher view={viewMode} onViewChange={setViewMode} />
 
                     <div className="flex items-center gap-2">
-                     
+
                         {(search || selectedSection !== 's8') && (
                             <Button
                                 variant="ghost"

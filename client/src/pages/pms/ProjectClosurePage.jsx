@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckSquare, Pencil, AlertTriangle, CheckCircle, Clock, Award, ShieldCheck, Lock } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
+import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
@@ -200,71 +201,75 @@ const ProjectClosurePage = () => {
         <Panel className="p-8 text-center"><EmptyState icon={CheckSquare} title="No Records Found" hint="Records will appear here." /></Panel>
       ) : (
         <Panel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Project</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Closure Due Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Closure Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Approved By</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Installation</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Client Sign-Off</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Snags</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Payment</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Closure Gate</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Current Owner</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-center font-semibold text-slate-700 dark:text-slate-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {stageItems.map((item, idx) => {
+          <Table
+            items={stageItems}
+            columns={[
+              { key: 'dueDate', label: 'Closure Due Date', render: (val) => formatDate(val) },
+              { key: 'projectClosureDate', label: 'Closure Date', render: (val, item) => formatDate(val || item.closureDate || item.createdAt) },
+              { key: 'approvedBy', label: 'Approved By' },
+              {
+                key: 'installationCompletion',
+                label: 'Installation',
+                render: (val) => (
+                  <Badge tone={val === 'Completed' ? 'green' : 'amber'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'clientSignOff',
+                label: 'Client Sign-Off',
+                render: (val) => (
+                  <Badge tone={val === 'Signed' ? 'green' : 'amber'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'snagStatus',
+                label: 'Snags',
+                render: (val) => (
+                  <Badge tone={val === 'Closed' ? 'green' : 'rose'}>
+                    {val || 'Open'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'paymentClosure',
+                label: 'Payment',
+                render: (val) => (
+                  <Badge tone={val === 'Closed' ? 'green' : 'amber'}>
+                    {val || 'Pending'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'closureGate',
+                label: 'Closure Gate',
+                render: (_, item) => {
                   const gatePassed = checkClosureGate(item);
                   return (
-                    <tr key={item.id || item._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                      <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{item.code || item.project || `PC-${idx + 1}`}</td>
-                      <td className="px-4 py-3 text-xs">{formatDate(item.dueDate)}</td>
-                      <td className="px-4 py-3 text-xs">{formatDate(item.projectClosureDate || item.closureDate || item.createdAt)}</td>
-                      <td className="px-4 py-3 text-xs">{item.approvedBy || '—'}</td>
-                      <td className="px-4 py-3 text-xs">
-                        <Badge tone={item.installationCompletion === 'Completed' ? 'green' : 'amber'}>
-                          {item.installationCompletion || 'Pending'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <Badge tone={item.clientSignOff === 'Signed' ? 'green' : 'amber'}>
-                          {item.clientSignOff || 'Pending'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <Badge tone={item.snagStatus === 'Closed' ? 'green' : 'rose'}>
-                          {item.snagStatus || 'Open'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <Badge tone={item.paymentClosure === 'Closed' ? 'green' : 'amber'}>
-                          {item.paymentClosure || 'Pending'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <Badge tone={gatePassed ? 'emerald' : 'orange'}>
-                          {gatePassed ? 'Gate Passed' : 'Gate Locked'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-xs">{item.currentOwner || '—'}</td>
-                      <td className="px-4 py-3">
-                        <Badge tone={item.status === 'Closed' ? 'green' : 'blue'}>{item.status || 'In Review'}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditingItem(item)} title="Edit" />
-                      </td>
-                    </tr>
+                    <Badge tone={gatePassed ? 'emerald' : 'orange'}>
+                      {gatePassed ? 'Gate Passed' : 'Gate Locked'}
+                    </Badge>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
+                },
+              },
+              { key: 'currentOwner', label: 'Current Owner' },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (val) => (
+                  <Badge tone={val === 'Closed' ? 'green' : 'blue'}>{val || 'In Review'}</Badge>
+                ),
+              },
+            ]}
+            idColumnKey="code"
+            idColumnLabel="Code / Project"
+            idColumnRender={(item, idx) => item.code || item.project || `PC-${idx + 1}`}
+            onEdit={setEditingItem}
+            theme="slate"
+          />
         </Panel>
       )}
 

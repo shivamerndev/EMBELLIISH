@@ -16,7 +16,7 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, fabricsApi, usersApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import Table from '../../components/sales/Table';
+import Table from '../../components/table/Table';
 import HeaderTools from '../../components/consumption/HeaderTools';
 import ConsumptionGrid from '../../components/consumption/ConsumptionGrid';
 import AddWindowMeasurementModal from '../../components/consumption/AddWindowModal';
