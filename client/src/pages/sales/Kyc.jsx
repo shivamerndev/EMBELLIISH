@@ -1,54 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Search,
-  Eye,
-  ShieldCheck,
-  Calendar,
-  Paperclip,
-  Pencil,
-  FileCheck,
-  CheckCircle2,
-  Clock,
-  UploadCloud,
-  X,
-  Plus,
-  Trash2,
-  ExternalLink,
-  RefreshCw,
-  Building2,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  FileText,
-  FileSpreadsheet,
-  AlertCircle,
-  AlertTriangle,
-  Filter,
-  Check
-} from 'lucide-react';
+import { Search, Eye, ShieldCheck, Paperclip, Pencil, FileCheck, CheckCircle2, Clock, UploadCloud, Plus, Trash2, ExternalLink, User, MapPin, FileText, AlertTriangle, Filter } from 'lucide-react';
 import { date, dateTime } from '../../utils/format';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
-import {
-  PageHeader,
-  Panel,
-  Button,
-  Badge,
-  Input,
-  Select,
-  Textarea,
-  Loading,
-  ErrorState,
-  EmptyState,
-  StatTile,
-  Modal,
-  Field,
-  DelayBadge,
-  ViewSwitcher,
-  PhoneInput,
-  validatePhoneNumber,
-} from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher, PhoneInput, validatePhoneNumber } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';

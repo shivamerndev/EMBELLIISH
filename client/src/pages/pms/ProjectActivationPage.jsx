@@ -165,7 +165,7 @@ const ProjectActivationPage = () => {
       ) : (
         <Panel>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs whitespace-nowrap">
               <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Code / Client</th>
