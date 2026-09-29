@@ -24,36 +24,20 @@ const PMS_STAGES = [
 ];
 
 const buildStageApi = (slug) => ({
-  list: (params) =>
-    api.get(`/pms/${slug}`, { params }).catch((err) => {
-      if (err?.status === 404) return { success: true, data: [] };
-      throw err;
-    }),
-  get: (id) =>
-    api.get(`/pms/${slug}/${id}`).catch((err) => {
-      if (err?.status === 404) return { success: true, data: null };
-      throw err;
-    }),
-  create: (payload) =>
-    api.post(`/pms/${slug}`, payload).catch((err) => {
-      if (err?.status === 404) return { success: true, data: { id: `item-${Date.now()}`, ...payload } };
-      throw err;
-    }),
-  update: (id, payload) =>
-    api.put(`/pms/${slug}/${id}`, payload).catch((err) => {
-      if (err?.status === 404) return { success: true, data: { id, _id: id, ...payload } };
-      throw err;
-    }),
-  remove: (id) =>
-    api.delete(`/pms/${slug}/${id}`).catch((err) => {
-      if (err?.status === 404) return { success: true };
-      throw err;
-    }),
+  list: (params) => api.get(`/pms/${slug}`, { params }),
+  get: (id) => api.get(`/pms/${slug}/${id}`),
+  create: (payload) => api.post(`/pms/${slug}`, payload),
+  update: (id, payload) => api.put(`/pms/${slug}/${id}`, payload),
+  advance: (id, payload) => api.post(`/pms/${slug}/${id}/advance`, payload),
+  remove: (id) => api.delete(`/pms/${slug}/${id}`),
 });
 
-export const pmsApi = Object.fromEntries(
-  PMS_STAGES.map((stage) => [stage.key, buildStageApi(stage.slug)])
-);
+export const pmsApi = {
+  ...Object.fromEntries(PMS_STAGES.map((stage) => [stage.key, buildStageApi(stage.slug)])),
+  getProjectStages: (projectIdentifier) =>
+    api.get(`/pms/project/${encodeURIComponent(projectIdentifier)}/stages`),
+  getSummary: () => api.get('/pms/summary'),
+};
 
 export { PMS_STAGES };
 export default pmsApi;

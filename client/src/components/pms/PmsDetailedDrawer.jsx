@@ -30,10 +30,11 @@ import {
   getPmsNextStageUrl,
   DEFAULT_STAGE_FIELDS,
 } from '../../utils/pmsPipeline';
-import { PMS_STAGE_DEFAULTS } from '../../hooks/pmsDefaults';
+import { pmsApi } from '../../api/pms.api';
+import usePms from '../../hooks/usePms';
 
 const getNestedVal = (obj, path) => {
-  if (!obj || !path) return undefined; 
+  if (!obj || !path) return undefined;
   return path.split('.').reduce((curr, p) => (curr == null ? undefined : curr[p]), obj);
 };
 
@@ -103,9 +104,13 @@ const PmsDetailedDrawer = ({
   const [copied, setCopied] = useState(false);
 
   const pmsState = useSelector((state) => state?.pms);
+  const [projectStagesData, setProjectStagesData] = useState({});
+  const [loadingStages, setLoadingStages] = useState(false);
 
   // Normalize project object from props
   const currentItem = item || lead || project;
+  const { handleAdvanceStageItem } = usePms();
+  const [advancing, setAdvancing] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -168,6 +173,44 @@ const PmsDetailedDrawer = ({
     return 'On Track';
   }, [currentItem]);
 
+  // Fetch real cross-stage lifecycle from backend when drawer opens
+  useEffect(() => {
+    if (!open || !currentItem) {
+      setProjectStagesData({});
+      return;
+    }
+    const ident = projectCode || currentItem.code || currentItem._id || currentItem.id;
+    if (!ident) return;
+
+    let cancelled = false;
+    const loadProjectLifecycle = async () => {
+      setLoadingStages(true);
+      try {
+        const res = await pmsApi.getProjectStages(ident);
+        const data = res?.data || res;
+        if (!cancelled && data?.records && Array.isArray(data.records)) {
+          const map = {};
+          data.records.forEach((rec) => {
+            if (rec.stageKey) map[rec.stageKey] = rec;
+            if (rec.stageSlug) map[rec.stageSlug] = rec;
+            if (rec.stage) map[rec.stage] = rec;
+          });
+          setProjectStagesData(map);
+        }
+      } catch (err) {
+        // Non-blocking stage retrieval
+        console.warn('[PmsDetailedDrawer] Project lifecycle load notice:', err?.message || err);
+      } finally {
+        if (!cancelled) setLoadingStages(false);
+      }
+    };
+
+    loadProjectLifecycle();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currentItem, projectCode]);
+
   // Determine active stage key
   const activeStage = useMemo(() => {
     if (currentStageKey) return currentStageKey;
@@ -207,21 +250,29 @@ const PmsDetailedDrawer = ({
     if (!currentItem) return [];
 
     return PMS_WORKFLOW_STAGES.map((stage, idx) => {
-      // Find matching item in Redux store or PMS_STAGE_DEFAULTS
+      // Find matching item in backend projectStagesData or Redux store
       const storeItems = pmsState?.items?.[stage.key] || [];
-      const defaultItems = PMS_STAGE_DEFAULTS?.[stage.key] || [];
-      const allItems = [...storeItems, ...defaultItems];
+      const remoteRecord = projectStagesData[stage.key] || projectStagesData[stage.slug];
 
-      const match = allItems.find((itm) => {
-        if (!itm) return false;
-        if (itm.id === currentItem.id || itm._id === currentItem._id) return true;
-        const itmCode = itm.code || '';
-        if (projectCode && itmCode.includes(projectCode)) return true;
-        if (clientName && itmCode.includes(clientName)) return true;
-        return false;
-      });
+      const match =
+        remoteRecord ||
+        storeItems.find((itm) => {
+          if (!itm) return false;
+          if (itm.id === currentItem.id || itm._id === currentItem._id) return true;
+          const itmCode = itm.code || '';
+          if (projectCode && itmCode.includes(projectCode)) return true;
+          if (clientName && itmCode.includes(clientName)) return true;
+          return false;
+        }) ||
+        (idx === activeStageIndex ? currentItem : null);
 
-      const stageStatus = match?.status || (idx === 0 ? 'Completed' : idx < activeStageIndex ? 'Completed' : idx === activeStageIndex ? (currentItem.status || 'In Progress') : 'Pending');
+      const stageStatus =
+        match?.status ||
+        (idx < activeStageIndex
+          ? 'Completed'
+          : idx === activeStageIndex
+          ? currentItem.status || 'In Progress'
+          : 'Pending');
 
       const isCompleted = [
         'completed',
@@ -280,7 +331,7 @@ const PmsDetailedDrawer = ({
         record: match,
       };
     });
-  }, [currentItem, projectCode, clientName, activeStageIndex, pmsState]);
+  }, [currentItem, projectCode, clientName, activeStageIndex, pmsState, projectStagesData]);
 
   const completedStagesCount = useMemo(() => {
     return stageDataList.filter((s) => s.isCompleted).length;
@@ -708,6 +759,37 @@ const PmsDetailedDrawer = ({
           )}
 
           <div className="flex items-center gap-2 ml-auto">
+            {/* If stage is not completed, offer Complete & Auto-Advance */}
+            {!['completed', 'approved', 'closed', 'signed', 'verified'].includes(String(currentItem?.status || '').toLowerCase()) && (
+              <Button
+                size="sm"
+                variant="primary"
+                icon={CheckCircle2}
+                loading={advancing}
+                onClick={async () => {
+                  if (!currentItem || advancing) return;
+                  setAdvancing(true);
+                  try {
+                    const res = await handleAdvanceStageItem(activeStage, currentItem._id || currentItem.id, {
+                      status: 'Completed',
+                    });
+                    if (res?.nextStage?.slug) {
+                      navigate(`/pms/${res.nextStage.slug}?search=${encodeURIComponent(projectCode)}`);
+                      onClose?.();
+                    }
+                  } catch (err) {
+                    console.error('Failed to complete and advance stage:', err);
+                  } finally {
+                    setAdvancing(false);
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
+                title="Mark this stage Completed and auto-unlock next stage"
+              >
+                Complete & Advance →
+              </Button>
+            )}
+
             {nextStageInfo && nextStageInfo.key !== currentStageInfo.key && (
               <Button
                 size="sm"

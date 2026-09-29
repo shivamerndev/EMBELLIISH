@@ -62,9 +62,25 @@ const ExecutionSetupEditModal = ({ item, onClose, onDone }) => {
     <Modal
       open={Boolean(item)}
       footer={
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Execution Setup</Button>
+        <div className="flex justify-between items-center w-full pt-4 border-t">
+          <Button
+            type="button"
+            loading={pending}
+            onClick={() => {
+              if (!form.dueDate) {
+                setError('Due Date is required');
+                return;
+              }
+              execute({ ...form, status: 'Completed' });
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs"
+          >
+            Complete & Advance →
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Execution Setup</Button>
+          </div>
         </div>
       }
       onClose={onClose}

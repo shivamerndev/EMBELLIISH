@@ -19,89 +19,7 @@ const REASSIGNMENT_TABS = [
   { key: 'HIGH', label: 'High Priority' },
 ];
 
-const SAMPLE_QUALIFIED_LEADS = [
-  {
-    _id: 'seed-ld-002',
-    code: 'LD/002',
-    clientName: 'Amazon India',
-    contactPerson: 'Rani Sharma',
-    phone: '9876543210',
-    email: 'rani@amazon.com',
-    status: 'QUALIFIED',
-    qualificationDecision: 'APPROVED',
-    assignmentDueDate: '2026-08-18',
-    dcmCapacityStatus: 'OVERLOADED',
-    assignedDcmName: 'Rahul Verma',
-    assignmentDateTime: '08/04/2026 15:30',
-    dcmActiveProjectCount: 6,
-    priority: 'HIGH',
-    reassignmentRequired: true,
-    reassignedToName: 'Punam K',
-    reassignmentReason: 'DCM capacity limit reached. Reassigned for faster execution.',
-    updatedUser: 'Sakshi',
-  },
-  {
-    _id: 'seed-ld-004',
-    code: 'LD/004',
-    clientName: 'Prestige Tech Park',
-    contactPerson: 'Vikram Mehta',
-    phone: '9812345678',
-    email: 'vikram@prestige.com',
-    status: 'QUALIFIED',
-    qualificationDecision: 'APPROVED',
-    assignmentDueDate: '2026-08-22',
-    dcmCapacityStatus: 'AVAILABLE',
-    assignedDcmName: 'Hitesh Sharma',
-    assignmentDateTime: '08/05/2026 10:15',
-    dcmActiveProjectCount: 3,
-    priority: 'HIGH',
-    reassignmentRequired: false,
-    reassignedToName: 'NA',
-    reassignmentReason: 'Initial assignment completed smoothly.',
-    updatedUser: 'Hitesh',
-  },
-  {
-    _id: 'seed-ld-005',
-    code: 'LD/005',
-    clientName: 'Urban Ladder Designs',
-    contactPerson: 'Ananya Roy',
-    phone: '9711223344',
-    email: 'ananya@urbanladder.com',
-    status: 'QUALIFIED',
-    qualificationDecision: 'APPROVED',
-    assignmentDueDate: '2026-08-25',
-    dcmCapacityStatus: 'OVERLOADED',
-    assignedDcmName: 'Saskhi M',
-    assignmentDateTime: '08/06/2026 11:45',
-    dcmActiveProjectCount: 9,
-    priority: 'MEDIUM',
-    reassignmentRequired: true,
-    reassignedToName: 'Amit Patel',
-    reassignmentReason: 'Client requested senior DCM switch due to specialized commercial scope.',
-    updatedUser: 'Admin',
-  },
-  {
-    _id: 'seed-ld-006',
-    code: 'LD/006',
-    clientName: 'Wipro Enterprises',
-    contactPerson: 'Karan Malhotra',
-    phone: '9900112233',
-    email: 'karan@wipro.com',
-    status: 'QUALIFIED',
-    qualificationDecision: 'APPROVED',
-    assignmentDueDate: '2026-08-28',
-    dcmCapacityStatus: 'AVAILABLE',
-    assignedDcmName: 'Neha Gupta',
-    assignmentDateTime: '08/07/2026 16:20',
-    dcmActiveProjectCount: 4,
-    priority: 'HIGH',
-    reassignmentRequired: false,
-    reassignedToName: 'NA',
-    reassignmentReason: 'Reassigned after initial manager workload balance.',
-    updatedUser: 'Neha',
-  }
-];
-
+// DCM Managers Fallback List
 const DCM_MANAGERS_LIST = [
   { _id: 'dcm-1', name: 'Hitesh Sharma', role: 'Senior DCM', activeProjectCount: 3, capacityStatus: 'AVAILABLE' },
   { _id: 'dcm-2', name: 'Rahul Verma', role: 'DCM Manager', activeProjectCount: 6, capacityStatus: 'OVERLOADED' },
@@ -143,7 +61,333 @@ const LeadPriorityBadge = ({ value }) => {
   );
 };
 
-/* ------------------------------------------------------------- Reassign DCM Modal Component */
+/* ------------------------------------------------------------- DCM List Hook */
+
+const useDcmList = () => {
+  const { data: usersData } = useAsync(
+    () => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []),
+    []
+  );
+
+  return React.useMemo(() => {
+    if (!usersData || usersData.length === 0) return DCM_MANAGERS_LIST;
+    const fetched = usersData
+      .filter(
+        (u) =>
+          !u.role ||
+          u.role.includes('DCM') ||
+          u.role.includes('MANAGER') ||
+          u.role.includes('ADMIN') ||
+          u.department === 'DCM' ||
+          u.department === 'Sales'
+      )
+      .map((u) => ({
+        _id: u._id || u.id,
+        name: u.name,
+        role: u.role || 'DCM / Manager',
+        activeProjectCount: u.activeProjectCount ?? 3,
+        capacityStatus:
+          u.capacityStatus || ((u.activeProjectCount ?? 3) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
+      }));
+
+    const names = new Set(fetched.map((f) => f.name));
+    const merged = [...fetched];
+    DCM_MANAGERS_LIST.forEach((d) => {
+      if (!names.has(d.name)) merged.push(d);
+    });
+    return merged;
+  }, [usersData]);
+};
+
+/* ------------------------------------------------------------- Create Qualified Lead Modal Component */
+
+export const CreateQualifiedLeadModal = ({ open, onClose, onDone }) => {
+  const currentUser = useSelector((state) => state.auth?.user);
+  const currentUserName = currentUser?.name || currentUser?.email || 'Admin';
+  const dcmList = useDcmList();
+
+  const [form, setForm] = useState({
+    clientName: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    location: '',
+    priority: 'HIGH',
+    assignedDcmName: '',
+    reassignedToName: '',
+    dcmCapacityStatus: 'AVAILABLE',
+    dcmActiveProjectCount: 0,
+    assignmentDueDate: getLocalDate(),
+    assignmentDateTime: getLocalDateTime(),
+    reassignmentRequired: false,
+    reassignmentReason: '',
+    status: 'QUALIFIED',
+    qualificationDecision: 'APPROVED',
+  });
+
+  const [managerSearch, setManagerSearch] = useState('');
+  const [formError, setFormError] = useState('');
+
+  const { execute, pending, error } = useAction(
+    (payload) => leadsApi.create(payload),
+    {
+      onSuccess: () => {
+        if (onDone) onDone();
+        if (onClose) onClose();
+      },
+    }
+  );
+
+  const setField = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleSelectDcm = (dcmName) => {
+    const selectedDcm = dcmList.find((d) => d.name === dcmName);
+    if (selectedDcm) {
+      setForm((prev) => ({
+        ...prev,
+        assignedDcmName: selectedDcm.name,
+        dcmActiveProjectCount: selectedDcm.activeProjectCount ?? 0,
+        dcmCapacityStatus:
+          selectedDcm.capacityStatus ||
+          ((selectedDcm.activeProjectCount ?? 0) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        assignedDcmName: dcmName,
+        dcmActiveProjectCount: 0,
+        dcmCapacityStatus: 'AVAILABLE',
+      }));
+    }
+  };
+
+  const filteredDcms = React.useMemo(() => {
+    if (!managerSearch.trim()) return dcmList;
+    const q = managerSearch.toLowerCase();
+    return dcmList.filter(
+      (d) =>
+        d.name?.toLowerCase().includes(q) ||
+        humanise(d.role || '')?.toLowerCase().includes(q)
+    );
+  }, [dcmList, managerSearch]);
+
+  const submit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setFormError('');
+
+    if (!form.clientName?.trim()) {
+      setFormError('Client / Company Name is required.');
+      return;
+    }
+    if (!form.phone?.trim()) {
+      setFormError('Phone number is required.');
+      return;
+    }
+    if (!form.assignedDcmName?.trim()) {
+      setFormError('Please select an assigned DCM / Manager.');
+      return;
+    }
+
+    execute({
+      ...form,
+      clientName: form.clientName.trim(),
+      phone: form.phone.trim(),
+      email: form.email?.trim() || undefined,
+      location: form.location?.trim() || undefined,
+      status: 'QUALIFIED',
+      qualificationDecision: 'APPROVED',
+      updatedUser: currentUserName || 'Admin',
+    });
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Add Qualified Lead & Assign DCM"
+      subtitle="Fill in client details and assign a Dedicated Customer Manager to save to database"
+      size="xl"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={submit} loading={pending} icon={UserPlus}>
+            Save to Database
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4 pr-1">
+        {(error?.message || formError) && (
+          <p className="text-xs text-rose-500 font-semibold p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+            {error?.message || formError}
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Client / Company Name" required>
+            <Input
+              value={form.clientName}
+              onChange={setField('clientName')}
+              placeholder="e.g. Prestige Estates / Rajiv Sharma"
+              required
+            />
+          </Field>
+          <Field label="Contact Person">
+            <Input
+              value={form.contactPerson}
+              onChange={setField('contactPerson')}
+              placeholder="e.g. Vikram Mehta"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Field label="Phone Number" required>
+            <Input
+              value={form.phone}
+              onChange={setField('phone')}
+              placeholder="e.g. 9812345678"
+              required
+            />
+          </Field>
+          <Field label="Email Address">
+            <Input
+              type="email"
+              value={form.email}
+              onChange={setField('email')}
+              placeholder="e.g. client@example.com"
+            />
+          </Field>
+          <Field label="Priority">
+            <Select
+              value={form.priority}
+              onChange={setField('priority')}
+              options={[
+                { value: 'HIGH', label: 'High Priority' },
+                { value: 'MEDIUM', label: 'Medium Priority' },
+                { value: 'LOW', label: 'Low Priority' },
+              ]}
+            />
+          </Field>
+        </div>
+
+        <Field label="Site Address / Location">
+          <Input
+            value={form.location}
+            onChange={setField('location')}
+            placeholder="e.g. Sector 54, Golf Course Road, Gurgaon"
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Assigned DCM / Manager" required>
+            <Select
+              value={form.assignedDcmName}
+              onChange={(e) => handleSelectDcm(e.target.value)}
+              options={[
+                { value: '', label: '-- Select Assigned DCM / Manager --' },
+                ...dcmList.map((d) => ({
+                  value: d.name,
+                  label: `${d.name} : ${humanise(d.role || 'DCM')} (${d.activeProjectCount ?? 0} projects)`,
+                })),
+              ]}
+              required
+            />
+          </Field>
+          <Field label="Assignment Due Date">
+            <Input
+              type="date"
+              value={form.assignmentDueDate}
+              onChange={setField('assignmentDueDate')}
+            />
+          </Field>
+        </div>
+
+        {/* DCM Directory Selector */}
+        <div className="rounded-xl border border-stone-200 dark:border-[#3d3026] bg-stone-50/70 dark:bg-[#171310] p-3 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
+                Select from DCM Directory
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300">
+                {dcmList.length} Available
+              </span>
+            </div>
+            <div className="relative w-44">
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={managerSearch}
+                onChange={(e) => setManagerSearch(e.target.value)}
+                placeholder="Search DCM..."
+                className="w-full pl-8 pr-2 py-1 text-xs rounded-md border border-stone-200 dark:border-[#3d3026] bg-white dark:bg-[#120f0d] text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+            {filteredDcms.map((dcm) => {
+              const isSelected = form.assignedDcmName === dcm.name;
+              const initials = dcm.name
+                ? dcm.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                : 'M';
+
+              return (
+                <button
+                  key={dcm._id || dcm.name}
+                  type="button"
+                  onClick={() => handleSelectDcm(dcm.name)}
+                  className={`text-left p-2 rounded-lg border text-xs transition-all duration-150 flex items-center justify-between gap-2 ${
+                    isSelected
+                      ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-xs'
+                      : 'border-stone-200 dark:border-[#2e251e] bg-white dark:bg-[#1a1512] hover:border-amber-500/40 hover:bg-stone-50 dark:hover:bg-[#251e18]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                        isSelected
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-stone-200 dark:bg-[#2e251e] text-stone-700 dark:text-stone-300'
+                      }`}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-stone-900 dark:text-stone-100 truncate flex items-center gap-1 text-[11px]">
+                        <span className="truncate">{dcm.name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-amber-500 shrink-0" />}
+                      </div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
+                        {humanise(dcm.role || 'DCM')} • {dcm.activeProjectCount ?? 0} Projects
+                      </div>
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    <DcmCapacityBadge value={dcm.capacityStatus} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <Field label="Assignment / Reassignment Context Note">
+          <Textarea
+            value={form.reassignmentReason}
+            onChange={setField('reassignmentReason')}
+            placeholder="e.g. Initial assignment for high-value residential project / Client preference..."
+            rows={2}
+          />
+        </Field>
+      </form>
+    </Modal>
+  );
+};
 
 export const ReassignDcmModal = ({ item, onClose, onDone }) => {
   const currentUser = useSelector((state) => state.auth?.user);
@@ -163,28 +407,7 @@ export const ReassignDcmModal = ({ item, onClose, onDone }) => {
 
   const [managerSearch, setManagerSearch] = useState('');
   const [formError, setFormError] = useState('');
-
-  const { data: usersData } = useAsync(() => usersApi.list({ limit: 100 }).then((r) => r.data?.items || r.data || []), []);
-
-  const dcmList = React.useMemo(() => {
-    if (!usersData || usersData.length === 0) return DCM_MANAGERS_LIST;
-    const fetched = usersData
-      .filter((u) => !u.role || u.role.includes('DCM') || u.role.includes('MANAGER') || u.role.includes('ADMIN') || u.department === 'DCM' || u.department === 'Sales')
-      .map((u) => ({
-        _id: u._id || u.id,
-        name: u.name,
-        role: u.role || 'DCM / Manager',
-        activeProjectCount: u.activeProjectCount ?? 3,
-        capacityStatus: u.capacityStatus || ((u.activeProjectCount ?? 3) >= 6 ? 'OVERLOADED' : 'AVAILABLE'),
-      }));
-
-    const names = new Set(fetched.map((f) => f.name));
-    const merged = [...fetched];
-    DCM_MANAGERS_LIST.forEach((d) => {
-      if (!names.has(d.name)) merged.push(d);
-    });
-    return merged;
-  }, [usersData]);
+  const dcmList = useDcmList();
 
   const filteredDcms = React.useMemo(() => {
     if (!managerSearch.trim()) return dcmList;
@@ -482,6 +705,7 @@ export const ReassignDcmPage = () => {
   const [tab, setTab] = useState('ALL');
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [reassigningItem, setReassigningItem] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -496,12 +720,12 @@ export const ReassignDcmPage = () => {
 
   const apiItems = data?.items || [];
 
-  // Filter for qualified leads
+  // Filter for qualified leads strictly from real database items
   const qualifiedApiItems = apiItems.filter(
     (i) => i.status === 'QUALIFIED' || i.qualificationDecision === 'APPROVED'
   );
 
-  const list = qualifiedApiItems.length > 0 ? qualifiedApiItems : SAMPLE_QUALIFIED_LEADS;
+  const list = qualifiedApiItems;
 
   const filtered = list.filter((item) => {
     if (tab === 'HIGH' && item.priority !== 'HIGH') return false;
@@ -526,6 +750,16 @@ export const ReassignDcmPage = () => {
       <PageHeader
         title="CRM — Reassign DCM (Qualified Leads)"
         subtitle="View qualified leads and reassign Dedicated Customer Managers (DCMs)"
+        action={
+          <Button
+            variant="primary"
+            icon={UserPlus}
+            onClick={() => setIsCreating(true)}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+          >
+            Add Qualified Lead
+          </Button>
+        }
       />
 
       <Panel className="mb-4">
@@ -633,13 +867,7 @@ export const ReassignDcmPage = () => {
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-400">{row.updatedUser || 'Admin'}</td>
                           <td className="p-3 text-right sticky right-0 z-10 bg-white dark:bg-slate-950 group-hover:bg-amber-100 dark:group-hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              icon={UserCheck}
-                              onClick={() => setReassigningItem(row)}
-                              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs"
-                            >
+                            <Button size="sm" variant="primary" icon={UserCheck} onClick={() => setReassigningItem(row)} className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs">
                               Reassign DCM
                             </Button>
                           </td>
@@ -669,6 +897,14 @@ export const ReassignDcmPage = () => {
         <ReassignDcmModal
           item={reassigningItem}
           onClose={() => setReassigningItem(null)}
+          onDone={reload}
+        />
+      )}
+
+      {isCreating && (
+        <CreateQualifiedLeadModal
+          open={isCreating}
+          onClose={() => setIsCreating(false)}
           onDone={reload}
         />
       )}
