@@ -138,9 +138,13 @@ export const findItemsByProject = async (projectIdentifier) => {
  */
 export const syncApprovedLeads = async () => {
   try {
+    const verifiedKycLeadIds = await SalesCommercialModel.find({
+      'kyc.status': { $regex: /^verified$/i },
+    }).distinct('lead');
+
     const candidateLeads = await LeadModel.find({
       $or: [
-        { 'kyc.status': { $regex: /^verified$/i } },
+        ...(verifiedKycLeadIds.length > 0 ? [{ _id: { $in: verifiedKycLeadIds } }] : []),
         { status: { $in: ['CONVERTED', 'QUALIFIED'] } },
         { qualificationDecision: { $regex: /^approved$/i } },
       ],
@@ -155,45 +159,73 @@ export const syncApprovedLeads = async () => {
 
     let syncedCount = 0;
     for (const lead of candidateLeads) {
-      const edge = lead.salesCommercial || {};
+      let edge = lead.salesCommercial;
+      if (!edge || typeof edge !== 'object' || !edge._id) {
+        edge = (await SalesCommercialModel.findOne({ lead: lead._id }).lean()) || {};
+      }
 
       // Check if lead already has a record in PMS (either in projectActivation or downstream)
-      const existing = await PmsItem.findOne({
-        $or: [
-          { lead: lead._id },
-          { code: lead.code },
-        ],
-      });
+      const orConditions = [{ lead: lead._id }];
+      if (lead.code) {
+        orConditions.push({ code: lead.code });
+      }
+      const existing = await PmsItem.findOne({ $or: orConditions });
 
-      const quote =
-        edge.quotation?.finalQuotedValue ||
-        edge.quotation?.grandTotal ||
-        edge.proposal?.total ||
-        edge.costing?.price ||
-        edge.advance?.amount ||
-        lead.budget ||
-        '';
+      // Specific enterprise fields mapped directly from Lead and SalesCommercial models:
+      // 1. Approved Quote: Final quoted value from Quotation (Stage 9) or Costing price (Stage 8)
+      const quoteVal = edge.quotation?.finalQuotedValue ?? edge.costing?.price ?? null;
+      const approvedQuote =
+        quoteVal !== null && quoteVal !== undefined
+          ? `₹${Number(quoteVal).toLocaleString('en-IN')}`
+          : '';
 
-      const location =
+      // 2. Site Details: KYC site delivery address, Site Visit address, or Lead address/location
+      const siteDetails =
         edge.kyc?.siteDeliveryAddress ||
         edge.siteAddress ||
-        lead.siteAddress ||
-        lead.address?.line1 ||
-        lead.location ||
-        'Gurgaon, Haryana';
+        (lead.address?.line1
+          ? [lead.address.line1, lead.address.city, lead.address.state, lead.address.pincode].filter(Boolean).join(', ')
+          : lead.location || '');
 
-      const owner = lead.assignedDCM?.name || lead.assignedDcmName || 'Vikram Mehta';
-      const clientName = edge.kyc?.billingLegalName || lead.clientName || 'Private Residence';
-      const isKycVerified =
-        String(edge.kyc?.status || lead.kyc?.status || '').toLowerCase() === 'verified';
-      const isAdvanceReceived =
-        ['received', 'committed', 'discussed'].includes(String(edge.advance?.status || '').toLowerCase()) ||
-        Boolean(edge.advance?.amount && edge.advance.amount > 0);
+      // 3. Execution Owner: Lead's assigned DCM
+      const owner = lead.assignedDCM?.name || lead.assignedDcmName || '';
+
+      // 4. Client Name: Billing Legal Name from KYC (Stage 12) or primary Lead client name
+      const clientName = edge.kyc?.billingLegalName || lead.clientName || '';
+
+      // 5. Payment Receipt: Advance receipt number from Advance (Stage 7)
+      const paymentReceipt = edge.advance?.receiptNumber || '';
+
+      // 6. Project Activation Date: Verification date from KYC, Advance received date, or conversion date
+      const projectActivationDate =
+        edge.kyc?.verificationDate || edge.advance?.receivedDate || lead.convertedAt || null;
+
+      // 7. Client Approval: Approval status from Stage 10
+      let clientApproval = 'Pending';
+      const rawApproval = edge.approval?.clientApprovalStatus || edge.approval?.status;
+      if (rawApproval) {
+        const normApproval = String(rawApproval).toUpperCase();
+        if (normApproval === 'APPROVED') clientApproval = 'Approved';
+        else if (normApproval === 'REJECTED' || normApproval === 'DECLINED') clientApproval = 'Rejected';
+        else if (normApproval === 'ON_HOLD' || normApproval === 'REVISION_REQUESTED') clientApproval = 'On Hold';
+      }
+
+      // 8. KYC / Billing Status: Stage 12 verification status
+      let kycBillingStatus = 'Pending';
+      const rawKyc = edge.kyc?.status || lead.kyc?.status;
+      if (rawKyc) {
+        const normKyc = String(rawKyc).toLowerCase();
+        if (normKyc === 'verified') kycBillingStatus = 'Verified';
+        else if (normKyc === 'in_progress' || normKyc === 'in progress') kycBillingStatus = 'In Progress';
+        else if (normKyc === 'correction required' || normKyc === 'correction_required') kycBillingStatus = 'On Hold';
+        else if (normKyc === 'rejected') kycBillingStatus = 'Rejected';
+      }
+      const isKycVerified = kycBillingStatus === 'Verified';
 
       if (!existing) {
         await PmsItem.create({
           lead: lead._id,
-          code: lead.code || `PRJ-${lead._id.toString().slice(-4).toUpperCase()}`,
+          code: lead.code || '',
           clientName,
           stage: 'projectActivation',
           stageKey: 'projectActivation',
@@ -202,20 +234,45 @@ export const syncApprovedLeads = async () => {
           delay: 'No',
           currentOwner: owner,
           assignedPcExecutionOwner: owner,
-          siteDetails: `${location}, Site access verified`,
-          approvedQuote: quote ? (String(quote).startsWith('₹') ? String(quote) : `₹${quote}`) : '₹4,50,000',
-          paymentReceipt: edge.advance?.receiptNumber || `RCP-2026-${lead._id.toString().slice(-3).toUpperCase()}`,
-          projectActivationDate: edge.kyc?.verificationDate || edge.advance?.receivedDate || new Date(),
-          clientApproval: edge.approval?.status === 'Approved' ? 'Approved' : 'Approved',
-          kycBillingStatus: isKycVerified ? 'Verified' : 'Pending',
+          siteDetails,
+          approvedQuote,
+          paymentReceipt,
+          projectActivationDate,
+          clientApproval,
+          kycBillingStatus,
         });
         syncedCount += 1;
-      } else if (existing.stageKey === 'projectActivation' && isKycVerified && existing.kycBillingStatus !== 'Verified') {
-        // Keep KYC / billing status in sync if completed in CRM afterwards
-        await PmsItem.updateOne(
-          { _id: existing._id },
-          { $set: { kycBillingStatus: 'Verified', clientName, siteDetails: `${location}, Site access verified` } }
-        );
+      } else if (existing.stageKey === 'projectActivation') {
+        // Keep KYC / billing status and details in sync if completed in CRM afterwards
+        const updateFields = {};
+        if (isKycVerified && existing.kycBillingStatus !== 'Verified') {
+          updateFields.kycBillingStatus = 'Verified';
+        }
+        if (clientName && clientName !== existing.clientName) {
+          updateFields.clientName = clientName;
+        }
+        if (siteDetails && siteDetails !== existing.siteDetails) {
+          updateFields.siteDetails = siteDetails;
+        }
+        if (owner && !existing.assignedPcExecutionOwner) {
+          updateFields.assignedPcExecutionOwner = owner;
+          updateFields.currentOwner = owner;
+        }
+        if (approvedQuote && !existing.approvedQuote) {
+          updateFields.approvedQuote = approvedQuote;
+        }
+        if (paymentReceipt && !existing.paymentReceipt) {
+          updateFields.paymentReceipt = paymentReceipt;
+        }
+        if (projectActivationDate && !existing.projectActivationDate) {
+          updateFields.projectActivationDate = projectActivationDate;
+        }
+        if (clientApproval && clientApproval !== 'Pending' && existing.clientApproval !== clientApproval) {
+          updateFields.clientApproval = clientApproval;
+        }
+        if (Object.keys(updateFields).length > 0) {
+          await PmsItem.updateOne({ _id: existing._id }, { $set: updateFields });
+        }
       }
     }
 

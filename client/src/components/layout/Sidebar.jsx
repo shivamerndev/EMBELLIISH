@@ -54,7 +54,8 @@ const NAV = [
     ],
   },
   {
-    label: 'PMS', path: '/project-management', icon: Folder,
+    label: 'PMS',
+    icon: Folder,
     children: [
       { label: "Project Activation / Advance", path: "/pms/project-activation" },
       { label: "Execution Setup / Project Context", path: "/pms/execution-setup" },
@@ -123,12 +124,32 @@ export const Sidebar = ({ isCollapsed = false, onToggle, isMobileOpen = false, o
 
   const items = NAV.filter((item) => !item.permission || granted.has(item.permission));
 
+  const getDefaultChildInfo = (item) => {
+    if (item.label === 'CRM') {
+      return { defaultPath: '/crm/leads', modulePrefix: '/crm' };
+    }
+    if (item.label === 'PMS') {
+      return { defaultPath: '/pms/project-activation', modulePrefix: '/pms' };
+    }
+    if (item.children && item.children.length > 0) {
+      const firstChild = item.children[0];
+      const path = firstChild.path || (firstChild.children && firstChild.children[0]?.path);
+      if (path) {
+        const parts = path.split('/').filter(Boolean);
+        return { defaultPath: path, modulePrefix: parts.length > 0 ? `/${parts[0]}` : '' };
+      }
+    }
+    return { defaultPath: null, modulePrefix: null };
+  };
+
   const [openMenus, setOpenMenus] = useState(() => {
     const initial = {};
     if (location.pathname.startsWith('/crm')) {
       initial['CRM'] = true;
       initial['CRM_Leads'] = true;
       initial['CRM_Sales and Commercials'] = true;
+    } else if (location.pathname.startsWith('/pms')) {
+      initial['PMS'] = true;
     }
     return initial;
   });
@@ -140,18 +161,43 @@ export const Sidebar = ({ isCollapsed = false, onToggle, isMobileOpen = false, o
         CRM: true,
         CRM_Leads: prev['CRM_Leads'] ?? true,
         'CRM_Sales and Commercials': prev['CRM_Sales and Commercials'] ?? true,
+        PMS: false,
+      }));
+    } else if (location.pathname.startsWith('/pms')) {
+      setOpenMenus((prev) => ({
+        ...prev,
+        PMS: true,
+        CRM: false,
       }));
     }
   }, [location.pathname]);
 
-  const toggleMenu = (key, defaultChildPath) => {
+  const toggleTopLevelMenu = (key, defaultChildPath, modulePrefix) => {
     setOpenMenus((prev) => {
       const isOpening = !prev[key];
-      if (isOpening && defaultChildPath && !location.pathname.startsWith('/crm')) {
-        navigate(defaultChildPath);
+      if (isOpening) {
+        if (defaultChildPath && modulePrefix && !location.pathname.startsWith(modulePrefix)) {
+          navigate(defaultChildPath);
+        }
+        const next = { ...prev, [key]: true };
+        if (key === 'PMS') {
+          next.CRM = false;
+        } else if (key === 'CRM') {
+          next.PMS = false;
+          next.CRM_Leads = next.CRM_Leads ?? true;
+          next['CRM_Sales and Commercials'] = next['CRM_Sales and Commercials'] ?? true;
+        }
+        return next;
       }
-      return { ...prev, [key]: isOpening };
+      return { ...prev, [key]: false };
     });
+  };
+
+  const toggleSubMenu = (key) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
   };
 
   const handleLinkClick = () => {
@@ -210,7 +256,10 @@ export const Sidebar = ({ isCollapsed = false, onToggle, isMobileOpen = false, o
                 <div key={item.label} className="space-y-1">
                   <button
                     type="button"
-                    onClick={() => toggleMenu(item.label, '/crm/leads')}
+                    onClick={() => {
+                      const { defaultPath, modulePrefix } = getDefaultChildInfo(item);
+                      toggleTopLevelMenu(item.label, defaultPath, modulePrefix);
+                    }}
                     className={cn(
                       'w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 border-l-2 text-left',
                       isChildActive
@@ -246,7 +295,7 @@ export const Sidebar = ({ isCollapsed = false, onToggle, isMobileOpen = false, o
                             <div key={subGroup.label} className="space-y-1">
                               <button
                                 type="button"
-                                onClick={() => toggleMenu(subKey)}
+                                onClick={() => toggleSubMenu(subKey)}
                                 className={cn(
                                   'w-full flex items-center justify-between px-2.5 py-1.5 text-xs font-bold tracking-wider rounded-md transition-all text-left uppercase',
                                   isSubGroupActive

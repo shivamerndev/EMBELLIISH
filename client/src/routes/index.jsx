@@ -87,6 +87,7 @@ export const AppRoutes = () => (
 
         {/* PMS Sub-Routes */}
         <Route path="/pms" element={<Navigate to="/pms/project-activation" replace />} />
+        <Route path="/project-management" element={<Navigate to="/pms/project-activation" replace />} />
         <Route path="/pms/project-activation" element={<ProjectActivationPage />} />
         <Route path="/pms/execution-setup" element={<ExecutionSetupPage />} />
         <Route path="/pms/design-finalisation" element={<DesignFinalisationPage />} />
