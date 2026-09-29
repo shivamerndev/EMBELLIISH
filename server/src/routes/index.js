@@ -26,6 +26,9 @@ import reportsRoutes from '../modules/reports/reports.routes.js';
 // Upload : photo/file attachments for sales stages
 import uploadRoutes from './upload.routes.js';
 
+// PMS : all 21 project execution and tracking stages
+import pmsRoutes from '../modules/pms/pms.routes.js';
+
 import settingsService from '../modules/settings/settings.service.js';
 import { STAGE_ORDER, STAGE_LABELS } from '../constants/workflow.constants.js';
 import { ROLES, ROLE_PERMISSIONS } from '../constants/roles.constants.js';
@@ -43,6 +46,7 @@ router.use('/upload', uploadRoutes);
 router.use('/crm/leads', leadRoutes);
 router.use('/crm/architects', architectRoutes);
 router.use('/sales', salesRoutes);
+router.use('/pms', pmsRoutes);
 
 router.use('/inventory/fabrics', fabricRoutes);
 

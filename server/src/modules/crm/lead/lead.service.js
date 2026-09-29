@@ -5,6 +5,7 @@ import { nextCode } from '../../../core/sequence.js';
 import LeadModel from './lead.model.js';
 import SalesCommercialModel from '../../sales/sales.model.js';
 import { LEAD_STATUS } from '../../../constants/workflow.constants.js';
+import { syncApprovedLeads } from '../../pms/pms.repo.js';
 
 const leadRepository = new BaseRepository(LeadModel, {
   filterable: ['status', 'source', 'projectType', 'assignedDCM', 'architect', 'qualifiedBy', 'budgetClassification', 'architectInvolved'],
@@ -284,6 +285,14 @@ class LeadService extends BaseService {
           })) : [],
         };
       }
+      if (updateData.kyc || updateData.advance || updateData.approval || updateData.status === 'CONVERTED') {
+        try {
+          await syncApprovedLeads();
+        } catch (syncErr) {
+          console.warn('[lead.service] PMS sync warning on KYC/Commercial update:', syncErr.message);
+        }
+      }
+
       return {
         ...edgeDoc,
         ...updatedLead,
@@ -291,6 +300,14 @@ class LeadService extends BaseService {
         id: updatedLead._id || updatedLead.id,
         salesCommercial: edgeDoc,
       };
+    }
+
+    if (updateData.kyc || updateData.status === 'CONVERTED') {
+      try {
+        await syncApprovedLeads();
+      } catch (syncErr) {
+        console.warn('[lead.service] PMS sync warning on lead update:', syncErr.message);
+      }
     }
 
     return updatedLead;
@@ -314,6 +331,13 @@ class LeadService extends BaseService {
 
     if (lead.convertedProject) {
       await SalesCommercialModel.updateOne({ lead: id }, { to: lead.convertedProject });
+    }
+
+    // Automatically flow converted CRM lead into PMS Stage 1 (Project Activation)
+    try {
+      await syncApprovedLeads();
+    } catch (syncErr) {
+      console.warn('[lead.service] Non-blocking PMS sync warning on conversion:', syncErr.message);
     }
 
     return lead.toJSON();

@@ -1,12 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-    Search, Eye, CheckSquare, Calendar, CheckCircle2, Paperclip, Home, Pencil,
-    Plus, Trash2, Clock, AlertTriangle, Layers, ArrowRight, RefreshCw, Check, X, Ruler, Sparkles, FileText,
-    FileSpreadsheet, Download, ExternalLink, UploadCloud, Presentation, FileUp, Printer, Save, ChevronDown
-} from 'lucide-react';
+import { Search, Eye, CheckSquare, CheckCircle2, Paperclip, Home, Pencil, Plus, Trash2, AlertTriangle, Layers, RefreshCw, Ruler, FileSpreadsheet, Download, ExternalLink, Presentation, Printer, Save, ChevronDown } from 'lucide-react';
 import { date } from '../../utils/format';
-import { PageHeader, Panel, Button, Badge, Input, Select, Textarea, Loading, ErrorState, EmptyState, StatTile, Modal, Field, DelayBadge, ViewSwitcher } from '../../components/ui';
+import { PageHeader, Panel, Button, Badge, Input, Loading, ErrorState, EmptyState, StatTile, Modal, DelayBadge, ViewSwitcher } from '../../components/ui';
 import useViewMode from '../../hooks/useViewMode';
 import CardGridView from '../../components/common/CardGridView';
 import SalesStageCard from '../../components/cards/SalesStageCard';
@@ -15,14 +11,10 @@ import useSales from '../../hooks/useSales';
 import { leadsApi, usersApi, uploadApi } from '../../api';
 import { useAsync, useAction } from '../../hooks/useAsync';
 import DetailedDrawer from '../../components/sales/DetailedDrawer';
+import Table from '../../components/table/Table';
 import { SiteDetailSheetView } from '../../components/sales/SiteDetailSheetView';
 import { SiteDetailSheetEditor } from '../../components/sales/SiteDetailSheetEditor';
-import {
-    SAMPLE_SITE_DETAIL_ROOMS,
-    isSampleSiteDetailRooms,
-    getQuotationRoomsFromLead,
-    buildSiteDetailRoomsFromLead
-} from '../../components/sales/siteSheetDefaults';
+import { isSampleSiteDetailRooms, getQuotationRoomsFromLead, buildSiteDetailRoomsFromLead } from '../../components/sales/siteSheetDefaults';
 import { printSiteDetailSheet, printAllSiteDetailSheets } from '../../components/sales/siteSheetPrintService';
 
 const SPREADSHEET_SECTIONS = [
@@ -30,17 +22,18 @@ const SPREADSHEET_SECTIONS = [
         id: 's6',
         title: 'Site Detail Sheet',
         color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700/80',
-        // All fields : shown in DetailedDrawer
         cols: [
+            { key: 'code', label: 'Lead ID' },
+            { key: 'clientName', label: 'Client Name' },
+            { key: 'readySize.dueDate', label: 'Site Detail Sheet Due' },
+            { key: 'readySize.confirmationDate', label: 'Actual Confirmation Date' },
+            { key: 'delayStatus', label: 'Delay / SLA Status' },
+            { key: 'readySize.confirmedBy', label: 'Site Confirmed By' },
+            { key: 'readySize.siteCondition', label: 'Site Condition' },
             { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet (Google / XLS)' },
             { key: 'readySize.designPpt', label: 'Design PPT' },
             { key: 'readySize.selectionPpt', label: 'Selection PPT' },
-            { key: 'readySize.dueDate', label: 'Site Detail Sheet Due' },
-            { key: 'delayStatus', label: 'Delay / SLA Status' },
-            { key: 'readySize.confirmedBy', label: 'Site Confirmed By' },
-            { key: 'readySize.confirmationDate', label: 'Confirmation Date' },
             { key: 'readySize.windowSizes', label: 'Window Size' },
-            { key: 'readySize.siteCondition', label: 'Site Condition' },
             { key: 'readySize.pelmetDetails', label: 'Pelmet Details' },
             { key: 'readySize.channelDetails', label: 'Channel Details' },
             { key: 'readySize.readyHeight', label: 'Ready Height' },
@@ -48,14 +41,13 @@ const SPREADSHEET_SECTIONS = [
         ],
         // Subset shown in table : prevents horizontal scrolling
         tableCols: [
-            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet' },
-            { key: 'readySize.designPpt', label: 'Design PPT' },
-            { key: 'readySize.selectionPpt', label: 'Selection PPT' },
+            { key: 'clientName', label: 'Client Name' },
             { key: 'readySize.dueDate', label: 'Due Date' },
+            { key: 'readySize.confirmationDate', label: 'Actual Date' },
             { key: 'delayStatus', label: 'SLA Status' },
             { key: 'readySize.confirmedBy', label: 'Confirmed By' },
             { key: 'readySize.siteCondition', label: 'Site Condition' },
-            { key: 'readySize.windowSizes', label: 'Window Sizes' },
+            { key: 'readySize.siteDetailSheetGoogleLink', label: 'Site Detail Sheet' },
         ]
     }
 ];
@@ -921,58 +913,28 @@ const SpreadsheetGridView = ({ items, onView, onEdit, onRowClick, selectedSectio
                 ))}
             </div>
 
-            <div className="overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative">
-                <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr className="sticky top-0 z-20 text-center shadow-sm bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30">
-                            <th className="bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 p-4 text-[10px] uppercase text-center font-semibold text-amber-100 dark:text-slate-400 z-30">
-                                Code
-                            </th>
-                            {visibleSections.map((sec) =>
-                                (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                    <th key={col.key} className="border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90">
-                                        {col.label}
-                                    </th>
-                                ))
-                            )}
-                            <th className="bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30">
-                                Manage
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y text-center divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/40 text-slate-800 dark:text-slate-200">
-                        {items.map((lead, idx) => (
-                            <tr onClick={() => onRowClick ? onRowClick(lead) : onView(lead)} key={lead.id || lead._id || idx} className="hover:bg-amber-500/5 dark:hover:bg-slate-900/80 transition group cursor-pointer">
-                                <td className="border-r border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 z-10   text-brand-600 dark:text-brand-400 font-semibold">
-                                    <button type="button" onClick={(e) => { e.stopPropagation(); onView(lead); }} className="hover:underline truncate px-2">
-                                        {lead.code}
-                                    </button>
-                                </td>
-                                {visibleSections.map((sec) =>
-                                    (sec.tableCols || sec.cols).filter((c) => c.key !== 'sno' && c.key !== 'code').map((col) => (
-                                        <td key={col.key} className="p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap">
-                                            {renderSpreadsheetCell(lead, col.key, idx + 1, onView, onEdit, users)}
-                                        </td>
-                                    ))
-                                )}
-                                <td className="p-2 bg-slate-50 dark:bg-slate-950 group-hover:bg-slate-100 dark:group-hover:bg-slate-900 text-right sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800/80">
-                                    <div className="flex items-center justify-end gap-1">
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            icon={FileSpreadsheet}
-                                            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
-                                            title="Open Room-wise Site Detail Sheet Preview"
-                                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                                        />
-                                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Lead Details" />
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <Table
+                items={items}
+                visibleSections={visibleSections}
+                renderSpreadsheetCell={renderSpreadsheetCell}
+                cellRendererArgs={[users]}
+                onRowClick={onRowClick}
+                onView={onView}
+                onEdit={onEdit}
+                renderActions={(lead) => (
+                    <div className="flex items-center justify-end gap-1">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            icon={FileSpreadsheet}
+                            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+                            title="Open Room-wise Site Detail Sheet Preview"
+                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        />
+                        <Button size="sm" variant="ghost" icon={Eye} onClick={(e) => { e.stopPropagation(); onView(lead); }} title="View Lead Details" />
+                    </div>
+                )}
+            />
         </Panel>
     );
 };
