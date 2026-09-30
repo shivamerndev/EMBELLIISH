@@ -72,12 +72,6 @@ const FinalPaymentEditModal = ({ item, onClose, onDone }) => {
             <span>{typeof error === 'string' ? error : error?.message || 'Update failed'}</span>
           </div>
         )}
-
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300">
-          <Sparkles className="w-4 h-4 shrink-0 text-emerald-500" />
-          <span><strong>Finance Sync:</strong> Outstanding Amount is automatically fetched from the Finance billing ledger.</span>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Payment Due Date">
             <Input type="date" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />

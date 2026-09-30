@@ -48,7 +48,7 @@ Execution Drawing Request
      -		Request Date	
      -		Requested By	
      -		Drawing Required By Date	
-     -		 Input Completeness Status 	
+     -		Input Completeness Status 	
      -		Drawing Version / Revision No.	
      -		Prepared By	
      -		Checked By	
@@ -74,13 +74,13 @@ Execution Drawing Preparation
 	-			Pelmet/Channel/Motor Details	
 	-			Technical Feasibility Input	
 	-			Current Owner	
-	-			 Status	
+	-			Status	
 	-			Delay	
 
 
 Approvals
 
-	-	    Approvals Due Date	
+	-	   Approvals Due Date	
 	-		Approved By	
 	-		Approval Date	
 	-		Status	
@@ -103,7 +103,6 @@ Change / Revision Control
 	-		Timeline Impact	
 	-		Approval Status	
 	-		Revised Version	
-	-		<Empty Field>
 
 
 Order Sheet / FMS Creation
@@ -114,15 +113,16 @@ Order Sheet / FMS Creation
 	-		Creation Date	
 	-		Production Release Status / Date	
 	-		Approved Order	
-	-		Room Details 
-	-   	Fabric and motor data should flow forward rather than be entered again
-	-		Design	
-	-		Fabric	
-	-		Motor/Accessory Needs	
-	-		Stage Dates	
+   -		Stage Dates	
 	-		Current Owner	
 	-	    Status	
-    -		Delay	
+   -		Delay	
+  # Fabric and motor data should flow forward rather than be entered again
+   - 		Room Details 
+   - 		Design	
+   - 		Fabric	
+   - 		Motor/Accessory Needs	
+   - 		Sizes	
 
 
 Procurement Request    
@@ -166,7 +166,7 @@ Production / QC Status
 
 Packing / Dispatch Readiness	
 
-	-    Packing / Dispatch Readiness Due Date	
+	-  Packing / Dispatch Readiness Due Date	
 	-	Packing Status	
 	-	Dispatch Readiness Status	
 	-	Target Dispatch Date	
@@ -176,7 +176,7 @@ Packing / Dispatch Readiness
 	-	Challan	
 	-	Room-Wise Scope	
 	-	Current Owner	
-	-	 Status	
+	-	Status	
 	-	Delay	
 
 
@@ -186,20 +186,20 @@ Final Payment
   -	Invoice/Payment Summary	
   -	Payment Status	
   -	Payment Clearance Date	
-  -	should auto-fetch from Finance 	Outstanding Amount	
-  - Client Status	
-  - Dispatch Readiness	
-  - Outstanding Amount	
-  - Current Owner	
-  - Status	
-  - Delay	
+  -	Outstanding Amount => should auto-fetch from Finance 		
+  -   Client Status	
+  -   Dispatch Readiness	
+  -   Outstanding Amount	
+  -   Current Owner	
+  -   Status	
+  -   Delay	
 
 
 Installation Scheduling	   
 
    -		Installation Scheduling Due Date	
-   -		 Confirmed Installation Date & Time	
-   -		 Assigned Installer / Team	
+   -		Confirmed Installation Date & Time	
+   -		Assigned Installer / Team	
    -		Client Confirmation Status	
    -		Final Payment	
    -		QC	
@@ -209,62 +209,62 @@ Installation Scheduling
    -		Room-Wise Scope	
    -		Installer Availability	
    -		Current Owner	
-   -		 Status	
+   -		Status	
    -		Delay	
 
 
 Installation Brief / Dispatch to Site	   
 
-    -			Installation Brief / Dispatch to Site Due Date	
-    - 			Dispatch Date & Time	
-    - 			Material Handed Over To / Received By Installer	
-    - 			 Installation Brief Acknowledged	
-    - 			Packing List	
-    - 			Challan	
-    - 			Room/Scope List	
-    - 			Site Details	
-    - 			Client/Site Contact	
-    - 			Motor/Wiring Info	
-    - 			Current Owner	
-    - 			 Status	
-    - 			Delay	
+    -	  Installation Brief / Dispatch to Site Due Date	
+    -   Dispatch Date & Time	
+    -   Material Handed Over To / Received By Installer	
+    -   Installation Brief Acknowledged	
+    -   Packing List	
+    -   Challan	
+    -   Room/Scope List	
+    -   Site Details	
+    -   Client/Site Contact	
+    -   Motor/Wiring Info	
+    -   Current Owner	
+    -   Status	
+    -   Delay	
 
 
 Installation Execution / Daily Updates	    
-    -	 Installation Due Date	
-    -  	 Installation Start Date	
-    -   Site Issue / Blocker	
-    -  	 Installation Photos / Proof	
+    -	   Installation Due Date	
+    -  	Installation Start Date	
+    -    Site Issue / Blocker	
+    -  	Installation Photos / Proof	
     -  	Installation Brief	
     -  	Site Readiness	
     -  	Material	
     -  	Tools	
     -  	Site Access	
     -  	Current Owner	
-    -  	 Status	
+    -  	Status	
     -  	Delay	
 
 
 Client Execution Updates
 
-    - 	Client Execution Due Date	
+    -  Client Execution Due Date	
     -  Last Client Update Date	
     -  Updated By	
     -  Next Update Due Date	
-    -  Project Stage ➡️➡️➡️➡️ Project/product	ion/installation statuses should auto-fetch rather than be typed again ➡️➡️➡️➡️		
-    -  Production Status ➡️➡️➡️➡️ Project/production/installation statuses should auto-fetch rather than be typed again  ➡️➡️➡️➡️	Production Status	
-   -    Expected Dates	
-   -    Delays	
-   -          Installation Status ➡️➡️➡️➡️ Project/production/installation statuses should auto-fetch rather than be typed again  ➡️➡️➡️➡️	Installation Status	
-   -    Client Queries	
-   -    Current Owner	
-   -       Status	
-   -       Delay	
+    -  Project Stage ➡️➡️➡️➡️ Project/production/installation statuses should auto-fetch rather than be typed again	
+    -  Production Status ➡️➡️➡️➡️ Project/production/installation statuses should auto-fetch rather than be typed again	
+   -   Expected Dates
+   -   Delays	
+   -   Installation Status ➡️➡️➡️➡️ Project/production/installation statuses should auto-fetch rather than be typed again	
+   -   Client Queries	
+   -   Current Owner	
+   -   Status	
+   -   Delay	
 
 
 Snag / Rework	   
 
-    -    Snag / Rework Due Date	
+    -       Snag / Rework Due Date	
     - 		Snag ID	
     - 		Snag Owner	
     - 		Target Closure Date	
@@ -278,11 +278,12 @@ Snag / Rework
     - 		Returned Material	
     - 		Required Correction	
     - 		Current Owner	
-    - 		 Status	
+    - 		Status	
     - 		Delay	
 
 
-Maintenance	      
+Maintenance	    
+
    -			Maintenance Due Date	
    -			Ticket ID	
    -			Request Date	
@@ -302,9 +303,10 @@ Maintenance
 
 
 Project Closure	
-    -   Project Closure Due Date	
+
+    -    Project Closure Due Date	
     - 	Project Closure Date	
-    - 	 Approved By	
+    - 	Approved By	
     - 	Installation Completion	
     - 	Client Sign-Off	
    -		Snag Status	
@@ -312,6 +314,6 @@ Project Closure
    -		Challans	
    -		Final Photos	
    -		Current Owner	
-   -		 Status	
+   -		Status	
    -		Delay	
    -		Closure gate should require Installation Complete + Client Sign-off + Snags Closed + Payment Closed	Auto Updated

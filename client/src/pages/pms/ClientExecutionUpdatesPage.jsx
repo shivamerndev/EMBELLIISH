@@ -76,11 +76,6 @@ const ClientExecutionUpdatesEditModal = ({ item, onClose, onDone }) => {
           </div>
         )}
 
-        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
-          <Sparkles className="w-4 h-4 shrink-0 text-blue-500" />
-          <span><strong>Auto-fetched Statuses:</strong> Project Stage, Production Status, and Installation Status auto-fetch from active PMS modules rather than re-typing.</span>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Client Execution Due Date">
             <Input type="date" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />
