@@ -1,4 +1,5 @@
 import ApiError from '../../core/ApiError.js';
+import PmsItem from './pms.model.js';
 import {
   normalizeStageNames,
   findItemsByStage,
@@ -258,15 +259,15 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
     currentItem.currentOwner ||
     payload.assignedPcExecutionOwner ||
     currentItem.assignedPcExecutionOwner ||
-    'Execution Lead';
+    '';
 
-  const carriedQuote = payload.approvedQuote || currentItem.approvedQuote || '₹4,50,000';
-  const carriedSite = payload.siteDetails || currentItem.siteDetails || 'Site access verified';
+  const carriedQuote = payload.approvedQuote || currentItem.approvedQuote || '';
+  const carriedSite = payload.siteDetails || currentItem.siteDetails || '';
 
   const baseNextData = {
     lead: leadId,
     code: projectCode,
-    clientName: payload.clientName || currentItem.clientName || 'Private Residence',
+    clientName: payload.clientName || currentItem.clientName || '',
     siteDetails: carriedSite,
     currentOwner: carriedOwner,
     assignedPcExecutionOwner: carriedOwner,

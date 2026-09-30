@@ -1,10 +1,24 @@
-Pipeline
-Lead Details Page UI
-Drawer feilds
+
+# Order sheet / fms
+Version , Created By are saprate in order sheet pms.
+Sizes is missing
+
+# Production / QC Status only these 4 feilds allowed
+Production / QC Due Date
+Production / QC Done Date
+Production / QC Done By
+Production / QC Status 
 
 
+# Installation Execution / Daily Updates	
+Missing feilds.    
+    -  	Material	
+    -  	Tools	
 
-These are the feilds for only Curtain calculator
+
+# Calculators
+
+1. These are the feilds for only Curtain calculator
 
 Area / Room  
 Particular

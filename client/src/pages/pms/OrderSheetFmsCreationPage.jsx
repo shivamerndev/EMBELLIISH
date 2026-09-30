@@ -77,11 +77,6 @@ const OrderSheetFmsEditModal = ({ item, onClose, onDone }) => {
           </div>
         )}
 
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
-          <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
-          <span><strong>Auto-flow Forward:</strong> Fabric and motor specifications flow forward automatically from design/proposals into room details.</span>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Order Sheet / FMS Creation Due Date">
             <Input type="date" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />
