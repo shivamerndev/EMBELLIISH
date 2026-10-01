@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2, Copy, Save, RotateCcw, Printer, CheckSquare, Check, FileText } from 'lucide-react';
 import { Button } from '../ui';
 import { printMeasurementSheet } from './measurementPrintService';
@@ -278,16 +279,64 @@ const MeasurementCapture = ({
 
     // Active room suggestion dropdown state (stores index of row or null)
     const [activeRoomDropdown, setActiveRoomDropdown] = useState(null);
-    const dropdownContainerRef = useRef(null);
+    const [dropdownPosition, setDropdownPosition] = useState(null);
+    const activeInputRef = useRef(null);
+    const dropdownMenuRef = useRef(null);
+
+    const updateDropdownPosition = () => {
+        if (!activeInputRef.current) return;
+        const rect = activeInputRef.current.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return;
+
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const dropdownHeight = 210;
+        const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+        setDropdownPosition({
+            top: openUpward ? Math.max(8, rect.top - dropdownHeight - 4) : rect.bottom + 4,
+            left: Math.max(8, Math.min(rect.left, window.innerWidth - 240)),
+            width: Math.max(rect.width, 220),
+        });
+    };
 
     useEffect(() => {
+        if (activeRoomDropdown === null) {
+            setDropdownPosition(null);
+            return;
+        }
+
+        updateDropdownPosition();
+
+        const handleScrollOrResize = (e) => {
+            if (dropdownMenuRef.current && dropdownMenuRef.current.contains(e.target)) {
+                return;
+            }
+            updateDropdownPosition();
+        };
+
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+
+        return () => {
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+        };
+    }, [activeRoomDropdown]);
+
+    useEffect(() => {
+        if (activeRoomDropdown === null) return;
+
         const handleGlobalClick = (e) => {
-            if (activeRoomDropdown !== null) {
-                if (dropdownContainerRef.current && !dropdownContainerRef.current.contains(e.target)) {
-                    setActiveRoomDropdown(null);
-                }
+            if (
+                dropdownMenuRef.current &&
+                !dropdownMenuRef.current.contains(e.target) &&
+                activeInputRef.current &&
+                !activeInputRef.current.contains(e.target)
+            ) {
+                setActiveRoomDropdown(null);
             }
         };
+
         document.addEventListener('mousedown', handleGlobalClick);
         return () => document.removeEventListener('mousedown', handleGlobalClick);
     }, [activeRoomDropdown]);
@@ -753,11 +802,7 @@ const MeasurementCapture = ({
                                         </td>
 
                                         {/* 2. Area */}
-                                        <td
-                                            ref={activeRoomDropdown === index ? dropdownContainerRef : null}
-                                            className={`px-1.5 py-1 border-r border-slate-200 dark:border-slate-800 ${activeRoomDropdown === index ? 'relative z-50' : 'relative'
-                                                }`}
-                                        >
+                                        <td className="px-1.5 py-1 border-r border-slate-200 dark:border-slate-800">
                                             <div className="relative flex items-center w-full">
                                                 <input
                                                     type="text"
@@ -765,29 +810,19 @@ const MeasurementCapture = ({
                                                     onChange={(e) => {
                                                         const val = e.target.value;
                                                         handleRowChange(index, 'area', val);
-                                                        if (!val.trim()) {
-                                                            setActiveRoomDropdown(index);
-                                                        } else {
-                                                            setActiveRoomDropdown(null);
-                                                        }
+                                                        activeInputRef.current = e.target;
+                                                        setActiveRoomDropdown(index);
                                                     }}
-                                                    onFocus={() => {
-                                                        if (!row.area || !row.area.trim()) {
-                                                            setActiveRoomDropdown(index);
-                                                        }
+                                                    onFocus={(e) => {
+                                                        activeInputRef.current = e.target;
+                                                        setActiveRoomDropdown(index);
                                                     }}
-                                                    onClick={() => {
-                                                        if (!row.area || !row.area.trim()) {
-                                                            setActiveRoomDropdown(index);
-                                                        }
-                                                    }}
-                                                    onBlur={() => {
-                                                        setTimeout(() => {
-                                                            setActiveRoomDropdown((curr) => (curr === index ? null : curr));
-                                                        }, 180);
+                                                    onClick={(e) => {
+                                                        activeInputRef.current = e.target;
+                                                        setActiveRoomDropdown(index);
                                                     }}
                                                     onKeyDown={(e) => {
-                                                        if (e.key === 'Escape') {
+                                                        if (e.key === 'Escape' || e.key === 'Tab') {
                                                             setActiveRoomDropdown(null);
                                                         }
                                                     }}
@@ -795,44 +830,6 @@ const MeasurementCapture = ({
                                                     placeholder="Area / Room"
                                                     className="w-full text-sm font-medium px-1.5 py-1 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 border border-transparent focus:border-amber-500 rounded focus:outline-none transition"
                                                 />
-
-
-                                                {/* Floating Dropdown for Pre-Site Visit Rooms */}
-
-                                                {activeRoomDropdown === index && !readOnly && (!row.area || !row.area.trim()) && (
-                                                    <div className={`absolute left-0 min-w-[220px] w-full bg-white dark:bg-slate-900 border border-amber-500/40 dark:border-amber-500/50 rounded-lg shadow-xl py-1 overflow-hidden z-50 ${index >= rows.length - 2 && index >= 3 ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
-
-                                                        {/* Rooms list */}
-                                                        <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 scrollbar-thin">
-                                                            {availableRooms.map((roomName) => {
-                                                                const isSelected = row.area?.trim().toLowerCase() === roomName.trim().toLowerCase();
-                                                                return (<button key={roomName} type="button"
-                                                                    onMouseDown={(e) => {
-                                                                        e.preventDefault();
-                                                                        handleRowChange(index, 'area', roomName);
-                                                                        setActiveRoomDropdown(null);
-                                                                    }}
-                                                                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${isSelected ? 'bg-amber-100/80 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 font-semibold' : 'hover:bg-amber-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200'}`}>
-                                                                    <span className="truncate">{roomName}</span>
-                                                                    {isSelected && (
-                                                                        <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 ml-2" />
-                                                                    )}
-                                                                </button>
-                                                                );
-                                                            })}
-                                                        </div>
-
-                                                        {/* Custom value indicator if row.area is not in list */}
-                                                        {row.area && !availableRooms.some((r) => r.toLowerCase() === row.area.trim().toLowerCase()) && (
-                                                            <div className="px-2.5 py-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                                                <span className="truncate">
-                                                                    Current: <strong className="text-slate-700 dark:text-slate-200 font-medium">"{row.area}"</strong>
-                                                                </span>
-                                                                <span className="text-[9px] text-slate-400 italic shrink-0 ml-1">(custom)</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
                                             </div>
                                         </td>
 
@@ -1185,6 +1182,80 @@ const MeasurementCapture = ({
                     )}
                 </div>
             </div>
+
+            {/* Portaled Floating Dropdown for Pre-Site Visit Rooms */}
+            {activeRoomDropdown !== null && dropdownPosition && !readOnly && typeof document !== 'undefined' && createPortal(
+                <div
+                    ref={dropdownMenuRef}
+                    style={{
+                        position: 'fixed',
+                        top: `${dropdownPosition.top}px`,
+                        left: `${dropdownPosition.left}px`,
+                        width: `${dropdownPosition.width}px`,
+                        zIndex: 99999,
+                    }}
+                    className="bg-white dark:bg-slate-900 border border-amber-500/40 dark:border-amber-500/50 rounded-lg shadow-2xl py-1 overflow-hidden"
+                >
+                    {/* Header info */}
+                    <div className="px-3 py-1.5 text-[11px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/40 border-b border-amber-200/50 dark:border-amber-900/30 flex items-center justify-between">
+                        <span>{hasPreSiteRooms ? 'Pre-Site Visit Rooms' : 'Suggested Rooms'}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Esc to close</span>
+                    </div>
+
+                    {/* Rooms list */}
+                    <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 scrollbar-thin">
+                        {(() => {
+                            const searchArea = (rows[activeRoomDropdown]?.area || '').trim().toLowerCase();
+                            const filtered = searchArea
+                                ? availableRooms.filter((r) => r.toLowerCase().includes(searchArea))
+                                : availableRooms;
+                            const listToRender = filtered.length > 0 ? filtered : availableRooms;
+
+                            return listToRender.map((roomName) => {
+                                const isSelected = (rows[activeRoomDropdown]?.area || '').trim().toLowerCase() === roomName.trim().toLowerCase();
+                                return (
+                                    <button
+                                        key={roomName}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            handleRowChange(activeRoomDropdown, 'area', roomName);
+                                            setActiveRoomDropdown(null);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
+                                            isSelected
+                                                ? 'bg-amber-100/80 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 font-semibold'
+                                                : 'hover:bg-amber-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200'
+                                        }`}
+                                    >
+                                        <span className="truncate">{roomName}</span>
+                                        {isSelected && (
+                                            <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 ml-2" />
+                                        )}
+                                    </button>
+                                );
+                            });
+                        })()}
+                    </div>
+
+                    {/* Custom value indicator if row.area is not in list */}
+                    {rows[activeRoomDropdown]?.area &&
+                        !availableRooms.some(
+                            (r) => r.toLowerCase() === (rows[activeRoomDropdown].area || '').trim().toLowerCase()
+                        ) && (
+                            <div className="px-2.5 py-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <span className="truncate">
+                                    Current:{' '}
+                                    <strong className="text-slate-700 dark:text-slate-200 font-medium">
+                                        "{rows[activeRoomDropdown].area}"
+                                    </strong>
+                                </span>
+                                <span className="text-[9px] text-slate-400 italic shrink-0 ml-1">(custom)</span>
+                            </div>
+                        )}
+                </div>,
+                document.body
+            )}
 
         </div>
     );
