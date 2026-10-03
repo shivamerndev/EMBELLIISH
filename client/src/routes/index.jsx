@@ -107,8 +107,8 @@ export const AppRoutes = () => (
         <Route path="/pms/installation-execution-updates" element={<InstallationExecutionUpdatesPage />} />
         <Route path="/pms/client-execution-updates" element={<ClientExecutionUpdatesPage />} />
         <Route path="/pms/snag-rework" element={<SnagReworkPage />} />
-        <Route path="/pms/maintenance" element={<MaintenancePage />} />
         <Route path="/pms/project-closure" element={<ProjectClosurePage />} />
+        <Route path="/pms/maintenance" element={<MaintenancePage />} />
 
         <Route path="/members" element={<MembersPage />} />
         <Route path="/settings" element={<SettingsPage />} />

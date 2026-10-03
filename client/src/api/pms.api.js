@@ -19,8 +19,8 @@ const PMS_STAGES = [
   { key: 'installationExecutionUpdates', slug: 'installation-execution-updates', label: 'Installation Execution / Daily Updates' },
   { key: 'clientExecutionUpdates', slug: 'client-execution-updates', label: 'Client Execution Updates' },
   { key: 'snagRework', slug: 'snag-rework', label: 'Snag / Rework' },
-  { key: 'maintenance', slug: 'maintenance', label: 'Maintenance' },
   { key: 'projectClosure', slug: 'project-closure', label: 'Project Closure' },
+  { key: 'maintenance', slug: 'maintenance', label: 'Maintenance' },
 ];
 
 const buildStageApi = (slug) => ({

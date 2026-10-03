@@ -571,6 +571,7 @@ const PmsDetailedDrawer = ({
                 </div>
 
                 {nextStageInfo && nextStageInfo.key !== currentStageInfo.key && (
+                  activeStage === 'projectClosure' && String(currentItem?.maintenanceRequired || '').toLowerCase() !== 'yes' ? null : (
                   <button
                     type="button"
                     onClick={() => {
@@ -583,7 +584,7 @@ const PmsDetailedDrawer = ({
                     <span>Next: {nextStageInfo.shortLabel}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                )}
+                ))}
               </div>
             </div>
           )}
@@ -791,6 +792,7 @@ const PmsDetailedDrawer = ({
             )}
 
             {nextStageInfo && nextStageInfo.key !== currentStageInfo.key && (
+              activeStage === 'projectClosure' && String(currentItem?.maintenanceRequired || '').toLowerCase() !== 'yes' ? null : (
               <Button
                 size="sm"
                 variant="outline"
@@ -805,7 +807,7 @@ const PmsDetailedDrawer = ({
               >
                 Next: {nextStageInfo.shortLabel}
               </Button>
-            )}
+            ))}
 
             {onViewFull && (
               <Button

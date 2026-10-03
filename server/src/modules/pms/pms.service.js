@@ -31,8 +31,8 @@ export const PMS_STAGES_CONFIG = [
   { key: 'installationExecutionUpdates', slug: 'installation-execution-updates', label: 'Installation Execution / Daily Updates' },
   { key: 'clientExecutionUpdates', slug: 'client-execution-updates', label: 'Client Execution Updates' },
   { key: 'snagRework', slug: 'snag-rework', label: 'Snag / Rework' },
-  { key: 'maintenance', slug: 'maintenance', label: 'Maintenance' },
   { key: 'projectClosure', slug: 'project-closure', label: 'Project Closure' },
+  { key: 'maintenance', slug: 'maintenance', label: 'Maintenance' },
 ];
 
 /**
@@ -183,6 +183,8 @@ const getCarriedForwardStageDefaults = (nextKey, baseData) => {
       defaults.ticketId = `TKT-${(baseData.code || 'PRJ').replace(/[^a-zA-Z0-9]/g, '')}`;
       defaults.requestDate = new Date();
       defaults.amcSchedule = 'Preventive visit in 6 months';
+      defaults.clientComplaint = baseData.maintenanceDetails || 'Maintenance requested from Project Closure';
+      defaults.warrantyMaintenanceContext = baseData.maintenanceDetails || 'Standard warranty & AMC coverage';
       break;
 
     case 'projectClosure':
@@ -192,6 +194,8 @@ const getCarriedForwardStageDefaults = (nextKey, baseData) => {
       defaults.snagStatus = 'Closed';
       defaults.paymentClosure = 'Closed';
       defaults.projectClosureDate = new Date();
+      defaults.maintenanceRequired = 'No';
+      defaults.maintenanceDetails = '';
       break;
 
     default:
@@ -211,6 +215,99 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
     (s) => s.key === currentKey || s.slug === currentSlug
   );
 
+  // If current stage is projectClosure, transition to maintenance is strictly based on maintenanceRequired
+  if (currentKey === 'projectClosure' || currentSlug === 'project-closure') {
+    const isMnt = String(payload.maintenanceRequired ?? currentItem.maintenanceRequired ?? '').toLowerCase() === 'yes';
+    if (!isMnt) {
+      // If maintenance is not required, ensure any maintenance record for this lead/project is removed
+      const leadId = currentItem.lead?._id || currentItem.lead;
+      const projectCode = currentItem.code || payload.code;
+      await PmsItem.deleteMany({
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'maintenance' },
+              { stageSlug: 'maintenance' },
+              { stage: 'maintenance' },
+            ],
+          },
+        ],
+      });
+      return null;
+    }
+    const maintenanceConfig = PMS_STAGES_CONFIG.find((s) => s.key === 'maintenance');
+    if (!maintenanceConfig) return null;
+
+    let nextStageConfig = maintenanceConfig;
+    const leadId = currentItem.lead?._id || currentItem.lead;
+    const projectCode = currentItem.code || payload.code;
+
+    const nextQuery = {
+      $and: [
+        {
+          $or: [
+            ...(leadId ? [{ lead: leadId }] : []),
+            ...(projectCode ? [{ code: projectCode }] : []),
+          ],
+        },
+        {
+          $or: [
+            { stageKey: nextStageConfig.key },
+            { stageSlug: nextStageConfig.slug },
+            { stage: nextStageConfig.key },
+            { stage: nextStageConfig.slug },
+          ],
+        },
+      ],
+    };
+
+    const existingNext = await PmsItem.findOne(nextQuery);
+    if (existingNext) {
+      existingNext.status = 'Open';
+      existingNext.clientComplaint = payload.maintenanceDetails || currentItem.maintenanceDetails || existingNext.clientComplaint;
+      existingNext.warrantyMaintenanceContext = payload.maintenanceDetails || currentItem.maintenanceDetails || existingNext.warrantyMaintenanceContext;
+      existingNext.updatedBy = userId;
+      await existingNext.save();
+      return { nextItem: existingNext.toJSON ? existingNext.toJSON() : existingNext, nextStage: nextStageConfig };
+    }
+
+    const carriedOwner = payload.currentOwner || currentItem.currentOwner || 'Support Team';
+    const carriedSite = payload.siteDetails || currentItem.siteDetails || '';
+    const details = payload.maintenanceDetails || currentItem.maintenanceDetails || 'Maintenance requested at project closure';
+
+    const createdNext = await createItem({
+      lead: leadId,
+      code: projectCode,
+      clientName: payload.clientName || currentItem.clientName || '',
+      siteDetails: carriedSite,
+      currentOwner: carriedOwner,
+      assignedPcExecutionOwner: carriedOwner,
+      owner: carriedOwner,
+      stage: nextStageConfig.key,
+      stageKey: nextStageConfig.key,
+      stageSlug: nextStageConfig.slug,
+      status: 'Open',
+      ticketId: projectCode ? `TKT-${projectCode}` : `TKT-${Date.now().toString().slice(-4)}`,
+      requestDate: new Date(),
+      warrantyStatus: 'Active (5-Year Somfy & Fabric Coverage)',
+      clientComplaint: details,
+      warrantyMaintenanceContext: details,
+      delay: '0 days',
+      dueDate: new Date(Date.now() + 7 * 86400000),
+      targetResolutionDate: new Date(Date.now() + 5 * 86400000),
+      createdBy: userId,
+      source: 'projectClosure',
+    });
+
+    return { nextItem: createdNext, nextStage: nextStageConfig };
+  }
+
   // If already at last stage, no further auto-advance needed
   if (currentIndex === -1 || currentIndex >= PMS_STAGES_CONFIG.length - 1) {
     return null;
@@ -222,11 +319,19 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
   if (nextStageConfig.key === 'snagRework') {
     const hasSnag = String(currentItem.snag || payload.snag || '').toLowerCase() === 'yes';
     if (!hasSnag) {
-      // If no snag reported during installation execution, bypass snagRework and proceed to maintenance
-      const maintenanceIndex = PMS_STAGES_CONFIG.findIndex((s) => s.key === 'maintenance');
-      if (maintenanceIndex !== -1) {
-        nextStageConfig = PMS_STAGES_CONFIG[maintenanceIndex];
+      // If no snag reported during installation execution, bypass snagRework and proceed directly to projectClosure
+      const closureIndex = PMS_STAGES_CONFIG.findIndex((s) => s.key === 'projectClosure');
+      if (closureIndex !== -1) {
+        nextStageConfig = PMS_STAGES_CONFIG[closureIndex];
       }
+    }
+  }
+
+  // If current stage is snagRework, completing it moves the lead directly into projectClosure
+  if (currentKey === 'snagRework' || currentSlug === 'snag-rework') {
+    const projectClosureIndex = PMS_STAGES_CONFIG.findIndex((s) => s.key === 'projectClosure');
+    if (projectClosureIndex !== -1) {
+      nextStageConfig = PMS_STAGES_CONFIG[projectClosureIndex];
     }
   }
 
@@ -256,9 +361,17 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
   const existingNext = await PmsItem.findOne(nextQuery);
 
   if (existingNext) {
+    let shouldSave = false;
     // If existing next record was pending, set it to In Progress
     if (existingNext.status === 'Pending') {
       existingNext.status = 'In Progress';
+      shouldSave = true;
+    }
+    if (currentKey === 'snagRework' || currentSlug === 'snag-rework') {
+      existingNext.snagStatus = payload.snagStatus || currentItem.snagStatus || 'Completed';
+      shouldSave = true;
+    }
+    if (shouldSave) {
       existingNext.updatedBy = userId;
       await existingNext.save();
     }
@@ -453,6 +566,214 @@ export const syncSnagsFromInstallationUpdates = async (specificLeadId = null, sp
 };
 
 /**
+ * Synchronizes Maintenance items specifically based on whether Maintenance Required
+ * was flagged ("Yes" / "No") in the Project Closure stage.
+ */
+export const syncMaintenanceFromProjectClosure = async (specificLeadId = null, specificCode = null) => {
+  try {
+    const closureQuery = {
+      $or: [
+        { stageKey: 'projectClosure' },
+        { stageSlug: 'project-closure' },
+        { stage: 'projectClosure' },
+        { stage: 'project-closure' },
+      ],
+    };
+
+    if (specificLeadId || specificCode) {
+      closureQuery.$and = [
+        {
+          $or: [
+            ...(specificLeadId ? [{ lead: specificLeadId }] : []),
+            ...(specificCode ? [{ code: specificCode }] : []),
+          ],
+        },
+      ];
+
+      const closure = await PmsItem.findOne(closureQuery).lean();
+      const leadId = specificLeadId || closure?.lead?._id || closure?.lead;
+      const projectCode = specificCode || closure?.code;
+      const isMntRequired = closure && String(closure.maintenanceRequired || '').trim().toLowerCase() === 'yes';
+
+      const mntQuery = {
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'maintenance' },
+              { stageSlug: 'maintenance' },
+              { stage: 'maintenance' },
+            ],
+          },
+        ],
+      };
+
+      if (isMntRequired) {
+        const existingMnt = await PmsItem.findOne(mntQuery);
+        const mntTicketId = projectCode
+          ? `TKT-${projectCode}`
+          : `TKT-${closure._id ? closure._id.toString().slice(-4) : Date.now().toString().slice(-4)}`;
+        const details = closure.maintenanceDetails || 'Maintenance requested at project closure';
+
+        if (!existingMnt) {
+          await createItem({
+            lead: leadId,
+            code: projectCode,
+            clientName: closure.clientName || '',
+            siteDetails: closure.siteDetails || '',
+            currentOwner: closure.currentOwner || 'Support Team',
+            assignedPcExecutionOwner: closure.assignedPcExecutionOwner || 'Support Team',
+            owner: closure.currentOwner || 'Support Team',
+            stage: 'maintenance',
+            stageKey: 'maintenance',
+            stageSlug: 'maintenance',
+            status: 'Open',
+            ticketId: mntTicketId,
+            requestDate: new Date(),
+            warrantyStatus: 'Active (5-Year Somfy & Fabric Coverage)',
+            clientComplaint: details,
+            warrantyMaintenanceContext: details,
+            delay: '0 days',
+            dueDate: new Date(Date.now() + 7 * 86400000),
+            targetResolutionDate: new Date(Date.now() + 5 * 86400000),
+            createdBy: closure.createdBy,
+            source: 'projectClosure',
+          });
+        } else {
+          let modified = false;
+          if (details && existingMnt.clientComplaint !== details) {
+            existingMnt.clientComplaint = details;
+            modified = true;
+          }
+          if (details && existingMnt.warrantyMaintenanceContext !== details) {
+            existingMnt.warrantyMaintenanceContext = details;
+            modified = true;
+          }
+          if (modified) {
+            await existingMnt.save();
+          }
+        }
+      } else {
+        // If maintenance is not 'Yes', remove from maintenance stage completely
+        await PmsItem.deleteMany(mntQuery);
+      }
+      return;
+    }
+
+    // Bulk sync across all projects:
+    // Only leads with maintenanceRequired === 'Yes' in Project Closure are eligible for Maintenance
+    const closureItems = await PmsItem.find(closureQuery).lean();
+    const yesClosures = closureItems.filter(
+      (c) => String(c.maintenanceRequired || '').trim().toLowerCase() === 'yes'
+    );
+
+    const allowedCodes = new Set(yesClosures.map((c) => c.code).filter(Boolean));
+    const allowedLeadIds = new Set(
+      yesClosures.map((c) => (c.lead?._id || c.lead)?.toString()).filter(Boolean)
+    );
+
+    // Find all existing maintenance items and remove any that are NOT authorized by a "Yes" in Project Closure
+    const allMaintenanceItems = await PmsItem.find({
+      $or: [
+        { stageKey: 'maintenance' },
+        { stageSlug: 'maintenance' },
+        { stage: 'maintenance' },
+      ],
+    }).lean();
+
+    const unauthorizedMntIds = allMaintenanceItems
+      .filter((mnt) => {
+        const codeMatch = mnt.code && allowedCodes.has(mnt.code);
+        const leadIdStr = (mnt.lead?._id || mnt.lead)?.toString();
+        const leadMatch = leadIdStr && allowedLeadIds.has(leadIdStr);
+        return !codeMatch && !leadMatch;
+      })
+      .map((mnt) => mnt._id);
+
+    if (unauthorizedMntIds.length > 0) {
+      await PmsItem.deleteMany({ _id: { $in: unauthorizedMntIds } });
+    }
+
+    // Ensure all yesClosures have a maintenance record
+    for (const closure of yesClosures) {
+      const leadId = closure.lead?._id || closure.lead;
+      const projectCode = closure.code;
+      if (!leadId && !projectCode) continue;
+
+      const mntQuery = {
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'maintenance' },
+              { stageSlug: 'maintenance' },
+              { stage: 'maintenance' },
+            ],
+          },
+        ],
+      };
+
+      const existingMnt = await PmsItem.findOne(mntQuery);
+      const mntTicketId = projectCode
+        ? `TKT-${projectCode}`
+        : `TKT-${closure._id ? closure._id.toString().slice(-4) : Date.now().toString().slice(-4)}`;
+      const details = closure.maintenanceDetails || 'Maintenance requested at project closure';
+
+      if (!existingMnt) {
+        await createItem({
+          lead: leadId,
+          code: projectCode,
+          clientName: closure.clientName || '',
+          siteDetails: closure.siteDetails || '',
+          currentOwner: closure.currentOwner || 'Support Team',
+          assignedPcExecutionOwner: closure.assignedPcExecutionOwner || 'Support Team',
+          owner: closure.currentOwner || 'Support Team',
+          stage: 'maintenance',
+          stageKey: 'maintenance',
+          stageSlug: 'maintenance',
+          status: 'Open',
+          ticketId: mntTicketId,
+          requestDate: new Date(),
+          warrantyStatus: 'Active (5-Year Somfy & Fabric Coverage)',
+          clientComplaint: details,
+          warrantyMaintenanceContext: details,
+          delay: '0 days',
+          dueDate: new Date(Date.now() + 7 * 86400000),
+          targetResolutionDate: new Date(Date.now() + 5 * 86400000),
+          createdBy: closure.createdBy,
+          source: 'projectClosure',
+        });
+      } else {
+        let modified = false;
+        if (details && existingMnt.clientComplaint !== details) {
+          existingMnt.clientComplaint = details;
+          modified = true;
+        }
+        if (details && existingMnt.warrantyMaintenanceContext !== details) {
+          existingMnt.warrantyMaintenanceContext = details;
+          modified = true;
+        }
+        if (modified) {
+          await existingMnt.save();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in syncMaintenanceFromProjectClosure:', err.message);
+  }
+};
+
+/**
  * Ensures any projects completed in the previous stage exist in current stage.
  */
 const ensureSequentialStageCascade = async (currentStageKey, currentStageSlug) => {
@@ -460,6 +781,56 @@ const ensureSequentialStageCascade = async (currentStageKey, currentStageSlug) =
   if (currentStageKey === 'snagRework' || currentStageSlug === 'snag-rework') {
     await syncSnagsFromInstallationUpdates();
     return;
+  }
+
+  // If current stage is maintenance, visibility is strictly based on Maintenance Required in Project Closure
+  if (currentStageKey === 'maintenance' || currentStageSlug === 'maintenance') {
+    await syncMaintenanceFromProjectClosure();
+    return;
+  }
+
+  // If current stage is projectClosure, cascade completed snags from snagRework directly
+  if (currentStageKey === 'projectClosure' || currentStageSlug === 'project-closure') {
+    const completedSnags = await PmsItem.find({
+      $or: [
+        { stageKey: 'snagRework' },
+        { stageSlug: 'snag-rework' },
+        { stage: 'snagRework' },
+        { stage: 'snag-rework' },
+      ],
+      $or: [
+        { snagStatus: { $regex: /^(completed|closed|resolved)$/i } },
+        { status: { $regex: /^(completed|approved|closed|passed|signed|verified)$/i } },
+      ],
+    }).lean();
+
+    for (const snagItem of completedSnags) {
+      const leadId = snagItem.lead?._id || snagItem.lead;
+      const projectCode = snagItem.code;
+
+      const exists = await PmsItem.findOne({
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'projectClosure' },
+              { stageSlug: 'project-closure' },
+              { stage: 'projectClosure' },
+              { stage: 'project-closure' },
+            ],
+          },
+        ],
+      });
+
+      if (!exists) {
+        await autoAdvanceToNextStage('snagRework', snagItem, {}, null);
+      }
+    }
   }
 
   const currentIndex = PMS_STAGES_CONFIG.findIndex(
@@ -528,6 +899,32 @@ export const fetchStageItemsService = async (stageStr, query = {}) => {
 
   // 3. Return active items for this stage
   const items = await findItemsByStage(key, slug, query);
+
+  // If maintenance stage, strictly ensure ONLY leads with maintenanceRequired === 'Yes' in Project Closure are returned
+  if (key === 'maintenance' || slug === 'maintenance') {
+    const closureItems = await PmsItem.find({
+      $or: [
+        { stageKey: 'projectClosure' },
+        { stageSlug: 'project-closure' },
+        { stage: 'projectClosure' },
+        { stage: 'project-closure' },
+      ],
+      maintenanceRequired: { $regex: /^yes$/i },
+    }).lean();
+
+    const allowedCodes = new Set(closureItems.map((c) => c.code).filter(Boolean));
+    const allowedLeadIds = new Set(
+      closureItems.map((c) => (c.lead?._id || c.lead)?.toString()).filter(Boolean)
+    );
+
+    return items.filter((item) => {
+      const codeMatch = item.code && allowedCodes.has(item.code);
+      const leadIdStr = (item.lead?._id || item.lead)?.toString();
+      const leadMatch = leadIdStr && allowedLeadIds.has(leadIdStr);
+      return Boolean(codeMatch || leadMatch);
+    });
+  }
+
   return items;
 };
 
@@ -576,6 +973,16 @@ export const createStageItemService = async (stageStr, payload, userId) => {
     const leadId = created.lead?._id || created.lead;
     const projectCode = created.code;
     await syncSnagsFromInstallationUpdates(leadId, projectCode);
+  }
+
+  // If projectClosure stage, handle Maintenance transition immediately
+  if (key === 'projectClosure' || slug === 'project-closure') {
+    const leadId = created.lead?._id || created.lead;
+    const projectCode = created.code;
+    const isMntRequired = String(payload.maintenanceRequired ?? created.maintenanceRequired ?? '').toLowerCase() === 'yes';
+    if (isMntRequired) {
+      await syncMaintenanceFromProjectClosure(leadId, projectCode);
+    }
   }
 
   return created;
@@ -635,19 +1042,68 @@ export const updateStageItemService = async (stageStr, id, payload, userId) => {
     await syncSnagsFromInstallationUpdates(leadId, projectCode);
   }
 
+  // Check if snagStatus is marked completed/closed in snagRework
+  const isSnagCompleted =
+    (key === 'snagRework' || slug === 'snag-rework') &&
+    ['completed', 'closed', 'resolved'].includes(
+      String(payload.snagStatus || updated.snagStatus || '').toLowerCase()
+    );
+
   // Check if status transitioned to or is Completed/Approved
   const isCompleted =
-    payload.status &&
-    ['completed', 'approved', 'closed', 'verified'].includes(String(payload.status).toLowerCase());
+    isSnagCompleted ||
+    (payload.status &&
+      ['completed', 'approved', 'closed', 'verified'].includes(String(payload.status).toLowerCase()));
+
+  if (isSnagCompleted && (!payload.status || payload.status === 'Open')) {
+    await updateItem(id, {
+      status: 'Completed',
+      snagStatus: payload.snagStatus || updated.snagStatus || 'Completed',
+      ...(updated.closureDate ? {} : { closureDate: new Date() }),
+    });
+    updated.status = 'Completed';
+    updated.snagStatus = payload.snagStatus || updated.snagStatus || 'Completed';
+    if (!updated.closureDate) updated.closureDate = new Date();
+  }
 
   let advanceResult = null;
   if (isCompleted) {
     advanceResult = await autoAdvanceToNextStage(stageStr, updated, payload, userId);
   }
 
+  // If projectClosure stage, handle Maintenance transition based on maintenanceRequired
+  if (key === 'projectClosure' || slug === 'project-closure') {
+    const leadId = updated.lead?._id || updated.lead;
+    const projectCode = updated.code;
+    const isMntRequired = String(payload.maintenanceRequired ?? updated.maintenanceRequired ?? '').toLowerCase() === 'yes';
+
+    if (isMntRequired) {
+      await syncMaintenanceFromProjectClosure(leadId, projectCode);
+    } else {
+      // If not 'Yes', completely remove any maintenance records for this lead/project
+      await PmsItem.deleteMany({
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'maintenance' },
+              { stageSlug: 'maintenance' },
+              { stage: 'maintenance' },
+            ],
+          },
+        ],
+      });
+    }
+  }
+
   return {
     ...updated,
-    _autoAdvancedNextStage: advanceResult?.nextStage?.label || null,
+    _autoAdvancedNextStage: advanceResult?.nextStage?.label || (String(payload.maintenanceRequired || updated.maintenanceRequired || '').toLowerCase() === 'yes' ? 'Maintenance' : null),
     _nextStageItem: advanceResult?.nextItem || null,
   };
 };

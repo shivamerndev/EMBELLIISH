@@ -190,7 +190,10 @@ const MaintenancePage = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Maintenance" subtitle="Track warranty tickets, site details, motor context, and service closure" />
+      <PageHeader
+        title="Maintenance"
+        subtitle="Track warranty tickets and service requests for projects transitioned from Project Closure (Maintenance Required: Yes)"
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Tickets" value={stageItems.length} sub="All maintenance tickets" icon={Hammer} tone="blue" />
@@ -199,17 +202,43 @@ const MaintenancePage = () => {
         <StatTile label="In Progress" value={inProgressCount} sub="Technician visiting" icon={Clock} tone="orange" />
       </div>
 
+      <div className="flex items-center justify-between p-3 rounded-xl border border-amber-500/25 bg-amber-500/5 text-xs text-amber-800 dark:text-amber-300">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span>
+            <strong>Post-Closure Gate:</strong> Only leads with <strong>Maintenance Required: Yes</strong> selected in Project Closure are visible in this stage.
+          </span>
+        </div>
+        <Badge tone="amber">Closure Gate Filtered</Badge>
+      </div>
+
       {loading ? (
         <Panel className="p-12 text-center"><Loading text="Loading..." /></Panel>
       ) : error ? (
         <ErrorState error={typeof error === 'string' ? { message: error } : error} onRetry={handleLoad} />
       ) : stageItems.length === 0 ? (
-        <Panel className="p-8 text-center"><EmptyState icon={Hammer} title="No Records Found" hint="Records will appear here." /></Panel>
+        <Panel className="p-8 text-center">
+          <EmptyState
+            icon={Hammer}
+            title="No Maintenance Records Found"
+            hint="Only leads marked with 'Yes (Move to Maintenance)' in Project Closure appear here."
+          />
+        </Panel>
       ) : (
         <Panel>
           <Table
             items={stageItems}
             columns={[
+              {
+                key: 'clientName',
+                label: 'Lead / Client',
+                render: (val, item) => (
+                  <div>
+                    <div className="font-semibold text-slate-800 dark:text-slate-100">{val || item.lead?.clientName || '—'}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.code || item.lead?.code || '—'}</div>
+                  </div>
+                ),
+              },
               { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
               { key: 'requestDate', label: 'Request Date', render: (val) => formatDate(val) },
               {

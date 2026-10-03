@@ -75,8 +75,8 @@ const NAV = [
       { label: "Installation Execution / Daily Updates", path: "/pms/installation-execution-updates" },
       { label: "Client Execution Updates", path: "/pms/client-execution-updates" },
       { label: "Snag / Rework", path: "/pms/snag-rework" },
-      { label: "Maintenance", path: "/pms/maintenance" },
-      { label: "Project Closure", path: "/pms/project-closure" }
+      { label: "Project Closure", path: "/pms/project-closure" },
+      { label: "Maintenance", path: "/pms/maintenance" }
     ]
   },
   { label: 'Members', path: '/members', icon: Users },

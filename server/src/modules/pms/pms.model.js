@@ -23,8 +23,8 @@ import { auditEntrySchema, applyJsonTransform } from '../../core/schemaPlugins.j
  * 16. installationExecutionUpdates / installation-execution-updates
  * 17. clientExecutionUpdates / client-execution-updates
  * 18. snagRework / snag-rework
- * 19. maintenance / maintenance
- * 20. projectClosure / project-closure
+ * 19. projectClosure / project-closure
+ * 20. maintenance / maintenance
  */
 const pmsItemSchema = new mongoose.Schema(
   {

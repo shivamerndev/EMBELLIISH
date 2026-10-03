@@ -167,22 +167,22 @@ export const PMS_WORKFLOW_STAGES = [
     desc: 'Post-installation snag punchlist, wave pitch tuning, re-measure & closure verification',
   },
   {
-    key: 'maintenance',
-    slug: 'maintenance',
-    stepNumber: 19,
-    label: 'Maintenance & Warranty',
-    shortLabel: 'Maintenance',
-    path: '/pms/maintenance',
-    desc: '5-year Somfy motor & fabric warranty, AMC scheduled visits & ticket support',
-  },
-  {
     key: 'projectClosure',
     slug: 'project-closure',
-    stepNumber: 20,
+    stepNumber: 19,
     label: 'Project Closure',
     shortLabel: 'Closure & Signoff',
     path: '/pms/project-closure',
     desc: 'Final project sign-off, client feedback, delivery handover document & project archive',
+  },
+  {
+    key: 'maintenance',
+    slug: 'maintenance',
+    stepNumber: 20,
+    label: 'Maintenance & Warranty',
+    shortLabel: 'Maintenance',
+    path: '/pms/maintenance',
+    desc: '5-year Somfy motor & fabric warranty, AMC scheduled visits & ticket support',
   },
 ];
 
@@ -208,6 +208,19 @@ export const getPmsStage = (stageKeyOrSlugOrPath) => {
 };
 
 export const getPmsNextStage = (stageKeyOrSlugOrPath) => {
+  const target = String(stageKeyOrSlugOrPath || '').toLowerCase().trim();
+  if (target === 'snagrework' || target === 'snag-rework' || target.includes('snag-rework')) {
+    return (
+      PMS_WORKFLOW_STAGES.find((s) => s.key === 'projectClosure') ||
+      PMS_WORKFLOW_STAGES[PMS_WORKFLOW_STAGES.length - 1]
+    );
+  }
+  if (target === 'projectclosure' || target === 'project-closure' || target.includes('project-closure')) {
+    return (
+      PMS_WORKFLOW_STAGES.find((s) => s.key === 'maintenance') ||
+      PMS_WORKFLOW_STAGES[PMS_WORKFLOW_STAGES.length - 1]
+    );
+  }
   const idx = getPmsStageIndex(stageKeyOrSlugOrPath);
   if (idx !== -1 && idx < PMS_WORKFLOW_STAGES.length - 1) {
     return PMS_WORKFLOW_STAGES[idx + 1];
@@ -442,6 +455,20 @@ export const DEFAULT_STAGE_FIELDS = {
     { key: 'clientComplaint', label: 'Client Complaint' },
     { key: 'status', label: 'Stage Status', type: 'badge' },
   ],
+  projectClosure: [
+    { key: 'dueDate', label: 'Due Date', type: 'date' },
+    { key: 'projectClosureDate', label: 'Closure Date', type: 'date' },
+    { key: 'approvedBy', label: 'Approved By' },
+    { key: 'installationCompletion', label: 'Installation Signoff', type: 'badge' },
+    { key: 'clientSignOff', label: 'Client Sign-off', type: 'badge' },
+    { key: 'snagStatus', label: 'Snag Status', type: 'badge' },
+    { key: 'paymentClosure', label: 'Payment Ledger', type: 'badge' },
+    { key: 'maintenanceRequired', label: 'Maintenance Required', type: 'badge' },
+    { key: 'maintenanceDetails', label: 'Maintenance Details' },
+    { key: 'challans', label: 'Challans Reconciled' },
+    { key: 'finalPhotos', label: 'Media Archive' },
+    { key: 'status', label: 'Stage Status', type: 'badge' },
+  ],
   maintenance: [
     { key: 'dueDate', label: 'Due Date', type: 'date' },
     { key: 'ticketId', label: 'Ticket ID' },
@@ -452,18 +479,6 @@ export const DEFAULT_STAGE_FIELDS = {
     { key: 'closureDate', label: 'Closure Date', type: 'date' },
     { key: 'clientComplaint', label: 'Complaint / Request' },
     { key: 'warrantyMaintenanceContext', label: 'Warranty Scope' },
-    { key: 'status', label: 'Stage Status', type: 'badge' },
-  ],
-  projectClosure: [
-    { key: 'dueDate', label: 'Due Date', type: 'date' },
-    { key: 'projectClosureDate', label: 'Closure Date', type: 'date' },
-    { key: 'approvedBy', label: 'Approved By' },
-    { key: 'installationCompletion', label: 'Installation Signoff', type: 'badge' },
-    { key: 'clientSignOff', label: 'Client Sign-off', type: 'badge' },
-    { key: 'snagStatus', label: 'Snag Status', type: 'badge' },
-    { key: 'paymentClosure', label: 'Payment Ledger', type: 'badge' },
-    { key: 'challans', label: 'Challans Reconciled' },
-    { key: 'finalPhotos', label: 'Media Archive' },
     { key: 'status', label: 'Stage Status', type: 'badge' },
   ],
 };

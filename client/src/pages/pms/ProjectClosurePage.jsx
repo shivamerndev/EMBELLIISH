@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { CheckSquare, Pencil, AlertTriangle, CheckCircle, Clock, Award, ShieldCheck, Lock } from 'lucide-react';
+import { CheckSquare, Pencil, AlertTriangle, CheckCircle, Clock, Award, ShieldCheck, Lock, Eye, ArrowRight } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
 import usePms from '../../hooks/usePms';
 import { pmsApi } from '../../api/pms.api';
 
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import PmsDetailedDrawer from '../../components/pms/PmsDetailedDrawer';
 
 const STAGE = 'projectClosure';
@@ -26,7 +26,7 @@ const formatDate = (val) => {
 const checkClosureGate = (item) => {
   const installDone = item?.installationCompletion === 'Completed' || item?.installationCompletion === 'Complete';
   const signOffDone = item?.clientSignOff === 'Signed' || item?.clientSignOff === 'Approved';
-  const snagsDone = item?.snagStatus === 'Closed' || item?.snagStatus === 'Resolved';
+  const snagsDone = ['closed', 'completed', 'resolved'].includes(String(item?.snagStatus || '').toLowerCase());
   const paymentDone = item?.paymentClosure === 'Closed' || item?.paymentClosure === 'Cleared' || item?.paymentClosure === 'Settled';
   return installDone && signOffDone && snagsDone && paymentDone;
 };
@@ -40,6 +40,8 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
     clientSignOff: item?.clientSignOff || 'Signed',
     snagStatus: item?.snagStatus || 'Closed',
     paymentClosure: item?.paymentClosure || 'Closed',
+    maintenanceRequired: item?.maintenanceRequired || 'No',
+    maintenanceDetails: item?.maintenanceDetails || '',
     challans: item?.challans || '',
     finalPhotos: item?.finalPhotos || '',
     currentOwner: item?.currentOwner || '',
@@ -49,6 +51,7 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
   const [error, setError] = useState('');
 
   const isGatePassed = checkClosureGate(form);
+  const isMntRequired = String(form.maintenanceRequired || '').toLowerCase() === 'yes';
 
   const { execute, pending } = useAction(
     (payload) => pmsApi.projectClosure.update(item._id || item.id, { ...payload, closureGatePassed: isGatePassed }),
@@ -70,7 +73,15 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
       footer={
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" onClick={handleSubmit} loading={pending}>Save Project Closure</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            onClick={handleSubmit}
+            loading={pending}
+            className={isMntRequired ? 'bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-xs' : 'bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs'}
+          >
+            {isMntRequired ? 'Save & Move to Maintenance' : 'Save & Finalize Closure'}
+          </Button>
         </div>
       }
       onClose={onClose}
@@ -150,6 +161,55 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
           <Field label="Delay">
             <Input value={form.delay} onChange={(e) => setForm({...form, delay: e.target.value})} placeholder="e.g. 0 days" />
           </Field>
+        </div>  
+
+        {/* Maintenance Transition Decision Block */}
+        <div className="p-4 rounded-xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+              Post-Closure Transition Gate
+            </span>
+            <Badge tone={isMntRequired ? 'amber' : 'green'}>
+              {isMntRequired ? 'Transition to Maintenance' : 'Official Project Closure'}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Maintenance Required">
+              <Select
+                value={form.maintenanceRequired}
+                onChange={(e) => setForm({ ...form, maintenanceRequired: e.target.value })}
+                options={[
+                  { value: 'No', label: 'No (Officially Close Project)' },
+                  { value: 'Yes', label: 'Yes (Move to Maintenance)' },
+                ]}
+              />
+            </Field>
+
+            <Field label="Maintenance Requirement Details">
+              <Input
+                value={form.maintenanceDetails}
+                onChange={(e) => setForm({ ...form, maintenanceDetails: e.target.value })}
+                placeholder="Enter maintenance details or warranty scope..."
+              />
+            </Field>
+          </div>
+
+          {isMntRequired ? (
+            <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-lg flex items-center gap-2 text-xs">
+              <CheckCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Maintenance is marked <strong>Yes</strong>: Saving this record will automatically move this lead into <strong>Maintenance</strong>. Only leads with this option selected will be visible on the Maintenance page.
+              </span>
+            </div>
+          ) : (
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-lg flex items-center gap-2 text-xs">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span>
+                Maintenance is marked <strong>No</strong>: Project will be finalized and archived directly without moving into Maintenance (will not be visible on the Maintenance page).
+              </span>
+            </div>
+          )}
         </div>
 
         <Field label="Challans (Delivery & Site Challans)">
@@ -167,6 +227,7 @@ const ProjectClosureEditModal = ({ item, onClose, onDone }) => {
 
 const ProjectClosurePage = () => {
   const { handleFetchStage, pmsState } = usePms();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const search = (searchParams.get('search') || '').toLowerCase().trim();
 
@@ -203,6 +264,7 @@ const ProjectClosurePage = () => {
 
   const closedCount = stageItems.filter(i => i.status === 'Closed').length;
   const gatePassedCount = stageItems.filter(i => checkClosureGate(i)).length;
+  const maintenanceCount = stageItems.filter(i => String(i.maintenanceRequired || '').toLowerCase() === 'yes').length;
 
   return (
     <div className="space-y-4">
@@ -211,8 +273,8 @@ const ProjectClosurePage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Projects" value={stageItems.length} sub="Closure pipeline" icon={CheckSquare} tone="blue" />
         <StatTile label="Closure Gate Passed" value={gatePassedCount} sub="All 4 conditions met" icon={ShieldCheck} tone="green" />
+        <StatTile label="Maintenance Required" value={maintenanceCount} sub="Moved to Maintenance" icon={Clock} tone="amber" />
         <StatTile label="Officially Closed" value={closedCount} sub="Signed & archived" icon={CheckCircle} tone="emerald" />
-        <StatTile label="Gate Blocked" value={stageItems.length - gatePassedCount} sub="Pending install/snag/payment" icon={Clock} tone="amber" />
       </div>
 
       {loading ? (
@@ -225,6 +287,40 @@ const ProjectClosurePage = () => {
         <Panel>
           <Table
             items={stageItems}
+            renderActions={(item) => {
+              const isMnt = String(item.maintenanceRequired || '').toLowerCase() === 'yes';
+              const projectCode = item.code || item.lead?.code || item.clientName || '';
+              return (
+                <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={Eye}
+                    title="View Details"
+                    onClick={() => setDrawerItem(item)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={Pencil}
+                    title="Edit Record"
+                    onClick={() => setEditingItem(item)}
+                  />
+                  {isMnt && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      icon={ArrowRight}
+                      className="bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 text-[11px] px-2 py-0.5 font-medium"
+                      title="Maintenance Required. Open Maintenance stage."
+                      onClick={() => navigate(`/pms/maintenance?search=${encodeURIComponent(projectCode)}`)}
+                    >
+                      Mnt →
+                    </Button>
+                  )}
+                </div>
+              );
+            }}
             columns={[
               { key: 'dueDate', label: 'Closure Due Date', render: (val) => formatDate(val) },
               { key: 'projectClosureDate', label: 'Closure Date', render: (val, item) => formatDate(val || item.closureDate || item.createdAt) },
@@ -251,7 +347,7 @@ const ProjectClosurePage = () => {
                 key: 'snagStatus',
                 label: 'Snags',
                 render: (val) => (
-                  <Badge tone={val === 'Closed' ? 'green' : 'rose'}>
+                  <Badge tone={['closed', 'completed', 'resolved'].includes(String(val || '').toLowerCase()) ? 'green' : 'rose'}>
                     {val || 'Open'}
                   </Badge>
                 ),
@@ -273,6 +369,18 @@ const ProjectClosurePage = () => {
                   return (
                     <Badge tone={gatePassed ? 'emerald' : 'orange'}>
                       {gatePassed ? 'Gate Passed' : 'Gate Locked'}
+                    </Badge>
+                  );
+                },
+              },
+              {
+                key: 'maintenanceRequired',
+                label: 'Maintenance',
+                render: (val) => {
+                  const isYes = String(val || '').toLowerCase() === 'yes';
+                  return (
+                    <Badge tone={isYes ? 'amber' : 'slate'}>
+                      {isYes ? 'Yes (In Maintenance)' : 'No'}
                     </Badge>
                   );
                 },
