@@ -185,37 +185,27 @@ const ExecutionDrawingPreparationPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
               {
-                key: 'structuredRequest',
-                label: 'Structured Request',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
               },
-              { key: 'sizes', label: 'Sizes' },
               {
-                key: 'pelmetChannelMotorDetails',
-                label: 'Pelmet / Channel / Motor',
+                key: 'sizes',
+                label: 'Sizes / Scope',
                 render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
+                  <span className="text-xs text-slate-700 dark:text-slate-300 max-w-[180px] truncate block" title={val}>
+                    {val || 'Standard specs'}
                   </span>
                 ),
               },
               {
-                key: 'technicalFeasibilityInput',
-                label: 'Feasibility Input',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
               },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -225,15 +215,15 @@ const ExecutionDrawingPreparationPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Drawing ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `EDP-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

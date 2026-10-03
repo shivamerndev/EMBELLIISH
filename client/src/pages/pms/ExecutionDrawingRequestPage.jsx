@@ -225,10 +225,13 @@ const ExecutionDrawingRequestPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'drawingDueDate', label: 'Drawing Due Date', render: (val, item) => formatDate(val || item.dueDate) },
-              { key: 'requestDate', label: 'Request Date', render: (val) => formatDate(val) },
-              { key: 'requestedBy', label: 'Requested By' },
+              {
+                key: 'drawingDueDate',
+                label: 'Drawing Due Date',
+                render: (val, item) => formatDate(val || item.dueDate),
+              },
               {
                 key: 'drawingVersion',
                 label: 'Version / Drafter',
@@ -244,11 +247,10 @@ const ExecutionDrawingRequestPage = () => {
                 ),
               },
               {
-                key: 'readyHeightStatus',
-                label: 'Ready Height',
-                render: (val) => <Badge tone={val === 'Ready' ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val, item) => val || item.requestedBy || '—',
               },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -258,15 +260,15 @@ const ExecutionDrawingRequestPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Request ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `EDR-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

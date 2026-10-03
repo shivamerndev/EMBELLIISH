@@ -275,71 +275,42 @@ const SnagReworkPage = () => {
         <Panel className="p-0 overflow-hidden">
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             idColumnKey="snagId"
-            idColumnLabel="Snag ID"
+            idColumnLabel="Snag / Project"
             idColumnRender={(item, idx) => (
               <div>
-                <span className="font-semibold text-brand-600 dark:text-brand-400">{item.snagId || item.code || `SNG-${idx + 1}`}</span>
-                {item.code && <span className="block text-[10px] text-slate-400 font-normal">{item.code}</span>}
+                <span className="font-semibold text-brand-600 dark:text-brand-400 block truncate">{item.snagId || item.code || `SNG-${idx + 1}`}</span>
+                {item.code && <span className="block text-[10px] text-slate-400 font-normal truncate">{item.code}</span>}
               </div>
             )}
             onEdit={setEditingItem}
-            renderActions={(item) => {
-              const isCompleted = ['closed', 'completed', 'resolved'].includes(
-                String(item.snagStatus || item.status || '').toLowerCase()
-              );
-              const projectCode = item.code || item.lead?.code || item.clientName || '';
-              return (
-                <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={Eye}
-                    title="View Details"
-                    onClick={() => setDrawerItem(item)}
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={Pencil}
-                    title="Edit Record"
-                    onClick={() => setEditingItem(item)}
-                  />
-                  {isCompleted ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      icon={ArrowRight}
-                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 text-[11px] px-2 py-0.5 font-medium"
-                      title="Lead moved to Project Closure. Click to open Project Closure."
-                      onClick={() => navigate(`/pms/project-closure?search=${encodeURIComponent(projectCode)}`)}
-                    >
-                      Closure →
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      icon={CheckCircle}
-                      className="text-slate-600 hover:text-emerald-700 hover:border-emerald-400 text-[11px] px-2 py-0.5"
-                      title="Quick Mark Completed & Move into Project Closure"
-                      loading={quickCompletingId === (item._id || item.id)}
-                      onClick={() => handleQuickComplete(item)}
-                    >
-                      Complete
-                    </Button>
-                  )}
-                </div>
-              );
-            }}
+            renderActions={(item) => (
+              <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Eye}
+                  title="View Details"
+                  onClick={() => setDrawerItem(item)}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Pencil}
+                  title="Edit Record"
+                  onClick={() => setEditingItem(item)}
+                />
+              </div>
+            )}
             columns={[
               {
                 key: 'clientName',
                 label: 'Lead / Client',
                 render: (val, item) => (
-                  <div>
-                    <div className="font-semibold text-slate-800 dark:text-slate-100">{val || item.lead?.clientName || '—'}</div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.siteDetails || item.lead?.phone || '—'}</div>
+                  <div className="max-w-[180px]">
+                    <div className="font-semibold text-slate-800 dark:text-slate-100 truncate">{val || item.lead?.clientName || '—'}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{item.siteDetails || item.lead?.phone || '—'}</div>
                   </div>
                 ),
               },
@@ -347,11 +318,6 @@ const SnagReworkPage = () => {
                 key: 'dueDate',
                 label: 'Due Date',
                 render: (val) => formatDate(val),
-              },
-              {
-                key: 'siteItem',
-                label: 'Site / Item',
-                render: (val, item) => <span className="max-w-[150px] truncate block">{val || item.siteDetails || '—'}</span>,
               },
               {
                 key: 'issueReport',
@@ -364,17 +330,12 @@ const SnagReworkPage = () => {
               },
               {
                 key: 'snagOwner',
-                label: 'Snag Owner',
-                render: (val) => val || '—',
-              },
-              {
-                key: 'targetClosureDate',
-                label: 'Target Closure',
-                render: (val) => formatDate(val),
+                label: 'Owner',
+                render: (val, item) => val || item.currentOwner || '—',
               },
               {
                 key: 'snagStatus',
-                label: 'Snag Status',
+                label: 'Status',
                 render: (val, item) => {
                   const isDone = ['closed', 'completed', 'resolved'].includes(String(val || '').toLowerCase());
                   return (
@@ -400,16 +361,6 @@ const SnagReworkPage = () => {
                     </div>
                   );
                 },
-              },
-              {
-                key: 'currentOwner',
-                label: 'Current Owner',
-                render: (val) => val || '—',
-              },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <span className="font-mono text-xs">{val || '0 days'}</span>,
               },
             ]}
             onRowClick={setDrawerItem}

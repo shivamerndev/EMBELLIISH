@@ -200,22 +200,24 @@ const InstallationBriefDispatchPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'dispatchDateTime', label: 'Dispatch Date & Time', className: 'font-semibold text-slate-800 dark:text-slate-200' },
+              {
+                key: 'dispatchDateTime',
+                label: 'Dispatch Date & Time',
+                className: 'font-semibold text-slate-800 dark:text-slate-200',
+                render: (val, item) => val || formatDate(item.dueDate) || 'Pending Dispatch',
+              },
               {
                 key: 'materialHandedOverToReceivedByInstaller',
-                label: 'Handed Over To / Received By',
-                render: (val, item) => val || item.dispatchedToInstaller || '—',
+                label: 'Handed Over To',
+                render: (val, item) => val || item.dispatchedToInstaller || 'Pending Handover',
               },
               {
                 key: 'installationBriefAcknowledged',
                 label: 'Brief Acknowledged',
                 render: (val) => <Badge tone={val?.includes('Acknowledged') ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
               },
-              { key: 'challan', label: 'Challan', className: 'font-mono' },
-              { key: 'clientSiteContact', label: 'Client Contact' },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -225,15 +227,15 @@ const InstallationBriefDispatchPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `DSP-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

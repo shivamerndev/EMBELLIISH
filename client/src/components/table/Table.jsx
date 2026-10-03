@@ -30,6 +30,7 @@ const Table = ({
     headerBgClassName,
     pinnedHeaderClassName,
     cellRendererArgs = [],
+    noHorizontalScroll = false,
 }) => {
     const data = paginatedItems || items || [];
 
@@ -46,13 +47,17 @@ const Table = ({
     const cellRenderer = renderSpreadsheetCell || renderCell;
     const totalCols = activeColumns.length + (showIdColumn ? 1 : 0) + (showActions ? 1 : 0);
 
-    const defaultContainerClass = 'overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative';
+    const defaultContainerClass = noHorizontalScroll
+        ? 'overflow-y-auto max-h-[60vh] overflow-x-hidden select-none relative w-full'
+        : 'overflow-x-auto max-h-[55vh] overflow-y-auto select-none relative';
 
     const finalHeaderRowClass = headerBgClassName || 'bg-[#836444] text-white font-bold border-b border-amber-300 dark:border-amber-500/30';
 
     const finalPinnedThClass = pinnedHeaderClassName || 'bg-[#6b5240] dark:bg-slate-950 border-b border-r border-amber-300/40 dark:border-slate-800 text-amber-100 dark:text-slate-400';
 
-    const colThClass = 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90';
+    const colThClass = noHorizontalScroll
+        ? 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2.5 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 bg-[#836444] dark:bg-slate-900/90'
+        : 'border-b border-r border-amber-300/40 dark:border-slate-800/80 p-2 text-[10px] uppercase font-semibold text-amber-50 dark:text-slate-300 whitespace-nowrap min-w-[130px] bg-[#836444] dark:bg-slate-900/90';
 
     const finalActionLabel = actionColumnLabel || 'Manage';
     const manageThClass = 'bg-[#6b5240] dark:bg-slate-950 border-b border-amber-300/40 dark:border-slate-800 p-2 text-[10px] uppercase font-semibold text-amber-100 dark:text-slate-400 text-center sticky right-0 z-30 border-l border-amber-300/40 dark:border-slate-800';
@@ -120,7 +125,7 @@ const Table = ({
                                     const colAlign = col.align ? (col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left') : '';
                                     return (
 
-                                        <td key={col.key} className={`p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap ${colAlign} ${col.className || ''}`}>
+                                        <td key={col.key} className={`p-3 sm:p-4 border-r border-slate-200 dark:border-slate-800/60 ${noHorizontalScroll ? 'break-words' : 'whitespace-nowrap'} ${colAlign} ${col.className || ''}`}>
                                             {col.render ? col.render(lead[col.key], lead, idx) : cellRenderer ? cellRenderer(lead, col.key, idx + 1, onView, onEdit, ...cellRendererArgs) : (lead[col.key] ?? '—')}
                                         </td>
                                     );

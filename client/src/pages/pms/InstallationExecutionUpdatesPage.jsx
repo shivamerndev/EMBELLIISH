@@ -222,53 +222,33 @@ const InstallationExecutionUpdatesPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Installation Due Date', render: (val) => formatDate(val) },
-              { key: 'installationStartDate', label: 'Start Date', render: (val, item) => formatDate(val || item.reportDate) },
+              {
+                key: 'dueDate',
+                label: 'Installation Due Date',
+                render: (val) => formatDate(val),
+              },
               {
                 key: 'siteIssueBlocker',
-                label: 'Site Issue / Blocker',
-                render: (val) => (
-                  val && val !== 'None' ? (
-                    <span className="text-rose-600 dark:text-rose-400 font-semibold">{val}</span>
-                  ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400">None (Smooth)</span>
-                  )
-                ),
-              },
-              {
-                key: 'snag',
-                label: 'Snag / Rework',
+                label: 'Site Issue / Status',
                 render: (val, item) => (
-                  val === 'Yes' ? (
-                    <div className="space-y-0.5">
-                      <Badge tone="rose">Snag Reported</Badge>
-                      {item.snagNote && (
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[150px] truncate" title={item.snagNote}>
-                          {item.snagNote}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Badge tone="slate">No</Badge>
-                  )
+                  <div>
+                    {val && val !== 'None' ? (
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold block truncate max-w-[180px]">{val}</span>
+                    ) : item.snag === 'Yes' ? (
+                      <span className="text-rose-500 font-medium block truncate max-w-[180px]">Snag Reported</span>
+                    ) : (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">Smooth Execution</span>
+                    )}
+                  </div>
                 ),
               },
               {
-                key: 'installationPhotosProof',
-                label: 'Photos / Proof',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || 'Photos verified on drive'}
-                  </span>
-                ),
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val, item) => val || item.installerName || '—',
               },
-              {
-                key: 'siteReadiness',
-                label: 'Readiness & Access',
-                render: (val, item) => `${val || 'Ready'} (${item.siteAccess || 'Full Access'})`,
-              },
-              { key: 'currentOwner', label: 'Owner', render: (val, item) => val || item.installerName || '—' },
               {
                 key: 'status',
                 label: 'Status',
@@ -278,15 +258,15 @@ const InstallationExecutionUpdatesPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `IEU-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

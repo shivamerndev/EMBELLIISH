@@ -188,30 +188,31 @@ const MotorsAccessoriesControlPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'motorType', label: 'Motor Type', className: 'font-semibold text-slate-800 dark:text-slate-200' },
               {
-                key: 'requirement',
-                label: 'Requirement',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
+              {
+                key: 'motorType',
+                label: 'Motor Type',
+                className: 'font-semibold text-slate-800 dark:text-slate-200',
+                render: (val, item) => (
+                  <div>
+                    <span className="block truncate">{val || 'Standard Motor'}</span>
+                    {item.vendorOrder && (
+                      <span className="block text-[10px] text-slate-400 font-mono mt-0.5 truncate">PO: {item.vendorOrder}</span>
+                    )}
+                  </div>
                 ),
               },
-              { key: 'expectedReadinessDate', label: 'Expected Date', render: (val) => formatDate(val) },
               {
-                key: 'automationWiringDetails',
-                label: 'Automation / Wiring',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
               },
-              { key: 'vendorOrder', label: 'Vendor Order', className: 'font-mono' },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -221,15 +222,15 @@ const MotorsAccessoriesControlPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `MAC-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

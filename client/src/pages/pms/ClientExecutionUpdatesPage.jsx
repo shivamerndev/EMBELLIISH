@@ -191,32 +191,28 @@ const ClientExecutionUpdatesPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'lastClientUpdateDate', label: 'Last Update Date', render: (val, item) => formatDate(val || item.updateDate) },
-              { key: 'updatedBy', label: 'Updated By', render: (val, item) => val || item.sharedBy || '—' },
-              { key: 'nextUpdateDueDate', label: 'Next Update Due', render: (val) => formatDate(val) },
+              {
+                key: 'lastClientUpdateDate',
+                label: 'Last Update',
+                render: (val, item) => formatDate(val || item.updateDate || item.dueDate),
+              },
               {
                 key: 'projectStage',
-                label: 'Auto Statuses (Stage / Prod / Install)',
+                label: 'Reported Stage',
                 render: (_, item) => (
                   <div className="flex flex-col gap-0.5 text-[10px]">
                     <span className="text-brand-600 dark:text-brand-400 font-semibold">{item.projectStage || 'In Progress'}</span>
-                    <span className="text-slate-500">Prod: {item.productionStatus || 'Complete'} | Inst: {item.installationStatus || 'In Progress'}</span>
+                    <span className="text-slate-500">Prod: {item.productionStatus || 'Complete'}</span>
                   </div>
                 ),
               },
-              { key: 'expectedDates', label: 'Expected Dates' },
               {
-                key: 'clientQueries',
-                label: 'Client Queries',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'updatedBy',
+                label: 'Updated By',
+                render: (val, item) => val || item.sharedBy || item.currentOwner || '—',
               },
-              { key: 'currentOwner', label: 'Owner', render: (val, item) => val || item.sharedBy || '—' },
               {
                 key: 'status',
                 label: 'Status',
@@ -226,15 +222,15 @@ const ClientExecutionUpdatesPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Client ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `CEU-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

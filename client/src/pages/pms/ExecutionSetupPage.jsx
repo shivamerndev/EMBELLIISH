@@ -217,29 +217,23 @@ const ExecutionSetupPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'approvedDesign', label: 'Approved Design' },
-              { key: 'approvedQuote', label: 'Approved Quote', className: 'text-emerald-600 dark:text-emerald-400 font-semibold' },
               {
-                key: 'paymentStatus',
-                label: 'Payment Status',
-                render: (val) => (
-                  <Badge tone={val === 'Complete' ? 'green' : val === 'Partial' ? 'amber' : 'slate'}>
-                    {val || 'Pending'}
-                  </Badge>
-                ),
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
               },
-              { key: 'executionOwnerPc', label: 'Execution Owner / PC' },
-              { key: 'currentOwner', label: 'Current Owner', render: (val, item) => val || item.executionOwnerPc || '—' },
               {
-                key: 'openActions',
-                label: 'Open Actions / Risks',
-                render: (_, item) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={`Actions: ${item.openActions || 'None'} | Risks: ${item.openRisks || 'None'}`}>
-                    {item.openActions || item.openRisks || '—'}
-                  </span>
-                ),
+                key: 'approvedQuote',
+                label: 'Approved Quote',
+                className: 'text-emerald-600 dark:text-emerald-400 font-semibold',
+                render: (val) => val || '—',
+              },
+              {
+                key: 'executionOwnerPc',
+                label: 'Execution Owner / PC',
+                render: (val, item) => val || item.currentOwner || '—',
               },
               {
                 key: 'status',
@@ -250,15 +244,15 @@ const ExecutionSetupPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `PRJ-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

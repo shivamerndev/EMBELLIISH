@@ -287,79 +287,30 @@ const ProjectClosurePage = () => {
         <Panel>
           <Table
             items={stageItems}
-            renderActions={(item) => {
-              const isMnt = String(item.maintenanceRequired || '').toLowerCase() === 'yes';
-              const projectCode = item.code || item.lead?.code || item.clientName || '';
-              return (
-                <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={Eye}
-                    title="View Details"
-                    onClick={() => setDrawerItem(item)}
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={Pencil}
-                    title="Edit Record"
-                    onClick={() => setEditingItem(item)}
-                  />
-                  {isMnt && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      icon={ArrowRight}
-                      className="bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 text-[11px] px-2 py-0.5 font-medium"
-                      title="Maintenance Required. Open Maintenance stage."
-                      onClick={() => navigate(`/pms/maintenance?search=${encodeURIComponent(projectCode)}`)}
-                    >
-                      Mnt →
-                    </Button>
-                  )}
-                </div>
-              );
-            }}
+            noHorizontalScroll={true}
+            renderActions={(item) => (
+              <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Eye}
+                  title="View Details"
+                  onClick={() => setDrawerItem(item)}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Pencil}
+                  title="Edit Record"
+                  onClick={() => setEditingItem(item)}
+                />
+              </div>
+            )}
             columns={[
-              { key: 'dueDate', label: 'Closure Due Date', render: (val) => formatDate(val) },
-              { key: 'projectClosureDate', label: 'Closure Date', render: (val, item) => formatDate(val || item.closureDate || item.createdAt) },
-              { key: 'approvedBy', label: 'Approved By' },
               {
-                key: 'installationCompletion',
-                label: 'Installation',
-                render: (val) => (
-                  <Badge tone={val === 'Completed' ? 'green' : 'amber'}>
-                    {val || 'Pending'}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'clientSignOff',
-                label: 'Client Sign-Off',
-                render: (val) => (
-                  <Badge tone={val === 'Signed' ? 'green' : 'amber'}>
-                    {val || 'Pending'}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'snagStatus',
-                label: 'Snags',
-                render: (val) => (
-                  <Badge tone={['closed', 'completed', 'resolved'].includes(String(val || '').toLowerCase()) ? 'green' : 'rose'}>
-                    {val || 'Open'}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'paymentClosure',
-                label: 'Payment',
-                render: (val) => (
-                  <Badge tone={val === 'Closed' ? 'green' : 'amber'}>
-                    {val || 'Pending'}
-                  </Badge>
-                ),
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
               },
               {
                 key: 'closureGate',
@@ -380,12 +331,16 @@ const ProjectClosurePage = () => {
                   const isYes = String(val || '').toLowerCase() === 'yes';
                   return (
                     <Badge tone={isYes ? 'amber' : 'slate'}>
-                      {isYes ? 'Yes (In Maintenance)' : 'No'}
+                      {isYes ? 'Yes' : 'No'}
                     </Badge>
                   );
                 },
               },
-              { key: 'currentOwner', label: 'Current Owner' },
+              {
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
+              },
               {
                 key: 'status',
                 label: 'Status',
@@ -396,7 +351,18 @@ const ProjectClosurePage = () => {
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Project"
-            idColumnRender={(item, idx) => item.code || item.project || `PC-${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">
+                  {item.code || item.project || `PC-${idx + 1}`}
+                </span>
+                {item.clientName && (
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                    {item.clientName}
+                  </span>
+                )}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

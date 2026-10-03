@@ -174,19 +174,18 @@ const ChangeRevisionControlPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'changeRequested', label: 'Change Requested', className: 'font-semibold text-slate-800 dark:text-slate-200' },
               {
-                key: 'changeDetails',
-                label: 'Change Details',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
+                key: 'changeRequested',
+                label: 'Change Requested',
+                className: 'font-semibold text-slate-800 dark:text-slate-200',
+                render: (val, item) => (
+                  <span className="max-w-[200px] truncate block" title={val || item.changeDetails}>
+                    {val || item.changeDetails || '—'}
                   </span>
                 ),
               },
-              { key: 'costImpact', label: 'Cost Impact' },
-              { key: 'timelineImpact', label: 'Timeline Impact' },
               {
                 key: 'approvalStatus',
                 label: 'Approval Status',
@@ -196,8 +195,11 @@ const ChangeRevisionControlPage = () => {
                   </Badge>
                 ),
               },
-              { key: 'revisedVersion', label: 'Revised Version', className: 'font-mono' },
-              { key: 'currentOwner', label: 'Current Owner' },
+              {
+                key: 'currentOwner',
+                label: 'Current Owner',
+                render: (val) => val || '—',
+              },
               {
                 key: 'status',
                 label: 'Status',
@@ -207,15 +209,15 @@ const ChangeRevisionControlPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Change ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `CR-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

@@ -228,35 +228,16 @@ const MaintenancePage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
               {
                 key: 'clientName',
                 label: 'Lead / Client',
                 render: (val, item) => (
-                  <div>
-                    <div className="font-semibold text-slate-800 dark:text-slate-100">{val || item.lead?.clientName || '—'}</div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.code || item.lead?.code || '—'}</div>
+                  <div className="max-w-[180px]">
+                    <div className="font-semibold text-slate-800 dark:text-slate-100 truncate">{val || item.lead?.clientName || '—'}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{item.code || item.lead?.code || '—'}</div>
                   </div>
-                ),
-              },
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'requestDate', label: 'Request Date', render: (val) => formatDate(val) },
-              {
-                key: 'siteDetails',
-                label: 'Site Details',
-                render: (val) => (
-                  <span className="text-xs max-w-[140px] truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
-              },
-              {
-                key: 'clientComplaint',
-                label: 'Client Complaint',
-                render: (val) => (
-                  <span className="text-xs max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
                 ),
               },
               {
@@ -268,8 +249,11 @@ const MaintenancePage = () => {
                   </Badge>
                 ),
               },
-              { key: 'owner', label: 'Owner' },
-              { key: 'currentOwner', label: 'Current Owner' },
+              {
+                key: 'owner',
+                label: 'Support Owner',
+                render: (val, item) => val || item.currentOwner || '—',
+              },
               {
                 key: 'status',
                 label: 'Status',
@@ -279,7 +263,6 @@ const MaintenancePage = () => {
                   </Badge>
                 ),
               },
-              { key: 'delay', label: 'Delay', className: 'font-mono text-xs', render: (val) => val || '0 days' },
             ]}
             idColumnKey="ticketId"
             idColumnLabel="Ticket ID"

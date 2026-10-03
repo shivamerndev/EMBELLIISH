@@ -221,33 +221,24 @@ const InstallationSchedulingPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'confirmedInstallationDateTime', label: 'Confirmed Date & Time', className: 'font-semibold text-brand-600 dark:text-brand-400' },
-              { key: 'assignedInstallerTeam', label: 'Installer / Team' },
               {
-                key: 'clientConfirmationStatus',
-                label: 'Client Confirmation',
-                render: (val) => <Badge tone={val?.includes('Confirmed') ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
+                key: 'confirmedInstallationDateTime',
+                label: 'Installation Slot',
+                className: 'font-semibold text-brand-600 dark:text-brand-400',
+                render: (val, item) => val || formatDate(item.dueDate) || 'Pending Date',
               },
               {
-                key: 'gates',
-                label: 'Pre-Install Gates (Pay/QC/Pack)',
-                render: (_, item) => (
-                  <div className="flex items-center gap-1 text-[11px]">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.finalPaymentStatus === 'Cleared' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>Pay: {item.finalPaymentStatus || 'N/A'}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.qcStatus === 'Passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>QC: {item.qcStatus || 'N/A'}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${item.packingStatus === 'Completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-600'}`}>Pack: {item.packingStatus || 'N/A'}</span>
-                  </div>
-                ),
+                key: 'assignedInstallerTeam',
+                label: 'Installer Team',
+                render: (val) => val || 'Not Assigned',
               },
               {
                 key: 'siteReadiness',
                 label: 'Site Readiness',
                 render: (val) => <Badge tone={val?.includes('Ready') ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
               },
-              { key: 'challan', label: 'Challan', className: 'font-mono' },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -257,15 +248,15 @@ const InstallationSchedulingPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Schedule ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `INS-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

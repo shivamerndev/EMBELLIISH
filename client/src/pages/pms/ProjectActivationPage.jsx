@@ -205,34 +205,23 @@ const ProjectActivationPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'approvedQuote', label: 'Approved Quote', className: 'text-emerald-600 dark:text-emerald-400 font-semibold' },
-              { key: 'paymentReceipt', label: 'Payment Receipt', className: 'font-mono' },
-              { key: 'projectActivationDate', label: 'Activation Date', render: (val) => formatDate(val) },
               {
-                key: 'clientApproval',
-                label: 'Client Approval',
-                render: (val) => <Badge tone={val === 'Approved' ? 'green' : val === 'Rejected' ? 'rose' : 'slate'}>{val || 'Pending'}</Badge>,
-              },
-              { key: 'assignedPcExecutionOwner', label: 'Assigned PC / Owner' },
-              {
-                key: 'kycBillingStatus',
-                label: 'KYC / Billing Status',
-                render: (val) => (
-                  <div className="flex flex-col gap-0.5">
-                    <Badge tone={val === 'Verified' ? 'green' : 'amber'}>{val || 'Pending'}</Badge>
-                    <span className="text-[10px] text-slate-400">Customer Conversion</span>
-                  </div>
-                ),
+                key: 'projectActivationDate',
+                label: 'Activation Date',
+                render: (val) => formatDate(val),
               },
               {
-                key: 'siteDetails',
-                label: 'Site Details',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'approvedQuote',
+                label: 'Approved Quote',
+                className: 'text-emerald-600 dark:text-emerald-400 font-semibold',
+                render: (val) => val || '—',
+              },
+              {
+                key: 'assignedPcExecutionOwner',
+                label: 'Assigned PC / Owner',
+                render: (val, item) => val || item.currentOwner || '—',
               },
               {
                 key: 'status',
@@ -246,7 +235,12 @@ const ProjectActivationPage = () => {
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `PRJ-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

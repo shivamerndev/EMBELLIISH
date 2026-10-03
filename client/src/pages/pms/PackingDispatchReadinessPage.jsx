@@ -201,8 +201,13 @@ const PackingDispatchReadinessPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
+              {
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
               {
                 key: 'packingStatus',
                 label: 'Packing Status',
@@ -220,19 +225,11 @@ const PackingDispatchReadinessPage = () => {
                   );
                 },
               },
-              { key: 'targetDispatchDate', label: 'Target Dispatch', render: (val) => formatDate(val) },
-              { key: 'installationDate', label: 'Installation Date', render: (val) => formatDate(val) },
-              { key: 'challan', label: 'Challan', className: 'font-mono' },
               {
-                key: 'roomWiseScope',
-                label: 'Room Scope',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
               },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -242,15 +239,15 @@ const PackingDispatchReadinessPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `PDR-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

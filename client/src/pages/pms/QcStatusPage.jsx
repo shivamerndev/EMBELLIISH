@@ -174,33 +174,34 @@ const QcStatusPage = () => {
         <Panel className="p-0 overflow-hidden">
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `QC-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onEdit={setEditingItem}
             columns={[
               {
                 key: 'dueDate',
-                label: 'Production / QC Due Date',
+                label: 'QC Due Date',
                 render: (val) => formatDate(val),
               },
               {
-                key: 'qcDoneDate',
-                label: 'Production / QC Done Date',
-                render: (val, item) => formatDate(val || item.inspectionDate),
-              },
-              {
-                key: 'qcDoneBy',
-                label: 'Production / QC Done By',
-                render: (val, item) => val || item.inspectorName || '—',
-              },
-              {
                 key: 'qcStatus',
-                label: 'Production / QC Status',
-                render: (val) => (
-                  <Badge tone={val === 'Passed' ? 'green' : val === 'Failed' ? 'rose' : 'amber'}>
-                    {val || 'Passed'}
-                  </Badge>
+                label: 'QC Status',
+                render: (val, item) => (
+                  <div>
+                    <Badge tone={val === 'Passed' ? 'green' : val === 'Failed' ? 'rose' : 'amber'}>
+                      {val || 'Passed'}
+                    </Badge>
+                    {item.qcDoneBy && (
+                      <span className="block text-[10px] text-slate-400 mt-0.5 truncate">By: {item.qcDoneBy}</span>
+                    )}
+                  </div>
                 ),
               },
               {
@@ -214,15 +215,6 @@ const QcStatusPage = () => {
                 render: (val) => (
                   <Badge tone={val === 'Completed' ? 'green' : val === 'In Progress' ? 'blue' : 'slate'}>
                     {val || 'Pending'}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => (
-                  <Badge tone={val === 'Yes' ? 'rose' : 'green'}>
-                    {val === 'Yes' ? 'Delayed' : 'No Delay'}
                   </Badge>
                 ),
               },

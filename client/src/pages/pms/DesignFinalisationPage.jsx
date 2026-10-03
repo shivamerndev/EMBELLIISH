@@ -223,30 +223,32 @@ const DesignFinalisationPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
+              {
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
               {
                 key: 'finalDesignStatus',
-                label: 'Final Design Status',
-                render: (val) => (
-                  <Badge tone={val === 'Approved' ? 'green' : val === 'Client Review' ? 'amber' : 'slate'}>
-                    {val || 'Pending'}
-                  </Badge>
+                label: 'Design Status',
+                render: (val, item) => (
+                  <div>
+                    <Badge tone={val === 'Approved' ? 'green' : val === 'Client Review' ? 'amber' : 'slate'}>
+                      {val || 'Pending'}
+                    </Badge>
+                    {item.designVersion && (
+                      <span className="block text-[10px] text-slate-400 font-mono mt-0.5">{item.designVersion}</span>
+                    )}
+                  </div>
                 ),
               },
-              { key: 'designVersion', label: 'Version', className: 'font-mono' },
-              { key: 'designApprovalDate', label: 'Approval Date', render: (val) => formatDate(val) },
-              { key: 'approvedProposalQuote', label: 'Approved Proposal / Quote' },
               {
-                key: 'fabrics',
-                label: 'Fabrics',
-                render: (val) => (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'currentOwner',
+                label: 'Current Owner',
+                render: (val) => val || '—',
               },
-              { key: 'currentOwner', label: 'Current Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -256,15 +258,15 @@ const DesignFinalisationPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Design ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `DSN-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

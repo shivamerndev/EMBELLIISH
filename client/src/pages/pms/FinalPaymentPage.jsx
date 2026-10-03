@@ -194,16 +194,18 @@ const FinalPaymentPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Payment Due Date', render: (val) => formatDate(val) },
               {
-                key: 'invoicePaymentSummary',
-                label: 'Invoice / Payment Summary',
-                render: (val) => (
-                  <span className="text-xs text-slate-700 dark:text-slate-300 max-w-xs truncate block" title={val}>
-                    {val || '—'}
-                  </span>
-                ),
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
+              {
+                key: 'outstandingAmount',
+                label: 'Outstanding',
+                className: 'font-semibold text-emerald-600 dark:text-emerald-400',
+                render: (val) => val || '₹0',
               },
               {
                 key: 'paymentStatus',
@@ -214,19 +216,11 @@ const FinalPaymentPage = () => {
                   </Badge>
                 ),
               },
-              { key: 'paymentClearanceDate', label: 'Clearance Date', render: (val, item) => formatDate(val || item.paymentReceivedDate) },
-              { key: 'outstandingAmount', label: 'Outstanding (Finance)', className: 'font-semibold text-emerald-600 dark:text-emerald-400', render: (val) => val || '₹0' },
               {
-                key: 'clientStatus',
-                label: 'Client Status',
-                render: (val) => <Badge tone={val === 'Payment Settled' ? 'green' : 'slate'}>{val || 'Pending'}</Badge>,
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
               },
-              {
-                key: 'dispatchReadiness',
-                label: 'Dispatch Readiness',
-                render: (val) => <Badge tone={val?.includes('Approved') || val === 'Ready' ? 'green' : 'amber'}>{val || 'Hold'}</Badge>,
-              },
-              { key: 'currentOwner', label: 'Owner' },
               {
                 key: 'status',
                 label: 'Status',
@@ -236,15 +230,15 @@ const FinalPaymentPage = () => {
                   </Badge>
                 ),
               },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Project ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `PAY-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}

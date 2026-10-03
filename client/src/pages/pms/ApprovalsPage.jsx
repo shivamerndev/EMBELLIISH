@@ -201,10 +201,23 @@ const ApprovalsPage = () => {
         <Panel>
           <Table
             items={stageItems}
+            noHorizontalScroll={true}
             columns={[
-              { key: 'dueDate', label: 'Due Date', render: (val) => formatDate(val) },
-              { key: 'approvedBy', label: 'Approved By' },
-              { key: 'approvalDate', label: 'Approval Date', render: (val) => formatDate(val) },
+              {
+                key: 'dueDate',
+                label: 'Due Date',
+                render: (val) => formatDate(val),
+              },
+              {
+                key: 'approvedBy',
+                label: 'Approved By',
+                render: (val) => val || 'Pending Signoff',
+              },
+              {
+                key: 'currentOwner',
+                label: 'Owner',
+                render: (val) => val || '—',
+              },
               {
                 key: 'status',
                 label: 'Status',
@@ -214,28 +227,15 @@ const ApprovalsPage = () => {
                   </Badge>
                 ),
               },
-              { key: 'approvedDesign', label: 'Approved Design' },
-              {
-                key: 'executionDrawingStatus',
-                label: 'Drawing Status',
-                render: (val) => <Badge tone={val === 'Approved' ? 'green' : 'slate'}>{val || 'Pending'}</Badge>,
-              },
-              { key: 'orderSheet', label: 'Order Sheet', className: 'font-mono' },
-              {
-                key: 'measurementStatus',
-                label: 'Measurements',
-                render: (val) => <Badge tone={val === 'Approved' || val === 'Complete' ? 'green' : 'amber'}>{val || 'Pending'}</Badge>,
-              },
-              { key: 'currentOwner', label: 'Owner' },
-              {
-                key: 'delay',
-                label: 'Delay',
-                render: (val) => <Badge tone={val === 'Yes' ? 'rose' : 'green'}>{val === 'Yes' ? 'Delayed' : 'No Delay'}</Badge>,
-              },
             ]}
             idColumnKey="code"
             idColumnLabel="Code / Client"
-            idColumnRender={(item, idx) => item.code || `Approval ${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-100 block truncate">{item.code || `APV-${idx + 1}`}</span>
+                {item.clientName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{item.clientName}</span>}
+              </div>
+            )}
             onRowClick={setDrawerItem}
             onView={setDrawerItem}
             onEdit={setEditingItem}
