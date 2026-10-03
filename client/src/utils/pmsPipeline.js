@@ -411,6 +411,8 @@ export const DEFAULT_STAGE_FIELDS = {
     { key: 'installationPhotosProof', label: 'Photos & Proof' },
     { key: 'installationBrief', label: 'Brief Followed' },
     { key: 'siteReadiness', label: 'Site Readiness', type: 'badge' },
+    { key: 'snag', label: 'Snag / Rework', type: 'badge' },
+    { key: 'snagNote', label: 'Snag Note' },
     { key: 'material', label: 'Material Verified' },
     { key: 'tools', label: 'Tools Ready' },
     { key: 'status', label: 'Stage Status', type: 'badge' },

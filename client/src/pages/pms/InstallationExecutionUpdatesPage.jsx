@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, Pencil, AlertTriangle, CheckCircle, Clock, TrendingUp, Camera } from 'lucide-react';
+import { Activity,AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Button, Modal, Field, Input, Select, Textarea, Badge, StatTile } from '../../components/ui';
 import Table from '../../components/table/Table';
 import { useAction } from '../../hooks/useAsync';
@@ -37,6 +37,8 @@ const InstallationExecutionEditModal = ({ item, onClose, onDone }) => {
     currentOwner: item?.currentOwner || item?.installerName || '',
     status: item?.status || 'In Progress',
     delay: item?.delay || 'No',
+    snag: item?.snag || 'No',
+    snagNote: item?.snagNote || '',
   });
   const [error, setError] = useState('');
 
@@ -115,6 +117,27 @@ const InstallationExecutionEditModal = ({ item, onClose, onDone }) => {
           </Field>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-800/50 rounded-lg">
+          <Field label="Snag / Rework">
+            <Select
+              value={form.snag}
+              onChange={(e) => setForm({...form, snag: e.target.value})}
+              options={[
+                { value: 'No', label: 'No' },
+                { value: 'Yes', label: 'Yes (Send to Snag / Rework)' },
+              ]}
+            />
+          </Field>
+
+          <Field label="Add note about snag / rework">
+            <Input
+              value={form.snagNote}
+              onChange={(e) => setForm({...form, snagNote: e.target.value})}
+              placeholder={form.snag === 'Yes' ? 'Specify issue details for rework punchlist...' : 'Add note about snag / rework'}
+            />
+          </Field>
+        </div>
+
         <Field label="Installation Photos / Proof">
           <Input value={form.installationPhotosProof} onChange={(e) => setForm({...form, installationPhotosProof: e.target.value})} placeholder="Photo/Video links, cloud folder URL, or verification note..." />
         </Field>
@@ -152,7 +175,9 @@ const InstallationExecutionUpdatesPage = () => {
         (i.code || '').toLowerCase().includes(search) ||
         (i.clientName || '').toLowerCase().includes(search) ||
         (i.siteIssueBlocker || '').toLowerCase().includes(search) ||
-        (i.siteReadiness || '').toLowerCase().includes(search)
+        (i.siteReadiness || '').toLowerCase().includes(search) ||
+        (i.snagNote || '').toLowerCase().includes(search) ||
+        (i.snag || '').toLowerCase().includes(search)
       )
     : rawStageItems;
 
@@ -173,6 +198,7 @@ const InstallationExecutionUpdatesPage = () => {
   }, []);
 
   const completedCount = stageItems.filter(i => i.status === 'Completed').length;
+  const snagCount = stageItems.filter(i => i.snag === 'Yes').length;
   const blockedCount = stageItems.filter(i => i.status === 'Blocked' || (i.siteIssueBlocker && i.siteIssueBlocker !== 'None')).length;
 
   return (
@@ -182,8 +208,8 @@ const InstallationExecutionUpdatesPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Total Daily Logs" value={stageItems.length} sub="Active site jobs" icon={Activity} tone="blue" />
         <StatTile label="Completed Handover" value={completedCount} sub="100% Installed" icon={CheckCircle} tone="green" />
-        <StatTile label="Issues / Blocked" value={blockedCount} sub="Site issues reported" icon={AlertTriangle} tone="rose" />
-        <StatTile label="In Progress" value={stageItems.filter(i => i.status === 'In Progress').length} sub="Ongoing fitting" icon={Clock} tone="amber" />
+        <StatTile label="Snags Reported" value={snagCount} sub="Sent to Snag / Rework" icon={AlertCircle} tone={snagCount > 0 ? "rose" : "slate"} />
+        <StatTile label="Issues / Blocked" value={blockedCount} sub="Site issues reported" icon={AlertTriangle} tone="amber" />
       </div>
 
       {loading ? (
@@ -207,6 +233,24 @@ const InstallationExecutionUpdatesPage = () => {
                     <span className="text-rose-600 dark:text-rose-400 font-semibold">{val}</span>
                   ) : (
                     <span className="text-emerald-600 dark:text-emerald-400">None (Smooth)</span>
+                  )
+                ),
+              },
+              {
+                key: 'snag',
+                label: 'Snag / Rework',
+                render: (val, item) => (
+                  val === 'Yes' ? (
+                    <div className="space-y-0.5">
+                      <Badge tone="rose">Snag Reported</Badge>
+                      {item.snagNote && (
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[150px] truncate" title={item.snagNote}>
+                          {item.snagNote}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Badge tone="slate">No</Badge>
                   )
                 ),
               },

@@ -30,12 +30,12 @@ const SnagReworkEditModal = ({ item, onClose, onDone }) => {
     snagOwner: item?.snagOwner || '',
     targetClosureDate: formatDateInput(item?.targetClosureDate),
     snagStatus: item?.snagStatus || 'Open',
-    issueReport: item?.issueReport || '',
+    issueReport: item?.issueReport || item?.snagNote || '',
     closureDate: formatDateInput(item?.closureDate),
     closureProof: item?.closureProof || '',
-    siteItem: item?.siteItem || '',
+    siteItem: item?.siteItem || item?.siteDetails || '',
     photosVideo: item?.photosVideo || '',
-    clientComplaint: item?.clientComplaint || '',
+    clientComplaint: item?.clientComplaint || item?.snagNote || '',
     returnedMaterial: item?.returnedMaterial || '',
     requiredCorrection: item?.requiredCorrection || '',
     currentOwner: item?.currentOwner || '',
@@ -212,9 +212,24 @@ const SnagReworkPage = () => {
             items={stageItems}
             idColumnKey="snagId"
             idColumnLabel="Snag ID"
-            idColumnRender={(item, idx) => item.snagId || item.code || `SNG-${idx + 1}`}
+            idColumnRender={(item, idx) => (
+              <div>
+                <span className="font-semibold text-brand-600 dark:text-brand-400">{item.snagId || item.code || `SNG-${idx + 1}`}</span>
+                {item.code && <span className="block text-[10px] text-slate-400 font-normal">{item.code}</span>}
+              </div>
+            )}
             onEdit={setEditingItem}
             columns={[
+              {
+                key: 'clientName',
+                label: 'Lead / Client',
+                render: (val, item) => (
+                  <div>
+                    <div className="font-semibold text-slate-800 dark:text-slate-100">{val || item.lead?.clientName || '—'}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.siteDetails || item.lead?.phone || '—'}</div>
+                  </div>
+                ),
+              },
               {
                 key: 'dueDate',
                 label: 'Due Date',
@@ -223,14 +238,14 @@ const SnagReworkPage = () => {
               {
                 key: 'siteItem',
                 label: 'Site / Item',
-                render: (val) => <span className="max-w-[150px] truncate block">{val || '—'}</span>,
+                render: (val, item) => <span className="max-w-[150px] truncate block">{val || item.siteDetails || '—'}</span>,
               },
               {
                 key: 'issueReport',
-                label: 'Issue Report',
+                label: 'Issue / Snag Note',
                 render: (val, item) => (
-                  <span className="max-w-xs truncate block" title={val || item.clientComplaint}>
-                    {val || item.clientComplaint || '—'}
+                  <span className="max-w-xs truncate block font-medium text-rose-600 dark:text-rose-400" title={val || item.clientComplaint || item.snagNote}>
+                    {val || item.clientComplaint || item.snagNote || '—'}
                   </span>
                 ),
               },

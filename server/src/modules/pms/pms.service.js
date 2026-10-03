@@ -216,7 +216,19 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
     return null;
   }
 
-  const nextStageConfig = PMS_STAGES_CONFIG[currentIndex + 1];
+  let nextStageConfig = PMS_STAGES_CONFIG[currentIndex + 1];
+
+  // If next stage is snagRework, check if this project actually has a snag reported
+  if (nextStageConfig.key === 'snagRework') {
+    const hasSnag = String(currentItem.snag || payload.snag || '').toLowerCase() === 'yes';
+    if (!hasSnag) {
+      // If no snag reported during installation execution, bypass snagRework and proceed to maintenance
+      const maintenanceIndex = PMS_STAGES_CONFIG.findIndex((s) => s.key === 'maintenance');
+      if (maintenanceIndex !== -1) {
+        nextStageConfig = PMS_STAGES_CONFIG[maintenanceIndex];
+      }
+    }
+  }
 
   // Search if next stage item already exists for this project
   const leadId = currentItem.lead?._id || currentItem.lead;
@@ -306,9 +318,150 @@ export const autoAdvanceToNextStage = async (stageStr, currentItem, payload = {}
 };
 
 /**
+ * Synchronizes Snag / Rework items specifically based on whether Snag / Rework
+ * was flagged ("Yes" / "No") in the Installation Execution Updates stage.
+ */
+export const syncSnagsFromInstallationUpdates = async (specificLeadId = null, specificCode = null) => {
+  try {
+    const instQuery = {
+      $or: [
+        { stageKey: 'installationExecutionUpdates' },
+        { stageSlug: 'installation-execution-updates' },
+        { stage: 'installationExecutionUpdates' },
+        { stage: 'installation-execution-updates' },
+      ],
+    };
+
+    if (specificLeadId || specificCode) {
+      instQuery.$and = [
+        {
+          $or: [
+            ...(specificLeadId ? [{ lead: specificLeadId }] : []),
+            ...(specificCode ? [{ code: specificCode }] : []),
+          ],
+        },
+      ];
+    }
+
+    const instItems = await PmsItem.find(instQuery).lean();
+
+    for (const inst of instItems) {
+      const leadId = inst.lead?._id || inst.lead;
+      const projectCode = inst.code;
+      if (!leadId && !projectCode) continue;
+
+      const snagQuery = {
+        $and: [
+          {
+            $or: [
+              ...(leadId ? [{ lead: leadId }] : []),
+              ...(projectCode ? [{ code: projectCode }] : []),
+            ],
+          },
+          {
+            $or: [
+              { stageKey: 'snagRework' },
+              { stageSlug: 'snag-rework' },
+              { stage: 'snagRework' },
+              { stage: 'snag-rework' },
+            ],
+          },
+        ],
+      };
+
+      const hasSnag = String(inst.snag || '').toLowerCase() === 'yes';
+
+      if (hasSnag) {
+        const existingSnag = await PmsItem.findOne(snagQuery);
+        const snagId = projectCode ? `SNG-${projectCode}` : `SNG-${inst._id ? inst._id.toString().slice(-4) : Date.now().toString().slice(-4)}`;
+        const note = inst.snagNote || 'Snag reported during installation execution';
+
+        if (!existingSnag) {
+          await createItem({
+            lead: leadId,
+            code: projectCode,
+            clientName: inst.clientName || '',
+            siteDetails: inst.siteDetails || '',
+            siteItem: inst.siteDetails || 'Site Installation',
+            currentOwner: inst.currentOwner || inst.installerName || 'Site Team',
+            assignedPcExecutionOwner: inst.assignedPcExecutionOwner || inst.currentOwner || 'Site Team',
+            snagOwner: inst.currentOwner || inst.installerName || 'Site Team',
+            stage: 'snagRework',
+            stageKey: 'snagRework',
+            stageSlug: 'snag-rework',
+            status: 'Open',
+            snagStatus: 'Open',
+            snagId,
+            issueReport: note,
+            clientComplaint: note,
+            delay: '0 days',
+            dueDate: inst.dueDate || new Date(Date.now() + 5 * 86400000),
+            targetClosureDate: new Date(Date.now() + 3 * 86400000),
+            createdBy: inst.createdBy,
+            source: 'installationExecutionUpdates',
+            sourceInstallationId: inst._id,
+          });
+        } else {
+          let changed = false;
+          if (existingSnag.snagStatus === 'No Major Snags') {
+            existingSnag.snagStatus = 'Open';
+            changed = true;
+          }
+          if (note && (!existingSnag.issueReport || existingSnag.issueReport === 'No Major Snags')) {
+            existingSnag.issueReport = note;
+            changed = true;
+          }
+          if (!existingSnag.clientName && inst.clientName) {
+            existingSnag.clientName = inst.clientName;
+            changed = true;
+          }
+          if (changed) {
+            await existingSnag.save();
+          }
+        }
+      } else {
+        // Snag is 'No' or not 'Yes'; ensure any open or auto-created placeholder snag record is removed
+        // so this lead is NOT visible on the snag/rework page
+        await PmsItem.deleteMany({
+          ...snagQuery,
+          $or: [
+            { source: 'installationExecutionUpdates' },
+            { snagStatus: { $in: ['Open', 'No Major Snags'] } },
+            { issueReport: { $in: [null, '', 'No Major Snags'] } },
+          ],
+        });
+      }
+    }
+
+    // Clean up any legacy placeholder items with 'No Major Snags' and no note
+    if (!specificLeadId && !specificCode) {
+      await PmsItem.deleteMany({
+        $or: [
+          { stageKey: 'snagRework' },
+          { stageSlug: 'snag-rework' },
+          { stage: 'snagRework' },
+          { stage: 'snag-rework' },
+        ],
+        snagStatus: 'No Major Snags',
+        issueReport: { $in: [null, '', 'No Major Snags'] },
+      });
+    }
+  } catch (err) {
+    // Non-blocking sync error
+    console.error('Error in syncSnagsFromInstallationUpdates:', err.message);
+  }
+};
+
+/**
  * Ensures any projects completed in the previous stage exist in current stage.
  */
 const ensureSequentialStageCascade = async (currentStageKey, currentStageSlug) => {
+  // If current stage is snagRework, visibility is strictly based on snags reported in Installation Execution Updates
+  if (currentStageKey === 'snagRework' || currentStageSlug === 'snag-rework') {
+    await syncSnagsFromInstallationUpdates();
+    return;
+  }
+
   const currentIndex = PMS_STAGES_CONFIG.findIndex(
     (s) => s.key === currentStageKey || s.slug === currentStageSlug
   );
@@ -418,6 +571,13 @@ export const createStageItemService = async (stageStr, payload, userId) => {
     await autoAdvanceToNextStage(stageStr, created, payload, userId);
   }
 
+  // If installationExecutionUpdates stage, trigger snag sync immediately
+  if (key === 'installationExecutionUpdates') {
+    const leadId = created.lead?._id || created.lead;
+    const projectCode = created.code;
+    await syncSnagsFromInstallationUpdates(leadId, projectCode);
+  }
+
   return created;
 };
 
@@ -426,10 +586,10 @@ export const createStageItemService = async (stageStr, payload, userId) => {
  * If status is marked "Completed", auto-advances the project to the next stage.
  */
 export const updateStageItemService = async (stageStr, id, payload, userId) => {
+  const { key, slug } = normalizeStageNames(stageStr);
   const existing = await findItemById(id);
   if (!existing) {
     // If not found by ID, attempt creation with provided data
-    const { key, slug } = normalizeStageNames(stageStr);
     const created = await createItem({
       ...payload,
       stage: key,
@@ -441,6 +601,13 @@ export const updateStageItemService = async (stageStr, id, payload, userId) => {
     if (payload.status && ['completed', 'approved', 'closed', 'verified'].includes(String(payload.status).toLowerCase())) {
       await autoAdvanceToNextStage(stageStr, created, payload, userId);
     }
+
+    if (key === 'installationExecutionUpdates') {
+      const leadId = created.lead?._id || created.lead;
+      const projectCode = created.code;
+      await syncSnagsFromInstallationUpdates(leadId, projectCode);
+    }
+
     return created;
   }
 
@@ -460,6 +627,13 @@ export const updateStageItemService = async (stageStr, id, payload, userId) => {
   };
 
   const updated = await updateItem(id, updateData);
+
+  // If installationExecutionUpdates stage, trigger snag sync immediately
+  if (key === 'installationExecutionUpdates') {
+    const leadId = updated.lead?._id || updated.lead;
+    const projectCode = updated.code;
+    await syncSnagsFromInstallationUpdates(leadId, projectCode);
+  }
 
   // Check if status transitioned to or is Completed/Approved
   const isCompleted =
